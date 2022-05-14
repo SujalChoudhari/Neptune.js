@@ -31,9 +31,7 @@ export default class Application {
      */
     constructor() {
         // add play btn and a canvas
-        var play_btn = document.createElement("button");
-        play_btn.innerHTML = "Play";
-        play_btn.setAttribute("id", "button");
+        this.play_btn = document.getElementById("__play__");  
         this.width = window.innerWidth;
         this.height = window.innerHeight;
 
@@ -42,7 +40,12 @@ export default class Application {
         
         play_btn.onclick = () => {
             this.gameloop(0)
-            play_btn.remove();
+            try {
+                this.play_btn.remove();
+                document.getElementById("__removable__").remove();
+            } catch (error) {
+                console.log("[Not Found] '__removable__'not found in the DOM. Ignoring...");
+            }
             this.init();
         }
 
@@ -56,7 +59,12 @@ export default class Application {
         
         this.entities = [];
 
-        document.getElementById("loading_text").style.display = "none";
+        try {
+            document.getElementById("__loading_text__").innerHTML = " ";
+            this.play_btn.style.display = "block";
+        } catch (error) {
+            console.log("[Not Found] '__loading_text__' not found in the DOM. Ignoring...");
+        }
     }
     
     /**
