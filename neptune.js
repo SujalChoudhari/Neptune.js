@@ -3,7 +3,6 @@ import Application from "./core/main.js";
 
 //Basic
 import Entity from "./core/src/basic/entity.js";
-import SoundManager from "./core/src/basic/audio.js";
 import { Sound } from "./core/src/basic/audio.js";
 import Color from "./core/src/basic/color.js";
 
@@ -36,7 +35,6 @@ import Text from "./core/src/ui/text.js";
 export {
     Application,
     Entity,
-    SoundManager,
     Sound,
     Color,
     Mouse,
