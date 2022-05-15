@@ -1,0 +1,21 @@
+{
+  "name": "@neptune-js/neptune",
+  "version": "0.0.2",
+  "description": "A JavaScript Based Game Development Framework",
+  "main": "neptune.js",
+  "module": "neptune.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NotSujal/Neptune.js.git"
+  },
+  "keywords": [
+    "game-dev",
+    "neptune-js"
+  ],
+  "author": "notsujal",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/NotSujal/Neptune.js/issues"
+  },
+  "homepage": "https://github.com/NotSujal/Neptune.js#readme"
+}
