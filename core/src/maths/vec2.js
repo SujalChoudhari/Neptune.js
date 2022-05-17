@@ -19,6 +19,7 @@
  * @method normalise() - Normalises the vector.
  * @method limit(max) - Limits the vector to a maximum magnitude.
  * @method copy() - Returns a copy of the vector.
+ * @method rotate(degrees) - Rotates the vector by an angle.(degrees)
  * 
  * @static add(vec1, vec2) - Adds two vectors.
  * @static sub(vec1, vec2) - Subtracts two vectors.
@@ -141,6 +142,21 @@ export default class Vector2 {
     copy(){
         return new Vector2(this.x, this.y);
     }
+
+    /**
+     * Returns the cross product of two vectors.
+     * @param {Number} degrees - The angle in degrees.
+     */
+    rotate(degrees){
+        let rad = degrees * Math.PI / 180;
+        let cos = Math.cos(rad);
+        let sin = Math.sin(rad);
+        let x = this.x;
+        let y = this.y;
+        this.x = x * cos - y * sin;
+        this.y = x * sin + y * cos;
+    }
+
     
     static add(vec1, vec2) {
         return new Vector2(vec1.x + vec2.x, vec1.y + vec2.y);

@@ -1,6 +1,5 @@
 import Keyboard from "./src/events/keyboard.js";
 import Mouse from "./src/events/mouse.js";
-import EventHandler from "./src/events/userevents.js";
 
 /**
  * Application class
@@ -38,7 +37,7 @@ export default class Application {
         this.canvas = document.getElementById("__panel__");
         this.ctx = this.canvas.getContext("2d");
         
-        play_btn.onclick = () => {
+        this.play_btn.onclick = () => {
             this.gameloop(0)
             try {
                 this.play_btn.remove();
@@ -52,8 +51,7 @@ export default class Application {
         // this.mouse = new Mouse(this.canvas);
         Mouse.init(this.canvas);
         this.keyboard = new Keyboard(this.canvas);
-        this.events = new EventHandler();
-        document.body.appendChild(play_btn);
+        document.body.appendChild(this.play_btn);
         this.currentTimeStamp = performance.now();
         this.deltaTime = 0;
         

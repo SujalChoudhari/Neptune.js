@@ -3,14 +3,13 @@ import Application from "./core/main.js";
 
 //Basic
 import Entity from "./core/src/basic/entity.js";
-import { Sound } from "./core/src/basic/audio.js";
+import Sound from "./core/src/basic/audio.js";
 import Color from "./core/src/basic/color.js";
 
 //Events
 import Mouse from "./core/src/events/mouse.js";
 import Keyboard from "./core/src/events/keyboard.js";
-import EventHandler from "./core/src/events/userevents.js";
-import { Event } from "./core/src/events/userevents.js";
+
 
 //maths
 import Vector2 from "./core/src/maths/vec2.js";
@@ -39,8 +38,6 @@ export {
     Color,
     Mouse,
     Keyboard,
-    EventHandler,
-    Event,
     Vector2,
     Transform,
     CollidableTransform,

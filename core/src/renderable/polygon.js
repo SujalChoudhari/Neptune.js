@@ -31,13 +31,30 @@ export default class Polygon extends Transform{
     }
 
     draw(ctx){
-        ctx.fillStyle = `rgb(${this.color.r},${this.color.g},${this.color.b})`;
-        ctx.beginPath();
-        ctx.moveTo(this.worldPos.x + this.points[0].x,this.worldPos.y + this.points[0].y);
-        for(var i = 1; i < this.points.length; i++){
-            ctx.lineTo(this.worldPos.x + this.points[i].x,this.worldPos.y + this.points[i].y);
+        if(this.parent){
+            ctx.translate(this.parent.worldPos.x, this.parent.worldPos.y);
+            ctx.rotate(this.worldRot * Math.PI / 180);
+            ctx.fillStyle = `rgb(${this.color.r},${this.color.g},${this.color.b})`;
+            ctx.beginPath();
+            ctx.moveTo(this.points[0].x, this.points[0].y);
+            for(let i = 1; i < this.points.length; i++){
+                ctx.lineTo(this.points[i].x, this.points[i].y);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+        } else {
+            ctx.translate(this.worldPos.x, this.worldPos.y);
+            ctx.rotate(this.worldRot * Math.PI / 180);
+            ctx.fillStyle = `rgb(${this.color.r},${this.color.g},${this.color.b})`;
+            ctx.beginPath();
+            ctx.moveTo(this.points[0].x, this.points[0].y);
+            for(let i = 1; i < this.points.length; i++){
+                ctx.lineTo(this.points[i].x, this.points[i].y);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
         }
-        ctx.closePath();
-        ctx.fill();
     }
 }

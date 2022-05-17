@@ -27,7 +27,19 @@ export default class Rect extends Transform{
     }
 
     draw(ctx){
-        ctx.fillStyle = `rgb(${this.color.r},${this.color.g},${this.color.b})`;
-        ctx.fillRect(this.worldPos.x,this.worldPos.y,this.size.x,this.size.y);
+        if (this.parent){
+            ctx.translate(this.parent.worldPos.x, this.parent.worldPos.y);
+            ctx.rotate(this.worldRot* Math.PI / 180);
+            ctx.fillStyle = `rgb(${this.color.r},${this.color.g},${this.color.b})`;
+            ctx.fillRect(-this.centerPos.x +this.pos.x, -this.centerPos.y+this.pos.y, this.size.x, this.size.y);
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+        }else{
+            ctx.translate(this.worldPos.x,this.worldPos.y); 
+            ctx.rotate(this.worldRot* Math.PI / 180);
+            ctx.fillStyle = `rgb(${this.color.r},${this.color.g},${this.color.b})`;
+            ctx.fillRect(-this.centerPos.x ,-this.centerPos.y, this.size.x, this.size.y);
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+        }
     }
 }

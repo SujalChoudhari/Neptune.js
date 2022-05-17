@@ -38,6 +38,7 @@ export default class Text extends Transform{
     }
 
     draw(ctx){
+        ctx.rotate(this.rot * Math.PI / 180);
         ctx.fillStyle = `rgb(${this.color.r},${this.color.g},${this.color.b})`;
         ctx.font = this.font;
         ctx.textAlign = this.alignText;
@@ -47,5 +48,6 @@ export default class Text extends Transform{
             ctx.fillText(lines[i], this.worldPos.x, this.worldPos.y + i * this.size.y);
         }
         // ctx.fillText(this.text,this.worldPos.x,this.worldPos.y);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
     }
 }

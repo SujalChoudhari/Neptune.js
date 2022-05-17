@@ -11,13 +11,13 @@ import Color from "../basic/color.js";
  * Properties:
  * @property {Object} kwargs - The keyword arguments.
  * @property {Number} kwargs.color - The color of the triangle.
- * @property {Array} kwargs.points - The points of the triangle. (Vector2)
+ * @property {Array{Vector2}} kwargs.points - The points of the triangle. (Vector2)
  */
 export default class Triangle extends Transform{
     /**
      * @constructor
      * @param {Object} kwargs - The keyword arguments.
-     * @param {Array} kwargs.points - The points of the triangle. (Vector2)
+     * @param {Array{Vector2}} kwargs.points - The points of the triangle. (Vector2)
      * @param {Color} kwargs.color - The color of the triangle.
      */
     constructor(kwargs){
@@ -31,13 +31,28 @@ export default class Triangle extends Transform{
     }
 
     draw(ctx){
-        ctx.fillStyle = `rgb(${this.color.r},${this.color.g},${this.color.b})`;
-        ctx.beginPath();
-        ctx.moveTo(this.worldPos.x + this.points[0].x,this.worldPos.y + this.points[0].y);
-        for(var i = 1; i < this.points.length; i++){
-            ctx.lineTo(this.worldPos.x + this.points[i].x,this.worldPos.y + this.points[i].y);
+        if(this.parent){
+            ctx.translate(this.parent.worldPos.x, this.parent.worldPos.y);
+            ctx.rotate(this.worldRot * Math.PI / 180);
+            ctx.fillStyle = `rgb(${this.color.r},${this.color.g},${this.color.b})`;
+            ctx.beginPath();
+            ctx.moveTo(this.points[0].x, this.points[0].y);
+            ctx.lineTo(this.points[1].x, this.points[1].y);
+            ctx.lineTo(this.points[2].x, this.points[2].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+        } else {
+            ctx.translate(this.worldPos.x, this.worldPos.y);
+            ctx.rotate(this.worldRot * Math.PI / 180);
+            ctx.fillStyle = `rgb(${this.color.r},${this.color.g},${this.color.b})`;
+            ctx.beginPath();
+            ctx.moveTo(this.points[0].x, this.points[0].y);
+            ctx.lineTo(this.points[1].x, this.points[1].y);
+            ctx.lineTo(this.points[2].x, this.points[2].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
         }
-        ctx.closePath();
-        ctx.fill();
     }
 }
