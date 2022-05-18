@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: renderable/triangle.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: renderable/triangle.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import Transform from "../maths/transform.js";
+import Color from "../basic/color.js";
+
+/**
+ * @class Triangle
+ * @extends Transform
+ * @classdesc Triangle object. Create Triangle objects to display triangles on the screen.
+
+ * @property {Object} kwargs - The keyword arguments.
+ * @property {Number} kwargs.color - The color of the triangle.
+ * @property {Array} kwargs.points - The points of the triangle. (Vector2)
+ */
+export default class Triangle extends Transform{
+    /**
+     * @constructor
+     * @param {Object} kwargs - The keyword arguments.
+     * @param {Array} kwargs.points - The points of the triangle. (Vector2)
+     * @param {Color} kwargs.color - The color of the triangle.
+     */
+    constructor(kwargs){
+        super(kwargs);
+        this.color = kwargs["color"] || Color.random();
+        this.points = kwargs["points"] || [];
+    }
+
+    update(deltaTime){
+        super.update(deltaTime);
+    }
+
+    /**
+     * @memberof Triangle
+     * @method Triangle#draw - Draw the triangle.
+     * @param {CanvasRenderingContext2D} context - The context of the canvas.
+     */
+    draw(ctx){
+        if(this.parent){
+            ctx.translate(this.parent.worldPos.x, this.parent.worldPos.y);
+            ctx.rotate(this.worldRot * Math.PI / 180);
+            ctx.fillStyle = `rgb(${this.color.r},${this.color.g},${this.color.b})`;
+            ctx.beginPath();
+            ctx.moveTo(this.points[0].x, this.points[0].y);
+            ctx.lineTo(this.points[1].x, this.points[1].y);
+            ctx.lineTo(this.points[2].x, this.points[2].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+        } else {
+            ctx.translate(this.worldPos.x, this.worldPos.y);
+            ctx.rotate(this.worldRot * Math.PI / 180);
+            ctx.fillStyle = `rgb(${this.color.r},${this.color.g},${this.color.b})`;
+            ctx.beginPath();
+            ctx.moveTo(this.points[0].x, this.points[0].y);
+            ctx.lineTo(this.points[1].x, this.points[1].y);
+            ctx.lineTo(this.points[2].x, this.points[2].y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+        }
+    }
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-basic.html">basic</a></li></ul><h3>Classes</h3><ul><li><a href="Circle.html">Circle</a></li><li><a href="Image.html">Image</a></li><li><a href="module.exports_module.exports.html">exports</a></li><li><a href="module-basic.html">basic</a></li><li><a href="Polygon.html">Polygon</a></li><li><a href="Rect.html">Rect</a></li><li><a href="Text.html">Text</a></li><li><a href="Triangle.html">Triangle</a></li></ul><h3>Global</h3><ul><li><a href="global.html#add">add</a></li><li><a href="global.html#addAcceleration">addAcceleration</a></li><li><a href="global.html#addAcceleration(acceleration)-Addsanaccelerationtotheobject.">addAcceleration(acceleration) - Adds an acceleration to the object.</a></li><li><a href="global.html#addForce">addForce</a></li><li><a href="global.html#addImpulse">addImpulse</a></li><li><a href="global.html#align">align</a></li><li><a href="global.html#calculateCenterPos">calculateCenterPos</a></li><li><a href="global.html#calculateWorldCenterPos">calculateWorldCenterPos</a></li><li><a href="global.html#calculateWorldPos">calculateWorldPos</a></li><li><a href="global.html#calculateWorldRotation">calculateWorldRotation</a></li><li><a href="global.html#checkCollisionPoint">checkCollisionPoint</a></li><li><a href="global.html#checkCollisionPoint(point)-Returnstrueifthepointiscontainedwithinthetransform.">checkCollisionPoint(point) - Returns true if the point is contained within the transform.</a></li><li><a href="global.html#clear">clear</a></li><li><a href="global.html#containsPoint">containsPoint</a></li><li><a href="global.html#copy">copy</a></li><li><a href="global.html#div">div</a></li><li><a href="global.html#divInt">divInt</a></li><li><a href="global.html#draw">draw</a></li><li><a href="global.html#fill">fill</a></li><li><a href="global.html#gameloop">gameloop</a></li><li><a href="global.html#gameloop()-Thegameloop.">gameloop() - The game loop.</a></li><li><a href="global.html#getCollisionDirection">getCollisionDirection</a></li><li><a href="global.html#getCollisionPoint">getCollisionPoint</a></li><li><a href="global.html#getMouseDelta">getMouseDelta</a></li><li><a href="global.html#getMouseDelta-Returnsthemousedelta.">getMouseDelta - Returns the mouse delta.</a></li><li><a href="global.html#getMousePos">getMousePos</a></li><li><a href="global.html#init">init</a></li><li><a href="global.html#isClicked">isClicked</a></li><li><a href="global.html#isHovered">isHovered</a></li><li><a href="global.html#isKeyDown">isKeyDown</a></li><li><a href="global.html#isKeyPressed">isKeyPressed</a></li><li><a href="global.html#isKeyReleased">isKeyReleased</a></li><li><a href="global.html#isKeyUp">isKeyUp</a></li><li><a href="global.html#isKeyUp-Returnstrueifthekeyisup.">isKeyUp - Returns true if the key is up.</a></li><li><a href="global.html#isLeftButtonClicked">isLeftButtonClicked</a></li><li><a href="global.html#isLeftButtonPressed">isLeftButtonPressed</a></li><li><a href="global.html#isLeftButtonReleased">isLeftButtonReleased</a></li><li><a href="global.html#isMiddleButtonClicked">isMiddleButtonClicked</a></li><li><a href="global.html#isMiddleButtonPressed">isMiddleButtonPressed</a></li><li><a href="global.html#isMiddleButtonReleased">isMiddleButtonReleased</a></li><li><a href="global.html#isPlaying">isPlaying</a></li><li><a href="global.html#isPlaying()-Returnstrueifthesoundisplaying.">isPlaying() - Returns true if the sound is playing.</a></li><li><a href="global.html#isPressed">isPressed</a></li><li><a href="global.html#isPressed(mouse)-Checksifthebuttonispressed.">isPressed(mouse) - Checks if the button is pressed.</a></li><li><a href="global.html#isRightButtonClicked">isRightButtonClicked</a></li><li><a href="global.html#isRightButtonPressed">isRightButtonPressed</a></li><li><a href="global.html#isRightButtonReleased">isRightButtonReleased</a></li><li><a href="global.html#isWheelDown">isWheelDown</a></li><li><a href="global.html#isWheelUp">isWheelUp</a></li><li><a href="global.html#keyDown">keyDown</a></li><li><a href="global.html#keyUp">keyUp</a></li><li><a href="global.html#limit">limit</a></li><li><a href="global.html#mag">mag</a></li><li><a href="global.html#mul">mul</a></li><li><a href="global.html#mulInt">mulInt</a></li><li><a href="global.html#normalise">normalise</a></li><li><a href="global.html#onMouseDown">onMouseDown</a></li><li><a href="global.html#onMouseMove">onMouseMove</a></li><li><a href="global.html#onMouseUp">onMouseUp</a></li><li><a href="global.html#onMouseWheel">onMouseWheel</a></li><li><a href="global.html#pause">pause</a></li><li><a href="global.html#play">play</a></li><li><a href="global.html#rotate">rotate</a></li><li><a href="global.html#rotateDegrees">rotateDegrees</a></li><li><a href="global.html#rotateRadians">rotateRadians</a></li><li><a href="global.html#setLoop">setLoop</a></li><li><a href="global.html#setParent">setParent</a></li><li><a href="global.html#setParent(parent)-Setstheparentoftheentity.">setParent(parent) - Sets the parent of the entity.</a></li><li><a href="global.html#setVolume">setVolume</a></li><li><a href="global.html#stop">stop</a></li><li><a href="global.html#sub">sub</a></li><li><a href="global.html#update">update</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.10</a> on Wed May 18 2022 14:21:03 GMT+0530 (India Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

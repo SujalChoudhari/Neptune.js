@@ -1,8 +1,11 @@
 {
   "name": "@neptune-js/neptune",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A JavaScript Based Game Development Framework",
-  "main": "neptune.js",
+  "main": "src/neptune.js",
+  "scripts": {
+    "docs": "jsdoc -c ./jsdoc.json -d ./docs ./src/neptune.js"
+  },
   "type": "module",
   "repository": {
     "type": "git",
@@ -17,5 +20,9 @@
   "bugs": {
     "url": "https://github.com/NotSujal/Neptune.js/issues"
   },
-  "homepage": "https://github.com/NotSujal/Neptune.js#readme"
+  "homepage": "https://github.com/NotSujal/Neptune.js#readme",
+  "dependencies": {
+    "clean-jsdoc-theme": "^3.3.4",
+    "jsdoc": "^3.6.10"
+  }
 }

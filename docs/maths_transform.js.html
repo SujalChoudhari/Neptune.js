@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Adding favicon -->
+    
+
+    <!-- Adding meta -->
+    
+
+    <!-- Adding external script-->
+    
+
+    <!-- Adding external style-->
+    
+
+    <!-- Adding scripts-->
+    
+
+    <!-- Adding style-->
+    
+
+    <!-- Adding overlay script-->
+    
+
+    <!-- Adding overlay style-->
+    
+
+
+    <title>
+      maths/transform.js
+    </title>
+
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/third-party/ionicons.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/third-party/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/reset.css">
+    <link type="text/css" rel="stylesheet" href="styles/clean-jsdoc-theme-base.css">
+    <link type="text/css" rel="stylesheet" href="styles/clean-jsdoc-theme-dark.css">
+    
+    <svg aria-hidden="true" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+    style="display:none">
+    <defs>
+        <symbol id="copy-icon" viewbox="0 0 488.3 488.3">
+            <g>
+                <path
+                    d="M314.25,85.4h-227c-21.3,0-38.6,17.3-38.6,38.6v325.7c0,21.3,17.3,38.6,38.6,38.6h227c21.3,0,38.6-17.3,38.6-38.6V124    C352.75,102.7,335.45,85.4,314.25,85.4z M325.75,449.6c0,6.4-5.2,11.6-11.6,11.6h-227c-6.4,0-11.6-5.2-11.6-11.6V124    c0-6.4,5.2-11.6,11.6-11.6h227c6.4,0,11.6,5.2,11.6,11.6V449.6z" />
+                <path
+                    d="M401.05,0h-227c-21.3,0-38.6,17.3-38.6,38.6c0,7.5,6,13.5,13.5,13.5s13.5-6,13.5-13.5c0-6.4,5.2-11.6,11.6-11.6h227    c6.4,0,11.6,5.2,11.6,11.6v325.7c0,6.4-5.2,11.6-11.6,11.6c-7.5,0-13.5,6-13.5,13.5s6,13.5,13.5,13.5c21.3,0,38.6-17.3,38.6-38.6    V38.6C439.65,17.3,422.35,0,401.05,0z" />
+            </g>
+        </symbol>
+        <symbol id='search-icon' viewBox="0 0 512 512">
+            <g>
+                <g>
+                    <path
+                        d="M225.474,0C101.151,0,0,101.151,0,225.474c0,124.33,101.151,225.474,225.474,225.474    c124.33,0,225.474-101.144,225.474-225.474C450.948,101.151,349.804,0,225.474,0z M225.474,409.323    c-101.373,0-183.848-82.475-183.848-183.848S124.101,41.626,225.474,41.626s183.848,82.475,183.848,183.848    S326.847,409.323,225.474,409.323z" />
+                </g>
+            </g>
+            <g>
+                <g>
+                    <path
+                        d="M505.902,476.472L386.574,357.144c-8.131-8.131-21.299-8.131-29.43,0c-8.131,8.124-8.131,21.306,0,29.43l119.328,119.328    c4.065,4.065,9.387,6.098,14.715,6.098c5.321,0,10.649-2.033,14.715-6.098C514.033,497.778,514.033,484.596,505.902,476.472z" />
+                </g>
+            </g>
+        </symbol>
+        <symbol id="down-icon" viewBox="0 0 16 16">
+            <path 
+                fill-rule="evenodd" 
+                clip-rule="evenodd" 
+                d="M12.7803 6.21967C13.0732 6.51256 13.0732 6.98744 12.7803 7.28033L8.53033 11.5303C8.23744 11.8232 7.76256 11.8232 7.46967 11.5303L3.21967 7.28033C2.92678 6.98744 2.92678 6.51256 3.21967 6.21967C3.51256 5.92678 3.98744 5.92678 4.28033 6.21967L8 9.93934L11.7197 6.21967C12.0126 5.92678 12.4874 5.92678 12.7803 6.21967Z"
+            >
+            </path>
+        </symbol>
+    </defs>
+</svg>
+  </head>
+
+  <body>
+
+    <nav class="navbar" id="navbar">
+      <div class="navbar-heading" id="navbar-heading"><a href="index.html"><h2 class="navbar-heading-text">Home</h2></a></div><div class="search-box" id="search-box"><div class="search-box-input-container"><input class="search-box-input" type="text" placeholder="Search..." id="search-box-input" /><svg class="search-icon" alt="search-icon"><use xlink:href="#search-icon"></use></svg></div><div class="search-item-container" id="search-item-container"><ul class="search-item-ul" id="search-item-ul"></ul></div></div><div class="sidebar-main-content" id="sidebar-main-content"><div class="accordion collapsed" id="6131262" > <h3 class="accordion-heading">Classes<svg><use xlink:href="#down-icon"></use></svg></h3><ul class="accordion-content"><li class="accordion collapsed child" id=2570023><div class="accordion-heading child"><a href="Application.html">Application</a><svg><use xlink:href="#down-icon"></use></svg></div><ul class='methods accordion-content'><li data-type='method'><a href="Application.html#Application">Application</a></li><li data-type='method'><a href="Application.html#draw">draw</a></li><li data-type='method'><a href="Application.html#gameloop">gameloop</a></li><li data-type='method'><a href="Application.html#init">init</a></li><li data-type='method'><a href="Application.html#update">update</a></li></ul></li><li class="accordion collapsed child" id=4487635><div class="accordion-heading child"><a href="Color.html">Color</a><svg><use xlink:href="#down-icon"></use></svg></div><ul class='methods accordion-content'><li data-type='method'><a href="Color.html#.fromHex">fromHex</a></li><li data-type='method'><a href="Color.html#.fromHSL">fromHSL</a></li><li data-type='method'><a href="Color.html#.fromRGB">fromRGB</a></li><li data-type='method'><a href="Color.html#.fromRGBA">fromRGBA</a></li><li data-type='method'><a href="Color.html#.random">random</a></li><li data-type='method'><a href="Color.html#Color">Color</a></li></ul></li><li class="accordion collapsed child" id=4712987><div class="accordion-heading child"><a href="Entity.html">Entity</a><svg><use xlink:href="#down-icon"></use></svg></div><ul class='methods accordion-content'><li data-type='method'><a href="Entity.html#draw">draw</a></li><li data-type='method'><a href="Entity.html#Entity">Entity</a></li><li data-type='method'><a href="Entity.html#init">init</a></li><li data-type='method'><a href="Entity.html#setParent">setParent</a></li><li data-type='method'><a href="Entity.html#update">update</a></li></ul></li><li class="accordion collapsed child" id=1654867><div class="accordion-heading child"><a href="Keyboard.html">Keyboard</a><svg><use xlink:href="#down-icon"></use></svg></div><ul class='methods accordion-content'><li data-type='method'><a href="Keyboard.html#clear">clear</a></li><li data-type='method'><a href="Keyboard.html#isKeyDown">isKeyDown</a></li><li data-type='method'><a href="Keyboard.html#isKeyPressed">isKeyPressed</a></li><li data-type='method'><a href="Keyboard.html#isKeyReleased">isKeyReleased</a></li><li data-type='method'><a href="Keyboard.html#isKeyUp">isKeyUp</a></li></ul></li><li class="accordion collapsed child" id=6146178><div class="accordion-heading child"><a href="Mouse.html">Mouse</a><svg><use xlink:href="#down-icon"></use></svg></div><ul class='methods accordion-content'><li data-type='method'><a href="Mouse.html#clear">clear</a></li><li data-type='method'><a href="Mouse.html#getMouseDelta">getMouseDelta</a></li><li data-type='method'><a href="Mouse.html#getMousePos">getMousePos</a></li><li data-type='method'><a href="Mouse.html#isLeftButtonClicked">isLeftButtonClicked</a></li><li data-type='method'><a href="Mouse.html#isLeftButtonPressed">isLeftButtonPressed</a></li><li data-type='method'><a href="Mouse.html#isLeftButtonReleased">isLeftButtonReleased</a></li><li data-type='method'><a href="Mouse.html#isMiddleButtonClicked">isMiddleButtonClicked</a></li><li data-type='method'><a href="Mouse.html#isMiddleButtonPressed">isMiddleButtonPressed</a></li><li data-type='method'><a href="Mouse.html#isMiddleButtonReleased">isMiddleButtonReleased</a></li><li data-type='method'><a href="Mouse.html#isRightButtonClicked">isRightButtonClicked</a></li><li data-type='method'><a href="Mouse.html#isRightButtonPressed">isRightButtonPressed</a></li><li data-type='method'><a href="Mouse.html#isRightButtonReleased">isRightButtonReleased</a></li><li data-type='method'><a href="Mouse.html#isWheelDown">isWheelDown</a></li><li data-type='method'><a href="Mouse.html#isWheelUp">isWheelUp</a></li></ul></li><li class="accordion collapsed child" id=8237404><div class="accordion-heading child"><a href="Sound.html">Sound</a><svg><use xlink:href="#down-icon"></use></svg></div><ul class='methods accordion-content'><li data-type='method'><a href="Sound.html#isPlaying">isPlaying</a></li><li data-type='method'><a href="Sound.html#pause">pause</a></li><li data-type='method'><a href="Sound.html#play">play</a></li><li data-type='method'><a href="Sound.html#setLoop">setLoop</a></li><li data-type='method'><a href="Sound.html#setVolume">setVolume</a></li><li data-type='method'><a href="Sound.html#Sound">Sound</a></li><li data-type='method'><a href="Sound.html#stop">stop</a></li></ul></li><li class="accordion collapsed child" id=3044805><div class="accordion-heading child"><a href="Transform.html">Transform</a><svg><use xlink:href="#down-icon"></use></svg></div><ul class='methods accordion-content'><li data-type='method'><a href="Transform.html#align">align</a></li><li data-type='method'><a href="Transform.html#calculateCenterPos">calculateCenterPos</a></li><li data-type='method'><a href="Transform.html#calculateWorldCenterPos">calculateWorldCenterPos</a></li><li data-type='method'><a href="Transform.html#calculateWorldPos">calculateWorldPos</a></li><li data-type='method'><a href="Transform.html#calculateWorldRotation">calculateWorldRotation</a></li><li data-type='method'><a href="Transform.html#draw">draw</a></li><li data-type='method'><a href="Transform.html#Entity">Entity</a></li><li data-type='method'><a href="Transform.html#fill">fill</a></li><li data-type='method'><a href="Transform.html#init">init</a></li><li data-type='method'><a href="Transform.html#rotateDegrees">rotateDegrees</a></li><li data-type='method'><a href="Transform.html#rotateRadians">rotateRadians</a></li><li data-type='method'><a href="Transform.html#setParent">setParent</a></li><li data-type='method'><a href="Transform.html#update">update</a></li></ul></li></ul> </div><div class="accordion collapsed" id="285943" > <h3 class="accordion-heading">Tutorials<svg><use xlink:href="#down-icon"></use></svg></h3><ul class="accordion-content"><li class="accordion-list" id=""><a href="tutorial-Application_.html">Application</a></li><li class="accordion-list" id=""><a href="tutorial-Color_.html">Color</a></li></ul> </div>
+      
+
+    </nav>
+    <div class="navbar-ham" id="navbar-ham">
+      <div>
+        <div class="first"></div>
+        <div class="second"></div>
+        <div class="third"></div>
+      </div>
+    </div>
+
+    <div id="main" class="main-content">
+      
+      <h1 id='page-title' class="page-title">
+        maths/transform.js
+      </h1>
+      
+
+      
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import {Entity} from "../basic/entity.js";
+import Vector2 from "./vec2.js";
+
+/**
+ * @class Transform
+ * @classdesc A Transform is a class that represents a position and a size.
+ * @extends Entity
+ * @param {Object} kwargs - The keyword arguments.
+ * @param {Vector2} [kwargs.pos]- The world position. (Optional with x and y properties)
+ * @param {Vector2} [kwargs.size] - The world size. (Optional with w and h properties)
+ * @param {Number} kwargs.rot - The world rotation.
+ * @param {Number} kwargs.x - The x position.
+ * @param {Number} kwargs.y - The y position.
+ * @param {Number} kwargs.w - The width.
+ * @param {Number} kwargs.h - The height.
+ * 
+ * @example
+ * // Create a new transform.
+ * let transform = new Transform({
+ *      pos: new Vector2(10, 10),
+ *      size: new Vector2(10, 10),
+ *      rot: 0
+ *    });
+ * 
+ */
+export class Transform extends Entity {
+
+    constructor(kwargs) {
+        super(kwargs);
+        this.pos = kwargs["pos"] || new Vector2(kwargs["x"] || 0, kwargs["y"] || 0);
+        this.size = kwargs["size"] || new Vector2(kwargs["w"] || 1, kwargs["h"] || 1);
+        this.worldPos = new Vector2(this.pos.x, this.pos.y);
+
+        this.rot = kwargs["rot"] || 0;
+        this.worldRot = this.rot;
+
+        this.centerPos = new Vector2(this.size.x / 2, this.size.y / 2);
+        this.worldCenterPos = new Vector2(this.centerPos.x, this.centerPos.y);
+    }
+
+    /**
+     * @method
+     * @description Initializes the transform.
+     * 
+     * @example
+     * // Initialize the transform.
+     * transform.init();
+     */
+    init() {
+        this.calculateWorldPos();
+    }
+
+    /**
+     * @method
+     * @description Updates the Transform.
+     *  Calculates the world position and rotation.
+     * @param {Number} deltaTime - The time since the last update.
+     * 
+     * @example
+     * // Update the transform.
+     * transform.update(deltaTime);
+     */
+    update(deltaTime) {
+        this.calculateWorldRotation();
+        this.calculateWorldCenterPos();
+        this.calculateWorldPos();
+        super.update(deltaTime);
+    }
+
+    /**
+     * @method
+     * @description Draw the transform.
+     * @param {CanvasRenderingContext2D} ctx - The canvas context.
+     * 
+     * @example
+     * // Draw the transform. // Transform cannot been drawn.
+     * transform.draw(ctx);
+     * 
+     */
+    draw(ctx) {
+        super.draw(ctx);
+    }
+
+    /**
+     * @method
+     * @description Calculates the world position.
+     * 
+     * @example
+     * // Calculate the world position.
+     * transform.calculateWorldPos(); // auto called by update
+     * 
+     */
+    calculateWorldPos(){
+        this.worldPos.x = this.pos.x;
+        this.worldPos.y = this.pos.y;
+        if (this.parent) {
+            this.worldPos.x += this.parent.worldPos.x;
+            this.worldPos.y += this.parent.worldPos.y;
+        }
+        
+        
+    }
+
+    /**
+     * @method
+     * @description Calculates the world rotation. rot and worldRot are different.
+     * 
+     * @example
+     * // Calculate the world rotation.
+     * transform.calculateWorldRotation(); // auto called by update
+     * 
+     */
+    calculateWorldRotation(){
+        this.worldRot = 0;
+        if (this.parent) {
+            this.worldRot += this.parent.worldRot;
+        }
+    }
+
+    /**
+     * @method
+     * @description Calculates the world position.
+     * 
+     * @example
+     * // Calculate the world position.
+     * transform.calculateWorldPos();
+     * var center = transform.centerPos; //relative to parent
+     */
+    calculateCenterPos() {
+        this.centerPos.x = this.size.x / 2;
+        this.centerPos.y = this.size.y / 2;
+    }
+
+    /**
+     * @method
+     * @description Calculates the world center position.
+     * 
+     * @example
+     * // Calculate the world center position.
+     * transform.calculateWorldCenterPos(); // auto called by update
+     * 
+     */
+    calculateWorldCenterPos() {
+        this.worldCenterPos.x = this.centerPos.x;
+        this.worldCenterPos.y = this.centerPos.y;
+        if (this.parent) {
+            this.worldCenterPos.x += this.parent.worldPos.x;
+            this.worldCenterPos.y += this.parent.worldPos.y;
+        }
+    }
+
+    /**
+     * @method
+     * @description Rotates the transform by the given angle.
+     * @param {Number} degrees - The angle in degrees.
+     * 
+     * @example
+     * // Rotate the transform by 90 degrees.
+     * transform.rotateDegrees(90);
+     */
+    rotateDegrees(degrees) {
+        this.rot += degrees;
+    }
+
+    /**
+     * @method
+     * @description Rotates the transform by the given angle in radians.
+     * @param {Number} radians - The angle in radians.
+     * 
+     * @example
+     * // Rotate the transform by 90 degrees.
+     * transform.rotateRadians(Math.PI / 2);
+     * 
+     */
+    rotateRadians(radians) {
+        this.rot += radians * 180 / Math.PI;
+    }
+
+    /**
+     * @method
+     * @description Aligns the transform to the parent.
+     * |Available Types|        Description                                 |
+     * |---------------|----------------------------------------------------|
+     * | center        | Aligns the transform to the center of the parent.  |
+     * | top           | Aligns the transform to the top of the parent.     |
+     * | bottom        | Aligns the transform to the bottom of the parent.  |
+     * | left          | Aligns the transform to the left of the parent.    |
+     * | right         | Aligns the transform to the right of the parent.   |
+     * | middle        | Aligns the transform to the middle of the parent.  |
+     * 
+     * @param {String} type - The type of alignment.
+     * 
+     * @example
+     * // Align the transform to the top.
+     * transform.align("top");
+     */
+    align(type) {
+        if ("center" == type) {
+            this.pos.x = this.parent.size.x / 2 - this.size.x / 2;
+        }
+        else if ("left" == type) {
+            this.pos.x = 0;
+        }
+        else if ("right" == type) {
+            this.pos.x = this.parent.size.x - this.size.x;
+        }
+
+        if ("middle" == type) {
+            this.pos.y = this.parent.size.y / 2 - this.size.y / 2;
+        }
+        else if ("top" == type) {
+            this.pos.y = 0;
+        }
+        else if ("bottom" == type) {
+            this.pos.y = this.parent.size.y - this.size.y;
+        }
+
+    }
+
+    /**
+     * @method
+     * @description Fills the transform to the Parent size with the given padding.
+     * @param {Number} padx - The x padding.
+     * @param {Number} pady - The y padding.
+     * 
+     * @example
+     * // Fill the transform to the parent size with padding.
+     * transform.fill(10, 10);
+     */
+    fill(padx, pady) {
+        this.pos.x = padx;
+        this.pos.y = pady;
+        this.size.x = this.parent.size.x - padx * 2;
+        this.size.y = this.parent.size.y - pady * 2;
+    }
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+    </div>
+
+    <footer class="footer" id="footer">
+      
+    </footer>
+
+    <script src="scripts/third-party/prettify.js"></script>
+    <script src="scripts/third-party/lang-css.js"></script>
+    <script type="text/javascript" src="scripts/misc.js"></script>
+
+    <script>prettyPrint();</script>
+    <script src="scripts/linenumber.js"></script>
+    <script src="scripts/fix-code-block.js"></script>
+    <script src="scripts/fix-navbar.js"></script>
+    
+      <script src="scripts/search.js"></script>
+      <script src="scripts/third-party/fuse.js"></script>
+      <script>
+        var list = [{"title":"Application","link":"<a href=\"Application.html\">Application</a>"},{"title":"Application#Application","link":"<a href=\"Application.html#Application\">Application &rtrif; Application</a>"},{"title":"Application#draw","link":"<a href=\"Application.html#draw\">Application &rtrif; draw</a>"},{"title":"Application#gameloop","link":"<a href=\"Application.html#gameloop\">Application &rtrif; gameloop</a>"},{"title":"Application#init","link":"<a href=\"Application.html#init\">Application &rtrif; init</a>"},{"title":"Application#update","link":"<a href=\"Application.html#update\">Application &rtrif; update</a>"},{"title":"Color","link":"<a href=\"Color.html\">Color</a>"},{"title":"Color.fromHex","link":"<a href=\"Color.html#.fromHex\">Color &rtrif; fromHex</a>"},{"title":"Color.fromHSL","link":"<a href=\"Color.html#.fromHSL\">Color &rtrif; fromHSL</a>"},{"title":"Color.fromRGB","link":"<a href=\"Color.html#.fromRGB\">Color &rtrif; fromRGB</a>"},{"title":"Color.fromRGBA","link":"<a href=\"Color.html#.fromRGBA\">Color &rtrif; fromRGBA</a>"},{"title":"Color.random","link":"<a href=\"Color.html#.random\">Color &rtrif; random</a>"},{"title":"Color#Color","link":"<a href=\"Color.html#Color\">Color &rtrif; Color</a>"},{"title":"Entity","link":"<a href=\"Entity.html\">Entity</a>"},{"title":"Entity#draw","link":"<a href=\"Entity.html#draw\">Entity &rtrif; draw</a>"},{"title":"Entity#Entity","link":"<a href=\"Entity.html#Entity\">Entity &rtrif; Entity</a>"},{"title":"Entity#init","link":"<a href=\"Entity.html#init\">Entity &rtrif; init</a>"},{"title":"Entity#setParent","link":"<a href=\"Entity.html#setParent\">Entity &rtrif; setParent</a>"},{"title":"Entity#update","link":"<a href=\"Entity.html#update\">Entity &rtrif; update</a>"},{"title":"Keyboard","link":"<a href=\"Keyboard.html\">Keyboard</a>"},{"title":"Keyboard#clear","link":"<a href=\"Keyboard.html#clear\">Keyboard &rtrif; clear</a>"},{"title":"Keyboard#isKeyDown","link":"<a href=\"Keyboard.html#isKeyDown\">Keyboard &rtrif; isKeyDown</a>"},{"title":"Keyboard#isKeyPressed","link":"<a href=\"Keyboard.html#isKeyPressed\">Keyboard &rtrif; isKeyPressed</a>"},{"title":"Keyboard#isKeyReleased","link":"<a href=\"Keyboard.html#isKeyReleased\">Keyboard &rtrif; isKeyReleased</a>"},{"title":"Keyboard#isKeyUp","link":"<a href=\"Keyboard.html#isKeyUp\">Keyboard &rtrif; isKeyUp</a>"},{"title":"Mouse","link":"<a href=\"Mouse.html\">Mouse</a>"},{"title":"Mouse#clear","link":"<a href=\"Mouse.html#clear\">Mouse &rtrif; clear</a>"},{"title":"Mouse#getMouseDelta","link":"<a href=\"Mouse.html#getMouseDelta\">Mouse &rtrif; getMouseDelta</a>"},{"title":"Mouse#getMousePos","link":"<a href=\"Mouse.html#getMousePos\">Mouse &rtrif; getMousePos</a>"},{"title":"Mouse#isLeftButtonClicked","link":"<a href=\"Mouse.html#isLeftButtonClicked\">Mouse &rtrif; isLeftButtonClicked</a>"},{"title":"Mouse#isLeftButtonPressed","link":"<a href=\"Mouse.html#isLeftButtonPressed\">Mouse &rtrif; isLeftButtonPressed</a>"},{"title":"Mouse#isLeftButtonReleased","link":"<a href=\"Mouse.html#isLeftButtonReleased\">Mouse &rtrif; isLeftButtonReleased</a>"},{"title":"Mouse#isMiddleButtonClicked","link":"<a href=\"Mouse.html#isMiddleButtonClicked\">Mouse &rtrif; isMiddleButtonClicked</a>"},{"title":"Mouse#isMiddleButtonPressed","link":"<a href=\"Mouse.html#isMiddleButtonPressed\">Mouse &rtrif; isMiddleButtonPressed</a>"},{"title":"Mouse#isMiddleButtonReleased","link":"<a href=\"Mouse.html#isMiddleButtonReleased\">Mouse &rtrif; isMiddleButtonReleased</a>"},{"title":"Mouse#isRightButtonClicked","link":"<a href=\"Mouse.html#isRightButtonClicked\">Mouse &rtrif; isRightButtonClicked</a>"},{"title":"Mouse#isRightButtonPressed","link":"<a href=\"Mouse.html#isRightButtonPressed\">Mouse &rtrif; isRightButtonPressed</a>"},{"title":"Mouse#isRightButtonReleased","link":"<a href=\"Mouse.html#isRightButtonReleased\">Mouse &rtrif; isRightButtonReleased</a>"},{"title":"Mouse#isWheelDown","link":"<a href=\"Mouse.html#isWheelDown\">Mouse &rtrif; isWheelDown</a>"},{"title":"Mouse#isWheelUp","link":"<a href=\"Mouse.html#isWheelUp\">Mouse &rtrif; isWheelUp</a>"},{"title":"Sound","link":"<a href=\"Sound.html\">Sound</a>"},{"title":"Sound#isPlaying","link":"<a href=\"Sound.html#isPlaying\">Sound &rtrif; isPlaying</a>"},{"title":"Sound#pause","link":"<a href=\"Sound.html#pause\">Sound &rtrif; pause</a>"},{"title":"Sound#play","link":"<a href=\"Sound.html#play\">Sound &rtrif; play</a>"},{"title":"Sound#setLoop","link":"<a href=\"Sound.html#setLoop\">Sound &rtrif; setLoop</a>"},{"title":"Sound#setVolume","link":"<a href=\"Sound.html#setVolume\">Sound &rtrif; setVolume</a>"},{"title":"Sound#Sound","link":"<a href=\"Sound.html#Sound\">Sound &rtrif; Sound</a>"},{"title":"Sound#stop","link":"<a href=\"Sound.html#stop\">Sound &rtrif; stop</a>"},{"title":"Transform","link":"<a href=\"Transform.html\">Transform</a>"},{"title":"Transform#align","link":"<a href=\"Transform.html#align\">Transform &rtrif; align</a>"},{"title":"Transform#calculateCenterPos","link":"<a href=\"Transform.html#calculateCenterPos\">Transform &rtrif; calculateCenterPos</a>"},{"title":"Transform#calculateWorldCenterPos","link":"<a href=\"Transform.html#calculateWorldCenterPos\">Transform &rtrif; calculateWorldCenterPos</a>"},{"title":"Transform#calculateWorldPos","link":"<a href=\"Transform.html#calculateWorldPos\">Transform &rtrif; calculateWorldPos</a>"},{"title":"Transform#calculateWorldRotation","link":"<a href=\"Transform.html#calculateWorldRotation\">Transform &rtrif; calculateWorldRotation</a>"},{"title":"Transform#draw","link":"<a href=\"Transform.html#draw\">Transform &rtrif; draw</a>"},{"title":"Transform#Entity","link":"<a href=\"Transform.html#Entity\">Transform &rtrif; Entity</a>"},{"title":"Transform#fill","link":"<a href=\"Transform.html#fill\">Transform &rtrif; fill</a>"},{"title":"Transform#init","link":"<a href=\"Transform.html#init\">Transform &rtrif; init</a>"},{"title":"Transform#rotateDegrees","link":"<a href=\"Transform.html#rotateDegrees\">Transform &rtrif; rotateDegrees</a>"},{"title":"Transform#rotateRadians","link":"<a href=\"Transform.html#rotateRadians\">Transform &rtrif; rotateRadians</a>"},{"title":"Transform#setParent","link":"<a href=\"Transform.html#setParent\">Transform &rtrif; setParent</a>"},{"title":"Transform#update","link":"<a href=\"Transform.html#update\">Transform &rtrif; update</a>"},{"title":"Application","link":"<a href=\"Application.html\">Application</a>"},{"title":"Color","link":"<a href=\"Color.html\">Color</a>"}];
+        var options = 
+          setupSearch(list, options)
+      </script>
+    
+
+    
+
+    
+
+    
+
+
+  </body>
+
+</html>

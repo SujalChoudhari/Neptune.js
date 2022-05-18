@@ -1,4 +1,4 @@
-import * as npt from "../neptune.js"
+import * as npt from "../src/neptune.js"
 
 class Game extends npt.Application{
     constructor(){
