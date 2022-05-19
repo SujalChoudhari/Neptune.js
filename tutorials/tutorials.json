@@ -1,8 +1,11 @@
 {
-    "Application": {
-        "title": "Application"
+    "Quick Start Guide NPM": {
+        "title": "Quick Start Guide NPM"
     },
-    "Color": {
-        "title": "Color"
+    "Quick Start Guide CDN": {
+        "title": "Quick Start Guide CDN"
+    },
+    "Quick Start Guide Vite": {
+        "title": "Quick Start Guide Vite"
     }
 }

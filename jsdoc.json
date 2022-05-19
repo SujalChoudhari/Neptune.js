@@ -20,7 +20,39 @@
         "recurse": true,
         "readme": "README.md",
         "theme_opts": {
-            "theme": "dark"
+            "sections": ["Tutorials", "Classes", "Global", "Menu"],
+            "theme": "dark",
+            "title": "<p align='center'><img src='../images/logo_small.png' width='200'/></p>",
+            "footer": "MIT 2022 © Sujal Choudhari.",
+            "menu" : [
+                {
+                  "title": "Github",
+                  "link": "https://github.com/NotSujal/Neptune.js",
+                  "target": "_blank"
+                },
+                {
+                  "title": "NPM",
+                  "link": "https://www.npmjs.com/package/@neptune-js/neptune",
+                  "target": "_blank"
+                }
+              ],
+            "meta" : [
+                {
+                  "name": "author",
+                  "content": "Sujal Choudhari"
+                },
+                {
+                  "name": "description",
+                  "content": "2d game engine for javascript"
+                }
+              ],
+            "exclude_inherited": true,
+            "resizeable": {
+                "navbar": {
+                  "min": "250",
+                  "max": "400"
+                }
+              }
         }
     }
 }

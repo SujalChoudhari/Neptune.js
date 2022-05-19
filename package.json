@@ -1,6 +1,6 @@
 {
   "name": "@neptune-js/neptune",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A JavaScript Based Game Development Framework",
   "main": "src/neptune.js",
   "scripts": {
@@ -15,7 +15,7 @@
     "game-dev",
     "neptune-js"
   ],
-  "author": "notsujal",
+  "author": "Sujal Choudhari",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/NotSujal/Neptune.js/issues"

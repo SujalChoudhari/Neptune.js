@@ -1,9 +1,14 @@
-# Neptune.js
+<p align="center">
+  <img src="../images/logo_big.png" />
+</p>
+
+<p align="center">
 Neptune is still under development,
 Soon after testing the modules, 
 it will be released as a stable version.
 Thanks for your patience.
-[Follow along the development.](https://GitHub.com/Notsujal/neptune.js)
+<a href="https://GitHub.com/Notsujal/neptune.js"> Follow along the development </a>
+</p>
 
 ## What is Neptune.js?
 

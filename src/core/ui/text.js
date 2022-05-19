@@ -1,6 +1,26 @@
-import Transform from "../maths/transform.js";
-import Color from "../basic/color.js";
-export default class Text extends Transform{
+import {Transform} from "../maths/transform.js";
+import {Color} from "../basic/color.js";
+
+/**
+ * @class Text
+ * @classdesc A Text is a class that represents a text.
+ * @extends Transform
+ * @param {Object} kwargs - The keyword arguments.
+ * @param {String} kwargs.text - The text.
+ * @param {Color} [kwargs.color] - The color.
+ * @param {Number} kwargs.font - The font size.
+ * @param {Number} kwargs.align - The alignment.
+ * 
+ * @example
+ * // Create a text.
+ * let text = new Text({
+ *      "text": "Hello World",
+ *      "color": Color.random(),
+ *      "font": "30px Arial",
+ *      "align": "center"
+ * });
+ */
+export class Text extends Transform{
     constructor(kwargs){
         super(kwargs);
         this.color = kwargs["color"] || Color.random();
@@ -9,10 +29,32 @@ export default class Text extends Transform{
         this.alignText = kwargs["align"] || "center";
     }
 
+
+    /**
+     * @method
+     * @description Updates the text.
+     * @param {Number} deltaTime - The delta time.
+     * 
+     * @example
+     * // Update the text.
+     * text.update(deltaTime);
+     * 
+     */
     update(deltaTime){
         super.update(deltaTime);
     }
 
+
+    /**
+     * @method
+     * @description Renders the text.
+     * @param {CanvasRenderingContext2D} ctx - The canvas context.
+     * 
+     * @example
+     * // Render the text.
+     * text.draw(ctx);
+     * 
+     */
     draw(ctx){
         ctx.rotate(this.rot * Math.PI / 180);
         ctx.fillStyle = `rgb(${this.color.r},${this.color.g},${this.color.b})`;
@@ -24,5 +66,17 @@ export default class Text extends Transform{
             ctx.fillText(lines[i], this.worldPos.x, this.worldPos.y + i * this.size.y);
         }
         ctx.setTransform(1, 0, 0, 1, 0, 0);
+    }
+
+    /** 
+     * @method
+     * @description Initializes the Entity.
+
+     * @example
+     * // Initialize the entity.
+     * entity.init();
+     */
+    init(){
+        super.init();
     }
 }

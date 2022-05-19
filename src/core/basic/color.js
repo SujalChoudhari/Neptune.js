@@ -7,7 +7,6 @@
  * @property {Number} b The blue component of the color.
  * @property {Number} a The alpha component of the color.
  * 
- * @tutorial Color
  */
 export class Color {
 

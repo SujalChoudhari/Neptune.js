@@ -1,5 +1,5 @@
 import {Entity} from "../basic/entity.js";
-import Vector2 from "./vec2.js";
+import {Vector2} from "./vec2.js";
 
 /**
  * @class Transform
@@ -24,7 +24,6 @@ import Vector2 from "./vec2.js";
  * 
  */
 export class Transform extends Entity {
-
     constructor(kwargs) {
         super(kwargs);
         this.pos = kwargs["pos"] || new Vector2(kwargs["x"] || 0, kwargs["y"] || 0);
@@ -97,8 +96,6 @@ export class Transform extends Entity {
             this.worldPos.x += this.parent.worldPos.x;
             this.worldPos.y += this.parent.worldPos.y;
         }
-        
-        
     }
 
     /**
@@ -114,6 +111,9 @@ export class Transform extends Entity {
         this.worldRot = 0;
         if (this.parent) {
             this.worldRot += this.parent.worldRot;
+        }
+        else {
+            this.worldRot = this.rot;
         }
     }
 

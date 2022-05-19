@@ -1,4 +1,4 @@
-import Vector2 from "../maths/vec2";
+import {Vector2} from "../maths/vec2.js";
 
 /**
  * @class

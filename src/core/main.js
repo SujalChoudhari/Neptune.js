@@ -13,7 +13,9 @@
  * @property {number} lastTimeStamp - The last time stamp.
  * @property {Array.<Entity>} entities - The array of entities.
  * 
- * @tutorial Application
+ * @tutorial Quick Start Guide NPM
+ * @tutorial Quick Start Guide CDN
+ * @tutorial Quick Start Guide Vite
  */
 export class Application {
     /**
