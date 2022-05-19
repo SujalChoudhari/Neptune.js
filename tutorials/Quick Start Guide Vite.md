@@ -6,7 +6,7 @@ Follow along with the steps below to get started.
 This is a small test project to explore the framework. 
 You can expand it to a full project according to your needs.
 
-[**Sure, Download!**](../neptune-js-vite-example.zip)
+[**Sure, Download!**](https://raw.githubusercontent.com/NotSujal/Neptune.js/main/neptune-js-vite-example.zip)
 
 
 ### Install
@@ -45,9 +45,9 @@ yarn dev
 ## Output
 The output of this project should look like this.
 
-![play](../images/Screenshot-vite-example-play-button.png)
+![play](https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/Screenshot-vite-example-play-button.png)
 
-![game](../images/Screenshot-vite-example-game.png)
+![game](https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/Screenshot-vite-example-game.png)
 
 
 ## Custom Project
@@ -59,15 +59,15 @@ The output of this project should look like this.
 
 * Give your project a name.
 
-![1](../images/1.png)
+![1](https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/1.png)
 
 * Select the framework you want to use. (in this case vanilla)
 
-![2](../images/2.png)
+![2](https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/2.png)
 
 * Use the vanilla framework for JavaScript.
 
-![3](../images/3.png)
+![3](https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/3.png)
 
 * Let Vite finish.
 Move inside your project folder.
@@ -76,7 +76,7 @@ and run the following command.
   npm i
 ```
 
-![5](../images/5.png)
+![5](https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/5.png)
 
 
 * Now Install the Neptune.js from npm or yarn
@@ -87,15 +87,15 @@ or
 ```bash
     yarn add @neptune-js/neptune
 ```
-![6](../images/6.png)
+![6](https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/6.png)
 
 * Let npm/yarn finish
 Open Visual Studio Code / Your IDE of choice.
-![7](../images/7.png)
+![7](https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/7.png)
 
 
 * Project is ready to use.
-![8](../images/8.png)
+![8](https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/8.png)
 
 * Open `index.html` file and add the following code.
 ```html
