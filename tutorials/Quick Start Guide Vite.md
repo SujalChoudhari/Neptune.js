@@ -6,7 +6,7 @@ Follow along with the steps below to get started.
 This is a small test project to explore the framework. 
 You can expand it to a full project according to your needs.
 
-[**Sure, Download!**](https://raw.githubusercontent.com/NotSujal/Neptune.js/main/neptune-js-vite-example.zip)
+[**Sure, Download!**](https://raw.githubusercontent.com/NotSujal/Neptune.js/main/tutorials/neptune-js-vite-example.zip)
 
 
 ### Install
@@ -45,12 +45,13 @@ yarn dev
 ## Output
 The output of this project should look like this.
 
-![play](https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/Screenshot-vite-example-play-button.png)
+![play](https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/play_btn.png)
 
-![game](https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/Screenshot-vite-example-game.png)
+![game](https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/game.png)
 
 
 ## Custom Project
+
 ### Create Vite App
 * Create a vite app using the following command.
 ```bash

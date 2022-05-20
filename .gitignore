@@ -1,4 +1,2 @@
-node_modules/
-tests/
-
-
+# folders
+/node_modules/

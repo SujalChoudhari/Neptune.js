@@ -1,0 +1,10 @@
+# Folders
+tutorials/
+images/
+examples/
+docs/
+
+#Files
+jsdoc.json
+README.md
+.gitignore
