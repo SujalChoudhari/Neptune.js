@@ -90,6 +90,7 @@ export class Transform extends Entity {
      * 
      */
     calculateWorldPos(){
+        //calculate world position based of of the parents position and rotation
         this.worldPos.x = this.pos.x;
         this.worldPos.y = this.pos.y;
         if (this.parent) {
@@ -110,7 +111,7 @@ export class Transform extends Entity {
     calculateWorldRotation(){
         this.worldRot = 0;
         if (this.parent) {
-            this.worldRot += this.parent.worldRot;
+            this.worldRot += this.parent.rot;
         }
         else {
             this.worldRot = this.rot;
@@ -127,8 +128,8 @@ export class Transform extends Entity {
      * var center = transform.centerPos; //relative to parent
      */
     calculateCenterPos() {
-        this.centerPos.x = this.size.x / 2;
-        this.centerPos.y = this.size.y / 2;
+        this.centerPos.x = this.pos.x + this.size.x / 2;
+        this.centerPos.y = this.pos.y + this.size.y / 2;
     }
 
     /**
@@ -141,6 +142,7 @@ export class Transform extends Entity {
      * 
      */
     calculateWorldCenterPos() {
+        this.calculateCenterPos();
         this.worldCenterPos.x = this.centerPos.x;
         this.worldCenterPos.y = this.centerPos.y;
         if (this.parent) {
@@ -233,4 +235,5 @@ export class Transform extends Entity {
         this.size.x = this.parent.size.x - padx * 2;
         this.size.y = this.parent.size.y - pady * 2;
     }
+    
 }

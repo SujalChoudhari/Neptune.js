@@ -59,25 +59,19 @@ export class Circle extends Transform{
      */
     draw(ctx){
         if (this.parent){
-            // rotation about parent's center
-            ctx.translate(this.parent.worldPos.x, this.parent.worldPos.y);
-            ctx.rotate(this.worldRot* Math.PI / 180);
-            ctx.fillStyle = `rgb(${this.color.r},${this.color.g},${this.color.b})`;
-            ctx.beginPath();
-            ctx.arc(this.pos.x, this.pos.y, this.radius, 0, 2*Math.PI);
-            ctx.fill();
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-
-            
-        }else{
-            ctx.translate(this.worldPos.x,this.worldPos.y);
-            ctx.rotate(this.worldRot* Math.PI / 180);
-            ctx.fillStyle = `rgb(${this.color.r},${this.color.g},${this.color.b})`;
-            ctx.beginPath();
-            ctx.arc(0, 0, this.radius, 0, 2*Math.PI);
-            ctx.fill();
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.translate(this.parent.worldCenterPos.x, this.parent.worldCenterPos.y);
+            ctx.rotate(this.worldRot * Math.PI / 180);
+            ctx.translate(-this.parent.worldCenterPos.x,- this.parent.worldCenterPos.y);
         }
+        
+        // rotation about self
+        ctx.translate(this.worldCenterPos.x, this.worldCenterPos.y); 
+        ctx.rotate(this.rot* Math.PI / 180);
+        ctx.translate(-this.worldCenterPos.x, -this.worldCenterPos.y);
+        ctx.fillStyle = `rgb(${this.color.r},${this.color.g},${this.color.b})`;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius, 0, 2*Math.PI);
+        ctx.fill();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
     }
 }

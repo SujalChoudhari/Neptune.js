@@ -499,4 +499,5 @@ export class Vector2 {
         return new Vector2(Math.random() * (max - min) + min, Math.random() * (max - min) + min);
     }
 
+
 }

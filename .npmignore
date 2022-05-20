@@ -3,8 +3,10 @@ tutorials/
 images/
 examples/
 docs/
+.github/
 
 #Files
 jsdoc.json
 README.md
 .gitignore
+*.tgz

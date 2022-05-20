@@ -22,7 +22,7 @@
         "theme_opts": {
             "sections": ["Tutorials", "Classes", "Global", "Menu"],
             "theme": "dark",
-            "title": "<p align='center'><img src='../images/logo_small.png' width='200'/></p>",
+            "title": "<p align='center'><img src='https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/logo_small.png' width='200'/></p>",
             "footer": "MIT 2022 © Sujal Choudhari.",
             "menu" : [
                 {

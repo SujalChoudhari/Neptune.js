@@ -19,15 +19,27 @@ class Game extends npt.Application{
             color: npt.Color.darkgoldenrod,
             size: new npt.Vector2(100,100)
         });
+
+        this.rect3 = new npt.Rect({
+            app:this,
+            parent: this.rect2,
+            pos: new npt.Vector2(100,100),
+            color: npt.Color.darkcyan,
+            size: new npt.Vector2(100,100)
+        });
     }
+    init(){
+        super.init();
+
+    }
+
 
     update(deltaTime){
         super.update(deltaTime);
-
         this.rect.rotateDegrees(1);
-
         this.rect2.rotateDegrees(1);
-    }
+        console.log(this.rect2.worldPos);
+    }   
 
 }
 // Create a new Game
