@@ -21,10 +21,16 @@ import {Kinematic} from "./core/physics/kinematic.js";
 
 //renderable
 import {Circle} from "./core/renderable/circle.js";
-import {Image}  from "./core/renderable/image.js";
+import {Sprite}  from "./core/renderable/image.js";
 import {Polygon} from "./core/renderable/polygon.js";
 import {Rect} from "./core/renderable/rect.js";
 import {Triangle} from "./core/renderable/triangle.js";
+
+import { WireGrid} from "./core/gizmos/wireGrid.js";
+import { WireRect} from "./core/gizmos/wireRect.js";
+import { WireCircle } from "./core/gizmos/wireCircle.js";
+import { WireLine } from "./core/gizmos/wireLine.js";
+
 
 //ui
 import {Button} from "./core/ui/button.js";
@@ -43,9 +49,13 @@ export {
     CollidableTransform,
     Kinematic,
     Circle,
-    Image,
+    Sprite,
     Polygon,
     Rect,
+    WireGrid,
+    WireRect,
+    WireCircle,
+    WireLine,
     Triangle,
     Button,
     Text

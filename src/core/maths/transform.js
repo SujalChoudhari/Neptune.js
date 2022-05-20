@@ -30,11 +30,6 @@ export class Transform extends Entity {
         this.size = kwargs["size"] || new Vector2(kwargs["w"] || 1, kwargs["h"] || 1);
         this.worldPos = new Vector2(this.pos.x, this.pos.y);
 
-        this.rot = kwargs["rot"] || 0;
-        this.worldRot = this.rot;
-
-        this.centerPos = new Vector2(this.size.x / 2, this.size.y / 2);
-        this.worldCenterPos = new Vector2(this.centerPos.x, this.centerPos.y);
     }
 
     /**
@@ -60,8 +55,6 @@ export class Transform extends Entity {
      * transform.update(deltaTime);
      */
     update(deltaTime) {
-        this.calculateWorldRotation();
-        this.calculateWorldCenterPos();
         this.calculateWorldPos();
         super.update(deltaTime);
     }
@@ -97,85 +90,6 @@ export class Transform extends Entity {
             this.worldPos.x += this.parent.worldPos.x;
             this.worldPos.y += this.parent.worldPos.y;
         }
-    }
-
-    /**
-     * @method
-     * @description Calculates the world rotation. rot and worldRot are different.
-     * 
-     * @example
-     * // Calculate the world rotation.
-     * transform.calculateWorldRotation(); // auto called by update
-     * 
-     */
-    calculateWorldRotation(){
-        this.worldRot = 0;
-        if (this.parent) {
-            this.worldRot += this.parent.rot;
-        }
-        else {
-            this.worldRot = this.rot;
-        }
-    }
-
-    /**
-     * @method
-     * @description Calculates the world position.
-     * 
-     * @example
-     * // Calculate the world position.
-     * transform.calculateWorldPos();
-     * var center = transform.centerPos; //relative to parent
-     */
-    calculateCenterPos() {
-        this.centerPos.x = this.pos.x + this.size.x / 2;
-        this.centerPos.y = this.pos.y + this.size.y / 2;
-    }
-
-    /**
-     * @method
-     * @description Calculates the world center position.
-     * 
-     * @example
-     * // Calculate the world center position.
-     * transform.calculateWorldCenterPos(); // auto called by update
-     * 
-     */
-    calculateWorldCenterPos() {
-        this.calculateCenterPos();
-        this.worldCenterPos.x = this.centerPos.x;
-        this.worldCenterPos.y = this.centerPos.y;
-        if (this.parent) {
-            this.worldCenterPos.x += this.parent.worldPos.x;
-            this.worldCenterPos.y += this.parent.worldPos.y;
-        }
-    }
-
-    /**
-     * @method
-     * @description Rotates the transform by the given angle.
-     * @param {Number} degrees - The angle in degrees.
-     * 
-     * @example
-     * // Rotate the transform by 90 degrees.
-     * transform.rotateDegrees(90);
-     */
-    rotateDegrees(degrees) {
-        this.rot += degrees;
-    }
-
-    /**
-     * @method
-     * @description Rotates the transform by the given angle in radians.
-     * @param {Number} radians - The angle in radians.
-     * 
-     * @example
-     * // Rotate the transform by 90 degrees.
-     * transform.rotateRadians(Math.PI / 2);
-     * 
-     */
-    rotateRadians(radians) {
-        this.rot += radians * 180 / Math.PI;
     }
 
     /**

@@ -9,7 +9,7 @@ You can use the NPM to load the neptune.js library.
 
 ## Import
 ```javascript
-import * as npt from "https://cdn.jsdelivr.net/npm/@neptune-js/neptune@0.0.4-s/neptune.min.js"
+import * as npt from "https://cdn.jsdelivr.net/npm/@neptune-js/neptune@latest/src/neptune.min.js"
 ```
 
 ## Setting up the HTML
@@ -44,7 +44,7 @@ This file will provide a entry point for the game.
 It is the only file that needs to be imported into the HTML.
 
 ```javascript
-import * as npt from "https://cdn.jsdelivr.net/npm/@neptune-js/neptune@0.0.4-s/neptune.min.js"
+import * as npt from "https://cdn.jsdelivr.net/npm/@neptune-js/neptune@latest/src/neptune.min.js"
 
 class Game extends npt.Application{
     constructor(){

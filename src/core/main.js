@@ -1,3 +1,5 @@
+import { Color } from "../core/basic/color.js";
+
 /**
  * @class Application
  * @classdesc Main class of the Neptune engine.
@@ -26,8 +28,9 @@ export class Application {
         this.play_btn = document.getElementById("__play__");  
         this.width = window.innerWidth;
         this.height = window.innerHeight;
-
         this.fps = 60;
+        this.clearColor = Color.gray;
+
         this.canvas = document.getElementById("__panel__");
         this.ctx = this.canvas.getContext("2d");
         
@@ -97,7 +100,10 @@ export class Application {
 
         this.deltaTime = (timeStamp - this.currentTimeStamp) * this.fps / 1000;
         this.currentTimeStamp = timeStamp;
+
         this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+        this.ctx.fillStyle = this.clearColor.toString() || Color.darkgray;
+        this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 
 
         if (this.update) this.update(this.deltaTime);

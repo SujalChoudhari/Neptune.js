@@ -143,6 +143,21 @@ export class Color {
     static random() {
         return new Color(Math.random() * 255, Math.random() * 255, Math.random() * 255, 255);
     }
+
+    /**
+     * @method
+     * @description Returns a string representation of the color.
+     * @returns {String} The string representation of the color.
+     * 
+     * @example
+     * let color = new Color(255, 0, 0, 255);
+     * console.log(color.toString());
+     * // => "rgb(255, 0, 0)"
+     * 
+     */
+    toString() {
+        return `rgba(${this.r},${this.g},${this.b},${this.a})`;
+    }
 }
 
 

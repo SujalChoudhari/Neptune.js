@@ -1,58 +1,61 @@
 {
-    "plugins": [
-        "plugins/markdown"
-    ],
-    "recurseDepth": 10,
-    "source": {
-        "include": ["src/"],
-        "includePattern": ".+\\.js(doc|x)?$",
-        "excludePattern": "(^|\\/|\\\\)_"
-    },
-    "sourceType": "module",
-    "templates": {
-        "cleverLinks": true,
-        "monospaceLinks": true
-    },
-    "opts": {
-        "template": "node_modules/clean-jsdoc-theme", 
-        "destination": "./docs/", 
-        "tutorials": "tutorials",       
-        "recurse": true,
-        "readme": "README.md",
-        "theme_opts": {
-            "sections": ["Tutorials", "Classes", "Global", "Menu"],
-            "theme": "dark",
-            "title": "<p align='center'><img src='https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/logo_small.png' width='200'/></p>",
-            "footer": "MIT 2022 © Sujal Choudhari.",
-            "menu" : [
-                {
-                  "title": "Github",
-                  "link": "https://github.com/NotSujal/Neptune.js",
-                  "target": "_blank"
-                },
-                {
-                  "title": "NPM",
-                  "link": "https://www.npmjs.com/package/@neptune-js/neptune",
-                  "target": "_blank"
-                }
-              ],
-            "meta" : [
-                {
-                  "name": "author",
-                  "content": "Sujal Choudhari"
-                },
-                {
-                  "name": "description",
-                  "content": "2d game engine for javascript"
-                }
-              ],
-            "exclude_inherited": true,
-            "resizeable": {
-                "navbar": {
-                  "min": "250",
-                  "max": "400"
-                }
-              }
-        }
-    }
+	"plugins": [
+		"plugins/markdown"
+	],
+	"recurseDepth": 10,
+	"source": {
+		"include": [
+			"src/"
+		],
+		"includePattern": ".+\\.js(doc|x)?$",
+		"excludePattern": "(^|\\/|\\\\)_"
+	},
+	"sourceType": "module",
+	"templates": {
+		"cleverLinks": true,
+		"monospaceLinks": true
+	},
+	"opts": {
+		"template": "node_modules/clean-jsdoc-theme",
+		"destination": "./docs/",
+		"tutorials": "tutorials",
+		"recurse": true,
+		"readme": "README.md",
+		"theme_opts": {
+			"favicon":"https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/favicon.ico",
+			"sections": [
+				"Tutorials",
+				"Classes",
+				"Global",
+				"Menu"
+			],
+			"theme": "dark",
+			"add_scripts": " document.title = 'Neptune.js Documentation';",
+			"title": "Neptune.js",
+			"footer": "MIT 2022 © Sujal Choudhari.",
+			"menu": [
+				{
+					"title": "Github",
+					"link": "https://github.com/NotSujal/Neptune.js",
+					"target": "_blank"
+				},
+				{
+					"title": "NPM",
+					"link": "https://www.npmjs.com/package/@neptune-js/neptune",
+					"target": "_blank"
+				}
+			],
+			"meta": [
+				{
+					"name": "author",
+					"content": "Sujal Choudhari"
+				},
+				{
+					"name": "description",
+					"content": "2d game engine for javascript"
+				}
+			],
+			"exclude_inherited": true
+		}
+	}
 }

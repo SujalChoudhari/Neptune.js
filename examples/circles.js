@@ -7,7 +7,7 @@ class Game extends npt.Application{
             radius: 100,
             app:this,
             pos: new npt.Vector2(200,200),
-            color: npt.Color.random()
+            color: npt.Color.fromRGBA(255,0,0,0.1)
         });
 
         this.test2 = new npt.Circle({
@@ -15,7 +15,7 @@ class Game extends npt.Application{
             app:this,
             parent: this.test,
             pos: new npt.Vector2(200,200),
-            color: npt.Color.random()
+            color: npt.Color.fromRGBA(255,255,0,0.5)
         });
     }
 }

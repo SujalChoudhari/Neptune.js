@@ -1,5 +1,5 @@
-import {Transform} from "../maths/transform.js";
-import {Color} from "../basic/color.js";
+import { Transform } from "../maths/transform.js";
+import { Color } from "../basic/color.js";
 /**
  * @class Circle
  * @classdesc A Circle is a class that represents a circle.
@@ -16,8 +16,8 @@ import {Color} from "../basic/color.js";
  * });
  * 
  */
-export class Circle extends Transform{
-    constructor(kwargs){
+export class Circle extends Transform {
+    constructor(kwargs) {
         super(kwargs);
         this.color = kwargs["color"] || Color.random();
         this.radius = kwargs["radius"] || 1;
@@ -31,7 +31,7 @@ export class Circle extends Transform{
      * // Initialize the entity.
      * entity.init();
      */
-    init(){
+    init() {
         super.init();
     }
 
@@ -44,7 +44,7 @@ export class Circle extends Transform{
      * // Update the circle.
      * circle.update(deltaTime);
      */
-    update(deltaTime){
+    update(deltaTime) {
         super.update(deltaTime);
     }
 
@@ -57,21 +57,11 @@ export class Circle extends Transform{
      * // Draw the circle.
      * circle.draw(ctx);
      */
-    draw(ctx){
-        if (this.parent){
-            ctx.translate(this.parent.worldCenterPos.x, this.parent.worldCenterPos.y);
-            ctx.rotate(this.worldRot * Math.PI / 180);
-            ctx.translate(-this.parent.worldCenterPos.x,- this.parent.worldCenterPos.y);
-        }
-        
-        // rotation about self
-        ctx.translate(this.worldCenterPos.x, this.worldCenterPos.y); 
-        ctx.rotate(this.rot* Math.PI / 180);
-        ctx.translate(-this.worldCenterPos.x, -this.worldCenterPos.y);
-        ctx.fillStyle = `rgb(${this.color.r},${this.color.g},${this.color.b})`;
+    draw(ctx) {
+        ctx.fillStyle = this.color.toString();
         ctx.beginPath();
-        ctx.arc(0, 0, this.radius, 0, 2*Math.PI);
+        ctx.arc(this.worldPos.x, this.worldPos.y, this.radius, 0, 2 * Math.PI);
         ctx.fill();
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
+
     }
 }

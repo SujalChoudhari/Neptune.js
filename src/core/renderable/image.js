@@ -1,7 +1,7 @@
-import {Transform} from "../maths/transform.js";
+import { Transform } from "../maths/transform.js";
 
 /**
- * @class Image
+ * @class Sprite
  * @classdesc A Image is a class that represents an image.
  * @extends Transform
  * @param {Object} kwargs - The keyword arguments.
@@ -15,7 +15,7 @@ import {Transform} from "../maths/transform.js";
  *      size: new Vector2(10, 10)
  * });
  */
-export class Image extends Transform {
+export class Sprite extends Transform {
     constructor(kwargs) {
         super(kwargs);
         this.image = new Image();
@@ -26,7 +26,7 @@ export class Image extends Transform {
             console.log(this.name, " is loaded");
         }
     }
-    
+
     /** 
      * @method
      * @description Initializes the Entity.
@@ -35,7 +35,7 @@ export class Image extends Transform {
      * // Initialize the entity.
      * entity.init();
      */
-     init(){
+    init() {
         super.init();
     }
 
@@ -50,19 +50,11 @@ export class Image extends Transform {
      * 
      */
     draw(ctx) {
+        super.draw(ctx);
         if (this.isLoaded) return;
-        
-        if (this.parent) {
-            ctx.translate(this.parent.worldPos.x, this.parent.worldPos.y);
-            ctx.rotate(this.worldRot * Math.PI / 180);
-            ctx.drawImage(this.image, -this.centerPos.x + this.pos.x, -this.centerPos.y + this.pos.y, this.size.x, this.size.y);
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
-        } else {
-            ctx.translate(this.worldPos.x, this.worldPos.y);
-            ctx.rotate(this.worldRot * Math.PI / 180);
-            ctx.drawImage(this.image, -this.centerPos.x, -this.centerPos.y, this.size.x, this.size.y);
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
-        }
+        ctx.drawImage(this.image, this.worldPos.x, this.worldPos.y, this.size.x, this.size.y);
+
+
     }
 
     /**
