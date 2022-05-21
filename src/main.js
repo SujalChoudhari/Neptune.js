@@ -1,4 +1,4 @@
-import { Color } from "../core/basic/color.js";
+import { Color } from "./basic/color.js";
 
 /**
  * @class Application
@@ -46,6 +46,7 @@ export class Application {
         }
 
         document.body.appendChild(this.play_btn);
+
         this.currentTimeStamp = performance.now();
         this.deltaTime = 0;
         
@@ -66,6 +67,15 @@ export class Application {
     init() {
         this.canvas.setAttribute("height", window.innerHeight);
         this.canvas.setAttribute("width", window.innerWidth);
+        
+        window.addEventListener('resize', () => {
+            this.width = window.innerWidth;
+            this.height = window.innerHeight;
+            // this.canvas.width = this.width;
+            // this.canvas.height = this.height;
+            this.canvas.setAttribute("height", window.innerHeight);
+            this.canvas.setAttribute("width", window.innerWidth);
+        });
         this.canvas.focus();
         this.entities.forEach(entity => {
             entity.init();

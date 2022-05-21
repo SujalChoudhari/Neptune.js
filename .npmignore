@@ -1,12 +1,13 @@
 # Folders
-tutorials/
-images/
-examples/
-docs/
 .github/
+docs/
+examples/
+images/
+node_modules/
+tutorials/
 
 #Files
+.gitignore
 jsdoc.json
 README.md
-.gitignore
 *.tgz

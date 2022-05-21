@@ -5,7 +5,14 @@ class Game extends npt.Application{
         super();
         this.grid = new npt.WireGrid({
             color: npt.Color.fromRGBA(0,0,0,0.3),
-            size: this.width/20,
+            size: this.width,
+            space:100,
+            app: this
+        });
+        this.grid2 = new npt.WireGrid({
+            color: npt.Color.fromRGBA(0,0,0,0.3),
+            size: this.width,
+            space:10,
             app: this
         });
     }

@@ -25,7 +25,7 @@ class Game extends npt.Application{
         });
 
         this.vectr = new npt.WireLine({
-            color: npt.Color.fromRGBA(255,0,0,1),
+            color: npt.Color.fromRGBA(255,0,0,0.4),
             start: new npt.Vector2(100,100),
             end: new npt.Vector2(200,300),
             app: this

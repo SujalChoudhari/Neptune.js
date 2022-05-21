@@ -18,10 +18,10 @@ export class Color {
      * @param {Number} a The alpha component of the color.(Optional)
      * 
      * @example
-     * let color = new Color(255, 0, 0, 255);
+     * let color = new Color(255, 0, 0, 1);
      * 
      */
-    constructor(r, g, b, a = 255) {
+    constructor(r, g, b, a = 1) {
         this.r = r;
         this.g = g;
         this.b = b;
@@ -43,7 +43,7 @@ export class Color {
         let r = hex >> 16 & 255;
         let g = hex >> 8 & 255;
         let b = hex & 255;
-        return new Color(r, g, b, 255);
+        return new Color(r, g, b, 1);
     }
 
     /**
@@ -59,7 +59,7 @@ export class Color {
      * let color = Color.fromRGB(255, 0, 0);
      */
     static fromRGB(r, g, b) {
-        return new Color(r, g, b, 255);
+        return new Color(r, g, b, 1);
     }
 
     /**
@@ -73,7 +73,7 @@ export class Color {
      * @returns  {Color} The new color.
      * 
      * @example
-     * let color = Color.fromRGBA(255, 0, 0, 255);
+     * let color = Color.fromRGBA(255, 0, 0, 1);
      */
     static fromRGBA(r, g, b, a) {
         return new Color(r, g, b, a);
@@ -128,7 +128,7 @@ export class Color {
             g = 0;
             b = x;
         }
-        return new Color(Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255), 255);
+        return new Color(Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255), 1);
     }
 
     /**
@@ -141,7 +141,7 @@ export class Color {
      * let color = Color.random();
      */
     static random() {
-        return new Color(Math.random() * 255, Math.random() * 255, Math.random() * 255, 255);
+        return new Color(Math.random() * 255, Math.random() * 255, Math.random() * 255, 1);
     }
 
     /**
