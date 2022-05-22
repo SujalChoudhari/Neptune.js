@@ -1,8 +1,14 @@
-import * as npt from "../src/neptune.js"
+// Importing Neptune.js
+import * as npt from "@neptune-js/neptune"
 
+// Creating a new game class, this will be the main class for the game
 class Game extends npt.Application{
+    // Constructor of the class is used to initiate the game.
+    // All objects should be created here and Application class can be overridden here.
     constructor(){
         super();
+
+        // Using this keyword to assign the object to the variable.
         this.test = new npt.Circle({
             radius: 100,
             app:this,
@@ -19,5 +25,10 @@ class Game extends npt.Application{
         });
     }
 }
+
 // Create a new Game
+// No need to assign the game to a variable, but if you are facing Issues, try 
+// let game = new Game();
 new Game();
+
+// You should have 2 translucent circles on screen.
