@@ -1,11 +1,19 @@
 {
-    "Quick Start Guide NPM": {
-        "title": "Quick Start Guide NPM"
+    "Quick Start Guide":{
+        "title": "Quick Start Guide",
+        "children":{
+            "NPM":{
+                "title":"Setup using NPM"
+            },
+            "CDN":{
+                "title":"Setup using CDN"
+            },
+            "Vite":{
+                "title":"Setup using Vite"
+            }
+        }
     },
-    "Quick Start Guide CDN": {
-        "title": "Quick Start Guide CDN"
-    },
-    "Quick Start Guide Vite": {
-        "title": "Quick Start Guide Vite"
+    "Examples":{
+        "title":"Examples"
     }
 }

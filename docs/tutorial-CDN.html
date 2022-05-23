@@ -39,7 +39,7 @@
 
 
     <title>
-      basic/entity.js
+      Tutorial: Setup using CDN
     </title>
 
     <!--[if lt IE 9]>
@@ -106,104 +106,32 @@
     <div id="main" class="main-content">
       
       <h1 id='page-title' class="page-title">
-        basic/entity.js
+        Tutorial: Setup using CDN
       </h1>
       
 
-      
+      <section>
 
-
-
+<header>
     
-    <section>
-        <article>
-            <pre class="prettyprint source linenums"><code>
-/**
- * @class Entity
- * @description The base class for all entities.
- * 
- * @property {Object} kwargs - The keyword arguments.
- * @property {String} kwargs.name - The name of the entity.
- * @property {Entity} kwargs.parent - The parent entity.
- * @property {Application} kwargs.application - The application.
- */
-export class Entity {
-    /**
-     * @method
-     * @description Creates a new Entity object.
-     * @param {Object} kwargs - The keyword arguments.
-     * @param {String} kwargs.name - The name of the entity.
-     * @param {Entity} kwargs.parent - The parent entity.
-     * @param {Application} kwargs.app - The application.
-     * 
-     * @example
-     * // Create a new Entity object.
-     * let entity = new Entity({
-     *         name: "entity",
-     *         parent: null,
-     *         app: app
-     *      });
-     */
-    constructor(kwargs) {
-        this.name = kwargs["name"] || "Entity";
-        this.parent = kwargs["parent"] || null;
-        let app = kwargs["app"] || null;
-        if (app != null) app.entities.push(this);
-    }
 
-    /**
-     * @method
-     * @description Sets the new parent entity.
-     * @param {Entity} parent - The new parent entity.
-     * 
-     * @example
-     * // Set the new parent entity.
-     * entity.setParent(parent);
-     */
-    setParent(parent) {
-        this.parent = parent;
-    }
+    <h2>Setup using CDN</h2>
+</header>
 
-    /**
-     * @method
-     * @description Initializes the entity.
-     * 
-     * @example
-     * // Initialize the entity.
-     * entity.init();
-     */
-    init() { }
+<article>
+    <p>To start making use of Neptune.js framework,
+you first need to have at least the bare bones
+of a neptune project, this is easy to replicate and
+can be customised to your needs.</p>
+<p>You can use the NPM to load the neptune.js library.</p>
+<h2>Import</h2>
+<pre class="prettyprint source lang-javascript"><code>import * as npt from &quot;https://cdn.jsdelivr.net/npm/@neptune-js/neptune@latest/src/neptune.min.js&quot;
+</code></pre>
+<p>Thats it! You can now start making your game using the neptune.js framework.<br>
+Go to the <a href="tutorial-Quick%20Start%20Guide.html">Quick Start Guide</a> to see how to make your game.</p>
+</article>
 
-    /**
-     * @method
-     * @description Updates the entity.
-     * @param {Number} deltaTime - The time between the last frame and the current frame.
-     * 
-     * @example
-     * // Update the entity.
-     * entity.update(deltaTime);
-     */
-    update(deltaTime) {
-    }
-
-    /**
-     * @method
-     * @description Draws the entity.
-     * @param {CanvasRenderingContext2D} ctx - The canvas context.
-     * 
-     * @example
-     * // Draw the entity.
-     * entity.draw(ctx);
-     */
-    draw(ctx) {
-        
-    }
-}</code></pre>
-        </article>
-    </section>
-
-
-
+</section>
 
     </div>
 

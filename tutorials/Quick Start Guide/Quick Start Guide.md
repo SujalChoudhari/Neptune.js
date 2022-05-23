@@ -1,25 +1,10 @@
 
-To start making use of Neptune.js framework, 
-you first need to have at least the bare bones 
-of a neptune project, this is easy to replicate and
-can be customised to your needs.
+## Initiation
+Follow the steps listed above to get started initializing your project.
+You can choose from the options mentioned above.
 
-You can use the NPM to load the neptune.js library.
 
-## Install
-
-```bash
-npm install @neptune-js/neptune
-```
-or 
-```bash
-yarn add @neptune-js/neptune
-```
-
-## Import
-```javascript
-import * as npt  from '@neptune-js/neptune';
-```
+Once you have installed/imported everything, You are ready to start using the features of Neptune.js.
 
 ## Setting up the HTML
 This is the HTML that will be used to render the neptune.js application.
@@ -53,7 +38,7 @@ This file will provide a entry point for the game.
 It is the only file that needs to be imported into the HTML.
 
 ```javascript
-import * as npt  from '@neptune-js/neptune';
+import * as npt  from '@neptune-js/neptune'; // Depends on how you installed Neptune.js
 
 class Game extends npt.Application{
     constructor(){
@@ -88,7 +73,7 @@ Circle is a renderable object which we can draw on the screen.
 The following code will draw a red circle to the center of the screen.
 
 ```javascript
-import * as npt  from '@neptune-js/neptune';
+import * as npt  from '@neptune-js/neptune'; // Depends on how you installed Neptune.js
 
 class Game extends npt.Application {
     constructor() {
@@ -111,7 +96,7 @@ new Game();
 ## Hello World Example
 ## Hello World!
 Creating Text is simple, here is the code to follow
-```js
+```javascript
 class Game extends npt.Application {
     constructor() {
         super();

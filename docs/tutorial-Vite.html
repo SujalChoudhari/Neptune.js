@@ -39,7 +39,7 @@
 
 
     <title>
-      basic/entity.js
+      Tutorial: Setup using Vite
     </title>
 
     <!--[if lt IE 9]>
@@ -106,104 +106,111 @@
     <div id="main" class="main-content">
       
       <h1 id='page-title' class="page-title">
-        basic/entity.js
+        Tutorial: Setup using Vite
       </h1>
       
 
-      
+      <section>
 
-
-
+<header>
     
-    <section>
-        <article>
-            <pre class="prettyprint source linenums"><code>
-/**
- * @class Entity
- * @description The base class for all entities.
- * 
- * @property {Object} kwargs - The keyword arguments.
- * @property {String} kwargs.name - The name of the entity.
- * @property {Entity} kwargs.parent - The parent entity.
- * @property {Application} kwargs.application - The application.
- */
-export class Entity {
-    /**
-     * @method
-     * @description Creates a new Entity object.
-     * @param {Object} kwargs - The keyword arguments.
-     * @param {String} kwargs.name - The name of the entity.
-     * @param {Entity} kwargs.parent - The parent entity.
-     * @param {Application} kwargs.app - The application.
-     * 
-     * @example
-     * // Create a new Entity object.
-     * let entity = new Entity({
-     *         name: "entity",
-     *         parent: null,
-     *         app: app
-     *      });
-     */
-    constructor(kwargs) {
-        this.name = kwargs["name"] || "Entity";
-        this.parent = kwargs["parent"] || null;
-        let app = kwargs["app"] || null;
-        if (app != null) app.entities.push(this);
-    }
 
-    /**
-     * @method
-     * @description Sets the new parent entity.
-     * @param {Entity} parent - The new parent entity.
-     * 
-     * @example
-     * // Set the new parent entity.
-     * entity.setParent(parent);
-     */
-    setParent(parent) {
-        this.parent = parent;
-    }
+    <h2>Setup using Vite</h2>
+</header>
 
-    /**
-     * @method
-     * @description Initializes the entity.
-     * 
-     * @example
-     * // Initialize the entity.
-     * entity.init();
-     */
-    init() { }
+<article>
+    <p>This Guide will help you get started with Neptune with Vite.
+Follow along with the steps below to get started.</p>
+<h2>Demo Project</h2>
+<h3>Download</h3>
+<p>This is a small test project to explore the framework.
+You can expand it to a full project according to your needs.</p>
+<p><a href="https://raw.githubusercontent.com/NotSujal/Neptune.js/main/tutorials/neptune-js-vite-example.zip"><strong>Sure, Download!</strong></a></p>
+<h3>Install</h3>
+<ul>
+<li>After downloading the zip file, extract it to your project folder.</li>
+<li>Open your terminal and navigate to the project folder.</li>
+<li>Run the following command to install all dependencies.</li>
+</ul>
+<pre class="prettyprint source lang-bash"><code>npm install
+</code></pre>
+<p>or</p>
+<pre class="prettyprint source lang-bash"><code>yarn
+</code></pre>
+<h3>Run</h3>
+<ul>
+<li>After the command is finished running,
+you should see a folder called <code>node_modules</code> in your project folder.
+It means that all dependencies are installed.</li>
+<li>Run the following command to start the server.</li>
+</ul>
+<pre class="prettyprint source lang-bash"><code>npm run dev
+</code></pre>
+<p>or</p>
+<pre class="prettyprint source lang-bash"><code>yarn dev
+</code></pre>
+<ul>
+<li>You should see a message in your terminal that says <code>Server is running at http://localhost:3000</code>.</li>
+<li>Open your browser and navigate to <code>http://localhost:3000</code>.</li>
+</ul>
+<h2>Output</h2>
+<p>The output of this project should look like this.</p>
+<p><img src="https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/play_btn.png" alt="play"></p>
+<p><img src="https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/game.png" alt="game"></p>
+<h2>Custom Project</h2>
+<h3>Create Vite App</h3>
+<ul>
+<li>Create a vite app using the following command.</li>
+</ul>
+<pre class="prettyprint source lang-bash"><code>  npm create vite@latest
+</code></pre>
+<ul>
+<li>Give your project a name.</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/1.png" alt="1"></p>
+<ul>
+<li>Select the framework you want to use. (in this case vanilla)</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/2.png" alt="2"></p>
+<ul>
+<li>Use the vanilla framework for JavaScript.</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/3.png" alt="3"></p>
+<ul>
+<li>Let Vite finish.
+Move inside your project folder.
+and run the following command.</li>
+</ul>
+<pre class="prettyprint source lang-bash"><code>  npm i
+</code></pre>
+<p><img src="https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/5.png" alt="5"></p>
+<ul>
+<li>Now Install the Neptune.js from npm or yarn</li>
+</ul>
+<pre class="prettyprint source lang-bash"><code>  npm i @neptune-js/neptune
+</code></pre>
+<p>or</p>
+<pre class="prettyprint source lang-bash"><code>    yarn add @neptune-js/neptune
+</code></pre>
+<p><img src="https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/6.png" alt="6"></p>
+<ul>
+<li>
+<p>Let npm/yarn finish
+Open Visual Studio Code / Your IDE of choice.
+<img src="https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/7.png" alt="7"></p>
+</li>
+<li>
+<p>Project is ready to use.
+<img src="https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/8.png" alt="8"></p>
+</li>
+<li>
+<p>Now, You can now start making your game using the neptune.js framework.<br>
+Go to the <a href="tutorial-Quick%20Start%20Guide.html">Quick Start Guide</a> to see how to make your game.</p>
+</li>
+</ul>
+</article>
 
-    /**
-     * @method
-     * @description Updates the entity.
-     * @param {Number} deltaTime - The time between the last frame and the current frame.
-     * 
-     * @example
-     * // Update the entity.
-     * entity.update(deltaTime);
-     */
-    update(deltaTime) {
-    }
-
-    /**
-     * @method
-     * @description Draws the entity.
-     * @param {CanvasRenderingContext2D} ctx - The canvas context.
-     * 
-     * @example
-     * // Draw the entity.
-     * entity.draw(ctx);
-     */
-    draw(ctx) {
-        
-    }
-}</code></pre>
-        </article>
-    </section>
-
-
-
+</section>
 
     </div>
 

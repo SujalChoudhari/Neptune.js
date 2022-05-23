@@ -39,7 +39,7 @@
 
 
     <title>
-      basic/entity.js
+      Tutorial: Quick Start Guide
     </title>
 
     <!--[if lt IE 9]>
@@ -106,104 +106,149 @@
     <div id="main" class="main-content">
       
       <h1 id='page-title' class="page-title">
-        basic/entity.js
+        Tutorial: Quick Start Guide
       </h1>
       
 
-      
+      <section>
 
-
-
+<header>
     
-    <section>
-        <article>
-            <pre class="prettyprint source linenums"><code>
-/**
- * @class Entity
- * @description The base class for all entities.
- * 
- * @property {Object} kwargs - The keyword arguments.
- * @property {String} kwargs.name - The name of the entity.
- * @property {Entity} kwargs.parent - The parent entity.
- * @property {Application} kwargs.application - The application.
- */
-export class Entity {
-    /**
-     * @method
-     * @description Creates a new Entity object.
-     * @param {Object} kwargs - The keyword arguments.
-     * @param {String} kwargs.name - The name of the entity.
-     * @param {Entity} kwargs.parent - The parent entity.
-     * @param {Application} kwargs.app - The application.
-     * 
-     * @example
-     * // Create a new Entity object.
-     * let entity = new Entity({
-     *         name: "entity",
-     *         parent: null,
-     *         app: app
-     *      });
-     */
-    constructor(kwargs) {
-        this.name = kwargs["name"] || "Entity";
-        this.parent = kwargs["parent"] || null;
-        let app = kwargs["app"] || null;
-        if (app != null) app.entities.push(this);
+    <ul>
+        <li><a href="tutorial-NPM.html">Setup using NPM</a></li>
+    
+        <li><a href="tutorial-CDN.html">Setup using CDN</a></li>
+    
+        <li><a href="tutorial-Vite.html">Setup using Vite</a></li>
+    </ul>
+    
+
+    <h2>Quick Start Guide</h2>
+</header>
+
+<article>
+    <h2>Initiation</h2>
+<p>Follow the steps listed above to get started initializing your project.
+You can choose from the options mentioned above.</p>
+<p>Once you have installed/imported everything, You are ready to start using the features of Neptune.js.</p>
+<h2>Setting up the HTML</h2>
+<p>This is the HTML that will be used to render the neptune.js application.
+It is highly customizable and can be changed to suit your needs.
+This HTML template is the minimum required to render the neptune.js application.</p>
+<pre class="prettyprint source lang-html"><code>&lt;!DOCTYPE html>
+&lt;html>
+  &lt;head>
+    &lt;title>My Neptune Game&lt;/title>
+  &lt;/head>
+  &lt;body>  
+
+    &lt;!-- Game won't start until user clicks on the button -->
+    &lt;button id=&quot;__play__&quot;>Play&lt;/button>
+    &lt;!--The canvas where your game will be drawn -->
+    &lt;canvas id=&quot;__panel__&quot;>&lt;/canvas>
+  
+    &lt;!--Link the game file into the html -->
+
+    &lt;script type=&quot;module&quot; src=&quot;./main.js&quot;>&lt;/script>
+
+  &lt;/body>
+&lt;/html>
+</code></pre>
+<h2>Setting up the game file (main.js)</h2>
+<p>This file will provide a entry point for the game.
+It is the only file that needs to be imported into the HTML.</p>
+<pre class="prettyprint source lang-javascript"><code>import * as npt  from '@neptune-js/neptune'; // Depends on how you installed Neptune.js
+
+class Game extends npt.Application{
+    constructor(){
+        super();
+        // To create Entities. 
     }
 
-    /**
-     * @method
-     * @description Sets the new parent entity.
-     * @param {Entity} parent - The new parent entity.
-     * 
-     * @example
-     * // Set the new parent entity.
-     * entity.setParent(parent);
-     */
-    setParent(parent) {
-        this.parent = parent;
+    // Init is called only once when the Game starts, used for Initiating Code
+    init(){
+        super.init();
+    }
+    
+    // Update is called every frame, used to run logic and physics
+    update(deltaTime){
+        super.update(deltaTime);
+    }
+    
+    // Draw method used to draw Renderables on the screen, draw is called just after update
+    draw(ctx){
+        super.draw(ctx);
+    }
+}
+
+// Create a new Game
+new Game();
+</code></pre>
+<p>Thats it! You can now start making your game using the neptune.js framework.</p>
+<h2>Simple Circle Example</h2>
+<p>Circle is a renderable object which we can draw on the screen.
+The following code will draw a red circle to the center of the screen.</p>
+<pre class="prettyprint source lang-javascript"><code>import * as npt  from '@neptune-js/neptune'; // Depends on how you installed Neptune.js
+
+class Game extends npt.Application {
+    constructor() {
+        super();
+        this.circle = new npt.Circle({
+            app: this,  /*  when you pass the game class to the Entity(here,Circle), 
+                            it will automatically set the app property to the game class 
+                            and will draw and update the entity on the canvas without you having to call the draw/update method.*/
+            pos: new npt.Vector2(this.width / 2, this.height / 2),
+            radius: 100,
+            color: npt.Color.red
+        });
+    }
+}
+
+new Game();
+</code></pre>
+<h2>Hello World Example</h2>
+<h2>Hello World!</h2>
+<p>Creating Text is simple, here is the code to follow</p>
+<pre class="prettyprint source lang-javascript"><code>class Game extends npt.Application {
+    constructor() {
+        super();
+        this.background = new npt.Rect({
+            app:this,
+            pos: new npt.Vector2(0, 0),
+            w: this.width,
+            h: this.height,
+            color: npt.Color.black
+        });
+
+        this.text = new npt.Text({
+            parent: this.background, // property of an entity
+            pos: new npt.Vector2(200,200),
+            text: &quot;Hello World&quot;,
+            font: &quot;30px Roboto&quot;, // all fonts which are supported by html5 canvas can be used here
+            color: npt.Color.white,
+            align: &quot;center&quot; // this is text align (similar to the html5 canvas) https://www.w3schools.com/tags/canvas_textalign.asp
+        }); 
     }
 
-    /**
-     * @method
-     * @description Initializes the entity.
-     * 
-     * @example
-     * // Initialize the entity.
-     * entity.init();
-     */
-    init() { }
-
-    /**
-     * @method
-     * @description Updates the entity.
-     * @param {Number} deltaTime - The time between the last frame and the current frame.
-     * 
-     * @example
-     * // Update the entity.
-     * entity.update(deltaTime);
-     */
-    update(deltaTime) {
+    init() {
+        super.init();
+        this.text.align(&quot;center&quot;);
+        this.text.align('middle');
     }
 
-    /**
-     * @method
-     * @description Draws the entity.
-     * @param {CanvasRenderingContext2D} ctx - The canvas context.
-     * 
-     * @example
-     * // Draw the entity.
-     * entity.draw(ctx);
-     */
-    draw(ctx) {
-        
+    update(deltaTime){
+        super.update(deltaTime);
+        this.text.update(delatTime);  // Because app is not set of the text, we need to call update manually.
     }
-}</code></pre>
-        </article>
-    </section>
+}
 
+new Game();
 
+</code></pre>
+<p>Congratulations, you've learned the basics of using Neptune.js! If you want to explore more, check out the Documentation and Create Wonderfull games.</p>
+</article>
 
+</section>
 
     </div>
 
