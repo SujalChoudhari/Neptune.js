@@ -1,6 +1,6 @@
 {
   "name": "@neptune-js/neptune",
-  "version": "1.0.0-1",
+  "version": "1.0.0",
   "description": "A JavaScript Based Game Development Framework",
   "main": "src/neptune.js",
   "scripts": {
@@ -21,6 +21,5 @@
     "url": "https://github.com/NotSujal/Neptune.js/issues"
   },
   "homepage": "https://github.com/NotSujal/Neptune.js#readme",
-  "dependencies": {
-  }
+  "dependencies": {}
 }
