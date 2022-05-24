@@ -20,10 +20,22 @@ export class Sprite extends Transform {
         super(kwargs);
         this.image = new Image();
         this.image.src = kwargs["src"];
-        this.isLoaded = false
+
+        /**
+         * @property {Number} drawRect.x - The x position of the crop.
+         * @property {Number} drawRect.y - The y position of the crop.
+         * @property {Number} drawRect.w - The width of the crop.
+         * @property {Number} drawRect.h - The height of the crop.
+         */
+        this.drawRect ={
+            x: 0,
+            y: 0,
+            w: this.size.x, 
+            h: this.size.y
+        }
+        this.isLoaded = false;
         this.image.onload = function () {
             this.isLoaded = true;
-            console.log(this.name, " is loaded");
         }
     }
 
@@ -52,7 +64,10 @@ export class Sprite extends Transform {
     draw(ctx) {
         super.draw(ctx);
         if (this.isLoaded) return;
-        ctx.drawImage(this.image, this.worldPos.x, this.worldPos.y, this.size.x, this.size.y);
+        
+        ctx.drawImage(this.image,
+            this.drawRect.x,this.drawRect.y,this.drawRect.w,this.drawRect.h,
+            this.worldPos.x,this.worldPos.y,this.size.x,this.size.y);
 
 
     }
@@ -69,5 +84,25 @@ export class Sprite extends Transform {
      */
     update(deltaTime) {
         super.update(deltaTime);
+    }
+
+
+    /**
+     * @method
+     * @description Crops the Image to a specific area.
+     * @param {Number} x - The x position of the crop.
+     * @param {Number} y - The y position of the crop.
+     * @param {Number} w - The width of the crop.
+     * @param {Number} h - The height of the crop.
+     * 
+     * @example
+     * // Crop the image.
+     * image.crop(0, 0, 100, 100);
+     */
+    crop(x, y, width, height) {
+        this.drawRect.x = x;
+        this.drawRect.y = y;
+        this.drawRect.w = width;
+        this.drawRect.h = height;
     }
 }

@@ -96,9 +96,9 @@ export class Application {
      * @method
      * @description Draws the application. (Called by the engine)
      */
-    draw() {
+    draw(ctx) {
         this.entities.forEach(entity => {
-            entity.draw(this.ctx);
+            entity.draw(ctx);
         });
     }
     /**
@@ -117,7 +117,7 @@ export class Application {
 
 
         if (this.update) this.update(this.deltaTime);
-        if (this.draw) this.draw(this.deltaTime);
+        if (this.draw) this.draw(this.ctx);
         requestAnimationFrame(this.gameloop.bind(this));
     }
 

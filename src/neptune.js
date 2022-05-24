@@ -26,6 +26,7 @@ import {Circle} from "./renderable/circle.js";
 import {Sprite}  from "./renderable/image.js";
 import {Polygon} from "./renderable/polygon.js";
 import {Rect} from "./renderable/rect.js";
+import {SpriteSheet} from "./renderable/spritesheet.js";
 import {Triangle} from "./renderable/triangle.js";
 
 import { WireGrid} from "./gizmos/wireGrid.js";
@@ -41,27 +42,18 @@ import {Text} from "./ui/text.js";
 // export all the modules to the global scope
 export {
     Application,
-    Entity,
-    Sound,
-    Color,
-    Cookies,
-    Mouse,
-    Keyboard,
-    Touch,
-    Vector2,
-    Transform,
-    CollidableTransform,
-    Collision,
-    Kinematic,
-    Circle,
-    Sprite,
-    Polygon,
-    Rect,
-    WireGrid,
-    WireRect,
-    WireCircle,
-    WireLine,
-    Triangle,
-    Button,
-    Text
+    
+    Entity,Sound,Color,Cookies,
+
+    Mouse,Keyboard,Touch,
+
+    Vector2,Transform,CollidableTransform,
+
+    Collision,Kinematic,
+
+    Circle,Sprite,SpriteSheet,Triangle,Polygon,Rect,
+    
+    WireGrid,WireRect,WireCircle,WireLine,
+    
+    Button,Text
 };

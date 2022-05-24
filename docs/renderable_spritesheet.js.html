@@ -39,7 +39,7 @@
 
 
     <title>
-      Text
+      renderable/spritesheet.js
     </title>
 
     <!--[if lt IE 9]>
@@ -106,7 +106,7 @@
     <div id="main" class="main-content">
       
       <h1 id='page-title' class="page-title">
-        Text
+        renderable/spritesheet.js
       </h1>
       
 
@@ -114,800 +114,182 @@
 
 
 
-
-<section>
-
-
-<header>
     
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import { Vector2 } from "../neptune.js";
+import { Sprite } from "./image.js";
+
+/**
+ * @class SpriteSheet
+ * @classdesc A SpriteSheet is a class that represents a spritesheet.
+ * 
+ * @property {Object} sprites - The co-ordinates of the sprites.
+ * @property {Sprite} spritesheet - The spritesheet. The complete image.
+ * 
+ * @example
+ * // Create a new spritesheet.
+ * let spritesheet = new SpriteSheet({
+ *      src: "path/to/image/file.png",
+ *      pos: new Vector2(0,0),
+ *      size: new Vector2(32,32) // Size of each sprite.
+ *   });
+ */
+export class SpriteSheet {
+    /**
+     * @method
+     * @description Initializes the Entity.
+     * @param {Object} kwargs - The keyword arguments.
+     * @param {String} kwargs.src - The image source.
+     * @param {Vector2} kwargs.pos - The position of the image. Not used if the image is a spritesheet.
+     * @param {Vector2} kwargs.size - The size of the image.
+     * 
+     * @example
+     * // Create a new spritesheet.
+     */
+    constructor(kwargs) {
+        this.spritesheet = new Sprite({
+            src: kwargs["src"] || "",
+            pos: kwargs["pos"] || new Vector2(0, 0),
+            size: kwargs["size"] || new Vector2(100, 100)
+        });
+
+        this.sprites = {}
+    }   
+
+    /**
+     * @method
+     * @description Add a Single Sprite.
+     * @param {String} name - The name of the sprite.
+     * @param {Number} x - The x position of the sprite.
+     * @param {Number} y - The y position of the sprite.
+     * @param {Number} w - The width of the sprite.
+     * @param {Number} h - The height of the sprite.
+     * 
+     * @example
+     * // Add a sprite.
+     * spritesheet.addSprite("name",0,0,32,32);
+     * 
+     */
+    addSprite(name,x,y,w,h) {
+        let newSprite = {
+            x: x,
+            y: y,
+            w: w,
+            h: h
+        }
+        this.sprites = {...this.sprites, [name]: newSprite};
         
-        <h2>
-        
-        Text
-        
-        </h2>
-        
-        
-            <div class="class-description"><p>A Text is a class that represents a text.</p></div>
-        
-    
-</header>
-
-
-<article>
-    <div class="container-overview">
-    
-        
-
-    
-        <h2>Constructor</h2>
-    
-
-    <h4 class="name" id="Text">
-        <a href="#Text">#</a>
-        <span class="type-signature"></span>new Text<span class="signature">(kwargs)</span><span class="type-signature"></span>
-    </h4>
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>kwargs</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Object</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The keyword arguments.</p>
-                <h6>Properties</h6>
-                
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-        <th>Attributes</th>
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>text</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">String</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>The text.</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>color</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Color.html">Color</a></span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>The color.</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>font</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Number</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>The font size.</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>align</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Number</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>The alignment.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-            </td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    </div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-source">Source:</dt>
-            <dd class="tag-source"><ul class="dummy"><li>
-                <a href="ui_text.js.html">ui/text.js</a>, <a href="ui_text.js.html#line4">line 4</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Example</strong>
-        
-    <div class="rel">
-    <pre class="prettyprint"><code>// Create a text.let text = new Text({     "text": "Hello World",     "color": Color.random(),     "font": "30px Arial",     "align": "center"});</code></pre>
-    
-    
-    </div>
-
-    </div>
-
-
-    
-    </div>
-
-    
-        <h3 class="subsection-title">Extends</h3>
-
-        
-
-
-    <ul>
-        <li><a href="Transform.html">Transform</a></li>
-    </ul>
-
-
-    
-
-    
-
-    
-
-     
-
-    
-
-    
-
-    
-        <h3 class="subsection-title">Methods</h3>
-
-        
-            
-
-    
-
-    <h4 class="name" id="draw">
-        <a href="#draw">#</a>
-        <span class="type-signature"></span>draw<span class="signature">(ctx)</span><span class="type-signature"></span>
-    </h4>
-
-    
-
-
-
-    <div class="description">
-        <p>Renders the text.</p>
-    </div>
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>ctx</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">CanvasRenderingContext2D</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The canvas context.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    </div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-overrides">Overrides:</dt>
-            <dd class="tag-overrides"><ul class="dummy"><li>
-                <a href="Transform.html#draw">Transform#draw</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-source">Source:</dt>
-            <dd class="tag-source"><ul class="dummy"><li>
-                <a href="ui_text.js.html">ui/text.js</a>, <a href="ui_text.js.html#line58">line 58</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Example</strong>
-        
-    <div class="rel">
-    <pre class="prettyprint"><code>// Render the text.text.draw(ctx);</code></pre>
-    
-    
-    </div>
-
-    </div>
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="init">
-        <a href="#init">#</a>
-        <span class="type-signature"></span>init<span class="signature">()</span><span class="type-signature"></span>
-    </h4>
-
-    
-
-
-
-    <div class="description">
-        <p>Initializes the Entity.</p>
-    </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-overrides">Overrides:</dt>
-            <dd class="tag-overrides"><ul class="dummy"><li>
-                <a href="Transform.html#init">Transform#init</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-source">Source:</dt>
-            <dd class="tag-source"><ul class="dummy"><li>
-                <a href="ui_text.js.html">ui/text.js</a>, <a href="ui_text.js.html#line79">line 79</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Example</strong>
-        
-    <div class="rel">
-    <pre class="prettyprint"><code>// Initialize the entity.entity.init();</code></pre>
-    
-    
-    </div>
-
-    </div>
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="update">
-        <a href="#update">#</a>
-        <span class="type-signature"></span>update<span class="signature">(deltaTime)</span><span class="type-signature"></span>
-    </h4>
-
-    
-
-
-
-    <div class="description">
-        <p>Updates the text.</p>
-    </div>
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>deltaTime</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Number</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The delta time.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    </div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-overrides">Overrides:</dt>
-            <dd class="tag-overrides"><ul class="dummy"><li>
-                <a href="Transform.html#update">Transform#update</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-source">Source:</dt>
-            <dd class="tag-source"><ul class="dummy"><li>
-                <a href="ui_text.js.html">ui/text.js</a>, <a href="ui_text.js.html#line43">line 43</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Example</strong>
-        
-    <div class="rel">
-    <pre class="prettyprint"><code>// Update the text.text.update(deltaTime);</code></pre>
-    
-    
-    </div>
-
-    </div>
-
-
-        
-    
-
-    
-
-    
-</article>
-
-</section>
+    }
+
+
+    /**
+     * @method
+     * @description Add an entire Row of Sprites.
+     * @param {String} name - The name of the sprite. The names are suffixed with the index. (e.g. name_1, name_2, ...)
+     * @param {Number} x - The x position of the sprite.
+     * @param {Number} y - The y position of the sprite.
+     * @param {Number} w - The width of the sprite.
+     * @param {Number} h - The height of the sprite.
+     * @param {Number} num - The number of sprites to add in that row.
+     * 
+     * @example
+     * // Add a row of sprites.
+     * spritesheet.addRow("name",0,0,32,32,5);
+     * 
+     */
+    addRow(name,x,y,w,h,num) {
+        for(let i = 0; i &lt; num; i++) {
+            this.addSprite(name + `_${i}`,x+i*w,y,w,h);
+        }
+    }
+
+    /**
+     * @method
+     * @description Add an entire Column of Sprites.
+     * @param {String} name - The name of the sprite. The names are suffixed with the index. (e.g. name_1, name_2, ...)
+     * @param {Number} x - The x position of the sprite.
+     * @param {Number} y - The y position of the sprite.
+     * @param {Number} w - The width of the sprite.
+     * @param {Number} h - The height of the sprite.
+     * @param {Number} num - The number of sprites to add in that column.
+     * 
+     * @example
+     * // Add a column of sprites.
+     * spritesheet.addColumn("name",0,0,32,32,5);
+     */
+    addColumn(name,x,y,w,h,num) {
+        for(let i = 0; i &lt; num; i++) {
+            this.addSprite(name + `_${i}`,x,y+i*h,w,h);
+        }
+    }
+
+    /**
+     * @method
+     * @description Add an entire Grid of Sprites.
+     * @param {String} name - The name of the sprite. The names are suffixed with the index. (e.g. name_1, name_2, ...)
+     * @param {Number} x - The x position of the sprite.
+     * @param {Number} y - The y position of the sprite.
+     * @param {Number} w - The width of the sprite.
+     * @param {Number} h - The height of the sprite.
+     * @param {Number} numX - The number of sprites to add in that row.
+     * @param {Number} numY - The number of sprites to add in that column.
+     * 
+     * @example
+     * // Add a grid of sprites.
+     * spritesheet.addGrid("name",0,0,32,32,5,5);
+     */
+    addGrid(name,x,y,w,h,numX,numY) {
+        let a = 0;
+        for(let j = 0; j &lt; numY; j++) {
+            for(let i = 0; i &lt; numX; i++) {
+                a++;
+                this.addSprite(name + `_${a}`,x+i*w,y+j*h,w,h);
+            }
+        }
+    }
+
+    /**
+     * @method
+     * @description Delete the sprites
+     * @param {List} names - The names of the sprites to delete. [name_1, name_2, ...]
+     * 
+     * @example
+     * // Delete a sprite.
+     * spritesheet.deleteSprite(["name_1","name_2"]);
+     */
+    deleteSprite(names) {
+        console.log(typeof (names));
+        for(let name of names) {
+            delete this.sprites[name];
+        }
+    }
+
+    /**
+     * @method
+     * @description Draw the sprites
+     * @param {CanvasRenderingContext2D} ctx - The canvas context.
+     * @param {String} name - The name of the sprite.
+     * @param {Number} x - The x position of the sprite.
+     * @param {Number} y - The y position of the sprite.
+     * 
+     * @example
+     * // Draw a sprite.
+     * spritesheet.draw(ctx,"name_23",0,100);
+     */
+    draw(ctx,name,x,y) {
+        let sprite = this.sprites[name];
+        if(!sprite) {
+            return;
+        }
+
+        ctx.drawImage(this.spritesheet.image,
+            sprite.x,sprite.y,sprite.w,sprite.h,
+            x,y,this.spritesheet.size.x,this.spritesheet.size.y);
+    }
+}</code></pre>
+        </article>
+    </section>
 
 
 
