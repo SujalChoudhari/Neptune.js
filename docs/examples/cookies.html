@@ -1,0 +1,41 @@
+<button id="neptune-play">Play</button>
+<canvas id="neptune-canvas"></canvas>
+<style>
+    * {
+        margin: 0%;
+        padding: 0%;
+        overflow: hidden;
+    }
+</style>
+<script type="module">
+    import * as npt from "https://cdn.jsdelivr.net/npm/@neptune-js/neptune@latest/src/neptune.min.js";
+
+
+    class Game extends npt.Application {
+        constructor() {
+            super();
+            npt.Cookies.save("test", "test");
+            npt.Cookies.save("test2", "test2");
+            npt.Cookies.save("test3", "test3");
+            console.log(npt.Cookies.load("test"));
+            console.log(npt.Cookies.load("test2"));
+            console.log(npt.Cookies.load("test3"));
+
+            // npt.Cookies.delete("test");
+            // npt.Cookies.deleteAll();
+
+            this.text = new npt.Text({
+                pos : new npt.Vector2(20,20),
+                text : "Hello World",
+                font : "20px Arial",
+                color : "red",
+                align : "center",
+                app: this
+            })
+        }
+    }
+    // Create a new Game
+    new Game();
+
+
+</script>

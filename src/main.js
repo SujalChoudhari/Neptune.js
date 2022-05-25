@@ -3,6 +3,12 @@ import { Color } from "./basic/color.js";
 /**
  * @class Application
  * @classdesc Main class of the Neptune engine.
+ * An application is a Class that handles flow of the game and gameobjects.
+ * The life cycle of the Entities is managed by the Application.
+ * The Initialization of the Application is done by the constructor.
+ * There are special init functions to provide another way of initialization other than the constructor. Here the Entities can be configured.
+ * 
+ * 
  * @hideconstructor
  * 
  * @property {number} width - Width of the canvas.
@@ -15,9 +21,7 @@ import { Color } from "./basic/color.js";
  * @property {number} lastTimeStamp - The last time stamp.
  * @property {Array.<Entity>} entities - The array of entities.
  * 
- * @tutorial Quick Start Guide NPM
- * @tutorial Quick Start Guide CDN
- * @tutorial Quick Start Guide Vite
+ * @tutorial Quick Start Guide
  */
 export class Application {
     /**
@@ -25,23 +29,23 @@ export class Application {
      * @description Starts the application. (Called by the engine)
      */
     constructor() {
-        this.play_btn = document.getElementById("__play__");  
+        this.play_btn = document.getElementById("neptune-play");  
         this.width = window.innerWidth;
         this.height = window.innerHeight;
         this.fps = 60;
         this.clearColor = Color.gray;
 
-        this.canvas = document.getElementById("__panel__");
+        this.canvas = document.getElementById("neptune-canvas");
+        this.canvas.style.display = "none";
         this.ctx = this.canvas.getContext("2d");
         
         this.play_btn.onclick = () => {
             this.gameloop(0)
             try {
                 this.play_btn.remove();
-                document.getElementById("__removable__").remove();
-            } catch (error) {
-                console.log("[Not Found] '__removable__'not found in the DOM. Ignoring...");
-            }
+                this.canvas.style.display = "block";
+                document.getElementById("neptune-gamepage").remove();
+            } catch (error) {}
             this.init();
         }
 
@@ -53,11 +57,9 @@ export class Application {
         this.entities = [];
 
         try {
-            document.getElementById("__loading_text__").innerHTML = " ";
             this.play_btn.style.display = "block";
-        } catch (error) {
-            console.log("[Not Found] '__loading_text__' not found in the DOM. Ignoring...");
-        }
+            document.getElementById("neptune-loading").remove();
+        } catch (error) {}
     }
 
     /**
@@ -71,8 +73,6 @@ export class Application {
         window.addEventListener('resize', () => {
             this.width = window.innerWidth;
             this.height = window.innerHeight;
-            // this.canvas.width = this.width;
-            // this.canvas.height = this.height;
             this.canvas.setAttribute("height", window.innerHeight);
             this.canvas.setAttribute("width", window.innerWidth);
         });
@@ -101,6 +101,8 @@ export class Application {
             entity.draw(ctx);
         });
     }
+
+
     /**
      * @method
      * @description Updates the application. (Called by the engine)
@@ -120,6 +122,6 @@ export class Application {
         if (this.draw) this.draw(this.ctx);
         requestAnimationFrame(this.gameloop.bind(this));
     }
-
+    
 
 }

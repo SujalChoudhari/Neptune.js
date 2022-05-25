@@ -30,6 +30,7 @@
 				"Menu"
 			],
 			"theme": "dark",
+			"static_dir":["./examples"],
 			"add_scripts": " document.title = 'Neptune.js Documentation';",
 			"title": "Neptune.js",
 			"footer": "MIT 2022 © Sujal Choudhari.",

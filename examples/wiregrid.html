@@ -1,0 +1,34 @@
+<button id="neptune-play">Play</button>
+<canvas id="neptune-canvas"></canvas>
+<style>
+    * {
+        margin: 0%;
+        padding: 0%;
+        overflow: hidden;
+    }
+</style>
+<script type="module">
+    import * as npt from "https://cdn.jsdelivr.net/npm/@neptune-js/neptune@latest/src/neptune.min.js";
+
+
+    class Game extends npt.Application {
+        constructor() {
+            super();
+            this.grid = new npt.WireGrid({
+                color: npt.Color.fromRGBA(0, 0, 0, 0.3),
+                size: this.width,
+                space: 100,
+                app: this
+            });
+            this.grid2 = new npt.WireGrid({
+                color: npt.Color.fromRGBA(0, 0, 0, 0.3),
+                size: this.width,
+                space: 10,
+                app: this
+            });
+        }
+    }
+    // Create a new Game
+    new Game();
+
+</script>

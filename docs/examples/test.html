@@ -1,0 +1,33 @@
+<button id="__play__">Play</button>
+<canvas id="__panel__"></canvas>
+<script type="module">
+    import * as npt from "https://cdn.jsdelivr.net/npm/@neptune-js/neptune@latest/src/neptune.min.js";
+
+    class Game extends npt.Application {
+        constructor() {
+            super();
+            this.rect = new npt.Rect({
+                app: this,
+                pos: new npt.Vector2(20, 20),
+                size: new npt.Vector2(80, 80),
+                color: new npt.Color(255, 0, 0)
+            });
+
+            this.rect2 = new npt.Rect({
+                app: this,
+                pos: new npt.Vector2(30, 30),
+                size: new npt.Vector2(80, 80),
+                color: new npt.Color(0, 255, 0)
+            });
+
+            this.rect3 = new npt.Rect({
+                app: this,
+                pos: new npt.Vector2(40, 40),
+                size: new npt.Vector2(80, 80),
+                color: new npt.Color(0, 0, 255)
+            });
+        }
+    }
+    // Create a new Game
+    new Game();
+</script>

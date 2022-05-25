@@ -1,0 +1,32 @@
+<button id="neptune-play">Play</button>
+<canvas id="neptune-canvas"></canvas>
+<style>
+    * {
+        margin: 0%;
+        padding: 0%;
+        overflow: hidden;
+    }
+</style>
+<script type="module">
+    import * as npt from "https://cdn.jsdelivr.net/npm/@neptune-js/neptune@latest/src/neptune.min.js";
+
+
+    class Game extends npt.Application {
+        constructor() {
+            super();
+            this.poly = new npt.Polygon({
+                app: this,
+                points: [
+                    new npt.Vector2(20, 20),
+                    new npt.Vector2(200, 20),
+                    new npt.Vector2(200, 200),
+                    new npt.Vector2(20, 400)
+                ],
+                color: new npt.Color(255, 0, 0)
+            });
+        }
+    }
+    // Create a new Game
+    new Game();
+
+</script>
