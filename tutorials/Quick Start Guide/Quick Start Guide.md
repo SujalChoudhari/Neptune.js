@@ -20,9 +20,9 @@ This HTML template is the minimum required to render the neptune.js application.
   <body>  
 
     <!-- Game won't start until user clicks on the button -->
-    <button id="__play__">Play</button>
+    <button id="neptune-play">Play</button>
     <!--The canvas where your game will be drawn -->
-    <canvas id="__panel__"></canvas>
+    <canvas id="neptune-canvas"></canvas>
   
     <!--Link the game file into the html -->
 

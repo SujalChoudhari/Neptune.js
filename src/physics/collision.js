@@ -81,4 +81,96 @@ export class Collision{
             rect1.worldPos.y + rect1.size.y < rect2.worldPos.y
         );
     }
+
+    /**
+     * @method
+     * @static
+     * @description Check if a circle is colliding with a convex polygon
+     * @param {Circle} circle - The circle
+     * @param {Polygon} polygon - The convex polygon    
+     * @returns {boolean} - True if the circle and the polygon are colliding. Calculates based on the points of the polygon
+     * 
+     * @example
+     * if (!Collision.circlePolygon(circle, polygon)){
+     *   //do something
+     * }
+     */
+    static circlePolygon(circle, polygon){
+        var point = new Vector2();
+        var closestPoint = new Vector2();
+        var closestPointDistance = Number.MAX_VALUE;
+        var closestPointIndex = 0;
+        var closestPointDistanceSquared = 0;
+        var circleDistanceX = 0;
+        var circleDistanceY = 0;
+        var circleDistanceSquared = 0;
+        var circleDistance = 0;
+        var polygonPoints = polygon.points;
+        var polygonPointsLength = polygonPoints.length;
+        var i = 0;
+        for (i = 0; i < polygonPointsLength; i++) {
+            point.x = polygonPoints[i].x;
+            point.y = polygonPoints[i].y;
+            circleDistanceX = circle.worldPos.x - point.x;
+            circleDistanceY = circle.worldPos.y - point.y;
+            circleDistanceSquared = circleDistanceX * circleDistanceX + circleDistanceY * circleDistanceY;
+            if (circleDistanceSquared < closestPointDistanceSquared) {
+                closestPointDistanceSquared = circleDistanceSquared;
+                closestPointIndex = i;
+            }
+        }
+        closestPoint.x = polygonPoints[closestPointIndex].x;
+        closestPoint.y = polygonPoints[closestPointIndex].y;
+        circleDistanceX = circle.worldPos.x - closestPoint.x;
+        circleDistanceY = circle.worldPos.y - closestPoint.y;
+        circleDistance = Math.sqrt(circleDistanceX * circleDistanceX + circleDistanceY * circleDistanceY);
+        return circleDistance < circle.radius;
+    }
+
+    /**
+     * @method  
+     * @static
+     * @description Check if a rectangle and a convex polygon are colliding. Calculates based of the points of the polygon
+     * @param {Rect} rect - The rectangle   
+     * @param {Polygon} polygon - The convex polygon    
+     * @returns {boolean} - True if the rectangle and the polygon are colliding
+     * 
+     * @example
+     * if (!Collision.rectPolygon(rect, polygon)){
+     *  //do something
+     * }
+     */
+    static rectPolygon(rect, polygon){
+        var rectPoints = rect.points;
+        var polygonPoints = polygon.points;
+        var rectPointsLength = rectPoints.length;
+        var polygonPointsLength = polygonPoints.length;
+        var i = 0;
+        var j = 0;
+        var rectPoint = new Vector2();
+        var polygonPoint = new Vector2();
+        var rectPointDistance = 0;
+        var polygonPointDistance = 0;
+        var rectPointDistanceSquared = 0;
+        var polygonPointDistanceSquared = 0;
+        var rectPointDistanceSquared = 0;
+        for (i = 0; i < rectPointsLength; i++) {
+            rectPoint.x = rectPoints[i].x;
+            rectPoint.y = rectPoints[i].y;
+            for (j = 0; j < polygonPointsLength; j++) {
+                polygonPoint.x = polygonPoints[j].x;
+                polygonPoint.y = polygonPoints[j].y;
+                rectPointDistanceX = rectPoint.x - polygonPoint.x;
+                rectPointDistanceY = rectPoint.y - polygonPoint.y;
+                rectPointDistanceSquared = rectPointDistanceX * rectPointDistanceX + rectPointDistanceY * rectPointDistanceY;
+                if (rectPointDistanceSquared < rectPointDistanceSquared) {
+                    rectPointDistanceSquared = rectPointDistanceSquared;
+                }
+            }
+            if (rectPointDistanceSquared > 0) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
