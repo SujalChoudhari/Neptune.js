@@ -22,7 +22,7 @@
 		"recurse": true,
 		"readme": "README.md",
 		"theme_opts": {
-			"favicon":"https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/favicon.ico",
+			"favicon":"./images/favicon.ico",
 			"sections": [
 				"Tutorials",
 				"Classes",
@@ -30,7 +30,7 @@
 				"Menu"
 			],
 			"theme": "dark",
-			"static_dir":["./examples"],
+			"static_dir":["./examples","./images"],
 			"add_scripts": " document.title = 'Neptune.js Documentation';",
 			"title": "Neptune.js",
 			"footer": "MIT 2022 © Sujal Choudhari.",

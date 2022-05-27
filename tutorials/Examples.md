@@ -9,6 +9,7 @@ Here are few Examples of how to use the library to do simple tasks.
 * [Polygon](#polygon) - Render a polygon
 * [Rect](#rect) - Render a rectangle
 * [Spritesheet](#spritesheet) - Render images through spritesheets
+* [Text](#text) - Render text
 * [WireGrid](#wiregrid) - Render a wireframe grid
 * [Wires](#wires) - Render wireframes for definite geometry
 
@@ -317,7 +318,35 @@ new Game();
 <p align="center">
 <iframe src="examples/rect.html"  height="333" width="333" scrolling="no"></iframe>
 
+# Text
+Text Class allows you to create text. Simple HTML5 canvas text is supported.
 
+### Code
+```javascript
+import * as npt from "https://cdn.jsdelivr.net/npm/@neptune-js/neptune@latest/src/neptune.min.js";
+
+
+class Game extends npt.Application {
+	constructor() {
+		super();
+		this.text = new npt.Text({
+			text: "Hello World",
+			pos : new npt.Vector2(100, 100),
+			w: 300,
+			h:30,
+			font: "30px Arial",
+			align: "center",
+			app:    this
+		})
+	}
+}
+// Create a new Game
+new Game();
+
+```
+### Output
+<p align="center">
+<iframe src="examples/text.html"  height="333" width="333" scrolling="no"></iframe>
 
 # Spritesheet
 ## Code
@@ -372,10 +401,82 @@ new Game();
 
 
 # WireGrid
+Wiregrid is a Gizmo that can be used to draw a grid on the screen.
+Wire grid is necessary to get positions of objects.
+
+## Code
+```javascript
+import * as npt from "https://cdn.jsdelivr.net/npm/@neptune-js/neptune@latest/src/neptune.min.js";
+
+
+class Game extends npt.Application {
+	constructor() {
+		super();
+		this.grid = new npt.WireGrid({
+			color: npt.Color.fromRGBA(0, 0, 0, 0.3),
+			size: this.width,
+			space: 100,
+			app: this
+		});
+		this.grid2 = new npt.WireGrid({
+			color: npt.Color.fromRGBA(0, 0, 0, 0.3),
+			size: this.width,
+			space: 10,
+			app: this
+		});
+	}
+}
+// Create a new Game
+new Game();
+```
+## Output
 <p align="center">
 <iframe src="examples/wiregrid.html"  height="333" width="333" scrolling="no"></iframe>
 
+
+
 # Wires
+All the Gizmos are used to get a wireframe of any dimentions.
+Wiregrids or wire shapes can be used to debug vectors, or as an placeholder asset for objects.
+## Code
+```javascript
+import * as npt from "https://cdn.jsdelivr.net/npm/@neptune-js/neptune@latest/src/neptune.min.js";
+class Game extends npt.Application {
+	constructor() {
+		super();
+		this.grid = new npt.WireGrid({
+			color: npt.Color.fromRGBA(0, 0, 0, 0.3),
+			size: this.width,
+			space: 100,
+			app: this
+		});
+
+		this.wireRect = new npt.WireRect({
+			color: npt.Color.fromRGBA(0, 0, 0, 0.3),
+			pos: new npt.Vector2(10, 10),
+			size: new npt.Vector2(40, 40),
+			app: this
+		});
+
+		this.circle = new npt.WireCircle({
+			color: npt.Color.fromRGBA(0, 0, 0, 0.3),
+			pos: new npt.Vector2(this.width / 2, this.height / 2),
+			radius: this.width / 6,
+			app: this
+		});
+
+		this.vectr = new npt.WireLine({
+			color: npt.Color.fromRGBA(255, 0, 0, 0.4),
+			start: new npt.Vector2(100, 100),
+			end: new npt.Vector2(200, 300),
+			app: this
+		});
+	}
+}
+// Create a new Game
+new Game();
+```
+## Output
 <p align="center">
 <iframe src="examples/wires.html"  height="333" width="333" scrolling="no"></iframe>
 
