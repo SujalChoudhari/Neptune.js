@@ -4,6 +4,10 @@
  * @classdesc Class for managing cookies.
  * @hideconstructor
  * 
+ * 
+ * @since 1.0.0
+ * @author Sujal Choudhari <sjlchoudhari@gmail.com>
+ * @license MIT
  */
 export class Cookies {
 

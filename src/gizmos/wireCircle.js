@@ -9,9 +9,9 @@ import { Vector2 } from "../maths/vec2.js";
  * @classdesc Creates a wire circle
  * 
  * @param {Object} kwargs - Keyword arguments
- * @param {Color} kwargs.color - Color of the wire
- * @param {Vector2} kwargs.pos - Position of the wire
- * @param {Number} kwargs.radius - Radius of the wire
+ * @param {Color} [kwargs.color=Color.fuchsia] - Color of the wire
+ * @param {Vector2} [kwargs.pos=Vector2(0,0)] - Position of the wire
+ * @param {Number} [kwargs.radius=100] - Radius of the wire
  * 
  * @example
  * // Create a new WireCircle
@@ -21,6 +21,11 @@ import { Vector2 } from "../maths/vec2.js";
  *      radius: 20,
  *      app: this
  *  });
+ * 
+ * 
+ * @since 1.0.0
+ * @author Sujal Choudhari <sjlchoudhari@gmail.com>
+ * @license MIT
  */
 export class WireCircle extends Entity {
     constructor(kwargs) {

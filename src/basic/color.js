@@ -7,6 +7,10 @@
  * @property {Number} b The blue component of the color.
  * @property {Number} a The alpha component of the color.
  * 
+ * 
+ * @since 1.0.0
+ * @author Sujal Choudhari <sjlchoudhari@gmail.com>
+ * @license MIT
  */
 export class Color {
 
@@ -15,7 +19,7 @@ export class Color {
      * @param {Number} r The red component of the color.
      * @param {Number} g The green component of the color.
      * @param {Number} b The blue component of the color.
-     * @param {Number} a The alpha component of the color.(Optional)
+     * @param {Number} [a=1] The alpha component of the color
      * 
      * @example
      * let color = new Color(255, 0, 0, 1);

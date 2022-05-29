@@ -9,9 +9,9 @@ import { Vector2 } from "../maths/vec2.js";
  * @extends Entity
  * @classdesc Creates Grid of wires
  * @pr {Object} kwargs - Keyword arguments
- * @param {Color} kwargs.color - Color of the grid
- * @param {Number} kwargs.size - Size of the grid
- * @param {Number} kwargs.space - Space between each wire
+ * @param {Color} [kwargs.color=Color.fuchsia] - Color of the grid
+ * @param {Number} [kwargs.size=200] - Size of the grid
+ * @param {Number} [kwargs.space=10] - Space between each wire
  * 
  * @example
  * // Create a new WireGrid
@@ -21,6 +21,11 @@ import { Vector2 } from "../maths/vec2.js";
  *      space: 100,
  *      app: this
  *  });
+ * 
+ * 
+ * @since 1.0.0
+ * @author Sujal Choudhari <sjlchoudhari@gmail.com>
+ * @license MIT
  */
 export class WireGrid extends Entity {
     constructor(kwargs) {

@@ -9,9 +9,9 @@ import { Vector2 } from "../maths/vec2.js";
  * @classdesc Creates a wire rectangle
  * 
  * @param {Object} kwargs - Keyword arguments
- * @param {Color} kwargs.color - Color of the wire
- * @param {Vector2} kwargs.pos - Position of the wire
- * @param {Vector2} kwargs.size - Size of the wire
+ * @param {Color} [kwargs.color=Color.fuchsia] - Color of the wire
+ * @param {Vector2} [kwargs.pos=Vector2(0,0)] - Position of the wire
+ * @param {Vector2} [kwargs.size=Vector2(100,100)] - Size of the wire
  * 
  * @example
  * // Create a new WireRect
@@ -21,6 +21,11 @@ import { Vector2 } from "../maths/vec2.js";
  *     size: new Vector2(40,40),
  *     app: this
  * });
+ * 
+ * 
+ * @since 1.0.0
+ * @author Sujal Choudhari <sjlchoudhari@gmail.com>
+ * @license MIT
  */
 export class WireRect extends Entity {
     constructor(kwargs) {

@@ -11,6 +11,10 @@
  * // Create a new Keyboard object.
  * let keyboard = new Keyboard();
  * 
+ * 
+ * @since 1.0.0
+ * @author Sujal Choudhari <sjlchoudhari@gmail.com>
+ * @license MIT
  */
 export class Keyboard {
     constructor(canvas) {
@@ -100,9 +104,16 @@ export class Keyboard {
         };
     }
 
+    /**
+     * @event
+     */
     keyDown(e) {
         this.pressedKeys[e.which] = true;
     }
+
+    /**
+     * @event
+     */
     keyUp(e) {
         this.releasedKeys[e.which] = true;
     }
@@ -124,6 +135,7 @@ export class Keyboard {
 
     /**
      * @method
+     * 
      * @description Checks if the specified key is currently pressed.
      * @param {Number} keyCode - The Keycode of the key to check.
      * @returns {Boolean} Whether the key is currently pressed or not.

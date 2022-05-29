@@ -8,7 +8,7 @@ import {Vector2} from "../maths/vec2.js";
  * @extends Transform   
  * 
  * @property {Object} kwargs - The keyword arguments.
- * @property {Boolean} [kwargs.collidable] - Whether the transform is collidable.
+ * @property {Boolean} [kwargs.collidable=true] - Whether the transform is collidable.
  * 
  * @example 
  * // Create a new collidable transform.
@@ -18,6 +18,11 @@ import {Vector2} from "../maths/vec2.js";
  *      rot: 0,
  *      collidable: true
  *   });
+ * 
+ * 
+ * @since 1.0.0
+ * @author Sujal Choudhari <sjlchoudhari@gmail.com>
+ * @license MIT
  */
 export class CollidableTransform extends Transform{
     constructor(kwargs){

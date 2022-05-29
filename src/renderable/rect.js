@@ -6,13 +6,18 @@ import {Color} from "../basic/color.js";
  * @classdesc A Rect is a class that represents a rectangle.
  * @extends Transform
  * @param {Object} kwargs - The keyword arguments.
- * @param {Color} [kwargs.color] - The color.
+ * @param {Color} [kwargs.color=COlor.random()] - The color.
  * 
  * @example
  * // Create a new rectangle.
  * let rect = new Rect({
  *      color: new Color(255, 0, 0)
  * });
+ * 
+ * 
+ * @since 1.0.0
+ * @author Sujal Choudhari <sjlchoudhari@gmail.com>
+ * @license MIT
  */
 export class Rect extends Transform{
     constructor(kwargs){

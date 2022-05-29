@@ -4,6 +4,11 @@
  * 
  * @property {Number} x - The x coordinate.
  * @property {Number} y - The y coordinate.
+ * 
+ * 
+ * @since 1.0.0
+ * @author Sujal Choudhari <sjlchoudhari@gmail.com>
+ * @license MIT
  */
 export class Vector2 {
 

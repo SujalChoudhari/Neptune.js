@@ -6,8 +6,8 @@ import { Color } from "../basic/color.js";
  * @classdesc A Polygon is a class that represents a polygon.
  * @extends Transform
  * @param {Object} kwargs - The keyword arguments.
- * @param {Vector2[]} kwargs.points - The points.
- * @param {Color} [kwargs.color] - The color.
+ * @param {Vector2[]} [kwargs.points=[]] - The points.
+ * @param {Color} [kwargs.color=Color.random()] - The color.
  * 
  * @example
  * // Create a new polygon.
@@ -21,6 +21,10 @@ import { Color } from "../basic/color.js";
  *    color: new Color(255, 0, 0)
  * });
  * 
+ * 
+ * @since 1.0.0
+ * @author Sujal Choudhari <sjlchoudhari@gmail.com>
+ * @license MIT
  */
 export class Polygon extends Transform {
     constructor(kwargs) {

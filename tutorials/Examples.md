@@ -1,18 +1,6 @@
 
 Here are few Examples of how to use the library to do simple tasks.
 
-## Table of Contents
-* [Circles](#circles) - Render circles in a scene
-* [Collision](#collision) - Detect collisions between objects
-* [Cookies](#cookies) - Cookies are a great way to store data
-* [Sprite](#sprite) - Render a sprite
-* [Polygon](#polygon) - Render a polygon
-* [Rect](#rect) - Render a rectangle
-* [Spritesheet](#spritesheet) - Render images through spritesheets
-* [Text](#text) - Render text
-* [WireGrid](#wiregrid) - Render a wireframe grid
-* [Wires](#wires) - Render wireframes for definite geometry
-
 # Html Game Page
 This is the suggested html page fot the pourpose of exploring examples.
 ```html
@@ -88,7 +76,7 @@ new Game();
 
 ## Output
 <p align="center">
-<iframe src="examples/circles.html"  height="333" width="333" scrolling="no"></iframe>
+<iframe src="static/examples/circles.html"  height="333" width="333" scrolling="no"></iframe>
 </p>
 
 # Collision
@@ -170,7 +158,7 @@ new Game();
 
 ## Output
 <p align="center">
-<iframe src="examples/collision.html"  height="333" width="333" scrolling="no"></iframe>
+<iframe src="static/examples/collision.html"  height="333" width="333" scrolling="no"></iframe>
 </p>
 
 
@@ -243,7 +231,7 @@ new Game();
 ```
 ## Output
 <p align="center">
-<iframe src="examples/images.html"  height="333" width="333" scrolling="no"></iframe>
+<iframe src="static/examples/images.html"  height="333" width="333" scrolling="no"></iframe>
 </p>
 
 # Polygon
@@ -275,7 +263,7 @@ new Game();
 
 ## Output
 <p align="center">
-<iframe src="examples/polygon.html"  height="333" width="333" scrolling="no"></iframe>
+<iframe src="static/examples/polygon.html"  height="333" width="333" scrolling="no"></iframe>
 </p>
 
 # Rect
@@ -316,7 +304,7 @@ new Game();
 ```
 ## Output
 <p align="center">
-<iframe src="examples/rect.html"  height="333" width="333" scrolling="no"></iframe>
+<iframe src="static/examples/rect.html"  height="333" width="333" scrolling="no"></iframe>
 
 # Text
 Text Class allows you to create text. Simple HTML5 canvas text is supported.
@@ -346,7 +334,7 @@ new Game();
 ```
 ### Output
 <p align="center">
-<iframe src="examples/text.html"  height="333" width="333" scrolling="no"></iframe>
+<iframe src="static/examples/text.html"  height="333" width="333" scrolling="no"></iframe>
 
 # Spritesheet
 ## Code
@@ -397,7 +385,47 @@ new Game();
 ```
 ## Output
 <p align="center">
-<iframe src="examples/spritesheet.html"  height="333" width="333" scrolling="no"></iframe>
+<iframe src="static/examples/spritesheet.html"  height="333" width="333" scrolling="no"></iframe>
+
+
+# SpriteSheet Animation
+SpriteSheet Animation Class allows you to create animations from a spritesheet.
+One Animation per sheet. 
+## Code
+```javascript
+import * as npt from "../../src/neptune.js";
+
+
+class Game extends npt.Application {
+	constructor() {
+		super();
+		this.spritesheet = new npt.SpriteSheetAnimation({
+			src: "https://toppng.com/uploads/preview/spelunky-sprite-sheet-11562984861xfrhfytweq.png",
+			pos: new npt.Vector2(0, 0),
+			size: new npt.Vector2(200,200),
+			name:"test",
+		});
+
+		// this.spritesheet.addSprite("test",0,0,840/12,859/12);
+		this.spritesheet.addRow( 0, 0, 840/12,859/12,9);
+		this.spritesheet.startTimedAnimation(20);
+	}
+
+	update() {
+		super.update();
+	}
+	draw(ctx) {
+		this.spritesheet.draw(ctx,10,20);
+	}
+}
+// Create a new Game
+new Game();
+```
+
+## Output
+<p align="center">
+<iframe src="static/examples/spritesheetAnim.html"  height="333" width="333" scrolling="no"></iframe>
+
 
 
 # WireGrid
@@ -431,7 +459,7 @@ new Game();
 ```
 ## Output
 <p align="center">
-<iframe src="examples/wiregrid.html"  height="333" width="333" scrolling="no"></iframe>
+<iframe src="static/examples/wiregrid.html"  height="333" width="333" scrolling="no"></iframe>
 
 
 
@@ -478,7 +506,7 @@ new Game();
 ```
 ## Output
 <p align="center">
-<iframe src="examples/wires.html"  height="333" width="333" scrolling="no"></iframe>
+<iframe src="static/examples/wires.html"  height="333" width="333" scrolling="no"></iframe>
 
 
 

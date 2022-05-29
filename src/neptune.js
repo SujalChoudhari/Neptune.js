@@ -8,9 +8,9 @@ import {Color} from "./basic/color.js";
 import {Cookies} from "./basic/cookies.js";
 
 //Events
-import {Mouse} from "./events/mouse.js";
+import {Pointer} from "./events/pointer.js";
 import {Keyboard} from "./events/keyboard.js";
-import { Touch } from "./events/touch.js";
+import { CustomEvent } from "./events/custom_event.js";
 
 //maths
 import {Vector2} from "./maths/vec2.js";
@@ -27,6 +27,7 @@ import {Sprite}  from "./renderable/image.js";
 import {Polygon} from "./renderable/polygon.js";
 import {Rect} from "./renderable/rect.js";
 import {SpriteSheet} from "./renderable/spritesheet.js";
+import { SpriteSheetAnimation } from "./renderable/spritesheet_anim.js";
 import {Triangle} from "./renderable/triangle.js";
 
 import { WireGrid} from "./gizmos/wireGrid.js";
@@ -45,13 +46,13 @@ export {
     
     Entity,Sound,Color,Cookies,
 
-    Mouse,Keyboard,Touch,
+    Pointer,Keyboard,CustomEvent,
 
     Vector2,Transform,CollidableTransform,
 
     Collision,Kinematic,
 
-    Circle,Sprite,SpriteSheet,Triangle,Polygon,Rect,
+    Circle,Sprite,SpriteSheet,SpriteSheetAnimation,Triangle,Polygon,Rect,
     
     WireGrid,WireRect,WireCircle,WireLine,
     

@@ -6,19 +6,23 @@ import {Color} from "../basic/color.js";
  * @classdesc A Text is a class that represents a text.
  * @extends Transform
  * @param {Object} kwargs - The keyword arguments.
- * @param {String} kwargs.text - The text.
- * @param {Color} [kwargs.color] - The color.
- * @param {Number} kwargs.font - The font size.
- * @param {Number} kwargs.align - The alignment.
+ * @param {String} [kwargs.text=""] - The text.
+ * @param {Color} [kwargs.color=Color.random()] - The color.
+ * @param {String} [kwargs.font=""] - The font size.
+ * @param {String} [kwargs.align="center"] - The alignment.
  * 
  * @example
  * // Create a text.
  * let text = new Text({
- *      "text": "Hello World",
- *      "color": Color.random(),
- *      "font": "30px Arial",
- *      "align": "center"
+ *      text: "Hello World",
+ *      color: Color.random(),
+ *      font: "30px Arial",
+ *      align: "center"
  * });
+ * 
+ * @since 1.0.0
+ * @author Sujal Choudhari <sjlchoudhari@gmail.com>
+ * @license MIT
  */
 export class Text extends Transform{
     constructor(kwargs){

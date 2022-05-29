@@ -7,15 +7,20 @@
  * @property {String} kwargs.name - The name of the entity.
  * @property {Entity} kwargs.parent - The parent entity.
  * @property {Application} kwargs.application - The application.
+ * 
+ * 
+ * @since 1.0.0
+ * @author Sujal Choudhari <sjlchoudhari@gmail.com>
+ * @license MIT
  */
 export class Entity {
     /**
      * @method
      * @description Creates a new Entity object.
      * @param {Object} kwargs - The keyword arguments.
-     * @param {String} kwargs.name - The name of the entity.
-     * @param {Entity} kwargs.parent - The parent entity.
-     * @param {Application} kwargs.app - The application.
+     * @param {String} [kwargs.name = "Entity"] - The name of the entity.
+     * @param {Entity} [kwargs.parent=null] - The parent entity.
+     * @param {Application} [kwargs.app=null] - The application.
      * 
      * @example
      * // Create a new Entity object.

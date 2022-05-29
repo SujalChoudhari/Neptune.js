@@ -14,6 +14,11 @@ import { Transform } from "../maths/transform.js";
  *      pos: new Vector2(10, 10),
  *      size: new Vector2(10, 10)
  * });
+ * 
+ * 
+ * @since 1.0.0
+ * @author Sujal Choudhari <sjlchoudhari@gmail.com>
+ * @license MIT
  */
 export class Sprite extends Transform {
     constructor(kwargs) {

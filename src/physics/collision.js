@@ -3,6 +3,10 @@
  * @classdesc A class for collision detection
  * @static
  * 
+ * 
+ * @since 1.0.0
+ * @author Sujal Choudhari <sjlchoudhari@gmail.com>
+ * @license MIT
  */
 export class Collision{
 

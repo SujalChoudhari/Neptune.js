@@ -1,18 +1,23 @@
 import {CollidableTransform} from "../physics/collidable_transform.js";
 import {Color} from "../basic/color.js";
 import {Text} from "./text.js";
-import {Mouse} from "../events/mouse.js";
+import {Pointer} from "../events/pointer.js";
 
 /**
  * @class Button
  * @classdesc A Button is a class that represents a button.
  * @extends CollidableTransform
  * @param {Object} kwargs - The keyword arguments.
- * @param {String} kwargs.text - The text.
- * @param {Color} [kwargs.color] - The color.
- * @param {Number} kwargs.font - The font size.
- * @param {Number} kwargs.align - The alignment.
- * @param {Color} [kwargs.bgColor] - The background color.
+ * @param {String} [kwargs.text=""] - The text.
+ * @param {Color} [kwargs.color=Color.random()] - The color.
+ * @param {String} [kwargs.font=""] - The font.
+ * @param {String} [kwargs.align="center"] - The alignment.
+ * @param {Color} [kwargs.bgColor=null] - The background color.
+ * 
+ * 
+ * @since 1.0.0
+ * @author Sujal Choudhari <sjlchoudhari@gmail.com>
+ * @license MIT
  */
 export class Button extends CollidableTransform {
     constructor(kwargs) {
@@ -34,7 +39,7 @@ export class Button extends CollidableTransform {
     /**
      * @method
      * @description Checks if the button is Clicked.
-     * @param {Mouse} mouse - The mouse.
+     * @param {Pointer} mouse - The mouse.
      * @returns {Boolean} - True if the button is clicked.
      * 
      * @example
@@ -71,7 +76,7 @@ export class Button extends CollidableTransform {
     /**
      * @method
      * @description Checks if the button is pressed.
-     * @param {Mouse} mouse - The mouse.
+     * @param {Pointer} mouse - The mouse.
      * @returns {Boolean} - True if the button is pressed.
      * 
      * @example

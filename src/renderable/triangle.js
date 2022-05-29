@@ -7,7 +7,8 @@ import { Vector2 } from "../maths/vec2.js";
  * @classdesc A Triangle is a class that represents a triangle.
  * @extends Transform
  * @param {Object} kwargs - The keyword arguments.
- * @param {Vector2<Vector2>} kwargs.points - The points.
+ * @param {Color} [kwargs.color=Color.random()] - The color.
+ * @param {Vector2<Vector2>} [kwargs.points=[]] - The points.
  * 
  * @example
  * // Create a new triangle.
@@ -19,6 +20,11 @@ import { Vector2 } from "../maths/vec2.js";
  *   ],
  *   color: new Color(255, 0, 0)
  * });
+ * 
+ * 
+ * @since 1.0.0
+ * @author Sujal Choudhari <sjlchoudhari@gmail.com>
+ * @license MIT
  */
 export class Triangle extends Transform {
     constructor(kwargs) {

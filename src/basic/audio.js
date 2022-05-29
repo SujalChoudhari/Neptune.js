@@ -9,6 +9,10 @@
  * @property {Boolean} playing - Whether the audio file is currently playing or not.
  * @property {Audio} audio - The js-audio element.
  * 
+ * 
+ * @since 1.0.0
+ * @author Sujal Choudhari <sjlchoudhari@gmail.com>
+ * @license MIT
  */
 export class Sound {
 
@@ -18,8 +22,8 @@ export class Sound {
      * @param {Object} kwargs - The keyword arguments.
      * @param {String} kwargs.src - The path to the audio file.
      * @param {String} kwargs.name - The name of the audio file.
-     * @param {Number} kwargs.volume - The volume of the audio file.
-     * @param {Boolean} kwargs.loop - Whether the audio file should loop or not.
+     * @param {Number} [kwargs.volume=1] - The volume of the audio file.
+     * @param {Boolean} [kwargs.loop=false] - Whether the audio file should loop or not.
      * 
      * @example
      * // Create a new Sound object.
@@ -35,6 +39,7 @@ export class Sound {
         this.src = kwargs["src"];
         this.volume = kwargs["volume"] || 1;
         this.loop = kwargs["loop"] || false;
+        
         this.playing = false;
         this.audio = new Audio(this.src);
         this.audio.volume = this.volume;

@@ -74,18 +74,18 @@
 <script type="module">
     import * as npt from "https://cdn.jsdelivr.net/npm/@neptune-js/neptune@latest/src/neptune.min.js";
 
-
     class Game extends npt.Application {
         constructor() {
             super();
             this.spritesheet = new npt.SpriteSheet({
                 src: "https://toppng.com/uploads/preview/spelunky-sprite-sheet-11562984861xfrhfytweq.png",
                 pos: new npt.Vector2(0, 0),
-                size: new npt.Vector2(16, 16)
+                size: new npt.Vector2(16, 16),
+                name: 'test'
             });
 
             // this.spritesheet.addSprite("test",0,0,840/12,859/12);
-            this.spritesheet.addGrid("test", 0, 0, 840 / 12, 859 / 12, 12, 12);
+            this.spritesheet.addGrid( 0, 0, 840 / 12, 859 / 12, 12, 12);
         }
 
         init() {

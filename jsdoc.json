@@ -22,18 +22,13 @@
 		"recurse": true,
 		"readme": "README.md",
 		"theme_opts": {
-			"favicon":"./images/favicon.ico",
-			"sections": [
-				"Tutorials",
-				"Classes",
-				"Global",
-				"Menu"
-			],
+			"favicon":"./static/images/favicon.ico",
+
 			"theme": "dark",
-			"static_dir":["./examples","./images"],
-			"add_scripts": " document.title = 'Neptune.js Documentation';",
+			"static_dir":["./static"],
+			"add_scripts": "document.title = 'Neptune.js Documentation';",
 			"title": "Neptune.js",
-			"footer": "MIT 2022 © Sujal Choudhari.",
+			"footer": "MIT License | Copyright (c) 2022 Sujal Choudhari",
 			"menu": [
 				{
 					"title": "Github",

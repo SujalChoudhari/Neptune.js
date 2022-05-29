@@ -7,7 +7,8 @@ Neptune is still under development,
 Soon after testing the modules, 
 it will be released as a stable version.
 Thanks for your patience.
-<a href="https://GitHub.com/Notsujal/neptune.js"> Follow along the development </a>
+<a href="https://GitHub.com/Notsujal/neptune.js"> Follow along the development </a> or check out the <a href="
+https://neptune-js.vercel.app/"> documentation </a>
 </p>
 
 ## What is Neptune.js?

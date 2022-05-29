@@ -5,8 +5,8 @@ import { Color } from "../basic/color.js";
  * @classdesc A Circle is a class that represents a circle.
  * @extends Transform
  * @param {Object} kwargs - The keyword arguments.
- * @param {Number} kwargs.radius - The radius.
- * @param {Color} [kwargs.color] - The color.
+ * @param {Number} [kwargs.radius=1] - The radius.
+ * @param {Color} [kwargs.color=Color.random()] - The color.
  * 
  * @example
  * // Create a new circle.
@@ -14,6 +14,11 @@ import { Color } from "../basic/color.js";
  *     radius: 10,
  *     color: new Color(255, 0, 0)
  * });
+ * 
+ * 
+ * @since 1.0.0
+ * @author Sujal Choudhari <sjlchoudhari@gmail.com>
+ * @license MIT
  * 
  */
 export class Circle extends Transform {

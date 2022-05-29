@@ -9,9 +9,11 @@ import { Vector2 } from "../maths/vec2.js";
  * @classdesc Creates a line 
  * 
  * @param {Object} kwargs - Keyword arguments
- * @param {Color} kwargs.color - Color of the wire
- * @param {Vector2} kwargs.start - Position of the wire
- * @param {Vector2} kwargs.end - Position of the wire
+ * @param {Color} [kwargs.color=Color.fuchsia] - Color of the wire
+ * @param {Vector2} [kwargs.start=Vector2(0,0)] - Position of the wire (Optional with pos1)
+ * @param {Vector2} [kwargs.end=Vector2(0,0)]- Position of the wire (Optional with pos2)
+ * @param {Vector2} [kwargs.pos1=Vector2(0,0)] - Position of the wire
+ * @param {Vector2} [kwargs.pos2=Vector2(0,0)]- Position of the wire
  * 
  * @example
  * // Create a new WireLine
@@ -22,6 +24,10 @@ import { Vector2 } from "../maths/vec2.js";
  *      app: this
  * });
  * 
+ * 
+ * @since 1.0.0
+ * @author Sujal Choudhari <sjlchoudhari@gmail.com>
+ * @license MIT
  */
 export class WireLine extends Entity {
     constructor(kwargs) {

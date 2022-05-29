@@ -22,6 +22,10 @@ import { Color } from "./basic/color.js";
  * @property {Array.<Entity>} entities - The array of entities.
  * 
  * @tutorial Quick Start Guide
+ * 
+ * @since 1.0.0
+ * @author Sujal Choudhari <sjlchoudhari@gmail.com>
+ * @license MIT
  */
 export class Application {
     /**
