@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/NotSujal/Neptune.js/main/images/logo_big.png" />
+  <img src="https://raw.githubusercontent.com/NotSujal/Neptune.js/main/static/images/logo_big.png" />
 </p>
 
 <p align="center">
