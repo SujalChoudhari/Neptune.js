@@ -27,7 +27,7 @@ import {Sprite}  from "./renderable/image.js";
 import {Polygon} from "./renderable/polygon.js";
 import {Rect} from "./renderable/rect.js";
 import {SpriteSheet} from "./renderable/spritesheet.js";
-import { SpriteSheetAnimation } from "./renderable/spritesheet_anim.js";
+import {SpriteSheetAnimation} from "./renderable/spritesheet_animation.js";
 import {Triangle} from "./renderable/triangle.js";
 
 import { WireGrid} from "./gizmos/wireGrid.js";

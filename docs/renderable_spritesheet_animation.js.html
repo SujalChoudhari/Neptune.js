@@ -39,7 +39,7 @@
 
 
     <title>
-      gizmos/wireGrid.js
+      renderable/spritesheet_animation.js
     </title>
 
     <!--[if lt IE 9]>
@@ -106,7 +106,7 @@
     <div id="main" class="main-content">
       
       <h1 id='page-title' class="page-title">
-        gizmos/wireGrid.js
+        renderable/spritesheet_animation.js
       </h1>
       
 
@@ -117,66 +117,112 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>import { Color } from "../basic/color.js";
-import { Entity } from "../basic/entity.js";
-import { Vector2 } from "../maths/vec2.js";
+            <pre class="prettyprint source linenums"><code>import { SpriteSheet } from "./spritesheet.js";
 
 
 
 /**
- * @class WireGrid
- * @extends Entity
- * @classdesc Creates Grid of wires
- * @pr {Object} kwargs - Keyword arguments
- * @param {Color} [kwargs.color=Color.fuchsia] - Color of the grid
- * @param {Number} [kwargs.size=200] - Size of the grid
- * @param {Number} [kwargs.space=10] - Space between each wire
+ * @class SpriteSheetAnimation
+ * @description A SpriteSheetAnimation is a collection of sprites that can be animated.
+ * @param {Object} kwargs - A dictionary of keyword arguments passed to the constructor
  * 
  * @example
- * // Create a new WireGrid
- * let grid = new WireGrid({
- *      color: Color.fromRGBA(0,0,0,0.3),
- *      size: this.width,
- *      space: 100,
- *      app: this
- *  });
+ * // Create a new SpriteSheetAnimation.
+ * let spriteSheetAnimation = new SpriteSheetAnimation({
+ *     src: "assets/spritesheet.png",
+ *     pos: new Vector2(0, 0),
+ *     size: new Vector2(100, 100),
+ *     name: "SpriteSheetAnimation",
+ *   });
  * 
  * 
- * @since 1.0.0
+ * @since 1.1.2
  * @author Sujal Choudhari &lt;sjlchoudhari@gmail.com>
- * @license MIT
+ * 
  */
-export class WireGrid extends Entity {
+export class SpriteSheetAnimation extends SpriteSheet {
+
+    /**
+     * @method
+     * @description Constructs a new SpriteSheetAnimation.
+     */
     constructor(kwargs) {
         super(kwargs);
-        this.color = kwargs["color"] || Color.fuchsia;
-        this.size = kwargs["size"] || 200;
-        this.space = kwargs["space"] || 10;
+        this.currentFrame = 0;
     }
 
     /**
      * @method
-     * @description Draws the grid
-     * @param {CanvasRenderingContext2D} ctx - Canvas context
+     * @description Prepare next frame of animation.
      * 
      * @example
-     * // Draw the grid
-     * grid.draw(ctx);
+     * // Prepare next frame of animation.
+     * spriteSheetAnimation.nextFrame();
+     * 
      * 
      */
-    draw(ctx) {
-        super.draw(ctx);
-        ctx.strokeStyle = this.color.toString();
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        for (let i = 0; i &lt; this.size; i += this.space) {
-            ctx.moveTo(i, 0);
-            ctx.lineTo(i, this.size);
-            ctx.moveTo(0, i);
-            ctx.lineTo(this.size, i);
+    nextFrame() {
+        this.currentFrame++;
+        if (this.currentFrame >= Object.keys(this.sprites).length) {
+            this.currentFrame = 0;
         }
-        ctx.stroke();
+    }
 
+
+    /**
+     * @method
+     * @description Start a timed animation loop
+     * @param {Number} fps - The frames per second.
+     * 
+     * @example
+     * // Start a timed animation loop.
+     * init(){
+     *      spriteSheetAnimation.startTimedAnimation(10);
+     * }
+     */
+    startTimedAnimation(fps){
+        this.currentFrame++;
+        if (this.currentFrame >= Object.keys(this.sprites).length) {
+            this.currentFrame = 0;
+        }
+        setTimeout(() => {
+            this.startTimedAnimation(fps);
+        },  1000/fps);
+    }
+
+
+    /**
+     * @method
+     * @description Reset the animation to the first frame.
+     * 
+     * @example
+     * // Reset the animation to the first frame.
+     * spriteSheetAnimation.reset();
+     * 
+     * 
+     */
+    reset(){
+        this.currentFrame = 0;
+    }
+
+    /**
+     * @method
+     * @description Draw the animation.
+     * @param {CanvasRenderingContext2D} ctx - The canvas context.
+     * @param {Number} x - The x position.
+     * @param {Number} y - The y position.
+     * 
+     * @example
+     * // Draw the animation.
+     * draw(ctx){
+     *      super.draw(ctx);
+     *      spriteSheetAnimation.draw(ctx, 10,20);
+     * }
+     * 
+     * 
+     */
+    draw(ctx,x,y) {
+        super.draw(ctx,`${this.name}_${this.currentFrame}`, x,y);
     }
 }</code></pre>
         </article>

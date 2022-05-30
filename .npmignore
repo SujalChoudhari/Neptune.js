@@ -5,6 +5,7 @@ examples/
 images/
 node_modules/
 tutorials/
+static/
 
 #Files
 .gitignore
