@@ -5,18 +5,36 @@
 <p align="center">
 <br>
 GitHub Stats: <br>
+<a href="https://neptune-js.vercel.app">
 <img src="https://badgen.net/github/stars/notsujal/neptune.js"/>
 <img src="https://badgen.net/github/forks/notsujal/neptune.js"/>
 <img src="https://badgen.net/github/tags/notsujal/neptune.js"/>
+</a>
+<br>
+<br>
+Contributors: <br>
+<a href="https://neptune-js.vercel.app">
+<img src="https://badgen.net/github/contributors/notsujal/neptune.js"/>
+</a>
+<br>
+<a href="https://github.com/NotSujal/Neptune.js/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=NotSujal/Neptune.js" />
+</a>
+
 <br>
 <br>
 Releases: <br>
+<a href="https://neptune-js.vercel.app">
 <img src="https://badgen.net/github/tag/notsujal/neptune.js"/>
 <img src="https://badgen.net/github/releases/notsujal/neptune.js"/>
 <img src="https://badgen.net/github/license/notsujal/neptune.js"/>
 <br>
 <br>
+</a>
+
+<p align="center">
 Issues: <br>
+<a href="https://neptune-js.vercel.app">
 <img src="https://badgen.net/github/issues/notsujal/neptune.js"/>
 <img src="https://badgen.net/github/closed-issues/notsujal/neptune.js"/>
 <img src="https://badgen.net/github/open-issues/notsujal/neptune.js"/>
@@ -25,7 +43,7 @@ Issues: <br>
 <img src="https://badgen.net/github/label-issues/Notsujal/neptune.js/help wanted"/>
 <img src="https://badgen.net/github/label-issues/Notsujal/neptune.js/fixed"/>
 <img src="https://badgen.net/github/label-issues/Notsujal/neptune.js/bug"/>
-
+</a>
 
 
 
