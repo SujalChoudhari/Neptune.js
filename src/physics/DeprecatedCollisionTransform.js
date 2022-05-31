@@ -1,15 +1,14 @@
-import {Transform} from "../maths/transform.js";
-import {Vector2} from "../maths/vec2.js";
+import { Transform } from "../maths/transform.js";
+import { Vector2 } from "../maths/vec2.js";
 
 
 /**
  * @class CollidableTransform
  * @classdesc Transform that can collide.
  * @extends Transform   
- * 
+ * @deprecated Use Physics/Collision Instead.
  * @property {Object} kwargs - The keyword arguments.
  * @property {Boolean} [kwargs.collidable=true] - Whether the transform is collidable.
- * 
  * @example 
  * // Create a new collidable transform.
  * let collidableTransform = new CollidableTransform({
@@ -24,8 +23,8 @@ import {Vector2} from "../maths/vec2.js";
  * @author Sujal Choudhari <sjlchoudhari@gmail.com>
  * @license MIT
  */
-export class CollidableTransform extends Transform{
-    constructor(kwargs){
+export class CollidableTransform extends Transform {
+    constructor(kwargs) {
         super(kwargs);
         this.collidable = kwargs["collidable"] || true;
     }
@@ -38,7 +37,7 @@ export class CollidableTransform extends Transform{
      * @param {Number} deltaTime - The time since the last update.
      * 
      */
-    update(deltaTime){
+    update(deltaTime) {
         super.update(deltaTime);
     }
 
@@ -55,7 +54,7 @@ export class CollidableTransform extends Transform{
      *     // Do something.
      * }
      */
-    containsPoint(x,y){
+    containsPoint(x, y) {
         return x >= this.worldPos.x && x <= this.worldPos.x + this.size.x && y >= this.worldPos.y && y <= this.worldPos.y + this.size.y;
     }
 
@@ -73,8 +72,8 @@ export class CollidableTransform extends Transform{
      * }
      * 
      */
-    checkCollisionPoint(point){
-        return this.collidable && this.containsPoint(point.x,point.y);
+    checkCollisionPoint(point) {
+        return this.collidable && this.containsPoint(point.x, point.y);
     }
 
     /**
@@ -89,18 +88,18 @@ export class CollidableTransform extends Transform{
      * 
      * 
      */
-    getCollisionDirection(rect){
+    getCollisionDirection(rect) {
         let direction = new Vector2(0, 0);
-        if(this.checkCollisionPoint(new Vector2(rect.worldPos.x, rect.worldPos.y))){
+        if (this.checkCollisionPoint(new Vector2(rect.worldPos.x, rect.worldPos.y))) {
             direction.x = 1;
         }
-        if(this.checkCollisionPoint(new Vector2(rect.worldPos.x + rect.size.x, rect.worldPos.y))){
+        if (this.checkCollisionPoint(new Vector2(rect.worldPos.x + rect.size.x, rect.worldPos.y))) {
             direction.x = -1;
         }
-        if(this.checkCollisionPoint(new Vector2(rect.worldPos.x, rect.worldPos.y + rect.size.y))){
+        if (this.checkCollisionPoint(new Vector2(rect.worldPos.x, rect.worldPos.y + rect.size.y))) {
             direction.y = 1;
         }
-        if(this.checkCollisionPoint(new Vector2(rect.worldPos.x + rect.size.x, rect.worldPos.y + rect.size.y))){
+        if (this.checkCollisionPoint(new Vector2(rect.worldPos.x + rect.size.x, rect.worldPos.y + rect.size.y))) {
             direction.y = -1;
         }
         return direction;
@@ -117,12 +116,12 @@ export class CollidableTransform extends Transform{
      * let collisionPoint = transform.getCollisionPoint(rect);
      * 
      */
-    getCollisionPoint(rect){
+    getCollisionPoint(rect) {
         let dir = this.getCollisionDirection(rect);
-        if(dir.x != 0){
+        if (dir.x != 0) {
             return new Vector2(this.worldPos.x + this.size.x, this.worldPos.y + this.size.y / 2);
         }
-        else if(dir.y != 0){
+        else if (dir.y != 0) {
             return new Vector2(this.worldPos.x + this.size.x / 2, this.worldPos.y + this.size.y);
         }
         return new Vector2(0, 0);

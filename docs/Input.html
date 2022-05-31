@@ -39,7 +39,7 @@
 
 
     <title>
-      Vector2
+      Input
     </title>
 
     <!--[if lt IE 9]>
@@ -106,7 +106,7 @@
     <div id="main" class="main-content">
       
       <h1 id='page-title' class="page-title">
-        Vector2
+        Input
       </h1>
       
 
@@ -123,12 +123,12 @@
         
         <h2>
         
-        Vector2
+        Input
         
         </h2>
         
         
-            <div class="class-description"><p>A standard 2D vector.</p></div>
+            <div class="class-description"><p>The Input class is capable of handling keyboard, mouse and touch inputs.</p></div>
         
     
 </header>
@@ -143,9 +143,9 @@
         <h2>Constructor</h2>
     
 
-    <h4 class="name" id="Vector2">
-        <a href="#Vector2">#</a>
-        <span class="type-signature"></span>new Vector2<span class="signature">()</span><span class="type-signature"></span>
+    <h4 class="name" id="Input">
+        <a href="#Input">#</a>
+        <span class="type-signature"></span>new Input<span class="signature">()</span><span class="type-signature"></span>
     </h4>
 
     
@@ -191,13 +191,13 @@
 
         <tr>
             
-                <td class="name"><code>x</code></td>
+                <td class="name"><code>canvas</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">Number</span>
+<span class="param-type">HTMLCanvasElement</span>
 
 
             
@@ -207,7 +207,71 @@
 
             
 
-            <td class="description last"><p>The x coordinate.</p></td>
+            <td class="description last"><p>The canvas element that the input is attached to.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>pos</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The position of the mouse or touch.</p>
+                <h6>Properties</h6>
+<div class="allow-overflow">
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>x</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The x position of the mouse or touch.</p></td>
         </tr>
 
     
@@ -220,6 +284,37 @@
             <td class="type">
             
                 
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The y position of the mouse or touch.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+</div>
+
+            </td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>pressedButton</code></td>
+            
+
+            <td class="type">
+            
+                
 <span class="param-type">Number</span>
 
 
@@ -230,7 +325,214 @@
 
             
 
-            <td class="description last"><p>The y coordinate.</p></td>
+            <td class="description last"><p>The button that is currently pressed.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>isClicked</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Returns true if the button is clicked.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>isDoubleClicked</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Returns true if the button is double clicked.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>isMouseDown</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Returns true if the mouse button is down.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>touchCount</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Returns the number of touches.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>keyPressed</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The key that is currently pressed. (UNICODE)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>specialKeyPressed</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The special key that is currently pressed.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>wheelDelta</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The amount of wheel movement.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>onClick</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The function to call when the button is clicked.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>onDoubleClick</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The function to call when the button is double clicked.</p></td>
         </tr>
 
     
@@ -249,7 +551,7 @@
     
         <div class="details-item-container">
             <dt class="tag-since">Since:</dt>
-            <dd class="tag-since"><ul class="dummy"><li>1.0.0</li></ul></dd>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
         </div>
     
 
@@ -291,7 +593,7 @@
         <div class="details-item-container">
             <dt class="tag-source">Source:</dt>
             <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line1">line 1</a>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line1">line 1</a>
             </li></ul></dd>
         </div>
     
@@ -334,395 +636,23 @@
     
 
     
-
-    
-        <h3 class="subsection-title">Methods</h3>
+        <h3 class="subsection-title">Members</h3>
 
         
             
+<h4 class="name" id=".buttons">
+    <a href="#.buttons">#</a>
+    <span class="type-signature">(static, constant) </span>buttons<span class="type-signature"></span>
+</h4>
 
-    
 
-    <h4 class="name" id="add">
-        <a href="#add">#</a>
-        <span class="type-signature"></span>add<span class="signature">(vec)</span><span class="type-signature"></span>
-    </h4>
 
-    
 
+<div class="description">
+    <p>The button ids for the mouse.</p>
+</div>
 
 
-    <div class="description">
-        <p>Adds a vector to this vector.</p>
-    </div>
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>vec</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The vector to add.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    </div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-source">Source:</dt>
-            <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line41">line 41</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Example</strong>
-        
-    <div class="rel">
-    <pre class="prettyprint"><code>let vec = new Vector2(1, 2);vec.add(new Vector2(2, 3));console.log(vec.x); // 3</code></pre>
-    
-    
-    </div>
-
-    </div>
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="devide">
-        <a href="#devide">#</a>
-        <span class="type-signature"></span>devide<span class="signature">(vec)</span><span class="type-signature"></span>
-    </h4>
-
-    
-
-
-
-    <div class="description">
-        <p>Devides the vector by another vector or a scalar.</p>
-    </div>
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>vec</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-|
-
-<span class="param-type">Number</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The vector or scalar to divide by.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    </div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-source">Source:</dt>
-            <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line107">line 107</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Example</strong>
-        
-    <div class="rel">
-    <pre class="prettyprint"><code>let vec = new Vector2(1, 2);vec.divide(new Vector2(2, 3));console.log(vec.x); // 0.5console.log(vec.y); // 0.6666666666666666let vec = new Vector2(1, 2);vec.divide(2);console.log(vec.x); // 0.5console.log(vec.y); // 1</code></pre>
-    
-    
-    </div>
-
-    </div>
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="distance">
-        <a href="#distance">#</a>
-        <span class="type-signature"></span>distance<span class="signature">(vec)</span><span class="type-signature"></span>
-    </h4>
-
-    
-
-
-
-    <div class="description">
-        <p>Returns the distance between two vectors.</p>
-    </div>
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>vec</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The vector to find the distance to.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    </div>
 
 
 
@@ -737,7 +667,7 @@
     
         <div class="details-item-container">
             <dt class="tag-since">Since:</dt>
-            <dd class="tag-since"><ul class="dummy"><li>1.3.0</li></ul></dd>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
         </div>
     
 
@@ -765,7 +695,7 @@
         <div class="details-item-container">
             <dt class="tag-source">Source:</dt>
             <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line197">line 197</a>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line620">line 620</a>
             </li></ul></dd>
         </div>
     
@@ -784,338 +714,104 @@
 
 
 
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Example</strong>
-        
-    <div class="rel">
-    <pre class="prettyprint"><code>let vec = new Vector2(1, 2);console.log(vec.distance(new Vector2(3, 4))); // 2.8284271247461903</code></pre>
-    
-    
-    </div>
-
-    </div>
-
-
         
             
+<h4 class="name" id=".keyCode">
+    <a href="#.keyCode">#</a>
+    <span class="type-signature">(static, constant) </span>keyCode<span class="type-signature"></span>
+</h4>
 
-    
 
-    <h4 class="name" id="limit">
-        <a href="#limit">#</a>
-        <span class="type-signature"></span>limit<span class="signature">(max)</span><span class="type-signature"></span>
-    </h4>
 
-    
 
-
-
-    <div class="description">
-        <p>Limits the magnitude of the vector.</p>
-    </div>
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>max</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Number</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The maximum magnitude.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    </div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-source">Source:</dt>
-            <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line158">line 158</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Example</strong>
-        
-    <div class="rel">
-    <pre class="prettyprint"><code>let vec = new Vector2(1, 2);vec.limit(2);console.log(vec.magnitude()); // 2</code></pre>
-    
-    
-    </div>
-
-    </div>
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="magnitude">
-        <a href="#magnitude">#</a>
-        <span class="type-signature"></span>magnitude<span class="signature">()</span><span class="type-signature"> &rarr; {Number}</span>
-    </h4>
-
-    
-
-
-
-    <div class="description">
-        <p>Returns the Magnitude of the vector.</p>
-    </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-source">Source:</dt>
-            <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line127">line 127</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container mt-20">
-    <strong>Returns:</strong>
-        
-            
-<div class="param-desc">
-    <p>The magnitude of the vector.</p>
+<div class="description">
+    <p>The key codes for the keyboard.</p>
 </div>
 
 
 
-<dl class="param-type">
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Number</span>
 
 
-    </dd>
+
+
+
+
+<dl class="details">
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line631">line 631</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
 </dl>
 
-            
-    </div>
 
 
 
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Example</strong>
-        
-    <div class="rel">
-    <pre class="prettyprint"><code>let vec = new Vector2(1, 2);console.log(vec.magnitude()); // 2.23606797749979 (root of 5)</code></pre>
-    
-    
-    </div>
 
-    </div>
+
 
 
         
             
+<h4 class="name" id="pos">
+    <a href="#pos">#</a>
+    <span class="type-signature"></span>pos<span class="type-signature"></span>
+</h4>
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="subsection-title">Properties</h5>
 
     
-
-    <h4 class="name" id="multiply">
-        <a href="#multiply">#</a>
-        <span class="type-signature"></span>multiply<span class="signature">(vec)</span><span class="type-signature"></span>
-    </h4>
-
-    
-
-
-
-    <div class="description">
-        <p>Multiplies a vector or a Scalar by this vector.</p>
-    </div>
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
+<div class="allow-overflow">
+<table class="props">
     <thead>
     <tr>
         
@@ -1137,16 +833,13 @@
 
         <tr>
             
-                <td class="name"><code>vec</code></td>
+                <td class="name"><code>pos</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-|
-
-<span class="param-type">Number</span>
+<span class="param-type">Object</span>
 
 
             
@@ -1156,530 +849,10 @@
 
             
 
-            <td class="description last"><p>The vector or scalar to multiply.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    </div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-source">Source:</dt>
-            <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line79">line 79</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Example</strong>
-        
-    <div class="rel">
-    <pre class="prettyprint"><code>let vec = new Vector2(1, 2);vec.multiply(2);console.log(vec.x); // 2console.log(vec.y); // 4let vec = new Vector2(1, 2);vec.multiply(new Vector2(2, 3));console.log(vec.x); // 2console.log(vec.y); // 6</code></pre>
-    
-    
-    </div>
-
-    </div>
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="normalise">
-        <a href="#normalise">#</a>
-        <span class="type-signature"></span>normalise<span class="signature">()</span><span class="type-signature"></span>
-    </h4>
-
-    
-
-
-
-    <div class="description">
-        <p>Returns the normalised vector.</p>
-    </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-source">Source:</dt>
-            <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line142">line 142</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Example</strong>
-        
-    <div class="rel">
-    <pre class="prettyprint"><code>let vec = new Vector2(1, 2);let norm_vec = vec.normalise(); // new Vector2(0.4472135954999579, 0.8944271909999159)console.log(norm_vec.magnitude()); // 1 always</code></pre>
-    
-    
-    </div>
-
-    </div>
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="rotate">
-        <a href="#rotate">#</a>
-        <span class="type-signature"></span>rotate<span class="signature">(degrees)</span><span class="type-signature"></span>
-    </h4>
-
-    
-
-
-
-    <div class="description">
-        <p>Rotates a vector by a given angle in degrees.</p>
-    </div>
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>degrees</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Number</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The angle to rotate by.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    </div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-source">Source:</dt>
-            <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line176">line 176</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Example</strong>
-        
-    <div class="rel">
-    <pre class="prettyprint"><code>let vec = new Vector2(5, 0);vec.rotate(90);console.log(vec); // new Vector2(0, 5)</code></pre>
-    
-    
-    </div>
-
-    </div>
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="sub">
-        <a href="#sub">#</a>
-        <span class="type-signature"></span>sub<span class="signature">(vec)</span><span class="type-signature"></span>
-    </h4>
-
-    
-
-
-
-    <div class="description">
-        <p>Subtracts a vector from this vector.</p>
-    </div>
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>vec</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The vector to subtract.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    </div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-source">Source:</dt>
-            <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line57">line 57</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Example</strong>
-        
-    <div class="rel">
-    <pre class="prettyprint"><code>let vec = new Vector2(1, 2);vec.sub(new Vector2(2, 3));console.log(vec.x); // -1</code></pre>
-    
-    
-    </div>
-
-    </div>
-
-
-        
-            
-
-    
-
-    <h4 class="name" id="Vector2">
-        <a href="#Vector2">#</a>
-        <span class="type-signature"></span>Vector2<span class="signature">(x, y)</span><span class="type-signature"></span>
-    </h4>
-
-    
-
-
-
-    <div class="description">
-        <p>Creates a new Vector2 from Cartesian coordinates.</p>
-    </div>
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
+            <td class="description last"><p>The position of the mouse or touch.</p>
+                <h6>Properties</h6>
+<div class="allow-overflow">
+<table class="props">
     <thead>
     <tr>
         
@@ -1707,7 +880,7 @@
             <td class="type">
             
                 
-<span class="param-type">Number</span>
+<span class="param-type">number</span>
 
 
             
@@ -1717,7 +890,7 @@
 
             
 
-            <td class="description last"><p>The x coordinate.</p></td>
+            <td class="description last"><p>The x position of the mouse or touch.</p></td>
         </tr>
 
     
@@ -1730,7 +903,7 @@
             <td class="type">
             
                 
-<span class="param-type">Number</span>
+<span class="param-type">number</span>
 
 
             
@@ -1740,16 +913,21 @@
 
             
 
-            <td class="description last"><p>The y coordinate.</p></td>
+            <td class="description last"><p>The y position of the mouse or touch.</p></td>
         </tr>
 
     
     </tbody>
 </table>
+</div>
 
-    </div>
+            </td>
+        </tr>
 
-
+    
+    </tbody>
+</table>
+</div>
 
 
 
@@ -1785,7 +963,99 @@
         <div class="details-item-container">
             <dt class="tag-source">Source:</dt>
             <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line26">line 26</a>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line40">line 40</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+        
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id="clear">
+        <a href="#clear">#</a>
+        <span class="type-signature"></span>clear<span class="signature">()</span><span class="type-signature"></span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Reset all the input states. Use this after you have processed ALL the input.</p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line587">line 587</a>
             </li></ul></dd>
         </div>
     
@@ -1813,26 +1083,15 @@
 
 
 
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Example</strong>
-        
-    <div class="rel">
-    <pre class="prettyprint"><code>let vec = new Vector2(1, 2);console.log(vec.x); // 1console.log(vec.y); // 2</code></pre>
-    
-    
-    </div>
-
-    </div>
-
 
         
             
 
     
 
-    <h4 class="name" id=".add">
-        <a href="#.add">#</a>
-        <span class="type-signature">(static) </span>add<span class="signature">(vec1, vec2)</span><span class="type-signature"> &rarr; {<a href="Vector2.html">Vector2</a>}</span>
+    <h4 class="name" id="getKeyDown">
+        <a href="#getKeyDown">#</a>
+        <span class="type-signature"></span>getKeyDown<span class="signature">(keyCode)</span><span class="type-signature"> &rarr; {Boolean}</span>
     </h4>
 
     
@@ -1840,7 +1099,7 @@
 
 
     <div class="description">
-        <p>Adds two vectors.</p>
+        <p>Check if a key is pressed.</p>
     </div>
 
 
@@ -1877,13 +1136,13 @@
 
         <tr>
             
-                <td class="name"><code>vec1</code></td>
+                <td class="name"><code>keyCode</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
+<span class="param-type">Number</span>
 
 
             
@@ -1893,30 +1152,7 @@
 
             
 
-            <td class="description last"><p>The first vector.</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>vec2</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The second vector.</p></td>
+            <td class="description last"><p>The key code of the key to check.</p></td>
         </tr>
 
     
@@ -1935,6 +1171,11 @@
 
     
 
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
     
 
     
@@ -1961,7 +1202,7 @@
         <div class="details-item-container">
             <dt class="tag-source">Source:</dt>
             <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line217">line 217</a>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line608">line 608</a>
             </li></ul></dd>
         </div>
     
@@ -1992,7 +1233,7 @@
         
             
 <div class="param-desc">
-    <p>The sum of the two vectors.</p>
+    <p>Returns true if the key is pressed.</p>
 </div>
 
 
@@ -2003,7 +1244,7 @@
     </dt>
     <dd>
         
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
+<span class="param-type">Boolean</span>
 
 
     </dd>
@@ -2018,7 +1259,7 @@
         <strong>Example</strong>
         
     <div class="rel">
-    <pre class="prettyprint"><code>let vec1 = new Vector2(1, 2);let vec2 = new Vector2(2, 3);let sum = Vector2.add(vec1, vec2);console.log(sum.x); // 3</code></pre>
+    <pre class="prettyprint"><code>if(input.isKeyPressed(input.KEY_A)){//Do something}</code></pre>
     
     
     </div>
@@ -2031,9 +1272,9 @@
 
     
 
-    <h4 class="name" id=".angle">
-        <a href="#.angle">#</a>
-        <span class="type-signature">(static) </span>angle<span class="signature">(vec1, vec2)</span><span class="type-signature"> &rarr; {Number}</span>
+    <h4 class="name" id="getPosition">
+        <a href="#getPosition">#</a>
+        <span class="type-signature"></span>getPosition<span class="signature">()</span><span class="type-signature"> &rarr; {Object}</span>
     </h4>
 
     
@@ -2041,7 +1282,7 @@
 
 
     <div class="description">
-        <p>Returns the angle between two vectors.</p>
+        <p>Get the position of the mouse.</p>
     </div>
 
 
@@ -2051,80 +1292,6 @@
 
 
 
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>vec1</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The first vector.</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>vec2</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The second vector.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    </div>
 
 
 
@@ -2136,6 +1303,11 @@
 
     
 
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
     
 
     
@@ -2162,7 +1334,7 @@
         <div class="details-item-container">
             <dt class="tag-source">Source:</dt>
             <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line360">line 360</a>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line547">line 547</a>
             </li></ul></dd>
         </div>
     
@@ -2193,7 +1365,7 @@
         
             
 <div class="param-desc">
-    <p>The angle between the two vectors in radians.</p>
+    <p>Returns the position of the mouse.</p>
 </div>
 
 
@@ -2204,7 +1376,7 @@
     </dt>
     <dd>
         
-<span class="param-type">Number</span>
+<span class="param-type">Object</span>
 
 
     </dd>
@@ -2219,7 +1391,7 @@
         <strong>Example</strong>
         
     <div class="rel">
-    <pre class="prettyprint"><code>let vec1 = new Vector2(0,20);let vec2 = new Vector2(10,10);let angle = Vector2.angle(vec1, vec2); // PI/4</code></pre>
+    <pre class="prettyprint"><code>if(input.getPosition().x > 0){//Do something}</code></pre>
     
     
     </div>
@@ -2232,9 +1404,9 @@
 
     
 
-    <h4 class="name" id=".angle">
-        <a href="#.angle">#</a>
-        <span class="type-signature">(static) </span>angle<span class="signature">(vec1, vec2)</span><span class="type-signature"> &rarr; {Number}</span>
+    <h4 class="name" id="getSpecialKeyPressed">
+        <a href="#getSpecialKeyPressed">#</a>
+        <span class="type-signature"></span>getSpecialKeyPressed<span class="signature">()</span><span class="type-signature"> &rarr; {Number}</span>
     </h4>
 
     
@@ -2242,7 +1414,7 @@
 
 
     <div class="description">
-        <p>Returns the angle between two vectors.</p>
+        <p>Check if special keys are pressed (ALT, CTRL, SHIFT,META).</p>
     </div>
 
 
@@ -2252,80 +1424,6 @@
 
 
 
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>vec1</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The first vector.</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>vec2</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The second vector.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    </div>
 
 
 
@@ -2337,6 +1435,11 @@
 
     
 
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
     
 
     
@@ -2363,7 +1466,7 @@
         <div class="details-item-container">
             <dt class="tag-source">Source:</dt>
             <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line454">line 454</a>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line578">line 578</a>
             </li></ul></dd>
         </div>
     
@@ -2394,7 +1497,7 @@
         
             
 <div class="param-desc">
-    <p>The angle between the two vectors in radians.</p>
+    <p>Returns the special key pressed.</p>
 </div>
 
 
@@ -2420,7 +1523,7 @@
         <strong>Example</strong>
         
     <div class="rel">
-    <pre class="prettyprint"><code>let vec1 = new Vector2(0, 20);let vec2 = new Vector2(10, 10);let angle = Vector2.angle(vec1, vec2); // PI/4</code></pre>
+    <pre class="prettyprint"><code>if(input.isKeyPressed(input.KEY_ALT)){//Do something}</code></pre>
     
     
     </div>
@@ -2433,9 +1536,9 @@
 
     
 
-    <h4 class="name" id=".cross">
-        <a href="#.cross">#</a>
-        <span class="type-signature">(static) </span>cross<span class="signature">(vec1, vec2)</span><span class="type-signature"> &rarr; {Number}</span>
+    <h4 class="name" id="getTouchCount">
+        <a href="#getTouchCount">#</a>
+        <span class="type-signature"></span>getTouchCount<span class="signature">()</span><span class="type-signature"> &rarr; {Number}</span>
     </h4>
 
     
@@ -2443,7 +1546,7 @@
 
 
     <div class="description">
-        <p>Returns the cross product of two vectors.</p>
+        <p>Get the touch count</p>
     </div>
 
 
@@ -2453,80 +1556,6 @@
 
 
 
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>vec1</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The first vector.</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>vec2</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The second vector.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    </div>
 
 
 
@@ -2538,6 +1567,11 @@
 
     
 
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
     
 
     
@@ -2564,7 +1598,7 @@
         <div class="details-item-container">
             <dt class="tag-source">Source:</dt>
             <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line343">line 343</a>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line563">line 563</a>
             </li></ul></dd>
         </div>
     
@@ -2595,7 +1629,7 @@
         
             
 <div class="param-desc">
-    <p>The cross product of the two vectors.</p>
+    <p>Returns the touch count.</p>
 </div>
 
 
@@ -2621,7 +1655,7 @@
         <strong>Example</strong>
         
     <div class="rel">
-    <pre class="prettyprint"><code>// The cross product of two vectors is the z-component of the 3D vectorlet vec1 = new Vector2(1, 2);let vec2 = new Vector2(2, 3);let cross = Vector2.cross(vec1, vec2); // -1</code></pre>
+    <pre class="prettyprint"><code>if(input.getTouchCount() > 0){//Do something}</code></pre>
     
     
     </div>
@@ -2634,9 +1668,9 @@
 
     
 
-    <h4 class="name" id=".devide">
-        <a href="#.devide">#</a>
-        <span class="type-signature">(static) </span>devide<span class="signature">(vec1, vec2)</span><span class="type-signature"> &rarr; {<a href="Vector2.html">Vector2</a>}</span>
+    <h4 class="name" id="getWheelScroll">
+        <a href="#getWheelScroll">#</a>
+        <span class="type-signature"></span>getWheelScroll<span class="signature">()</span><span class="type-signature"> &rarr; {Number}</span>
     </h4>
 
     
@@ -2644,7 +1678,7 @@
 
 
     <div class="description">
-        <p>Divides a vector by another vector.</p>
+        <p>Get Wheel Scroll in pixels.</p>
     </div>
 
 
@@ -2654,80 +1688,6 @@
 
 
 
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>vec1</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The first vector.</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>vec2</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The second vector.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    </div>
 
 
 
@@ -2739,6 +1699,11 @@
 
     
 
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
     
 
     
@@ -2765,7 +1730,7 @@
         <div class="details-item-container">
             <dt class="tag-source">Source:</dt>
             <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line272">line 272</a>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line532">line 532</a>
             </li></ul></dd>
         </div>
     
@@ -2796,208 +1761,7 @@
         
             
 <div class="param-desc">
-    <p>The quotient of the two vectors.</p>
-</div>
-
-
-
-<dl class="param-type">
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-    </dd>
-</dl>
-
-            
-    </div>
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Example</strong>
-        
-    <div class="rel">
-    <pre class="prettyprint"><code>let vec1 = new Vector2(1, 2);let vec2 = new Vector2(2, 3);let quot = Vector2.devide(vec1, vec2);console.log(quot.x); // 0.5</code></pre>
-    
-    
-    </div>
-
-    </div>
-
-
-        
-            
-
-    
-
-    <h4 class="name" id=".distance">
-        <a href="#.distance">#</a>
-        <span class="type-signature">(static) </span>distance<span class="signature">(vec1, vec2)</span><span class="type-signature"> &rarr; {Number}</span>
-    </h4>
-
-    
-
-
-
-    <div class="description">
-        <p>Returns the distance between two vectors.</p>
-    </div>
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>vec1</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The first vector.</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>vec2</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The second vector.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    </div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-source">Source:</dt>
-            <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line415">line 415</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container mt-20">
-    <strong>Returns:</strong>
-        
-            
-<div class="param-desc">
-    <p>The distance between the two vectors.</p>
+    <p>Returns the wheel scroll in pixels.</p>
 </div>
 
 
@@ -3023,7 +1787,7 @@
         <strong>Example</strong>
         
     <div class="rel">
-    <pre class="prettyprint"><code>let vec1 = new Vector2(1, 2);let vec2 = new Vector2(2, 3);let dist = Vector2.dist(vec1, vec2); // 2.23606797749979</code></pre>
+    <pre class="prettyprint"><code>if(input.getWheelScroll() > 0){//Do something}</code></pre>
     
     
     </div>
@@ -3036,18 +1800,14 @@
 
     
 
-    <h4 class="name" id=".dot">
-        <a href="#.dot">#</a>
-        <span class="type-signature">(static) </span>dot<span class="signature">(vec1, vec2)</span><span class="type-signature"> &rarr; {Number}</span>
+    <h4 class="name" id="Input">
+        <a href="#Input">#</a>
+        <span class="type-signature"></span>Input<span class="signature">(canvas)</span><span class="type-signature"></span>
     </h4>
 
     
 
 
-
-    <div class="description">
-        <p>Returns the dot product of two vectors.</p>
-    </div>
 
 
 
@@ -3083,13 +1843,13 @@
 
         <tr>
             
-                <td class="name"><code>vec1</code></td>
+                <td class="name"><code>canvas</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
+<span class="param-type">HTMLCanvasElement</span>
 
 
             
@@ -3099,30 +1859,7 @@
 
             
 
-            <td class="description last"><p>The first vector.</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>vec2</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The second vector.</p></td>
+            <td class="description last"><p>The canvas element that the input is attached to.</p></td>
         </tr>
 
     
@@ -3167,7 +1904,103 @@
         <div class="details-item-container">
             <dt class="tag-source">Source:</dt>
             <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line324">line 324</a>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line32">line 32</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="isLeftClicked">
+        <a href="#isLeftClicked">#</a>
+        <span class="type-signature"></span>isLeftClicked<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Check if left mouse button is clicked.</p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line296">line 296</a>
             </li></ul></dd>
         </div>
     
@@ -3198,7 +2031,7 @@
         
             
 <div class="param-desc">
-    <p>The dot product of the two vectors.</p>
+    <p>Returns true if the left mouse button is clicked.</p>
 </div>
 
 
@@ -3209,7 +2042,7 @@
     </dt>
     <dd>
         
-<span class="param-type">Number</span>
+<span class="param-type">Boolean</span>
 
 
     </dd>
@@ -3224,7 +2057,7 @@
         <strong>Example</strong>
         
     <div class="rel">
-    <pre class="prettyprint"><code>let vec1 = new Vector2(1, 2);let vec2 = new Vector2(2, 3);let dot = Vector2.dot(vec1, vec2); // 8</code></pre>
+    <pre class="prettyprint"><code>if(input.isLeftClicked()){   //Do something}</code></pre>
     
     
     </div>
@@ -3237,9 +2070,9 @@
 
     
 
-    <h4 class="name" id=".lerp">
-        <a href="#.lerp">#</a>
-        <span class="type-signature">(static) </span>lerp<span class="signature">(vec1, vec2, t)</span><span class="type-signature"> &rarr; {<a href="Vector2.html">Vector2</a>}</span>
+    <h4 class="name" id="isLeftDown">
+        <a href="#isLeftDown">#</a>
+        <span class="type-signature"></span>isLeftDown<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span>
     </h4>
 
     
@@ -3247,7 +2080,2114 @@
 
 
     <div class="description">
-        <p>Lerps between two vectors.</p>
+        <p>Check if left mouse button is down.</p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line393">line 393</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>Returns true if the left mouse button is down.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Boolean</span>
+
+
+    </dd>
+</dl>
+
+            
+    </div>
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Example</strong>
+        
+    <div class="rel">
+    <pre class="prettyprint"><code>if(input.isLeftDown()){  //Do something}</code></pre>
+    
+    
+    </div>
+
+    </div>
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="isLeftPressed">
+        <a href="#isLeftPressed">#</a>
+        <span class="type-signature"></span>isLeftPressed<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Check if left mouse button is pressed.</p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line344">line 344</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>Returns true if the left mouse button is pressed.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Boolean</span>
+
+
+    </dd>
+</dl>
+
+            
+    </div>
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Example</strong>
+        
+    <div class="rel">
+    <pre class="prettyprint"><code>if(input.isLeftPressed()){   //Do something}</code></pre>
+    
+    
+    </div>
+
+    </div>
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="isMiddleClicked">
+        <a href="#isMiddleClicked">#</a>
+        <span class="type-signature"></span>isMiddleClicked<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Check if middle mouse button is clicked.</p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line328">line 328</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>Returns true if the middle mouse button is clicked.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Boolean</span>
+
+
+    </dd>
+</dl>
+
+            
+    </div>
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Example</strong>
+        
+    <div class="rel">
+    <pre class="prettyprint"><code>if(input.isMiddleClicked()){ //Do something}</code></pre>
+    
+    
+    </div>
+
+    </div>
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="isMiddleDown">
+        <a href="#isMiddleDown">#</a>
+        <span class="type-signature"></span>isMiddleDown<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Check if middle mouse button is down.</p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line424">line 424</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>Returns true if the middle mouse button is down.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Boolean</span>
+
+
+    </dd>
+</dl>
+
+            
+    </div>
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Example</strong>
+        
+    <div class="rel">
+    <pre class="prettyprint"><code>if(input.isMiddleDown()){//Do something} </code></pre>
+    
+    
+    </div>
+
+    </div>
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="isMiddlePressed">
+        <a href="#isMiddlePressed">#</a>
+        <span class="type-signature"></span>isMiddlePressed<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Check if middle mouse button is pressed.</p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line376">line 376</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>Returns true if the middle mouse button is pressed.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Boolean</span>
+
+
+    </dd>
+</dl>
+
+            
+    </div>
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Example</strong>
+        
+    <div class="rel">
+    <pre class="prettyprint"><code>if(input.isMiddlePressed()){ //Do something}</code></pre>
+    
+    
+    </div>
+
+    </div>
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="isRightClicked">
+        <a href="#isRightClicked">#</a>
+        <span class="type-signature"></span>isRightClicked<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Check if right mouse button is clicked.</p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line312">line 312</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>Returns true if the right mouse button is clicked.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Boolean</span>
+
+
+    </dd>
+</dl>
+
+            
+    </div>
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Example</strong>
+        
+    <div class="rel">
+    <pre class="prettyprint"><code>if(input.isRightClicked()){  //Do something}</code></pre>
+    
+    
+    </div>
+
+    </div>
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="isRightDown">
+        <a href="#isRightDown">#</a>
+        <span class="type-signature"></span>isRightDown<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Check if right mouse button is down.</p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line409">line 409</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>Returns true if the right mouse button is down.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Boolean</span>
+
+
+    </dd>
+</dl>
+
+            
+    </div>
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Example</strong>
+        
+    <div class="rel">
+    <pre class="prettyprint"><code>if(input.isRightDown()){ //Do something}</code></pre>
+    
+    
+    </div>
+
+    </div>
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="isRightPressed">
+        <a href="#isRightPressed">#</a>
+        <span class="type-signature"></span>isRightPressed<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Check if right mouse button is pressed.</p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line360">line 360</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>Returns true if the right mouse button is pressed.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Boolean</span>
+
+
+    </dd>
+</dl>
+
+            
+    </div>
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Example</strong>
+        
+    <div class="rel">
+    <pre class="prettyprint"><code>if(input.isRightPressed()){  //Do something}</code></pre>
+    
+    
+    </div>
+
+    </div>
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="leftMouseButtonClicked">
+        <a href="#leftMouseButtonClicked">#</a>
+        <span class="type-signature"></span>leftMouseButtonClicked<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Check if left mouse button is clicked.</p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line440">line 440</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>Returns true if the left mouse button is clicked.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Boolean</span>
+
+
+    </dd>
+</dl>
+
+            
+    </div>
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Example</strong>
+        
+    <div class="rel">
+    <pre class="prettyprint"><code>if(input.leftMouseButtonClicked()){ //Do something}</code></pre>
+    
+    
+    </div>
+
+    </div>
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="leftMouseButtonDoubleClicked">
+        <a href="#leftMouseButtonDoubleClicked">#</a>
+        <span class="type-signature"></span>leftMouseButtonDoubleClicked<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Check if left mouse button is double clicked.</p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line489">line 489</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>Returns true if the left mouse button is double clicked.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Boolean</span>
+
+
+    </dd>
+</dl>
+
+            
+    </div>
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Example</strong>
+        
+    <div class="rel">
+    <pre class="prettyprint"><code>if(input.leftMouseButtonDoubleClicked()){//Do something}</code></pre>
+    
+    
+    </div>
+
+    </div>
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="leftMouseButtonDown">
+        <a href="#leftMouseButtonDown">#</a>
+        <span class="type-signature"></span>leftMouseButtonDown<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Check if left mouse button is clicked.</p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line197">line 197</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>Returns true if the left mouse button is clicked.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Boolean</span>
+
+
+    </dd>
+</dl>
+
+            
+    </div>
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Example</strong>
+        
+    <div class="rel">
+    <pre class="prettyprint"><code>if(input.isLeftClicked()){    //Do something}</code></pre>
+    
+    
+    </div>
+
+    </div>
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="leftMouseButtonUp">
+        <a href="#leftMouseButtonUp">#</a>
+        <span class="type-signature"></span>leftMouseButtonUp<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Check if left mouse button is clicked.</p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line248">line 248</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>Returns true if the left mouse button is clicked.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Boolean</span>
+
+
+    </dd>
+</dl>
+
+            
+    </div>
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Example</strong>
+        
+    <div class="rel">
+    <pre class="prettyprint"><code>if(input.isLeftClicked()){   //Do something}</code></pre>
+    
+    
+    </div>
+
+    </div>
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="middleMouseButtonClicked">
+        <a href="#middleMouseButtonClicked">#</a>
+        <span class="type-signature"></span>middleMouseButtonClicked<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Check if middle mouse button is clicked.</p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line473">line 473</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>Returns true if the middle mouse button is clicked.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Boolean</span>
+
+
+    </dd>
+</dl>
+
+            
+    </div>
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Example</strong>
+        
+    <div class="rel">
+    <pre class="prettyprint"><code>if(input.middleMouseButtonClicked()){//Do something}</code></pre>
+    
+    
+    </div>
+
+    </div>
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="middleMouseButtonDoubleClicked">
+        <a href="#middleMouseButtonDoubleClicked">#</a>
+        <span class="type-signature"></span>middleMouseButtonDoubleClicked<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Check if middle mouse button is double clicked.</p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line517">line 517</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>Returns true if the middle mouse button is double clicked.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Boolean</span>
+
+
+    </dd>
+</dl>
+
+            
+    </div>
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Example</strong>
+        
+    <div class="rel">
+    <pre class="prettyprint"><code>if(input.middleMouseButtonDoubleClicked()){//Do something}</code></pre>
+    
+    
+    </div>
+
+    </div>
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="middleMouseButtonDown">
+        <a href="#middleMouseButtonDown">#</a>
+        <span class="type-signature"></span>middleMouseButtonDown<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Check if middle mouse button is clicked.</p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line231">line 231</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>Returns true if the middle mouse button is clicked.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Boolean</span>
+
+
+    </dd>
+</dl>
+
+            
+    </div>
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Example</strong>
+        
+    <div class="rel">
+    <pre class="prettyprint"><code>if(input.isMiddleClicked()){  //Do something}</code></pre>
+    
+    
+    </div>
+
+    </div>
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="middleMouseButtonUp">
+        <a href="#middleMouseButtonUp">#</a>
+        <span class="type-signature"></span>middleMouseButtonUp<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>Check if middle mouse button is clicked.</p>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <div class="details-item-container">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source"><ul class="dummy"><li>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line280">line 280</a>
+            </li></ul></dd>
+        </div>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="method-member-container mt-20">
+    <strong>Returns:</strong>
+        
+            
+<div class="param-desc">
+    <p>Returns true if the middle mouse button is clicked.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Boolean</span>
+
+
+    </dd>
+</dl>
+
+            
+    </div>
+
+
+
+    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
+        <strong>Example</strong>
+        
+    <div class="rel">
+    <pre class="prettyprint"><code>if(input.isMiddleClicked()){ //Do something}</code></pre>
+    
+    
+    </div>
+
+    </div>
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="onClick">
+        <a href="#onClick">#</a>
+        <span class="type-signature"></span>onClick<span class="signature">(event)</span><span class="type-signature"></span>
+    </h4>
+
+    
+
+
+
+    <div class="description">
+        <p>The function to call when the button is clicked.</p>
     </div>
 
 
@@ -3284,13 +4224,13 @@
 
         <tr>
             
-                <td class="name"><code>vec1</code></td>
+                <td class="name"><code>event</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
+<span class="param-type">event</span>
 
 
             
@@ -3300,53 +4240,7 @@
 
             
 
-            <td class="description last"><p>The first vector.</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>vec2</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The second vector.</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>t</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Number</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The interpolation value.</p></td>
+            <td class="description last"><p>The event that is passed to the function.</p></td>
         </tr>
 
     
@@ -3391,7 +4285,7 @@
         <div class="details-item-container">
             <dt class="tag-source">Source:</dt>
             <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line436">line 436</a>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line59">line 59</a>
             </li></ul></dd>
         </div>
     
@@ -3417,43 +4311,7 @@
 
 
 
-    <div class="method-member-container mt-20">
-    <strong>Returns:</strong>
-        
-            
-<div class="param-desc">
-    <p>The lerped vector.</p>
-</div>
 
-
-
-<dl class="param-type">
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-    </dd>
-</dl>
-
-            
-    </div>
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Example</strong>
-        
-    <div class="rel">
-    <pre class="prettyprint"><code>let vec1 = new Vector2(1, 2);let vec2 = new Vector2(2, 3);let t;let lerp_vec = Vector2.lerp(vec1, vec2, t);</code></pre>
-    
-    
-    </div>
-
-    </div>
 
 
         
@@ -3461,9 +4319,9 @@
 
     
 
-    <h4 class="name" id=".magnitude">
-        <a href="#.magnitude">#</a>
-        <span class="type-signature">(static) </span>magnitude<span class="signature">(vec)</span><span class="type-signature"> &rarr; {Number}</span>
+    <h4 class="name" id="onDoubleClick">
+        <a href="#onDoubleClick">#</a>
+        <span class="type-signature"></span>onDoubleClick<span class="signature">(event)</span><span class="type-signature"></span>
     </h4>
 
     
@@ -3471,7 +4329,7 @@
 
 
     <div class="description">
-        <p>Returns the magnitude of a vector.</p>
+        <p>The function to call when the button is double clicked.</p>
     </div>
 
 
@@ -3508,13 +4366,13 @@
 
         <tr>
             
-                <td class="name"><code>vec</code></td>
+                <td class="name"><code>event</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
+<span class="param-type">event</span>
 
 
             
@@ -3524,7 +4382,7 @@
 
             
 
-            <td class="description last"><p>The vector.</p></td>
+            <td class="description last"><p>The event that is passed to the function.</p></td>
         </tr>
 
     
@@ -3569,7 +4427,7 @@
         <div class="details-item-container">
             <dt class="tag-source">Source:</dt>
             <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line288">line 288</a>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line67">line 67</a>
             </li></ul></dd>
         </div>
     
@@ -3595,43 +4453,7 @@
 
 
 
-    <div class="method-member-container mt-20">
-    <strong>Returns:</strong>
-        
-            
-<div class="param-desc">
-    <p>The magnitude of the vector.</p>
-</div>
 
-
-
-<dl class="param-type">
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Number</span>
-
-
-    </dd>
-</dl>
-
-            
-    </div>
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Example</strong>
-        
-    <div class="rel">
-    <pre class="prettyprint"><code>let vec = new Vector2(1, 2);console.log(vec.magnitude()); // 2.23606797749979 (root of 5)</code></pre>
-    
-    
-    </div>
-
-    </div>
 
 
         
@@ -3639,9 +4461,9 @@
 
     
 
-    <h4 class="name" id=".multiply">
-        <a href="#.multiply">#</a>
-        <span class="type-signature">(static) </span>multiply<span class="signature">(vec1, vec2)</span><span class="type-signature"> &rarr; {<a href="Vector2.html">Vector2</a>}</span>
+    <h4 class="name" id="rightMouseButtonClicked">
+        <a href="#rightMouseButtonClicked">#</a>
+        <span class="type-signature"></span>rightMouseButtonClicked<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span>
     </h4>
 
     
@@ -3649,587 +4471,7 @@
 
 
     <div class="description">
-        <p>Multiplies a vector by another vector.</p>
-    </div>
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>vec1</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The first vector.</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>vec2</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The second vector.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    </div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-source">Source:</dt>
-            <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line254">line 254</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container mt-20">
-    <strong>Returns:</strong>
-        
-            
-<div class="param-desc">
-    <p>The product of the two vectors.</p>
-</div>
-
-
-
-<dl class="param-type">
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-    </dd>
-</dl>
-
-            
-    </div>
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Example</strong>
-        
-    <div class="rel">
-    <pre class="prettyprint"><code>let vec1 = new Vector2(1, 2);let vec2 = new Vector2(2, 3);let prod = Vector2.multiply(vec1, vec2);console.log(prod.x); // 2</code></pre>
-    
-    
-    </div>
-
-    </div>
-
-
-        
-            
-
-    
-
-    <h4 class="name" id=".normalise">
-        <a href="#.normalise">#</a>
-        <span class="type-signature">(static) </span>normalise<span class="signature">(vec)</span><span class="type-signature"> &rarr; {<a href="Vector2.html">Vector2</a>}</span>
-    </h4>
-
-    
-
-
-
-    <div class="description">
-        <p>Returns the normalised vector.</p>
-    </div>
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>vec</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The vector.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    </div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-source">Source:</dt>
-            <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line305">line 305</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container mt-20">
-    <strong>Returns:</strong>
-        
-            
-<div class="param-desc">
-    <p>The normalised vector.</p>
-</div>
-
-
-
-<dl class="param-type">
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-    </dd>
-</dl>
-
-            
-    </div>
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Example</strong>
-        
-    <div class="rel">
-    <pre class="prettyprint"><code>let vec = new Vector2(1, 2);let norm_vec = Vector2.norm(vec); // new Vector2(0.4472135954999579, 0.8944271909999159)console.log(norm_vec.magnitude()); // 1 always</code></pre>
-    
-    
-    </div>
-
-    </div>
-
-
-        
-            
-
-    
-
-    <h4 class="name" id=".project">
-        <a href="#.project">#</a>
-        <span class="type-signature">(static) </span>project<span class="signature">(vec1, vec2)</span><span class="type-signature"> &rarr; {<a href="Vector2.html">Vector2</a>}</span>
-    </h4>
-
-    
-
-
-
-    <div class="description">
-        <p>Returns the projection of second vector onto the first vector.</p>
-    </div>
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>vec1</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The first vector.</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>vec2</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The second vector.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    </div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-source">Source:</dt>
-            <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line378">line 378</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container mt-20">
-    <strong>Returns:</strong>
-        
-            
-<div class="param-desc">
-    <p>The projection of the second vector onto the first vector.</p>
-</div>
-
-
-
-<dl class="param-type">
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-    </dd>
-</dl>
-
-            
-    </div>
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Example</strong>
-        
-    <div class="rel">
-    <pre class="prettyprint"><code>let vec1 = new Vector2(1, 0);let vec2 = new Vector2(2, 0);let proj = Vector2.project(vec1, vec2); // new Vector2(1, 0)</code></pre>
-    
-    
-    </div>
-
-    </div>
-
-
-        
-            
-
-    
-
-    <h4 class="name" id=".random">
-        <a href="#.random">#</a>
-        <span class="type-signature">(static) </span>random<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="Vector2.html">Vector2</a>}</span>
-    </h4>
-
-    
-
-
-
-    <div class="description">
-        <p>Generates a random vector.</p>
+        <p>Check if right mouse button is clicked.</p>
     </div>
 
 
@@ -4276,7 +4518,7 @@
         <div class="details-item-container">
             <dt class="tag-source">Source:</dt>
             <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line467">line 467</a>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line456">line 456</a>
             </li></ul></dd>
         </div>
     
@@ -4307,7 +4549,7 @@
         
             
 <div class="param-desc">
-    <p>A random vector.</p>
+    <p>Returns true if the right mouse button is clicked.</p>
 </div>
 
 
@@ -4318,7 +4560,7 @@
     </dt>
     <dd>
         
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
+<span class="param-type">Boolean</span>
 
 
     </dd>
@@ -4333,7 +4575,7 @@
         <strong>Example</strong>
         
     <div class="rel">
-    <pre class="prettyprint"><code>let vec = Vector2.random();</code></pre>
+    <pre class="prettyprint"><code>if(input.rightMouseButtonClicked()){//Do something}</code></pre>
     
     
     </div>
@@ -4346,9 +4588,9 @@
 
     
 
-    <h4 class="name" id=".randomRange">
-        <a href="#.randomRange">#</a>
-        <span class="type-signature">(static) </span>randomRange<span class="signature">(min, max)</span><span class="type-signature"> &rarr; {<a href="Vector2.html">Vector2</a>}</span>
+    <h4 class="name" id="rightMouseButtonDoubleClicked">
+        <a href="#rightMouseButtonDoubleClicked">#</a>
+        <span class="type-signature"></span>rightMouseButtonDoubleClicked<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span>
     </h4>
 
     
@@ -4356,7 +4598,7 @@
 
 
     <div class="description">
-        <p>Generates a random vector with a given range of values.</p>
+        <p>Check if right mouse button is double clicked.</p>
     </div>
 
 
@@ -4366,80 +4608,6 @@
 
 
 
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>min</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Number</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The magnitude of the vector.</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>max</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Number</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The magnitude of the vector.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    </div>
 
 
 
@@ -4451,6 +4619,11 @@
 
     
 
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
     
 
     
@@ -4477,7 +4650,7 @@
         <div class="details-item-container">
             <dt class="tag-source">Source:</dt>
             <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line499">line 499</a>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line503">line 503</a>
             </li></ul></dd>
         </div>
     
@@ -4508,7 +4681,7 @@
         
             
 <div class="param-desc">
-    <p>A random vector.</p>
+    <p>Returns true if the right mouse button is double clicked.</p>
 </div>
 
 
@@ -4519,7 +4692,7 @@
     </dt>
     <dd>
         
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
+<span class="param-type">Boolean</span>
 
 
     </dd>
@@ -4534,7 +4707,7 @@
         <strong>Example</strong>
         
     <div class="rel">
-    <pre class="prettyprint"><code>let vec = Vector2.randomRange(1, 10);vec.magnitude(); // 1 to 10</code></pre>
+    <pre class="prettyprint"><code>if(input.rightMouseButtonDoubleClicked()){//Do something}</code></pre>
     
     
     </div>
@@ -4547,9 +4720,9 @@
 
     
 
-    <h4 class="name" id=".randomUnit">
-        <a href="#.randomUnit">#</a>
-        <span class="type-signature">(static) </span>randomUnit<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="Vector2.html">Vector2</a>}</span>
+    <h4 class="name" id="rightMouseButtonDown">
+        <a href="#rightMouseButtonDown">#</a>
+        <span class="type-signature"></span>rightMouseButtonDown<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span>
     </h4>
 
     
@@ -4557,7 +4730,7 @@
 
 
     <div class="description">
-        <p>Generates a random unit vector.</p>
+        <p>Check if right mouse button is clicked.</p>
     </div>
 
 
@@ -4578,6 +4751,11 @@
 
     
 
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
     
 
     
@@ -4604,7 +4782,7 @@
         <div class="details-item-container">
             <dt class="tag-source">Source:</dt>
             <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line481">line 481</a>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line215">line 215</a>
             </li></ul></dd>
         </div>
     
@@ -4635,7 +4813,7 @@
         
             
 <div class="param-desc">
-    <p>A random unit vector.</p>
+    <p>Returns true if the right mouse button is clicked.</p>
 </div>
 
 
@@ -4646,7 +4824,7 @@
     </dt>
     <dd>
         
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
+<span class="param-type">Boolean</span>
 
 
     </dd>
@@ -4661,7 +4839,7 @@
         <strong>Example</strong>
         
     <div class="rel">
-    <pre class="prettyprint"><code>let vec = Vector2.randomUnit();vec.magnitude(); // 1</code></pre>
+    <pre class="prettyprint"><code>if(input.isRightClicked()){   //Do something}</code></pre>
     
     
     </div>
@@ -4674,9 +4852,9 @@
 
     
 
-    <h4 class="name" id=".rotate">
-        <a href="#.rotate">#</a>
-        <span class="type-signature">(static) </span>rotate<span class="signature">(vec, angle)</span><span class="type-signature"> &rarr; {<a href="Vector2.html">Vector2</a>}</span>
+    <h4 class="name" id="rightMouseButtonUp">
+        <a href="#rightMouseButtonUp">#</a>
+        <span class="type-signature"></span>rightMouseButtonUp<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span>
     </h4>
 
     
@@ -4684,7 +4862,7 @@
 
 
     <div class="description">
-        <p>Rotates a vector by a given angle.</p>
+        <p>Check if right mouse button is clicked.</p>
     </div>
 
 
@@ -4694,80 +4872,6 @@
 
 
 
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>vec</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The vector.</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>angle</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Number</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The angle to rotate by in radians.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    </div>
 
 
 
@@ -4779,6 +4883,11 @@
 
     
 
+    
+        <div class="details-item-container">
+            <dt class="tag-since">Since:</dt>
+            <dd class="tag-since"><ul class="dummy"><li>1.2.2</li></ul></dd>
+        </div>
     
 
     
@@ -4805,7 +4914,7 @@
         <div class="details-item-container">
             <dt class="tag-source">Source:</dt>
             <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line396">line 396</a>
+                <a href="events_input.js.html">events/input.js</a>, <a href="events_input.js.html#line264">line 264</a>
             </li></ul></dd>
         </div>
     
@@ -4836,7 +4945,7 @@
         
             
 <div class="param-desc">
-    <p>The rotated vector.</p>
+    <p>Returns true if the right mouse button is clicked.</p>
 </div>
 
 
@@ -4847,7 +4956,7 @@
     </dt>
     <dd>
         
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
+<span class="param-type">Boolean</span>
 
 
     </dd>
@@ -4862,208 +4971,7 @@
         <strong>Example</strong>
         
     <div class="rel">
-    <pre class="prettyprint"><code>let vec = new Vector2(1, 0);let rot_vec = Vector2.rotate(vec, Math.PI / 2); // new Vector2(0, 1)</code></pre>
-    
-    
-    </div>
-
-    </div>
-
-
-        
-            
-
-    
-
-    <h4 class="name" id=".sub">
-        <a href="#.sub">#</a>
-        <span class="type-signature">(static) </span>sub<span class="signature">(vec1, vec2)</span><span class="type-signature"> &rarr; {<a href="Vector2.html">Vector2</a>}</span>
-    </h4>
-
-    
-
-
-
-    <div class="description">
-        <p>Subtracts two vectors.</p>
-    </div>
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>vec1</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The first vector.</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>vec2</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The second vector.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    </div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-source">Source:</dt>
-            <dd class="tag-source"><ul class="dummy"><li>
-                <a href="maths_vec2.js.html">maths/vec2.js</a>, <a href="maths_vec2.js.html#line236">line 236</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container mt-20">
-    <strong>Returns:</strong>
-        
-            
-<div class="param-desc">
-    <p>The difference of the two vectors.</p>
-</div>
-
-
-
-<dl class="param-type">
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type"><a href="Vector2.html">Vector2</a></span>
-
-
-    </dd>
-</dl>
-
-            
-    </div>
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Example</strong>
-        
-    <div class="rel">
-    <pre class="prettyprint"><code>let vec1 = new Vector2(1, 2);let vec2 = new Vector2(2, 3);let diff = Vector2.sub(vec1, vec2);console.log(diff.x); // -1</code></pre>
+    <pre class="prettyprint"><code>if(input.isRightClicked()){  //Do something}</code></pre>
     
     
     </div>

@@ -21,12 +21,11 @@
 		"tutorials": "tutorials",
 		"recurse": true,
 		"readme": "README.md",
+		"title": "Neptune.js",
 		"theme_opts": {
 			"favicon":"./static/images/favicon.ico",
-
 			"theme": "dark",
 			"static_dir":["./static"],
-			"add_scripts": "document.title = 'Neptune.js Documentation';",
 			"title": "Neptune.js",
 			"footer": "MIT License | Copyright (c) 2022 Sujal Choudhari",
 			"menu": [

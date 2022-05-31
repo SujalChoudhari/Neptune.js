@@ -1,10 +1,11 @@
-import {CollidableTransform} from "../physics/collidable_transform.js";
+import {CollidableTransform} from "../physics/DeprecatedCollisionTransform.js";
 import {Color} from "../basic/color.js";
 import {Text} from "./text.js";
 import {Pointer} from "../events/pointer.js";
 
 /**
  * @class Button
+ * @deprecated Due to changes in Physics/Collision, the buttons are temporarily disabled.
  * @classdesc A Button is a class that represents a button.
  * @extends CollidableTransform
  * @param {Object} kwargs - The keyword arguments.
@@ -41,6 +42,7 @@ export class Button extends CollidableTransform {
      * @description Checks if the button is Clicked.
      * @param {Pointer} mouse - The mouse.
      * @returns {Boolean} - True if the button is clicked.
+     * @deprecated Due to changes in Physics/Collision, the buttons are temporarily disabled.
      * 
      * @example
      * // Check if the button is clicked.
@@ -59,7 +61,7 @@ export class Button extends CollidableTransform {
      * @method
      * @description Checks if the button is hovered.
      * @returns {Boolean} - True if the button is hovered.
-     * 
+     * @deprecated Due to changes in Physics/Collision, the buttons are temporarily disabled.
      * @example
      * // Check if the button is hovered.
      * if(button.isHovered(mouse)){
@@ -78,7 +80,7 @@ export class Button extends CollidableTransform {
      * @description Checks if the button is pressed.
      * @param {Pointer} mouse - The mouse.
      * @returns {Boolean} - True if the button is pressed.
-     * 
+     * @deprecated Due to changes in Physics/Collision, the buttons are temporarily disabled.
      * @example
      * // Check if the button is pressed.
      * if(button.isPressed(mouse)){
@@ -97,7 +99,7 @@ export class Button extends CollidableTransform {
      * @method
      * @description Updates the button.
      * @param {Number} deltaTime - The time since the last update.
-     * 
+     * @deprecated Due to changes in Physics/Collision, the buttons are temporarily disabled.
      * @example
      * // Update the button.
      * button.update(deltaTime);
@@ -120,7 +122,7 @@ export class Button extends CollidableTransform {
      * @method
      * @description Draws the button.
      * @param {CanvasRenderingContext2D} context - The context.
-     * 
+     * @deprecated Due to changes in Physics/Collision, the buttons are temporarily disabled.
      * @example
      * // Draw the button.
      * button.draw(context);
@@ -138,7 +140,7 @@ export class Button extends CollidableTransform {
     /** 
      * @method
      * @description Initializes the Entity.
-
+     * @deprecated Due to changes in Physics/Collision, the buttons are temporarily disabled.
      * @example
      * // Initialize the entity.
      * entity.init();

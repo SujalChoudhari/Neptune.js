@@ -1,8 +1,11 @@
 import {Vector2} from "../maths/vec2.js";
-import {CollidableTransform} from "./collidable_transform.js";
+import {Transform} from "../maths/transform.js";
+
+
 
 /**
  * @class Kinematic
+ * 
  * @classdesc Kinematic class. 
  * Physics Engine has no control over the movement of the kinematic object.
  * @extends CollidableTransform
@@ -25,7 +28,7 @@ import {CollidableTransform} from "./collidable_transform.js";
  * @author Sujal Choudhari <sjlchoudhari@gmail.com>
  * @license MIT
  */
-export class Kinematic extends CollidableTransform{
+export class Kinematic extends Transform{
     constructor(kwargs){
         super(kwargs);
         this.velocity = kwargs["velocity"] || kwargs["vel"]  || new Vector2(0, 0);
@@ -38,6 +41,7 @@ export class Kinematic extends CollidableTransform{
     
     /**
      * @method
+     * 
      * @description Updates the Kinematic object.
      * Forces and Accelerations are applied to the velocity and position.
      * @param {Number} deltaTime - The time since the last update.
@@ -49,16 +53,17 @@ export class Kinematic extends CollidableTransform{
     update(deltaTime){
         super.update(deltaTime);
         this.velocity.add(this.acceleration);
-        this.velocity.mulInt(1 - this.drag);
+        this.velocity.multiply(1 - this.drag);
         this.velocity.limit(this.maxVelocity);
         this.pos.add(this.velocity);
         
-        this.acceleration.mulInt(0);
-        this.velocity.mulInt(0);
+        this.acceleration.multiply(0);
+        this.velocity.multiply(0);
     }
 
     /**
      * @method
+     * 
      * @description Adds a force to the kinematic object.
      * @param {Vector2} force - The force.
      * 
@@ -67,12 +72,13 @@ export class Kinematic extends CollidableTransform{
      * kinematic.addForce(force);
      */
     addForce(force){
-        force.mulInt(1 / this.mass);
+        force.multiply(1 / this.mass);
         this.acceleration.add(force);
     }
 
     /**
      * @method
+     * 
      * @description Adds a Impulse to the kinematic object.
      * @param {Vector2} impulse - The impulse.
      * 
@@ -81,12 +87,13 @@ export class Kinematic extends CollidableTransform{
      * kinematic.addImpulse(impulse);
      */
     addImpulse(impulse){
-        impulse.mulInt(1 / this.mass);
+        impulse.multiply(1 / this.mass);
         this.velocity.add(impulse);
     }
 
     /**
      * @method
+     * 
      * @description Adds a Acceleration to the kinematic object.
      * @param {Vector2} acceleration - The acceleration.
      * 

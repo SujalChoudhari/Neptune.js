@@ -61,66 +61,58 @@ export class Vector2 {
 
     /**
      * @method
-     * @description Multiplies a vector by a scalar.
-     * @param {Number} int - The scalar to multiply by.
-     * @returns {Vector2} Reference to this vector.
+     * @description Multiplies a vector or a Scalar by this vector.
+     * @param {Vector2|Number} vec - The vector or scalar to multiply.
      * 
      * @example
      * let vec = new Vector2(1, 2);
-     * vec.mulInt(2);
+     * vec.multiply(2);
      * console.log(vec.x); // 2
-     */
-    mulInt(int){
-        this.x *= int;
-        this.y *= int;
-        return this
-    }
-
-    /**
-     * @method
-     * @description Multiplies a vector by another vector.
-     * @param {Vector2} vec - The vector to multiply.
-     * @returns {Vector2} Reference to this vector.
+     * console.log(vec.y); // 4
      * 
-     * @example
      * let vec = new Vector2(1, 2);
-     * vec.mul(new Vector2(2, 3));
+     * vec.multiply(new Vector2(2, 3));
      * console.log(vec.x); // 2
+     * console.log(vec.y); // 6
+     * 
      */
-    mul(vec) {
-        this.x *= vec.x;
-        this.y *= vec.y;
-        return this
+    multiply(vec){
+        if (typeof vec === "number") {
+            this.x *= vec;
+            this.y *= vec;
+        }
+        else {
+            this.x *= vec.x;
+            this.y *= vec.y;
+        }
     }
 
     /**
      * @method
-     * @description Devides a vector by a scalar.
-     * @param {Number} int - The scalar to divide by.
+     * @description Devides the vector by another vector or a scalar.
+     * @param {Vector2|Number} vec - The vector or scalar to divide by.
      * 
      * @example
      * let vec = new Vector2(1, 2);
-     * vec.divInt(2);
+     * vec.divide(new Vector2(2, 3));
      * console.log(vec.x); // 0.5
-     */
-    divInt(int){
-        this.x /= int;
-        this.y /= int;
-    }
-
-
-    /**
-     * @method
-     * @description Devides a vector by another vector.
+     * console.log(vec.y); // 0.6666666666666666
      * 
-     * @example
      * let vec = new Vector2(1, 2);
-     * vec.div(new Vector2(2, 3));
+     * vec.divide(2);
      * console.log(vec.x); // 0.5
+     * console.log(vec.y); // 1
+     * 
      */
-    div(vec) {
-        this.x /= vec.x;
-        this.y /= vec.y;
+    devide(vec){
+        if(typeof vec === "number"){
+            this.x /= vec;
+            this.y /= vec;
+        }
+        else{
+            this.x /= vec.x;
+            this.y /= vec.y;
+        }
     }
 
     /**
@@ -130,9 +122,9 @@ export class Vector2 {
      * 
      * @example
      * let vec = new Vector2(1, 2);
-     * console.log(vec.mag()); // 2.23606797749979 (root of 5)
+     * console.log(vec.magnitude()); // 2.23606797749979 (root of 5)
      */
-    mag() {
+    magnitude() {
         return Math.sqrt(this.x * this.x + this.y * this.y);
     }
 
@@ -145,10 +137,10 @@ export class Vector2 {
      * let vec = new Vector2(1, 2);
      * let norm_vec = vec.normalise(); // new Vector2(0.4472135954999579, 0.8944271909999159)
      * 
-     * console.log(norm_vec.mag()); // 1 always
+     * console.log(norm_vec.magnitude()); // 1 always
      */
     normalise() {
-        let mag = this.mag();
+        let mag = this.magnitude();
         this.x /= mag;
         this.y /= mag;
     }
@@ -161,28 +153,15 @@ export class Vector2 {
      * @example
      * let vec = new Vector2(1, 2);
      * vec.limit(2);
-     * console.log(vec.mag()); // 2
+     * console.log(vec.magnitude()); // 2
      */
     limit(max){
-        if(this.mag() > max){
+        if(this.magnitude() > max){
             this.normalise();
-            this.mulInt(max);
+            this.multiply(max);
         }
     }
 
-    /**
-     * @method
-     * @description Returns a copy of the vector.
-     * @returns {Vector2} A copy of the vector.
-     * 
-     * @example
-     * let vec = new Vector2(1, 2);
-     * let copy = vec.copy();
-     * console.log(copy.x); // 1
-     */
-    copy(){
-        return new Vector2(this.x, this.y);
-    }
 
     /**
      * @method
@@ -202,6 +181,23 @@ export class Vector2 {
         let y = this.y;
         this.x = x * cos - y * sin;
         this.y = x * sin + y * cos;
+    }
+
+
+    /**
+     * @method
+     * @description Returns the distance between two vectors.
+     * @param {Vector2} vec - The vector to find the distance to.
+     * 
+     * @example
+     * let vec = new Vector2(1, 2);
+     * console.log(vec.distance(new Vector2(3, 4))); // 2.8284271247461903
+     * @since 1.3.0
+     */
+    distance(vec){
+        let x = this.x - vec.x;
+        let y = this.y - vec.y;
+        return Math.sqrt(x * x + y * y);
     }
 
     /**
@@ -252,10 +248,10 @@ export class Vector2 {
      * @example
      * let vec1 = new Vector2(1, 2);
      * let vec2 = new Vector2(2, 3);
-     * let prod = Vector2.mul(vec1, vec2);
+     * let prod = Vector2.multiply(vec1, vec2);
      * console.log(prod.x); // 2
      */
-    static mul(vec1, vec2) {
+    static multiply(vec1, vec2) {
         return new Vector2(vec1.x * vec2.x, vec1.y * vec2.y);
     }
 
@@ -270,10 +266,10 @@ export class Vector2 {
      * @example
      * let vec1 = new Vector2(1, 2);
      * let vec2 = new Vector2(2, 3);
-     * let quot = Vector2.div(vec1, vec2);
+     * let quot = Vector2.devide(vec1, vec2);
      * console.log(quot.x); // 0.5
      */
-    static div(vec1, vec2) {
+    static devide(vec1, vec2) {
         return new Vector2(vec1.x / vec2.x, vec1.y / vec2.y);
     }
 
@@ -287,9 +283,9 @@ export class Vector2 {
      * 
      * @example
      * let vec = new Vector2(1, 2);
-     * console.log(vec.mag()); // 2.23606797749979 (root of 5)
+     * console.log(vec.magnitude()); // 2.23606797749979 (root of 5)
      */
-    static mag(vec) {
+    static magnitude(vec) {
         return Math.sqrt(vec.x * vec.x + vec.y * vec.y);
     }
 
@@ -304,10 +300,10 @@ export class Vector2 {
      * @example
      * let vec = new Vector2(1, 2);
      * let norm_vec = Vector2.norm(vec); // new Vector2(0.4472135954999579, 0.8944271909999159)
-     * console.log(norm_vec.mag()); // 1 always
+     * console.log(norm_vec.magnitude()); // 1 always
      */
     static normalise(vec) {
-        let mag = this.mag(vec);
+        let mag = this.magnitude(vec);
         return new Vector2(vec.x / mag, vec.y / mag);
     }
 
@@ -362,7 +358,7 @@ export class Vector2 {
      * let angle = Vector2.angle(vec1, vec2); // PI/4
      */
     static angle(vec1, vec2) {
-        return Math.acos(this.dot(vec1, vec2) / (this.mag(vec1) * this.mag(vec2)));
+        return Math.acos(this.dot(vec1, vec2) / (this.magnitude(vec1) * this.magnitude(vec2)));
     }
 
 
@@ -380,7 +376,7 @@ export class Vector2 {
      * let proj = Vector2.project(vec1, vec2); // new Vector2(1, 0)
      */
     static project(vec1, vec2) {
-        let mag = this.mag(vec2);
+        let mag = this.magnitude(vec2);
         return new Vector2(vec2.x / mag, vec2.y / mag);
     }
 
@@ -456,7 +452,7 @@ export class Vector2 {
      * 
      */
     static angle(vec1, vec2) {
-        return Math.acos(this.dot(vec1, vec2) / (this.mag(vec1) * this.mag(vec2)));
+        return Math.acos(this.dot(vec1, vec2) / (this.magnitude(vec1) * this.magnitude(vec2)));
     }
 
     /**
@@ -480,7 +476,7 @@ export class Vector2 {
      * 
      * @example
      * let vec = Vector2.randomUnit();
-     * vec.mag(); // 1
+     * vec.magnitude(); // 1
      */
     static randomUnit(){
         return this.random().normalise();
@@ -497,7 +493,7 @@ export class Vector2 {
      * 
      * @example
      * let vec = Vector2.randomRange(1, 10);
-     * vec.mag(); // 1 to 10
+     * vec.magnitude(); // 1 to 10
      * 
      */
     static randomRange(min, max){

@@ -8,16 +8,14 @@ import {Color} from "./basic/color.js";
 import {Cookies} from "./basic/cookies.js";
 
 //Events
-import {Pointer} from "./events/pointer.js";
-import {Keyboard} from "./events/keyboard.js";
-import { CustomEvent } from "./events/custom_event.js";
+import { Input } from "./events/input.js";
+import { CustomEvent } from "./events/customEvent.js";
 
 //maths
 import {Vector2} from "./maths/vec2.js";
 import {Transform} from "./maths/transform.js";
 
 //physics
-import {CollidableTransform} from "./physics/collidable_transform.js";
 import {Kinematic} from "./physics/kinematic.js";
 import {Collision} from "./physics/collision.js";
 
@@ -27,7 +25,7 @@ import {Sprite}  from "./renderable/image.js";
 import {Polygon} from "./renderable/polygon.js";
 import {Rect} from "./renderable/rect.js";
 import {SpriteSheet} from "./renderable/spritesheet.js";
-import {SpriteSheetAnimation} from "./renderable/spritesheet_animation.js";
+import {SpriteSheetAnimation} from "./renderable/spritesheetAnimation.js";
 import {Triangle} from "./renderable/triangle.js";
 
 import { WireGrid} from "./gizmos/wireGrid.js";
@@ -46,9 +44,9 @@ export {
     
     Entity,Sound,Color,Cookies,
 
-    Pointer,Keyboard,CustomEvent,
+    Input,CustomEvent,
 
-    Vector2,Transform,CollidableTransform,
+    Vector2,Transform,
 
     Collision,Kinematic,
 

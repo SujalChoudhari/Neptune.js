@@ -1,8 +1,8 @@
+import { Vector2 } from "./maths/vec2.js";
 /**
  * @class Collision
  * @classdesc A class for collision detection
  * @static
- * 
  * 
  * @since 1.0.0
  * @author Sujal Choudhari <sjlchoudhari@gmail.com>
@@ -12,6 +12,7 @@ export class Collision{
 
     /**
      * @method 
+     * 
      * @static
      * @description Check if a circle and anonther circle are colliding
      * @param {Circle} circle1 - The first circle
@@ -33,6 +34,7 @@ export class Collision{
 
     /**
      * @method
+     * 
      * @static
      * @description Check if a circle and a rectangle are colliding
      * @param {Circle} circle - The circle
@@ -66,6 +68,7 @@ export class Collision{
 
     /**
      * @method
+     * 
      * @static
      * @description Check if a rectangle and another rectangle are colliding
      * @param {Rect} rect1 - The first rectangle
@@ -88,6 +91,7 @@ export class Collision{
 
     /**
      * @method
+     * 
      * @static
      * @description Check if a circle is colliding with a convex polygon
      * @param {Circle} circle - The circle
@@ -102,7 +106,6 @@ export class Collision{
     static circlePolygon(circle, polygon){
         var point = new Vector2();
         var closestPoint = new Vector2();
-        var closestPointDistance = Number.MAX_VALUE;
         var closestPointIndex = 0;
         var closestPointDistanceSquared = 0;
         var circleDistanceX = 0;
@@ -134,6 +137,7 @@ export class Collision{
     /**
      * @method  
      * @static
+     * 
      * @description Check if a rectangle and a convex polygon are colliding. Calculates based of the points of the polygon
      * @param {Rect} rect - The rectangle   
      * @param {Polygon} polygon - The convex polygon    
@@ -153,10 +157,9 @@ export class Collision{
         var j = 0;
         var rectPoint = new Vector2();
         var polygonPoint = new Vector2();
-        var rectPointDistance = 0;
-        var polygonPointDistance = 0;
+
         var rectPointDistanceSquared = 0;
-        var polygonPointDistanceSquared = 0;
+
         var rectPointDistanceSquared = 0;
         for (i = 0; i < rectPointsLength; i++) {
             rectPoint.x = rectPoints[i].x;
@@ -176,5 +179,28 @@ export class Collision{
             }
         }
         return true;
+    }
+
+    /**
+     * @method
+     * 
+     * @static
+     * @description Check if Point is Colliding with a Circle
+     * @param {Vector2} point - The position vector of the point
+     * @param {Circle} circle - The circle
+     * @returns {boolean} - True if the point and the circle are colliding
+     * 
+     * @example
+     * if (!Collision.pointCircle(point, circle)){
+     * //do something
+     * }
+     * @since 1.2.2
+     * 
+     */
+    static pointCircle(point, circle){
+        var circleDistanceX = point.x - circle.worldPos.x;
+        var circleDistanceY = point.y - circle.worldPos.y;
+        var circleDistanceSquared = circleDistanceX * circleDistanceX + circleDistanceY * circleDistanceY;
+        return circleDistanceSquared < circle.radius * circle.radius;
     }
 }

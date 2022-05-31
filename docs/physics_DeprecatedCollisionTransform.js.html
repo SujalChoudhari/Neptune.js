@@ -39,7 +39,7 @@
 
 
     <title>
-      WireGrid
+      physics/DeprecatedCollisionTransform.js
     </title>
 
     <!--[if lt IE 9]>
@@ -106,7 +106,7 @@
     <div id="main" class="main-content">
       
       <h1 id='page-title' class="page-title">
-        WireGrid
+        physics/DeprecatedCollisionTransform.js
       </h1>
       
 
@@ -114,494 +114,140 @@
 
 
 
-
-<section>
-
-
-<header>
-    
-        
-        <h2>
-        
-        WireGrid
-        
-        </h2>
-        
-        
-            <div class="class-description"><p>Creates Grid of wires</p></div>
-        
-    
-</header>
-
-
-<article>
-    <div class="container-overview">
-    
-        
-
-    
-        <h2>Constructor</h2>
-    
-
-    <h4 class="name" id="WireGrid">
-        <a href="#WireGrid">#</a>
-        <span class="type-signature"></span>new WireGrid<span class="signature">()</span><span class="type-signature"></span>
-    </h4>
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-        <th>Attributes</th>
-        
-
-        
-        <th>Default</th>
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>kwargs.color</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="Color.html">Color</a></span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    Color.fuchsia
-                
-                </td>
-            
-
-            <td class="description last"><p>Color of the grid</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>kwargs.size</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Number</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    200
-                
-                </td>
-            
-
-            <td class="description last"><p>Size of the grid</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>kwargs.space</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Number</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    10
-                
-                </td>
-            
-
-            <td class="description last"><p>Space between each wire</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    </div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-since">Since:</dt>
-            <dd class="tag-since"><ul class="dummy"><li>1.0.0</li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-author">Author:</dt>
-            <dd class="tag-author">
-                <ul>
-                    <li><a href="mailto:sjlchoudhari@gmail.com">Sujal Choudhari</a></li>
-                </ul>
-            </dd>
-        </div>
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-license">License:</dt>
-            <dd class="tag-license"><ul class="dummy"><li>MIT</li></ul></dd>
-        </div>
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-source">Source:</dt>
-            <dd class="tag-source"><ul class="dummy"><li>
-                <a href="gizmos_wireGrid.js.html">gizmos/wireGrid.js</a>, <a href="gizmos_wireGrid.js.html#line7">line 7</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Example</strong>
-        
-    <div class="rel">
-    <pre class="prettyprint"><code>// Create a new WireGridlet grid = new WireGrid({     color: Color.fromRGBA(0,0,0,0.3),     size: this.width,     space: 100,     app: this });</code></pre>
-    
     
-    </div>
-
-    </div>
-
-
-    
-    </div>
-
-    
-        <h3 class="subsection-title">Extends</h3>
-
-        
-
-
-    <ul>
-        <li><a href="Entity.html">Entity</a></li>
-    </ul>
-
-
-    
-
-    
-
-    
-
-     
-
-    
-
-    
-
-    
-        <h3 class="subsection-title">Methods</h3>
-
-        
-            
-
-    
-
-    <h4 class="name" id="draw">
-        <a href="#draw">#</a>
-        <span class="type-signature"></span>draw<span class="signature">(ctx)</span><span class="type-signature"></span>
-    </h4>
-
-    
-
-
-
-    <div class="description">
-        <p>Draws the grid</p>
-    </div>
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Parameters:</strong>
-        
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>ctx</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">CanvasRenderingContext2D</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Canvas context</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-    </div>
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-overrides">Overrides:</dt>
-            <dd class="tag-overrides"><ul class="dummy"><li>
-                <a href="Entity.html#draw">Entity#draw</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <div class="details-item-container">
-            <dt class="tag-source">Source:</dt>
-            <dd class="tag-source"><ul class="dummy"><li>
-                <a href="gizmos_wireGrid.js.html">gizmos/wireGrid.js</a>, <a href="gizmos_wireGrid.js.html#line48">line 48</a>
-            </li></ul></dd>
-        </div>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    <div class="method-member-container flex flex-col w-100 overflow-auto mt-20">
-        <strong>Example</strong>
-        
-    <div class="rel">
-    <pre class="prettyprint"><code>// Draw the gridgrid.draw(ctx);</code></pre>
-    
-    
-    </div>
-
-    </div>
-
-
-        
-    
-
-    
-
-    
-</article>
-
-</section>
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import { Transform } from "../maths/transform.js";
+import { Vector2 } from "../maths/vec2.js";
+
+
+/**
+ * @class CollidableTransform
+ * @classdesc Transform that can collide.
+ * @extends Transform   
+ * @deprecated Use Physics/Collision Instead.
+ * @property {Object} kwargs - The keyword arguments.
+ * @property {Boolean} [kwargs.collidable=true] - Whether the transform is collidable.
+ * @example 
+ * // Create a new collidable transform.
+ * let collidableTransform = new CollidableTransform({
+ *      pos: new Vector2(10, 10),
+ *      size: new Vector2(10, 10),
+ *      rot: 0,
+ *      collidable: true
+ *   });
+ * 
+ * 
+ * @since 1.0.0
+ * @author Sujal Choudhari &lt;sjlchoudhari@gmail.com>
+ * @license MIT
+ */
+export class CollidableTransform extends Transform {
+    constructor(kwargs) {
+        super(kwargs);
+        this.collidable = kwargs["collidable"] || true;
+    }
+
+
+    /**
+     * @method
+     * @description Updates the Transform.
+     * Calculates the world position and rotation.
+     * @param {Number} deltaTime - The time since the last update.
+     * 
+     */
+    update(deltaTime) {
+        super.update(deltaTime);
+    }
+
+    /**
+     * @method
+     * @description Checks if the transform contains the point.
+     * @param {Number} x - The x position.
+     * @param {Number} y - The y position.
+     * @returns {Boolean} Whether the transform contains the point.
+     * 
+     * @example
+     * // Check if the transform contains the point.
+     * if(transform.containsPoint(x, y)){
+     *     // Do something.
+     * }
+     */
+    containsPoint(x, y) {
+        return x >= this.worldPos.x &amp;&amp; x &lt;= this.worldPos.x + this.size.x &amp;&amp; y >= this.worldPos.y &amp;&amp; y &lt;= this.worldPos.y + this.size.y;
+    }
+
+    /**
+     * @method
+     * @description Checks if the point collides with the transform.
+     * The collidable property must be set to true for any collision to occur.
+     * @param {Vector2} point - The point to check.
+     * @returns {Boolean} Whether the point collides with the transform.
+     * 
+     * @example
+     * // Check if the point collides with the transform.
+     * if(transform.checkCollisionPoint(point)){
+     *    // Do something.
+     * }
+     * 
+     */
+    checkCollisionPoint(point) {
+        return this.collidable &amp;&amp; this.containsPoint(point.x, point.y);
+    }
+
+    /**
+     * @method
+     * @description Get the direction of the collision of a Rect (Not Tested).
+     * @param {Rect} rect - The rect to check.
+     * @returns {Vector2} The direction of the collision.
+     * 
+     * @example
+     * // Get the direction of the collision of a Rect.
+     * let dir = transform.getCollisionDirection(rect);
+     * 
+     * 
+     */
+    getCollisionDirection(rect) {
+        let direction = new Vector2(0, 0);
+        if (this.checkCollisionPoint(new Vector2(rect.worldPos.x, rect.worldPos.y))) {
+            direction.x = 1;
+        }
+        if (this.checkCollisionPoint(new Vector2(rect.worldPos.x + rect.size.x, rect.worldPos.y))) {
+            direction.x = -1;
+        }
+        if (this.checkCollisionPoint(new Vector2(rect.worldPos.x, rect.worldPos.y + rect.size.y))) {
+            direction.y = 1;
+        }
+        if (this.checkCollisionPoint(new Vector2(rect.worldPos.x + rect.size.x, rect.worldPos.y + rect.size.y))) {
+            direction.y = -1;
+        }
+        return direction;
+    }
+
+    /** 
+     * @method
+     * @description Returns the collision Point of the transform with the rect.
+     * @param {Rect} rect - The rect to check.
+     * @returns {Vector2} The collision point.
+     * 
+     * @example
+     * // Get the collision point of the transform with the rect.
+     * let collisionPoint = transform.getCollisionPoint(rect);
+     * 
+     */
+    getCollisionPoint(rect) {
+        let dir = this.getCollisionDirection(rect);
+        if (dir.x != 0) {
+            return new Vector2(this.worldPos.x + this.size.x, this.worldPos.y + this.size.y / 2);
+        }
+        else if (dir.y != 0) {
+            return new Vector2(this.worldPos.x + this.size.x / 2, this.worldPos.y + this.size.y);
+        }
+        return new Vector2(0, 0);
+    }
+}</code></pre>
+        </article>
+    </section>
 
 
 
