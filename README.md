@@ -3,6 +3,33 @@
 </p>
 
 <p align="center">
+<br>
+GitHub Stats: <br>
+<img src="https://badgen.net/github/stars/notsujal/neptune.js"/>
+<img src="https://badgen.net/github/forks/notsujal/neptune.js"/>
+<img src="https://badgen.net/github/tags/notsujal/neptune.js"/>
+<br>
+<br>
+Releases: <br>
+<img src="https://badgen.net/github/tag/notsujal/neptune.js"/>
+<img src="https://badgen.net/github/releases/notsujal/neptune.js"/>
+<img src="https://badgen.net/github/license/notsujal/neptune.js"/>
+<br>
+<br>
+Issues: <br>
+<img src="https://badgen.net/github/issues/notsujal/neptune.js"/>
+<img src="https://badgen.net/github/closed-issues/notsujal/neptune.js"/>
+<img src="https://badgen.net/github/open-issues/notsujal/neptune.js"/>
+
+<img src="https://badgen.net/github/label-issues/Notsujal/neptune.js/enhancement"/>
+<img src="https://badgen.net/github/label-issues/Notsujal/neptune.js/help wanted"/>
+<img src="https://badgen.net/github/label-issues/Notsujal/neptune.js/fixed"/>
+<img src="https://badgen.net/github/label-issues/Notsujal/neptune.js/bug"/>
+
+
+
+
+<p align="center">
 Neptune is still under development,
 Soon after testing the modules, 
 it will be released as a stable version.
