@@ -1,36 +1,32 @@
 import { Transform } from "../maths/transform.js";
 import { Color } from "../basic/color.js";
-
+import { Shape } from "./graphics.js";
 /**
- * @class Polygon
- * @classdesc A Polygon is a class that represents a polygon.
+ * @class Circle
+ * @classdesc A Circle is a class that represents a circle.
  * @extends Transform
  * @param {Object} kwargs - The keyword arguments.
- * @param {Vector2[]} [kwargs.points=[]] - The points.
+ * @param {Number} [kwargs.radius=1] - The radius.
  * @param {Color} [kwargs.color=Color.random()] - The color.
  * 
  * @example
- * // Create a new polygon.
- * let polygon = new Polygon({
- *    points: [
- *       new Vector2(0, 0),
- *       new Vector2(10, 0),
- *       new Vector2(10, 10),
- *       new Vector2(0, 10)
- *      ],
- *    color: new Color(255, 0, 0)
+ * // Create a new circle.
+ * let circle = new Circle({
+ *     radius: 10,
+ *     color: new Color(255, 0, 0)
  * });
  * 
  * 
  * @since 1.0.0
  * @author Sujal Choudhari <sjlchoudhari@gmail.com>
  * @license MIT
+ * 
  */
-export class Polygon extends Transform {
+export class Circle extends Shape {
     constructor(kwargs) {
         super(kwargs);
         this.color = kwargs["color"] || Color.random();
-        this.points = kwargs["points"] || [];
+        this.radius = kwargs["radius"] || 1;
     }
 
     /** 
@@ -45,16 +41,14 @@ export class Polygon extends Transform {
         super.init();
     }
 
-
     /**
      * @method
-     * @description Updates the Polygon.
+     * @description Updates the Circle.
      * @param {Number} deltaTime - The time since the last update.
      * 
-     * @example 
-     * // Update the polygon.
-     * polygon.update(deltaTime);
-     * 
+     * @example
+     * // Update the circle.
+     * circle.update(deltaTime);
      */
     update(deltaTime) {
         super.update(deltaTime);
@@ -62,22 +56,18 @@ export class Polygon extends Transform {
 
     /**
      * @method
-     * @description Draws the Polygon.
+     * @description Draws the Circle.
      * @param {CanvasRenderingContext2D} ctx - The canvas context.
      * 
      * @example
-     * // Draw the polygon.
-     * polygon.draw(ctx);
+     * // Draw the circle.
+     * circle.draw(ctx);
      */
     draw(ctx) {
-
         ctx.fillStyle = this.color.toString();
         ctx.beginPath();
-        ctx.moveTo(this.points[0].x, this.points[0].y);
-        for (let i = 1; i < this.points.length; i++) {
-            ctx.lineTo(this.points[i].x + this.worldPos.x, this.points[i].y + this.worldPos.y);
-        }
-        ctx.closePath();
+        ctx.arc(this.worldPos.x, this.worldPos.y, this.radius, 0, 2 * Math.PI);
         ctx.fill();
+
     }
 }

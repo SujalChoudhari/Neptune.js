@@ -40,6 +40,7 @@ it will be released as a stable version.
 Thanks for your patience.
 <a href="https://GitHub.com/Notsujal/neptune.js"> Follow along the development </a> or check out the <a href="
 https://neptune-js.vercel.app/"> documentation </a>
+Note: Quickstart Guide and Examples are not uptodate with the latest version.
 </p>
 
 ## What is Neptune.js?
@@ -74,27 +75,3 @@ Neptune provides various features which can work independently to some extent.
 ## Fast
 You don't have to wory about the main loop and the event cycles. 
 Neptune handles these things under the hood, and provides you with a clean but customisable features.
-
------
-## Github Repository File Structure
-The file structure of the Neptune.js repository is as follows:
-* `/docs` - Jsdoc Generated Documentation
-* `/static/` - Static files
-    * `/images` - Images for the documentation
-	* `/examples` - Examples for the documentation
-	* `/liveeditor` - Live Editor for the documentation
-* `/tutorials/` - Tutorials
-* `/src/` - Source code
-	* `/basic/` - Basic Components that every game needs
-	* `/events/` - Input and Event Handling
-	* `/gizmos/` - Gizmos for the game
-	* `/maths/` - Vector and Transform Maths
-	* `/physics/` - Physics
-	* `/renderable/` - Renderable Components
-	* `/ui/` - Text and Buttons
-* `/README.md` - Readme
-* `/package.json` - Package.json
-* `/LICENSE` - License
-* `/jsdoc.json` - Jsdoc Configuration
-* `/.gitignore` - Untracked files
-* `/.npmignore` - NPM Ignore for the project

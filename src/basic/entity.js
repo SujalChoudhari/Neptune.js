@@ -50,38 +50,8 @@ export class Entity {
         this.parent = parent;
     }
 
-    /**
-     * @method
-     * @description Initializes the entity.
-     * 
-     * @example
-     * // Initialize the entity.
-     * entity.init();
-     */
-    init() { }
-
-    /**
-     * @method
-     * @description Updates the entity.
-     * @param {Number} deltaTime - The time between the last frame and the current frame.
-     * 
-     * @example
-     * // Update the entity.
-     * entity.update(deltaTime);
-     */
-    update(deltaTime) {
-    }
-
-    /**
-     * @method
-     * @description Draws the entity.
-     * @param {CanvasRenderingContext2D} ctx - The canvas context.
-     * 
-     * @example
-     * // Draw the entity.
-     * entity.draw(ctx);
-     */
-    draw(ctx) {
-        
-    }
 }
+
+Entity.prototype.init = () =>{}
+Entity.prototype.update = (deltaTime) =>{}
+Entity.prototype.draw = (ctx) =>{}

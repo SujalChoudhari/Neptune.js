@@ -1,4 +1,5 @@
 import { Transform } from "../maths/transform.js";
+import { Shape } from "./graphics.js";
 
 /**
  * @class Sprite
@@ -20,7 +21,7 @@ import { Transform } from "../maths/transform.js";
  * @author Sujal Choudhari <sjlchoudhari@gmail.com>
  * @license MIT
  */
-export class Sprite extends Transform {
+export class Sprite extends Shape {
     constructor(kwargs) {
         super(kwargs);
         this.image = new Image();
@@ -67,7 +68,6 @@ export class Sprite extends Transform {
      * 
      */
     draw(ctx) {
-        super.draw(ctx);
         if (this.isLoaded) return;
         
         ctx.drawImage(this.image,

@@ -6,9 +6,12 @@ images/
 node_modules/
 tutorials/
 static/
+tests/
 
 #Files
 .gitignore
 jsdoc.json
 README.md
+SECURITY.md
+CHANGELOG.md
 *.tgz

@@ -1,5 +1,6 @@
 import {Transform} from "../maths/transform.js";
 import {Color} from "../basic/color.js";
+import { Shape } from "./graphics.js";
 
 /**
  * @class Rect
@@ -19,7 +20,7 @@ import {Color} from "../basic/color.js";
  * @author Sujal Choudhari <sjlchoudhari@gmail.com>
  * @license MIT
  */
-export class Rect extends Transform{
+export class Rect extends Shape{
     constructor(kwargs){
         super(kwargs);
         this.color = kwargs["color"] || Color.random();

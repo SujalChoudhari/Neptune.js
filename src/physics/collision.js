@@ -1,206 +1,148 @@
-import { Vector2 } from "./maths/vec2.js";
+import { Vector2 } from '../maths/vec2.js';
+
 /**
  * @class Collision
- * @classdesc A class for collision detection
- * @static
- * 
- * @since 1.0.0
- * @author Sujal Choudhari <sjlchoudhari@gmail.com>
- * @license MIT
+ * Collision Detection Class
  */
-export class Collision{
+export class Collision {
+	constructor() {
+		this.testAxis = new Vector2(0, 0);
+		this.response = new Vector2(0, 0);
+		this.relTanVel = new Vector2(0, 0);
+		this.tangent = new Vector2(0, 0);
+		this.relVel = new Vector2(0, 0);
+		this.center = new Vector2(0, 0);
+		this.axis = new Vector2(0, 0);
+		this.line = new Vector2(0, 0);
+		this.depth = 0;
+		this.edge = null;
+		this.vertex = null;
+	}
+	/**
+	 * @description SAT Collision Detection
+	 * @method
+	 * @param {Body} B0
+	 * @param {Body} B1
+	 */
+	SAT(B0, B1) {
+		// no aabb overlap performance kwargsimization
+		this.checkAABB(B1, B0);
+		let minDistance = Number.MAX_SAFE_INTEGER;
+		const n0 = B0.edges.length;
+		const n1 = B1.edges.length;
+		// Iterate through all of the edges of both bodies
+		for (let i = 0, n = n0 + n1; i < n; i++) {
+			// get edge
+			let edge = i < n0 ? B0.edges[i] : B1.edges[i - n0];
+			// Calculate the perpendicular to this edge and normalize it
+			this.testAxis.normal(edge.p0, edge.p1);
+			// Project both bodies onto the normal
+			B0.project(this.testAxis);
+			B1.project(this.testAxis);
+			//Calculate the distance between the two intervals
+			const dist = B0.min < B1.min ? B1.min - B0.max : B0.min - B1.max;
+			// If the intervals don't overlap, return, since there is no collision
+			if (dist > 0) {
+				return false;
+			}
+			else if (Math.abs(dist) < minDistance) {
+				// Save collision information
+				minDistance = Math.abs(dist);
+				this.axis.copy(this.testAxis);
+				this.edge = edge;
+			}
+		}
+		// save penetration depth
+		this.depth = minDistance;
+		// Ensure collision edge in B1 and collision vertex in B0
+		// console.log(this.edge.parent)
+		if (this.edge.parent != B1) {
+			const t = B1;
+			B1 = B0;
+			B0 = t;
+		}
+		// Make sure that the collision normal is pointing at B1
+		// let n = this.center.sub2(B0.center, B1.center).dot(this.axis);
+		const xx = B0.center.x - B1.center.x;
+		const yy = B0.center.y - B1.center.y;
+		const n = this.axis.x * xx + this.axis.y * yy;
+		// Revert the collision normal if it points away from B1
+		if (n < 0) {
+			this.axis.negative();
+		}
+		let smallestDist = Number.MAX_SAFE_INTEGER, v, dist;
+		for (let i = 0; i < B0.vCount; i++) {
+			// Measure the distance of the vertex from the line using the line equation
+			v = B0.vertices[i];
+			this.line.sub2(v.position, B1.center);
+			dist = this.axis.dot(this.line);
+			// Set the smallest distance and the collision vertex
+			if (dist < smallestDist) {
+				smallestDist = dist;
+				this.vertex = v;
+			}
+		}
+		// There is no separating axis. Report a collision!
+		return true;
+	}
 
-    /**
-     * @method 
-     * 
-     * @static
-     * @description Check if a circle and anonther circle are colliding
-     * @param {Circle} circle1 - The first circle
-     * @param {Circle} circle2 - The second circle
-     * @returns {boolean} - True if the circles are colliding
-     * 
-     * @example
-     * if (!Collision.circleCircle(circle1, circle2)){
-     *     //do something
-     * }
-     */
-    static circleCircle(circle1, circle2){
-        var dx = circle1.worldPos.x - circle2.worldPos.x;
-        var dy = circle1.worldPos.y - circle2.worldPos.y;
-        var distance = Math.sqrt(dx * dx + dy * dy);
-        return distance < circle1.radius + circle2.radius;
-    }
-
-
-    /**
-     * @method
-     * 
-     * @static
-     * @description Check if a circle and a rectangle are colliding
-     * @param {Circle} circle - The circle
-     * @param {Rect} rect - The rectangle
-     * @returns {boolean} - True if the circle and the rectangle are colliding
-     * 
-     * @example
-     * if (!Collision.circleRect(circle, rect)){
-     *    //do something
-     * }
-     */
-    static circleRect(circle, rect){
-        var circleDistanceX = Math.abs(circle.worldPos.x - rect.worldPos.x - rect.size.x / 2);
-        var circleDistanceY = Math.abs(circle.worldPos.y - rect.worldPos.y - rect.size.y / 2);
-        if (circleDistanceX > (rect.size.x / 2 + circle.radius)) {
-            return false;
-        }
-        if (circleDistanceY > (rect.size.y / 2 + circle.radius)) {
-            return false;
-        }
-        if (circleDistanceX <= (rect.size.x / 2)) {
-            return true;
-        }
-        if (circleDistanceY <= (rect.size.y / 2)) {
-            return true;
-        }
-        var cornerDistance_sq = (circleDistanceX - rect.size.x / 2) * (circleDistanceX - rect.size.x / 2) + (circleDistanceY - rect.size.y / 2) * (circleDistanceY - rect.size.y / 2);
-        return cornerDistance_sq <= (circle.radius * circle.radius);
-    }
-
-
-    /**
-     * @method
-     * 
-     * @static
-     * @description Check if a rectangle and another rectangle are colliding
-     * @param {Rect} rect1 - The first rectangle
-     * @param {Rect} rect2 - The second rectangle
-     * @returns {boolean} - True if the rectangles are colliding
-     * 
-     * @example
-     * if (!Collision.rectRect(rect1, rect2)){
-     *    //do something
-     * }
-     */
-    static rectRect(rect1, rect2){
-        return !(
-            rect1.worldPos.x > rect2.worldPos.x + rect2.size.x ||
-            rect1.worldPos.x + rect1.size.x < rect2.worldPos.x ||
-            rect1.worldPos.y > rect2.worldPos.y + rect2.size.y ||
-            rect1.worldPos.y + rect1.size.y < rect2.worldPos.y
-        );
-    }
-
-    /**
-     * @method
-     * 
-     * @static
-     * @description Check if a circle is colliding with a convex polygon
-     * @param {Circle} circle - The circle
-     * @param {Polygon} polygon - The convex polygon    
-     * @returns {boolean} - True if the circle and the polygon are colliding. Calculates based on the points of the polygon
-     * 
-     * @example
-     * if (!Collision.circlePolygon(circle, polygon)){
-     *   //do something
-     * }
-     */
-    static circlePolygon(circle, polygon){
-        var point = new Vector2();
-        var closestPoint = new Vector2();
-        var closestPointIndex = 0;
-        var closestPointDistanceSquared = 0;
-        var circleDistanceX = 0;
-        var circleDistanceY = 0;
-        var circleDistanceSquared = 0;
-        var circleDistance = 0;
-        var polygonPoints = polygon.points;
-        var polygonPointsLength = polygonPoints.length;
-        var i = 0;
-        for (i = 0; i < polygonPointsLength; i++) {
-            point.x = polygonPoints[i].x;
-            point.y = polygonPoints[i].y;
-            circleDistanceX = circle.worldPos.x - point.x;
-            circleDistanceY = circle.worldPos.y - point.y;
-            circleDistanceSquared = circleDistanceX * circleDistanceX + circleDistanceY * circleDistanceY;
-            if (circleDistanceSquared < closestPointDistanceSquared) {
-                closestPointDistanceSquared = circleDistanceSquared;
-                closestPointIndex = i;
-            }
-        }
-        closestPoint.x = polygonPoints[closestPointIndex].x;
-        closestPoint.y = polygonPoints[closestPointIndex].y;
-        circleDistanceX = circle.worldPos.x - closestPoint.x;
-        circleDistanceY = circle.worldPos.y - closestPoint.y;
-        circleDistance = Math.sqrt(circleDistanceX * circleDistanceX + circleDistanceY * circleDistanceY);
-        return circleDistance < circle.radius;
-    }
-
-    /**
-     * @method  
-     * @static
-     * 
-     * @description Check if a rectangle and a convex polygon are colliding. Calculates based of the points of the polygon
-     * @param {Rect} rect - The rectangle   
-     * @param {Polygon} polygon - The convex polygon    
-     * @returns {boolean} - True if the rectangle and the polygon are colliding
-     * 
-     * @example
-     * if (!Collision.rectPolygon(rect, polygon)){
-     *  //do something
-     * }
-     */
-    static rectPolygon(rect, polygon){
-        var rectPoints = rect.points;
-        var polygonPoints = polygon.points;
-        var rectPointsLength = rectPoints.length;
-        var polygonPointsLength = polygonPoints.length;
-        var i = 0;
-        var j = 0;
-        var rectPoint = new Vector2();
-        var polygonPoint = new Vector2();
-
-        var rectPointDistanceSquared = 0;
-
-        var rectPointDistanceSquared = 0;
-        for (i = 0; i < rectPointsLength; i++) {
-            rectPoint.x = rectPoints[i].x;
-            rectPoint.y = rectPoints[i].y;
-            for (j = 0; j < polygonPointsLength; j++) {
-                polygonPoint.x = polygonPoints[j].x;
-                polygonPoint.y = polygonPoints[j].y;
-                rectPointDistanceX = rectPoint.x - polygonPoint.x;
-                rectPointDistanceY = rectPoint.y - polygonPoint.y;
-                rectPointDistanceSquared = rectPointDistanceX * rectPointDistanceX + rectPointDistanceY * rectPointDistanceY;
-                if (rectPointDistanceSquared < rectPointDistanceSquared) {
-                    rectPointDistanceSquared = rectPointDistanceSquared;
-                }
-            }
-            if (rectPointDistanceSquared > 0) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * @method
-     * 
-     * @static
-     * @description Check if Point is Colliding with a Circle
-     * @param {Vector2} point - The position vector of the point
-     * @param {Circle} circle - The circle
-     * @returns {boolean} - True if the point and the circle are colliding
-     * 
-     * @example
-     * if (!Collision.pointCircle(point, circle)){
-     * //do something
-     * }
-     * @since 1.2.2
-     * 
-     */
-    static pointCircle(point, circle){
-        var circleDistanceX = point.x - circle.worldPos.x;
-        var circleDistanceY = point.y - circle.worldPos.y;
-        var circleDistanceSquared = circleDistanceX * circleDistanceX + circleDistanceY * circleDistanceY;
-        return circleDistanceSquared < circle.radius * circle.radius;
-    }
+	checkAABB(B1, B0) {
+		if (!(0 > Math.abs(B1.center.x - B0.center.x) - (B1.halfEx.x + B0.halfEx.x) &&
+			0 > Math.abs(B1.center.y - B0.center.y) - (B1.halfEx.y + B0.halfEx.y))) {
+			return false;
+		}
+	}
+	/**
+	 * @description Resolve Collision based on SAT Given Collision Information
+	 * @method
+	 * @param {float} friction
+	 */
+	resolve(friction) {
+		// cache vertices positions
+		let p0 = this.edge.p0, p1 = this.edge.p1, o0 = this.edge.v0.oldPosition, o1 = this.edge.v1.oldPosition, vp = this.vertex.position, vo = this.vertex.oldPosition, rs = this.response;
+		this.response.scale(this.axis, this.depth);
+		// calculate where on the edge the collision vertex lies
+		let t = Math.abs(p0.x - p1.x) > Math.abs(p0.y - p1.y)
+			? (vp.x - rs.x - p0.x) / (p1.x - p0.x)
+			: (vp.y - rs.y - p0.y) / (p1.y - p0.y);
+		// lambda math
+		let lambda = 1 / (t * t + (1 - t) * (1 - t));
+		// calculate mass
+		let m0 = this.vertex.parent.mass, m1 = this.edge.parent.mass, tm = m0 + m1;
+		m0 = m0 / tm;
+		m1 = m1 / tm;
+		// apply the collision response
+		p0.x -= rs.x * (1 - t) * lambda * m0;
+		p0.y -= rs.y * (1 - t) * lambda * m0;
+		p1.x -= rs.x * t * lambda * m0;
+		p1.y -= rs.y * t * lambda * m0;
+		vp.x += rs.x * m1;
+		vp.y += rs.y * m1;
+		//
+		// collision friction
+		//
+		// compute relative velocity
+		this.relVel.set(vp.x - vo.x - (p0.x + p1.x - o0.x - o1.x) * 0.5, vp.y - vo.y - (p0.y + p1.y - o0.y - o1.y) * 0.5);
+		// axis perpendicular
+		this.tangent.perp(this.axis);
+		// // project the relative velocity onto tangent
+		let relTv = this.relVel.dot(this.tangent);
+		let rt = this.relTanVel.set(this.tangent.x * relTv, this.tangent.y * relTv);
+		// // apply tangent friction
+		let groundf = 0.95;
+		vo.x += rt.x * groundf * m1;
+		vo.y += rt.y * groundf * m1;
+		o0.x -= rt.x * (1 - t) * groundf * lambda * m0;
+		o0.y -= rt.y * (1 - t) * groundf * lambda * m0;
+		o1.x -= rt.x * t * groundf * lambda * m0;
+		o1.y -= rt.y * t * groundf * lambda * m0;
+	}
+	
+	aabb(B0, B1) {
+		return (B0.bound.minX <= B1.bound.maxX) &&
+			(B0.bound.minY <= B1.bound.maxY) &&
+			(B0.bound.maxX >= B1.bound.minX) &&
+			(B1.bound.maxY >= B0.bound.minY);
+	}
 }
+

@@ -40,6 +40,9 @@ export class Application {
         this.clearColor = Color.gray;
 
         this.canvas = document.getElementById("neptune-canvas");
+        this.canvas.setAttribute("height", window.innerHeight);
+        this.canvas.setAttribute("width", window.innerWidth);
+        
         this.canvas.style.display = "none";
         this.ctx = this.canvas.getContext("2d");
         
@@ -50,6 +53,7 @@ export class Application {
                 this.canvas.style.display = "block";
                 document.getElementById("neptune-gamepage").remove();
             } catch (error) {}
+            this.canvas.setAttribute("tabindex", "1");
             this.init();
         }
 
@@ -84,6 +88,8 @@ export class Application {
         this.entities.forEach(entity => {
             entity.init();
         });
+
+        setInterval(this.fixedUpdate,100);
     }
 
     /**
@@ -106,6 +112,12 @@ export class Application {
         });
     }
 
+    lateUpdate(deltaTime) {
+    }
+
+    fixedUpdate() {
+    }
+
 
     /**
      * @method
@@ -113,7 +125,6 @@ export class Application {
      * @param {number} timeStamp - The current time stamp.
      */
     gameloop(timeStamp) {
-
         this.deltaTime = (timeStamp - this.currentTimeStamp) * this.fps / 1000;
         this.currentTimeStamp = timeStamp;
 
@@ -124,6 +135,7 @@ export class Application {
 
         if (this.update) this.update(this.deltaTime);
         if (this.draw) this.draw(this.ctx);
+        if (this.lateUpdate) this.lateUpdate(this.deltaTime);
         requestAnimationFrame(this.gameloop.bind(this));
     }
     

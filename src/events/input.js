@@ -24,39 +24,58 @@
  * @license MIT
  * 
  */
-export class Input{
+export class Input {
+    static canvas;
+    static pos = {
+        x: 0,
+        y: 0
+    };
+    static pressedButton;
+    static isClicked;
+    static isDoubleClicked;
+    static isMouseDown;
+    static touches = [];
+    static keyPressed = [];
+    static specialKeyPressed;
+    static wheelDelta;
+
+    /**
+     * @method 
+     * @description The function to call when the button is clicked.
+     * @param {event} event - The event that is passed to the function.
+     */
+    static onClick;
+
     /**
      * @method
-     * @param {HTMLCanvasElement} canvas - The canvas element that the input is attached to.
+     * @description The function to call when the button is double clicked.
+     * @param {event} event - The event that is passed to the function.
+     * 
      */
-    constructor(canvas){
-        this.canvas = canvas;
-        
-        /**
-         * @property {Object} pos - The position of the mouse or touch.
-         * @property {number} pos.x - The x position of the mouse or touch.
-         * @property {number} pos.y - The y position of the mouse or touch.
-         */
-        this.pos = {
+    static onDoubleClick;
+
+    static init(canvas) {
+        Input.canvas = canvas;
+        Input.pos = {
             x: 0,
             y: 0
         }
-        this.pressedButton = null;
-        this.isClicked = false;
-        this.isDoubleClicked = false;
-        this.isMouseDown = false;
-        this.touchCount = 0;
+        Input.pressedButton = null;
+        Input.isClicked = false;
+        Input.isDoubleClicked = false;
+        Input.isMouseDown = false;
+        Input.touches = [];
 
-        this.keyPressed = [];
-        this.specialKeyPressed = null;
-        this.wheelDelta = 0;
+        Input.keyPressed = [];
+        Input.specialKeyPressed = null;
+        Input.wheelDelta = 0;
 
         /**
          * @method 
          * @description The function to call when the button is clicked.
          * @param {event} event - The event that is passed to the function.
          */
-        this.onClick = (event) => {};
+        Input.onClick = (event) => { };
 
         /**
          * @method
@@ -64,33 +83,33 @@ export class Input{
          * @param {event} event - The event that is passed to the function.
          * 
          */
-        this.onDoubleClick = (event) => {};
+        Input.onDoubleClick = (event) => { };
 
         //#region Event Listeners
 
         //Click
-        this.canvas.addEventListener("click", this._Click.bind(this));
-        this.canvas.addEventListener("dblclick", this._DoubleClick.bind(this));
+        Input.canvas.addEventListener("click", Input._Click.bind(this));
+        Input.canvas.addEventListener("dblclick", Input._DoubleClick.bind(this));
 
         //Mouse
-        this.canvas.addEventListener("mousedown", this._MouseDown.bind(this));
-        this.canvas.addEventListener("mouseup", this._MouseUp.bind(this));
-        this.canvas.addEventListener("mousemove", this._MouseMove.bind(this));
-        this.canvas.addEventListener("mouseout", this._MouseUp.bind(this));
-        this.canvas.addEventListener("mouseleave", this._MouseUp.bind(this));
-        this.canvas.addEventListener("mouseover", this._MouseMove.bind(this));
+        Input.canvas.addEventListener("mousedown", Input._MouseDown.bind(this));
+        Input.canvas.addEventListener("mouseup", Input._MouseUp.bind(this));
+        Input.canvas.addEventListener("mousemove", Input._MouseMove.bind(this));
+        Input.canvas.addEventListener("mouseout", Input._MouseUp.bind(this));
+        Input.canvas.addEventListener("mouseleave", Input._MouseUp.bind(this));
+        Input.canvas.addEventListener("mouseover", Input._MouseMove.bind(this));
 
         //Touch
-        this.canvas.addEventListener("touchstart", this._MouseDown.bind(this));
-        this.canvas.addEventListener("touchend", this._MouseUp.bind(this));
-        this.canvas.addEventListener("touchmove", this._MouseMove.bind(this));
+        Input.canvas.addEventListener("touchstart", Input._TouchStart.bind(this));
+        Input.canvas.addEventListener("touchend", Input._TouchEnd.bind(this));
+        Input.canvas.addEventListener("touchmove", Input._TouchMove.bind(this));
 
         //Wheel
-        this.canvas.addEventListener("wheel", this._Wheel.bind(this));
+        Input.canvas.addEventListener("wheel", Input._Wheel.bind(this));
 
         // Keyboard
-        this.canvas.addEventListener("keydown", this._KeyDown.bind(this));
-        this.canvas.addEventListener("keyup", this._KeyUp.bind(this));
+        Input.canvas.addEventListener("keydown", Input._KeyDown.bind(this));
+        Input.canvas.addEventListener("keyup", Input._KeyUp.bind(this));
 
 
 
@@ -101,80 +120,100 @@ export class Input{
     //#region Private Methods
 
 
-    _checkSpecialKey(event){
-        if(event.shiftKey) return Input.keyCode.SHIFT;
-        if(event.ctrlKey) return Input.keyCode.CTRL;
-        if(event.altKey) return Input.keyCode.ALT;
-        if(event.metaKey) return Input.keyCode.META;
-        return null;
+    static _checkSpecialKey(event) {
+        if (event.shiftKey) Input.specialKeyPressed = Input.keyCode.SHIFT;
+        if (event.ctrlKey) Input.specialKeyPressed = Input.keyCode.CTRL;
+        if (event.altKey) Input.specialKeyPressed = Input.keyCode.ALT;
+        if (event.metaKey) Input.specialKeyPressed = Input.keyCode.META;
+        else Input.specialKeyPressed = null;
     }
 
-    _Click(event){
-        this.isClicked = true;
-        this.pos.x = event.offsetX;
-        this.pos.y = event.offsetY;
+    static _Click(event) {
+        Input.isClicked = true;
+        Input.pos.x = event.offsetX;
+        Input.pos.y = event.offsetY;
 
-        this.pressedButton = event.button;
-        this._checkSpecialKey(event);
+        Input.pressedButton = event.button;
+        Input._checkSpecialKey(event);
 
-        this.onClick(event);
+        Input.onClick(event);
     }
 
-    _DoubleClick(event){
-        this.isDoubleClicked = true;
-        this.pos.x = event.offsetX;
-        this.pos.y = event.offsetY;
+    static _DoubleClick(event) {
+        Input.isDoubleClicked = true;
+        Input.pos.x = event.offsetX;
+        Input.pos.y = event.offsetY;
 
-        this.pressedButton = event.button;
-        this._checkSpecialKey(event);
+        Input.pressedButton = event.button;
+        Input._checkSpecialKey(event);
 
-        this.onDoubleClick(event);
-
-    }
-
-    _MouseDown(event){
-        this.isMouseDown = true;
-        this.pos.x = event.offsetX;
-        this.pos.y = event.offsetY;
-        this.pressedButton = event.button;
-
-        this.pressedButton = event.button;
-        this._checkSpecialKey(event);
-        this.touchCount = event.touches.length;
+        Input.onDoubleClick(event);
 
     }
 
-    _MouseUp(event){
-        this.isMouseDown = false;
-        this.pos.x = event.offsetX;
-        this.pos.y = event.offsetY;
+    static _MouseDown(event) {
+        Input.isMouseDown = true;
+        Input.pos.x = event.offsetX;
+        Input.pos.y = event.offsetY;
+        Input.pressedButton = event.button;
 
-        this.pressedButton = event.button;
-        this._checkSpecialKey(event);
-        this.touchCount = event.touches.length;
+        Input.pressedButton = event.button;
+        Input._checkSpecialKey(event);
+
     }
 
-    _MouseMove(event){
-        this.pos.x = event.offsetX;
-        this.pos.y = event.offsetY;
+    static _MouseUp(event) {
+        Input.isMouseDown = false;
+        Input.pos.x = event.offsetX;
+        Input.pos.y = event.offsetY;
 
-        this.pressedButton = event.button;
-        this._checkSpecialKey(event);
-        this.touchCount = event.touches.length;
+        Input.pressedButton = event.button;
+        Input._checkSpecialKey(event);
     }
 
-    _Wheel(event){
-        this.wheelDelta = event.deltaY;
+    static _MouseMove(event) {
+        Input.pos.x = event.offsetX;
+        Input.pos.y = event.offsetY;
+
+        Input.pressedButton = event.button;
+        Input._checkSpecialKey(event);
+        // Input.touchCount = event.touches.length;
     }
 
-    _KeyDown(event){
-        this.keyPressed[event.key] = true;
-        this.specialKeyPressed = this._checkSpecialKey(event);
+    static _TouchStart(event) {
+        Input.touches = event.touches;
+        Input.pos.x = Math.round(event.changedTouches[0].pageX);
+        Input.pos.y = Math.round(event.changedTouches[0].pageY);
+        Input._checkSpecialKey(event);
     }
 
-    _KeyUp(event){
-        this.keyPressed[event.key] = false;
-        this.specialKeyPressed = null;
+    static _TouchEnd(event) {
+        Input.touches = event.touches;
+        Input.pos.x = Math.round(event.changedTouches[0].pageX);
+        Input.pos.y = Math.round(event.changedTouches[0].pageY);
+        Input._checkSpecialKey(event);
+
+    }
+
+    static _TouchMove(event) {
+        Input.touches = event.touches;
+        Input.pos.x = Math.round(event.changedTouches[0].pageX);
+        Input.pos.y = Math.round(event.changedTouches[0].pageY);
+        Input._checkSpecialKey(event);
+    }
+
+    static _Wheel(event) {
+        Input.wheelDelta = event.deltaY;
+    }
+
+    static _KeyDown(event) {
+        Input.keyPressed[event.key] = true;
+        Input._checkSpecialKey(event);
+    }
+
+    static _KeyUp(event) {
+        Input.keyPressed[event.key] = false;
+        Input.specialKeyPressed = null;
     }
 
 
@@ -194,8 +233,8 @@ export class Input{
      * 
      * @since 1.2.2
      */
-    leftMouseButtonDown(){
-        return this.pressedButton === 0;
+    static leftMouseButtonDown() {
+        return Input.pressedButton === 0;
     }
 
 
@@ -212,8 +251,8 @@ export class Input{
      * @since 1.2.2
      * 
      */
-    rightMouseButtonDown(){
-        return this.pressedButton === 2;
+    static rightMouseButtonDown() {
+        return Input.pressedButton === 2;
     }
 
     /**
@@ -228,8 +267,8 @@ export class Input{
      * 
      * @since 1.2.2
      */
-    middleMouseButtonDown(){
-        return this.pressedButton === 1;
+    static middleMouseButtonDown() {
+        return Input.pressedButton === 1;
     }
 
 
@@ -245,8 +284,8 @@ export class Input{
      * 
      * @since 1.2.2
      */
-    leftMouseButtonUp(){
-        return this.pressedButton === 0 && !this.isMouseDown;
+    static leftMouseButtonUp() {
+        return Input.pressedButton === 0 && !Input.isMouseDown;
     }
 
     /**
@@ -261,8 +300,8 @@ export class Input{
      * 
      * @since 1.2.2
      */
-    rightMouseButtonUp(){
-        return this.pressedButton === 2 && !this.isMouseDown;
+    static rightMouseButtonUp() {
+        return Input.pressedButton === 2 && !Input.isMouseDown;
     }
 
     /**
@@ -277,8 +316,8 @@ export class Input{
      * 
      * @since 1.2.2
      */
-    middleMouseButtonUp(){
-        return this.pressedButton === 1 && !this.isMouseDown;
+    static middleMouseButtonUp() {
+        return Input.pressedButton === 1 && !Input.isMouseDown;
     }
 
     /**
@@ -293,8 +332,8 @@ export class Input{
      * 
      * @since 1.2.2
      */
-    isLeftClicked(){
-        return this.isClicked && this.pressedButton === 0;
+    static isLeftClicked() {
+        return Input.isClicked && Input.pressedButton === 0;
     }
 
     /**
@@ -309,8 +348,8 @@ export class Input{
      * 
      * @since 1.2.2
      */
-    isRightClicked(){
-        return this.isClicked && this.pressedButton === 2;
+    static isRightClicked() {
+        return Input.isClicked && Input.pressedButton === 2;
     }
 
     /**
@@ -325,8 +364,8 @@ export class Input{
      * 
      * @since 1.2.2
      */
-    isMiddleClicked(){
-        return this.isClicked && this.pressedButton === 1;
+    static isMiddleClicked() {
+        return Input.isClicked && Input.pressedButton === 1;
     }
 
     /**
@@ -341,8 +380,8 @@ export class Input{
      * 
      * @since 1.2.2
      */
-    isLeftPressed(){
-        return this.pressedButton === 0;
+    static isLeftPressed() {
+        return Input.pressedButton === 0;
     }
 
     /**
@@ -357,8 +396,8 @@ export class Input{
      * 
      * @since 1.2.2
      */
-    isRightPressed(){
-        return this.pressedButton === 2;
+    static isRightPressed() {
+        return Input.pressedButton === 2;
     }
 
     /**
@@ -373,8 +412,8 @@ export class Input{
      * 
      * @since 1.2.2
      */
-    isMiddlePressed(){
-        return this.pressedButton === 1;
+    static isMiddlePressed() {
+        return Input.pressedButton === 1;
     }
 
     /**
@@ -390,8 +429,8 @@ export class Input{
      * @since 1.2.2
      * 
      */
-    isLeftDown(){
-        return this.isMouseDown && this.pressedButton === 0;
+    static isLeftDown() {
+        return Input.isMouseDown && Input.pressedButton === 0;
     }
 
     /**
@@ -406,8 +445,8 @@ export class Input{
      * 
      * @since 1.2.2
      */
-    isRightDown(){
-        return this.isMouseDown && this.pressedButton === 2;
+    static isRightDown() {
+        return Input.isMouseDown && Input.pressedButton === 2;
     }
 
     /**
@@ -421,11 +460,11 @@ export class Input{
      * }
      *  @since 1.2.2
      */
-    isMiddleDown(){
-        return this.isMouseDown && this.pressedButton === 1;
+    static isMiddleDown() {
+        return Input.isMouseDown && Input.pressedButton === 1;
     }
 
-    
+
     /**
      * @method
      * @description Check if left mouse button is clicked.
@@ -437,8 +476,8 @@ export class Input{
      * }
      * 
      */
-    leftMouseButtonClicked(){
-        return this.pressedButton === 0 && this.isClicked;
+    static leftMouseButtonClicked() {
+        return Input.pressedButton === 0 && Input.isClicked;
     }
 
 
@@ -453,8 +492,8 @@ export class Input{
      * }
      * 
      */
-    rightMouseButtonClicked(){
-        return this.pressedButton === 2 && this.isClicked;
+    static rightMouseButtonClicked() {
+        return Input.pressedButton === 2 && Input.isClicked;
     }
 
 
@@ -470,8 +509,8 @@ export class Input{
      * 
      * @since 1.2.2
      */
-    middleMouseButtonClicked(){
-        return this.pressedButton === 1 && this.isClicked;
+    static middleMouseButtonClicked() {
+        return Input.pressedButton === 1 && Input.isClicked;
     }
 
 
@@ -486,8 +525,8 @@ export class Input{
      * }
      * @since 1.2.2
      */
-    leftMouseButtonDoubleClicked(){
-        return this.pressedButton === 0 && this.isDoubleClicked;
+    static leftMouseButtonDoubleClicked() {
+        return Input.pressedButton === 0 && Input.isDoubleClicked;
     }
 
     /**
@@ -500,8 +539,8 @@ export class Input{
      * }
      * @since 1.2.2
      */
-    rightMouseButtonDoubleClicked(){
-        return this.pressedButton === 2 && this.isDoubleClicked;
+    static rightMouseButtonDoubleClicked() {
+        return Input.pressedButton === 2 && Input.isDoubleClicked;
     }
 
     /**
@@ -514,8 +553,8 @@ export class Input{
      * }
      * @since 1.2.2
      */
-    middleMouseButtonDoubleClicked(){
-        return this.pressedButton === 1 && this.isDoubleClicked;
+    static middleMouseButtonDoubleClicked() {
+        return Input.pressedButton === 1 && Input.isDoubleClicked;
     }
 
     /**
@@ -529,8 +568,8 @@ export class Input{
      * }
      * @since 1.2.2
      */
-    getWheelScroll(){
-        return this.wheelDelta;
+    static getWheelScroll() {
+        return Input.wheelDelta;
     }
 
     /**
@@ -544,8 +583,8 @@ export class Input{
      * }
      * @since 1.2.2
      */
-    getPosition(){
-        return this.pos;
+    static getPosition() {
+        return Input.pos;
     }
 
     /**
@@ -560,8 +599,8 @@ export class Input{
      * 
      * @since 1.2.2
      */
-    getTouchCount(){
-        return this.touchCount;
+    static getTouchCount() {
+        return Input.touchCount;
     }
 
     /**
@@ -575,8 +614,8 @@ export class Input{
      * }
      * @since 1.2.2
      */
-    getSpecialKeyPressed(){
-        return this.specialKeyPressed;
+    static getSpecialKeyPressed() {
+        return Input.specialKeyPressed;
     }
 
     /**
@@ -584,13 +623,14 @@ export class Input{
      * @description Reset all the input states. Use this after you have processed ALL the input.
      * @since 1.2.2
      */
-    clear(){
-        this.isClicked = false;
-        this.isDoubleClicked = false;
-        this.isMouseDown = false;
-        this.touchCount = 0;
-        this.specialKeyPressed = false;
-        this.wheelDelta = 0;
+    static clear() {
+        Input.isClicked = false;
+        Input.isDoubleClicked = false;
+        Input.isMouseDown = false;
+        Input.touches = 0;
+        Input.keyPressed = [];
+        Input.specialKeyPressed = false;
+        Input.wheelDelta = 0;
     }
 
     /**
@@ -605,12 +645,12 @@ export class Input{
      * }
      * @since 1.2.2
      */
-    getKeyDown(keyCode){
-        return this.keyPressed[keyCode];
+    static getKeyDown(keyCode) {
+        return Input.keyPressed[keyCode];
     }
     //#endregion
 
-}   
+}
 
 /**
  * @constant
@@ -628,7 +668,7 @@ Input.buttons = {
  * @description The key codes for the keyboard.
  * @since 1.2.2
  */
-Input.keyCode =  {
+Input.keyCode = {
     NUM_ONE: 49,
     NUM_TWO: 50,
     NUM_THREE: 51,

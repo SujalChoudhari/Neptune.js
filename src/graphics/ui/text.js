@@ -1,5 +1,5 @@
-import {Transform} from "../maths/transform.js";
-import {Color} from "../basic/color.js";
+import {Shape} from "../graphics.js";
+import {Color} from "../../basic/color.js";
 
 /**
  * @class Text
@@ -24,7 +24,7 @@ import {Color} from "../basic/color.js";
  * @author Sujal Choudhari <sjlchoudhari@gmail.com>
  * @license MIT
  */
-export class Text extends Transform{
+export class Text extends Shape{
     constructor(kwargs){
         super(kwargs);
         this.color = kwargs["color"] || Color.random();
@@ -67,7 +67,7 @@ export class Text extends Transform{
         this.size.x =  ctx.measureText(this.text).width;
         let lines = this.text.split("\n");
         for(let i = 0; i < lines.length; i++){
-            ctx.fillText(lines[i], this.worldPos.x, this.worldPos.y + i * this.size.y);
+            ctx.fillText(lines[i], this.worldPos.x, this.size.y +this.worldPos.y + i * this.size.y);
         }
         ctx.setTransform(1, 0, 0, 1, 0, 0);
     }
