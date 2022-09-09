@@ -2,6 +2,23 @@
 
 Changelog history of Neptune.js framework.
 
+## [2.0.0](https://github.com/NotSujal/Neptune.js/releases/tag/v2.0.0)
+*June 7,2020* 
+
+### Additions
+
+* Physics (`Atomic.js` Engine integrated with neptune)
+* `Vector2` class updated to work with physics engine
+* Inputs are revisited
+* `Renderables` are renamed under `graphics`
+
+### Changes
+* `vector2` methods renamed.
+* `InputVisualizer` added along with `Details` view for physics objects
+* All changes are live in the documentation.
+* #4 Fixed (again)
+
+
 ## [1.2.2](https://github.com/NotSujal/Neptune.js/releases/tag/1.2.2)
 *May 31, 2020*
 
