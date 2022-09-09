@@ -1,30 +1,6 @@
-/**
- * @class Color
- * @classdesc A class for handling colors.
- * 
- * @property {Number} r The red component of the color.
- * @property {Number} g The green component of the color.
- * @property {Number} b The blue component of the color.
- * @property {Number} a The alpha component of the color.
- * 
- * 
- * @since 1.0.0
- * @author Sujal Choudhari <sjlchoudhari@gmail.com>
- * @license MIT
- */
+
 export class Color {
 
-    /**
-     * @method
-     * @param {Number} r The red component of the color.
-     * @param {Number} g The green component of the color.
-     * @param {Number} b The blue component of the color.
-     * @param {Number} [a=1] The alpha component of the color
-     * 
-     * @example
-     * let color = new Color(255, 0, 0, 1);
-     * 
-     */
     constructor(r, g, b, a = 1) {
         this.r = r;
         this.g = g;
@@ -32,17 +8,6 @@ export class Color {
         this.a = a;
     }
 
-    /**
-     * @method
-     * @static
-     * @description Crafts a color from a hexadecimal number.
-     * @param {Number} hex - The hexadecimal value of the color (0x000000).
-     * @returns {Color} The random color.
-     * 
-     * @example
-     * let color = Color.fromHex(0xFF0000);
-     * 
-     */
     static fromHex(hex) {
         let r = hex >> 16 & 255;
         let g = hex >> 8 & 255;
@@ -50,52 +15,13 @@ export class Color {
         return new Color(r, g, b, 1);
     }
 
-    /**
-     * @method
-     * @static
-     * @description Creates a new color from RGB 
-     * @param {Number} r -The red component of the color.
-     * @param {Number} g -The green component of the color.
-     * @param {Number} b -The blue component of the color.
-     * @returns  {Color} The new color.
-     * 
-     * @example
-     * let color = Color.fromRGB(255, 0, 0);
-     */
     static fromRGB(r, g, b) {
         return new Color(r, g, b, 1);
     }
 
-    /**
-     * @method
-     * @static
-     * @description Creates a new color from RGBA values.
-     * @param {Number} r -The red component of the color.
-     * @param {Number} g -The green component of the color.
-     * @param {Number} b -The blue component of the color.
-     * @param {Number} a -The alpha component of the color.
-     * @returns  {Color} The new color.
-     * 
-     * @example
-     * let color = Color.fromRGBA(255, 0, 0, 1);
-     */
     static fromRGBA(r, g, b, a) {
         return new Color(r, g, b, a);
     }
-
-
-    /**
-     * @method
-     * @static
-     * @description Creates a new color from HSL values.
-     * @param {Number} h - The hue of the color.
-     * @param {Number} s - The saturation of the color.
-     * @param {Number} l - The lightness of the color.
-     * @returns {Color} The new color.
-     * 
-     * @example
-     * let color = Color.fromHSL(0, 0, 0);
-     */
 
     static fromHSL(h, s, l) {
         let c = (1 - Math.abs(2 * l - 1)) * s;
@@ -135,30 +61,10 @@ export class Color {
         return new Color(Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255), 1);
     }
 
-    /**
-     * @method
-     * @static
-     * @description Creates a random color.
-     * @returns {Color} A random color.
-     * 
-     * @example
-     * let color = Color.random();
-     */
     static random() {
         return new Color(Math.random() * 255, Math.random() * 255, Math.random() * 255, 1);
     }
 
-    /**
-     * @method
-     * @description Returns a string representation of the color.
-     * @returns {String} The string representation of the color.
-     * 
-     * @example
-     * let color = new Color(255, 0, 0, 255);
-     * console.log(color.toString());
-     * // => "rgb(255, 0, 0)"
-     * 
-     */
     toString() {
         return `rgba(${this.r},${this.g},${this.b},${this.a})`;
     }

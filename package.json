@@ -23,9 +23,5 @@
     "url": "https://github.com/NotSujal/Neptune.js/issues"
   },
   "homepage": "https://github.com/NotSujal/Neptune.js#readme",
-  "devDependencies": {
-    "clean-jsdoc-theme": "^3.3.4",
-    "jsdoc": "^3.6.10"
-  },
   "dependencies": {}
 }
