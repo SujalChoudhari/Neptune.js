@@ -1,5 +1,5 @@
 
-export default class Vector2 {
+export class Vector2 {
 	constructor(x, y) {
 		if (arguments.length == 0) {
 			this.x = 0;
@@ -251,5 +251,13 @@ export default class Vector2 {
 			avg.add(vec);
 		}
 		return avg.normalize();
+	}
+
+	static zero(){
+		return new Vector2(0,0);
+	}
+
+	static one(){
+		return new Vector2(1,1);
 	}
 }

@@ -1,52 +1,72 @@
 export class Entity {
-    constructor(name="Entity",parent=null,app=null) {
-        this.name = name
-        this.parent = parent
-        this.components = null;
-        if (app != null) app.entities.push(this);
+    constructor(name="Entity",children=[]) {
+        this.name = name;
+        this.children = children;
+        this.components = [];
     }
 
-    setParent(parent) {
-        this.parent = parent;
+    getComponent(type){
+        return this.components.find(component => component instanceof type);
+    }
+
+    hasComponent(type){
+        return this.components.some(component => component instanceof type);
+    }
+
+    removeComponent(type){
+        let index = this.components.findIndex(component => component instanceof type);
+        if(index > -1){
+            this.components.splice(index,1);
+        }
+    }
+
+    getComponents(type){
+        return this.components.filter(component => component instanceof type);
     }
 
     addComponent(component){
-        this.components.push(component);
+        if (!this.hasComponent(component.constructor)) {
+            component.entity = this;
+            this.components.push(component);
+        }
     }
 
-    Awake(){
-        this.components.forEach(component => {
-            component.Awake();
-        });
+    addChild(child){
+        if (this.children == null) {
+            this.children = [];
+        }
+        this.children.push(child);
     }
 
-    Start(){
-        this.components.forEach(component => {
-            component.Start();
-        });
+    removeChild(child){
+        let index = this.children.findIndex(c => c == child);
+        if(index > -1){
+            this.children.splice(index,1);
+        }
     }
 
-    Update(){
-        this.components.forEach(component => {
-            component.Update();
+    getComponentinChildren(type){
+        let component = null;
+        this.children.forEach(child => {
+            if(child.hasComponent(type)){
+                component = child.getComponent(type);
+            }
         });
+        return component;
     }
 
-    FixedUpdate(){
-        this.components.forEach(component => {
-            component.FixedUpdate();
-        });
+    getChildWithComponent(type){
+        return this.children.filter(child => child.hasComponent(type));
     }
 
-    LateUpdate(){
-        this.components.forEach(component => {
-            component.LateUpdate();
+    getChildrenWithComponent(type){
+        let children = [];
+        this.children.forEach(child => {
+            if(child.hasComponent(type)){
+                children.push(child);
+            }
         });
+        return children;
     }
 
-    Destroy(){
-        this.components.forEach(component => {
-            component.Destroy();
-        });
-    }
 }

@@ -17,14 +17,14 @@ export class Application {
         this.ctx = this.canvas.getContext("2d");
         
         this.play_btn.onclick = () => {
-            this.gameloop(0)
+            this.Gameloop(0)
             try {
                 this.play_btn.remove();
                 this.canvas.style.display = "block";
                 document.getElementById("neptune-gamepage").remove();
             } catch (error) {}
             this.canvas.setAttribute("tabindex", "1");
-            this.init();
+            this.Init();
         }
 
         document.body.appendChild(this.play_btn);
@@ -32,7 +32,6 @@ export class Application {
         this.currentTimeStamp = performance.now();
         this.deltaTime = 0;
         
-        this.entities = [];
 
         try {
             this.play_btn.style.display = "block";
@@ -40,7 +39,7 @@ export class Application {
         } catch (error) {}
     }
 
-    init() {
+    Init() {
         this.canvas.setAttribute("height", window.innerHeight);
         this.canvas.setAttribute("width", window.innerWidth);
         
@@ -51,18 +50,16 @@ export class Application {
             this.canvas.setAttribute("width", window.innerWidth);
         });
         this.canvas.focus();
-        this.entities.forEach(entity => {
-            entity.init();
-        });
+
 
         setInterval(this.fixedUpdate,100);
     }
 
+    Draw(ctx){}
 
+    Update(timeStamp){}
 
-
-
-    gameloop(timeStamp) {
+    Gameloop(timeStamp) {
         this.deltaTime = (timeStamp - this.currentTimeStamp) * this.fps / 1000;
         this.currentTimeStamp = timeStamp;
 
@@ -70,7 +67,10 @@ export class Application {
         this.ctx.fillStyle = this.clearColor.toString() || Color.darkgray;
         this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
 
-        requestAnimationFrame(this.gameloop.bind(this));
+        this.Update(timeStamp);
+        this.Draw(this.ctx);
+
+        requestAnimationFrame(this.Gameloop.bind(this));
     }
     
 
