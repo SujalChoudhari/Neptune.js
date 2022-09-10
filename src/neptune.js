@@ -1,4 +1,26 @@
 import { Color } from "./basic/color.js";
+import {Entity} from './basic/entity.js';
+import {Scene} from './basic/scene.js';
+
+import {Component} from './components/component.js';
+import { Transform } from "./components/transform.js";
+import { Shape } from "./components/shape.js";
+import { Sprite } from "./components/sprite.js";
+import { Sound } from "./components/audio.js";
+
+import {UITransform} from './components/ui/transform.js';
+import {Panel} from  './components/ui/panel.js';
+
+import {Input} from './events/input.js'
+import { Vector2 } from "./maths/vec2.js";
+
+
+export {
+    Color, Entity,Scene,
+    Component,Transform,Shape,Sprite,Sound,
+    UITransform,Panel,
+    Input,Vector2
+}
 
 export class Application {
 
@@ -75,3 +97,4 @@ export class Application {
     
 
 }
+

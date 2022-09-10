@@ -2,6 +2,7 @@ export class Entity {
     constructor(name="Entity",children=[]) {
         this.name = name;
         this.children = children;
+        this.parent = undefined;
         this.components = [];
     }
 
@@ -36,6 +37,7 @@ export class Entity {
             this.children = [];
         }
         this.children.push(child);
+        child.parent = this;
     }
 
     removeChild(child){
@@ -43,6 +45,7 @@ export class Entity {
         if(index > -1){
             this.children.splice(index,1);
         }
+        this.children[index].parent = undefined;
     }
 
     getComponentinChildren(type){

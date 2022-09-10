@@ -5,12 +5,11 @@ import { Transform } from "./transform.js";
 export class Shape extends Component {
     constructor(geometry = Shape.CIRCLE, color = Color.fuchsia, fill = true, param = { radius: 10, width: 10, height: 10 }) {
         super();
-        this.properties = {
-            geometry : geometry,
-            color : color,
-            fill : fill,
-            param : param,
-        }
+        this.properties.geometry = geometry;
+        this.properties.color = color;
+        this.properties.fill = fill;
+        this.properties.param = param;
+
     }
 
     getGeometry(){

@@ -4,14 +4,13 @@ import { Component } from "../component.js";
 
 export class UITransform extends Component {
 
-    constructor(x = 0, y = 0, width = 0, height = 0) {
+    constructor(x = 0, y = 0, width = 0, height = 0,rot=0) {
         super();
-        this.properties = {
-            x: x,
-            y: y,
-            width: width,
-            height: height
-        }
+        this.properties.x = x;
+        this.properties.y = y;
+        this.properties.width = width;
+        this.properties.height = height;
+        this.properties.rot = rot;
     }
 
     getX() {
@@ -55,56 +54,114 @@ export class UITransform extends Component {
         this.properties.y = center.y - this.properties.height / 2;
     }
 
-    align(alignX, alignY) {
+    getRot() {
+        return this.properties.rot;
+    }
+
+    setRot(rot) {
+        this.properties.rot = rot;
+    }
+
+    align(mode="center"){
+        let parent = this.entity.parent;
+        if (parent != undefined){
+            var parentTransform = parent.getComponent(UITransform);
+            var x = parentTransform.getX();
+            var y = parentTransform.getY();
+            var width = parentTransform.getWidth();
+            var height = parentTransform.getHeight();
+        }
+        else{
+            var x = 0;
+            var y = 0;
+            var width = window.innerWidth;
+            var height = window.innerHeight;
+        }
+
+        switch(mode){
+            case "left":
+                this.properties.x = x;
+                break;
+            case "right":
+                this.properties.x = x + width - this.properties.width;
+                break;
+            case "top":
+                this.properties.y = y;
+                break;
+            case "bottom":
+                this.properties.y = y + height - this.properties.height;
+                break;
+            case "center":
+                this.properties.x = x + width / 2 - this.properties.width / 2;
+                break;
+            case "middle":
+                this.properties.y = y + height / 2 - this.properties.height / 2;
+                break;
+        }
+
+
+    }
+
+    fill(mode="",padX=0,padY=0){
+        let parent = this.entity.parent;
+        if (parent != undefined){
+            var parentTransform = parent.getComponent(UITransform);
+            var x = parentTransform.getX();
+            var y = parentTransform.getY();
+            var width = parentTransform.getWidth();
+            var height = parentTransform.getHeight();
+        }
+        else{
+            var x = 0;
+            var y = 0;
+            var width = window.innerWidth;
+            var height = window.innerHeight;
+        }
+
+        switch(mode){
+            case "both":
+                this.properties.x = x + padX;
+                this.properties.y = y + padY;
+                this.properties.width = width - padX * 2;
+                this.properties.height = height - padY * 2;
+                break;
+            case "x":
+                this.properties.x = x + padX;
+                this.properties.width = width - padX * 2;
+                break;
+            case "y":
+                this.properties.y = y + padY;
+                this.properties.height = height - padY * 2;
+                break;
+
+        }
+    }
+            
+
+    isPointInside(point) {
+        return point.x >= this.properties.x && point.x <= this.properties.x + this.properties.width && point.y >= this.properties.y && point.y <= this.properties.y + this.properties.height;
+    }
+
+    isHovered() {
+        return this.isPointInside(Input.pos);
+    }
+
+    isClicked() {
+        return this.isHovered() && Input.mouseDown;
+    }
+
+    rotate(rot) {
+        this.properties.rot += rot;
+    }
+
+    debugDraw(ctx) {
         let x = this.properties.x;
         let y = this.properties.y;
         let width = this.properties.width;
         let height = this.properties.height;
 
-        if (alignX == "left") {
-            x = 0;
-        } else if (alignX == "center") {
-            x = (window.innerWidth - width) / 2;
-        } else if (alignX == "right") {
-            x = window.innerWidth - width;
-        }
-
-        if (alignY == "top") {
-            y = 0;
-        } else if (alignY == "center") {
-            y = (window.innerHeight - height) / 2;
-        } else if (alignY == "bottom") {
-            y = window.innerHeight - height;
-        }
-
-        this.properties.x = x;
-        this.properties.y = y;
+        ctx.strokeStyle = "red";
+        ctx.strokeRect(x, y, width, height);
     }
-
-    fill(options,padX=0,padY=0) {
-        let x = this.properties.x;
-        let y = this.properties.y;
-        let width = this.properties.width;
-        let height = this.properties.height;
-
-        if (options == "horizontal") {
-            x = 0;
-            width = window.innerWidth;
-        } else if (options == "vertical") {
-            y = 0;
-            height = window.innerHeight;
-        } else if (options == "both") {
-            x = 0;
-            y = 0;
-            width = window.innerWidth;
-            height = window.innerHeight;
-        }
-
-        this.properties.x = x+padX;
-        this.properties.y = y+padY;
-        this.properties.width = width-padX*2;
-        this.properties.height = height-padY*2;
-    }
-
 
 }

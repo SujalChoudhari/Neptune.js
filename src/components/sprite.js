@@ -4,12 +4,10 @@ import { Transform } from "./transform.js";
 export class Sprite extends Component {
     constructor(path="", width=10, height=10) {
         super();
-        this.properties = {
-            path: path,
-            width: width,
-            height: height,
-            image: new Image(width, height)
-        }
+        this.properties.path = path;
+        this.properties.width = width;
+        this.properties.height = height;
+        this.properties.image = new Image();
         this.properties.image.src = path;
 
     }

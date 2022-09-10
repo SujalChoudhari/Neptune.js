@@ -1,11 +1,11 @@
+import{Component} from './component.js';
+export class Sound extends Component {
 
-export class Sound {
-
-    constructor(kwargs) {
-        this.name = kwargs["name"];
-        this.src = kwargs["src"];
-        this.volume = kwargs["volume"] || 1;
-        this.loop = kwargs["loop"] || false;
+    constructor(name,src,volume=1,loop=false) {
+        this.name = name;
+        this.src = src;
+        this.volume = volume;
+        this.loop = loop;
         
         this.playing = false;
         this.audio = new Audio(this.src);

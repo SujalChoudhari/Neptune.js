@@ -1,4 +1,4 @@
-import { Application } from "../src/main.js";
+import { Application, } from "../src/main.js";
 import { Shape } from "../src/components/shape.js";
 import { Color } from "../src/basic/color.js";
 import { Entity } from "../src/basic/entity.js";
