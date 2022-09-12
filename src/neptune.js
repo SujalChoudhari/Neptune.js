@@ -17,7 +17,6 @@ import { GridContainer } from "./components/ui/containers/grid.js";
 import { Text } from "./components/ui/text.js";
 import { UISprite } from "./components/ui/sprite.js";
 
-
 import {Input} from './events/input.js'
 import { Vector2 } from "./maths/vec2.js";
 
@@ -36,7 +35,7 @@ export class Application {
         this.width = window.innerWidth;
         this.height = window.innerHeight;
         this.fps = 60;
-        this.clearColor = Color.gray;
+        this.clearColor = Color.fromHex(0x334455);
 
         this.canvas = document.getElementById("neptune-canvas");
         this.canvas.setAttribute("height", window.innerHeight);
@@ -81,7 +80,7 @@ export class Application {
         }
         this.canvas.focus();
 
-
+        Input.init(this.canvas);
         setInterval(this.fixedUpdate,100);
     }
 
@@ -93,13 +92,13 @@ export class Application {
         this.deltaTime = (timeStamp - this.currentTimeStamp) * this.fps / 1000;
         this.currentTimeStamp = timeStamp;
 
-        this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+        this.ctx.clearRect(0, 0, this.width, this.ctx.height);
         this.ctx.fillStyle = this.clearColor.toString() || Color.darkgray;
-        this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+        this.ctx.fillRect(0, 0, this.width, this.height);
 
         this.Update(timeStamp);
         this.Draw(this.ctx);
-
+        Input.clear();
         requestAnimationFrame(this.Gameloop.bind(this));
     }
     

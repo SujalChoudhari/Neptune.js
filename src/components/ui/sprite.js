@@ -1,31 +1,50 @@
-import { Sprite } from "../renderable/sprite.js";
 import { UITransform } from "./transform.js";
 import { Renderable } from "../renderable/renderable.js";
+import { Component } from "../component.js";
 
-export class UISprite extends Sprite {
+export class UISprite extends Renderable {
+    constructor(path){
+        super();
+        this.properties.path = path;
+        this.properties.image = new Image();
+        this.properties.image.src = path;
+    }
+
+    getPath() {
+        return this.properties.path;
+    }
+
+    setPath(path) {
+        this.properties.path = path;
+    }
+
+    getImage() {
+        return this.properties.image;
+    }   
+
+    setImage(image) {
+        this.properties.image = image;
+    }
+
     draw(ctx) {
         let image = this.properties.image;
         let path = this.properties.path;
-        let width = this.properties.width;
-        let height = this.properties.height;
-        let position = this.entity.getComponent(UITransform).getPosition();
-        let rotation = this.entity.getComponent(UITransform).getRotation();
-        let scale = this.entity.getComponent(UITransform).getScale();
+        let transform = this.entity.getComponent(UITransform);
+        let x = transform.getX();
+        let y = transform.getY();
+        let width = transform.getWidth();
+        let height = transform.getHeight();
 
         ctx.save();
-        ctx.translate(position.x, position.y);
-        ctx.rotate(rotation);
-        ctx.scale(scale.x, scale.y);
-
-        if (image.src != path) {
-            image.src = path;
-        }
-
-        ctx.drawImage(image, -width / 2, -height / 2, width, height);
+        ctx.translate(x, y);
+        ctx.drawImage(image, 0, 0, width, height);
+        
         let children = this.entity.getComponentsInChildren(Renderable);
         for (let i = 0; i < children.length; i++) {
             children[i].draw(ctx);
         }
+        
         ctx.restore();
+
     }
 }

@@ -42,7 +42,7 @@ export class Shape extends Renderable {
         ctx.rotate(rotation);
         ctx.scale(scale.x, scale.y);
         ctx.fillStyle = color.toString();
-        ctx.strokeStyle = color.toString();
+
 
         switch (this.properties.geometry) {
             case Shape.CIRCLE:
@@ -52,6 +52,13 @@ export class Shape extends Renderable {
             case Shape.RECTANGLE:
                 ctx.beginPath();
                 ctx.rect(-param.width / 2, -param.height / 2, param.width, param.height);
+                break;
+            case Shape.LINE:
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(param.width, param.height);
+                ctx.lineWidth = param.thickness || 5;
+                ctx.stroke();
                 break;
             case Shape.TRIANGLE:
                 ctx.beginPath();
@@ -80,3 +87,4 @@ export class Shape extends Renderable {
 Shape.CIRCLE = "circle";
 Shape.RECTANGLE = "rectangle";
 Shape.TRIANGLE = "triangle";
+Shape.LINE = "line";

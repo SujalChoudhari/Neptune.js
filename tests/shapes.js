@@ -1,18 +1,16 @@
-import { Application } from "../src/main.js";
-import { Shape } from "../src/components/shape.js";
-import { Color } from "../src/basic/color.js";
-import { Entity } from "../src/basic/entity.js";
-import { Transform } from "../src/components/transform.js";
-import { Vector2 } from "../src/maths/vec2.js";
-export class TestApplication extends Application {
+import * as npt from  '../src/neptune.js'
+
+
+export class Game extends npt.Application {
     constructor(){
         super();
-        let shape = new Shape(Shape.CIRCLE,Color.fuchsia,true,{radius: 10});
-        // let shape = new Shape(Shape.RECTANGLE,Color.fuchsia,true,{width: 100, height: 20});
-        // let shape = new Shape(Shape.TRIANGLE,Color.fuchsia,true,{width: 10, height: 10});
+        // let shape = new npt.Shape(npt.Shape.CIRCLE,npt.Color.fuchsia,true,{radius: 10});
+        // let shape = new npt.Shape(Shape.RECTANGLE,Color.fuchsia,true,{width: 100, height: 20});
+        // let shape = new npt.Shape(npt.Shape.TRIANGLE,npt.Color.fuchsia,true,{width: 10, height: 10});
+        let shape = new npt.Shape(npt.Shape.LINE,npt.Color.fuchsia,true,{width: 200, height: 200, thickness: 2});
         
-        this.circle = new Entity("Circle");
-        this.circle.addComponent(new Transform(new Vector2(100,100),0,new Vector2(2,1)));
+        this.circle = new npt.Entity("Circle");
+        this.circle.addComponent(new npt.Transform(new npt.Vector2(100,100),0,new npt.Vector2(1,1)));
         this.circle.addComponent(shape);
     }
 
@@ -26,8 +24,8 @@ export class TestApplication extends Application {
 
 
     Draw(ctx){
-        this.circle.getComponent(Shape).draw(ctx);
+        this.circle.getComponent(npt.Shape).draw(ctx);
     }
 }
 
-new TestApplication();
+new Game();

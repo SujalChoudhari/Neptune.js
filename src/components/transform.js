@@ -2,12 +2,13 @@ import { Component } from "./component.js";
 import {Vector2} from "../maths/vec2.js";
 
 export class Transform extends Component {
-    constructor(pos = Vector2.zero(),rot = 0, scale = Vector2.one()){
+    constructor(pos = Vector2.zero(),rot = 0, scale = Vector2.one(),radius = 0){
         super();
         this.properties = {
             position : pos,
             rotation : rot,
-            scale : scale
+            scale : scale,
+            radius : radius,
         }
     }
 
