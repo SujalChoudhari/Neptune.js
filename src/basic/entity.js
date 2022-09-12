@@ -1,3 +1,4 @@
+
 export class Entity {
     constructor(name="Entity",children=[]) {
         this.name = name;
@@ -14,15 +15,19 @@ export class Entity {
         return this.components.some(component => component instanceof type);
     }
 
+    getChildren(){
+        return this.children;
+    }
+
+    getParent(){
+        return this.parent;
+    }
+
     removeComponent(type){
         let index = this.components.findIndex(component => component instanceof type);
         if(index > -1){
             this.components.splice(index,1);
         }
-    }
-
-    getComponents(type){
-        return this.components.filter(component => component instanceof type);
     }
 
     addComponent(component){
@@ -56,6 +61,16 @@ export class Entity {
             }
         });
         return component;
+    }
+
+    getComponentsInChildren(type){
+        let components = [];
+        this.children.forEach(child => {
+            if(child.hasComponent(type)){
+                components.push(child.getComponent(type));
+            }
+        });
+        return components;
     }
 
     getChildWithComponent(type){

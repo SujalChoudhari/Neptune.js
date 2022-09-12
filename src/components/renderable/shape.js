@@ -1,8 +1,8 @@
-import { Component } from "./component.js";
-import { Color } from "../basic/color.js";
-import { Transform } from "./transform.js";
+import { Renderable } from "./renderable.js";
+import { Color } from "../../basic/color.js";
+import { Transform } from "../transform.js";
 
-export class Shape extends Component {
+export class Shape extends Renderable {
     constructor(geometry = Shape.CIRCLE, color = Color.fuchsia, fill = true, param = { radius: 10, width: 10, height: 10 }) {
         super();
         this.properties.geometry = geometry;
@@ -67,10 +67,11 @@ export class Shape extends Component {
             ctx.stroke();
         }
 
-        let children = this.entity.getChildWithComponent(Shape);
-        for (let child of children) {
-            child.getComponent(Shape).draw(ctx);
+        let children = this.entity.getComponentsInChildren(Renderable);
+        for (let i = 0; i < children.length; i++) {
+            children[i].draw(ctx);
         }
+
         ctx.restore();
     }
 }

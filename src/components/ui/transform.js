@@ -1,6 +1,7 @@
 
 import { Vector2 } from "../../maths/vec2.js";
 import { Component } from "../component.js";
+import { Input } from "../../events/input.js"
 
 export class UITransform extends Component {
 
@@ -11,6 +12,7 @@ export class UITransform extends Component {
         this.properties.width = width;
         this.properties.height = height;
         this.properties.rot = rot;
+
     }
 
     getX() {
@@ -133,7 +135,6 @@ export class UITransform extends Component {
                 this.properties.y = y + padY;
                 this.properties.height = height - padY * 2;
                 break;
-
         }
     }
             
@@ -143,25 +144,14 @@ export class UITransform extends Component {
     }
 
     isHovered() {
-        return this.isPointInside(Input.pos);
+        return this.isPointInside(Input.getPosition());
     }
 
     isClicked() {
-        return this.isHovered() && Input.mouseDown;
+        return this.isHovered() && Input.isLeftClicked();
     }
 
     rotate(rot) {
         this.properties.rot += rot;
     }
-
-    debugDraw(ctx) {
-        let x = this.properties.x;
-        let y = this.properties.y;
-        let width = this.properties.width;
-        let height = this.properties.height;
-
-        ctx.strokeStyle = "red";
-        ctx.strokeRect(x, y, width, height);
-    }
-
 }

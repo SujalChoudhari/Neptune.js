@@ -74,7 +74,6 @@ export class Input {
         Input.isDoubleClicked = true;
         Input.pos.x = event.offsetX;
         Input.pos.y = event.offsetY;
-
         Input.pressedButton = event.button;
         Input._checkSpecialKey(event);
 
@@ -87,8 +86,6 @@ export class Input {
         Input.pos.x = event.offsetX;
         Input.pos.y = event.offsetY;
         Input.pressedButton = event.button;
-
-        Input.pressedButton = event.button;
         Input._checkSpecialKey(event);
 
     }
@@ -97,16 +94,13 @@ export class Input {
         Input.isMouseDown = false;
         Input.pos.x = event.offsetX;
         Input.pos.y = event.offsetY;
-
-        Input.pressedButton = event.button;
+        Input.pressedButton = -1;
         Input._checkSpecialKey(event);
     }
 
     static _MouseMove(event) {
         Input.pos.x = event.offsetX;
         Input.pos.y = event.offsetY;
-
-        Input.pressedButton = event.button;
         Input._checkSpecialKey(event);
     }
 
@@ -229,6 +223,7 @@ export class Input {
         Input.keyPressed = [];
         Input.specialKeyPressed = false;
         Input.wheelDelta = 0;
+        Input.pressedButton = -1;
     }
     static getKeyDown(keyCode) {
         return Input.keyPressed[keyCode];

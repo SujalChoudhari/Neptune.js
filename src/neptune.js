@@ -4,12 +4,19 @@ import {Scene} from './basic/scene.js';
 
 import {Component} from './components/component.js';
 import { Transform } from "./components/transform.js";
-import { Shape } from "./components/shape.js";
-import { Sprite } from "./components/sprite.js";
+import { Shape } from "./components/renderable/shape.js";
+import { Sprite } from "./components/renderable/sprite.js";
 import { Sound } from "./components/audio.js";
 
 import {UITransform} from './components/ui/transform.js';
-import {Panel} from  './components/ui/panel.js';
+import {Container} from './components/ui/containers/container.js';
+import { MarginContainer } from "./components/ui/containers/margin.js";
+import { VBoxContainer } from "./components/ui/containers/vbox.js";
+import { HBoxContainer } from "./components/ui/containers/hbox.js";
+import { GridContainer } from "./components/ui/containers/grid.js";
+import { Text } from "./components/ui/text.js";
+import { UISprite } from "./components/ui/sprite.js";
+
 
 import {Input} from './events/input.js'
 import { Vector2 } from "./maths/vec2.js";
@@ -18,7 +25,7 @@ import { Vector2 } from "./maths/vec2.js";
 export {
     Color, Entity,Scene,
     Component,Transform,Shape,Sprite,Sound,
-    UITransform,Panel,
+    UITransform,Container,MarginContainer,VBoxContainer,HBoxContainer,GridContainer,Text,UISprite,
     Input,Vector2
 }
 
@@ -65,12 +72,13 @@ export class Application {
         this.canvas.setAttribute("height", window.innerHeight);
         this.canvas.setAttribute("width", window.innerWidth);
         
-        window.addEventListener('resize', () => {
+        window.onresize = () => {
+            console.log("Resized");
             this.width = window.innerWidth;
             this.height = window.innerHeight;
-            this.canvas.setAttribute("height", window.innerHeight);
-            this.canvas.setAttribute("width", window.innerWidth);
-        });
+            this.canvas.width = this.width;
+            this.canvas.height = this.height;
+        }
         this.canvas.focus();
 
 

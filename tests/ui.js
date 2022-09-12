@@ -4,34 +4,30 @@ import * as npt from  '../src/neptune.js'
 export class Game extends npt.Application {
     constructor(){
         super();
+        this.scene = new npt.Scene();
 
-        this.main = new npt.Entity("Main");
-        let transform = new npt.UITransform(0,0,100,100,0);
-        this.main.addComponent(transform);
-        transform.align("center");
-        transform.fill("both",10,30);
-
-        this.panel = new npt.Entity("Panel");   
-        let panelTransform = new npt.Panel(0,0,100,100,0,npt.Color.fuchsia);
-        this.panel.addComponent(panelTransform);
-        this.main.addChild(this.panel);
-        panelTransform.align("center");
-        panelTransform.align("bottom");
-        panelTransform.fill("both",30,10);
-        console.log(this.panel)
+        this.main = new npt.Entity();
+        this.main.addComponent(new npt.UITransform(100,100,100,100));
+        let container = new npt.MarginContainer(0,10,10,10);
+        this.main.addComponent(container);
+        container.update();
+        this.main.addComponent(new npt.Text("Hello World", "30px Arial", npt.Text.ALIGN_CENTER, npt.Color.aqua));
+        this.scene.addChild(this.main);
     }
 
     Init(){
-
+        npt.Input.init(this.canvas);
     }
 
     Update(timeStamp){
+        if(this.main.getComponent(npt.UITransform).isClicked()) console.log("Hovered");
 
+
+        npt.Input.clear();
     }
 
     Draw(ctx){
-        this.main.getComponent(npt.UITransform).debugDraw(ctx);
-        this.panel.getComponent(npt.Panel).draw(ctx);
+        this.scene.draw(ctx);
     }
 }
 

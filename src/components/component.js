@@ -1,5 +1,5 @@
 export class Component{
-    constructor(entity){
+    constructor(entity=undefined){
         this.entity = entity;
         this.properties = {};
     }

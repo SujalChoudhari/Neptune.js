@@ -1,7 +1,7 @@
-import { Component } from "./component.js";
-import { Transform } from "./transform.js";
+import { Renderable } from "./renderable.js";
+import { Transform } from "../transform.js";
 
-export class Sprite extends Component {
+export class Sprite extends Renderable {
     constructor(path="", width=10, height=10) {
         super();
         this.properties.path = path;
@@ -61,11 +61,12 @@ export class Sprite extends Component {
         if (image.src != path) {
             image.src = path;
         }
-
         ctx.drawImage(image, -width / 2, -height / 2, width, height);
-        let children = this.entity.getChildWithComponent(Sprite);
-        for (let child of children) {
-            child.getComponent(Sprite).draw(ctx);
+
+
+        let children = this.entity.getComponentsInChildren(Renderable);
+        for (let i = 0; i < children.length; i++) {
+            children[i].draw(ctx);
         }
 
         ctx.restore();

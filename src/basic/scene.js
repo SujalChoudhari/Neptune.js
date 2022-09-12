@@ -1,5 +1,4 @@
-import { Shape } from "../components/shape.js";
-import { Sprite } from "../components/sprite.js";
+import { Renderable } from "../components/renderable/renderable.js";
 import { Entity } from "./entity.js";
 
 
@@ -12,15 +11,17 @@ export class Scene extends Entity{
     }
 
     draw(ctx){
-        this.getChildrenWithComponent(Sprite).forEach(child => {
-            child.getComponent(Sprite).draw(ctx);
-        });
-        this.getChildrenWithComponent(Shape).forEach(child => {
-            child.getComponent(Shape).draw(ctx);
+        this.getComponentsInChildren(Renderable).forEach(renderable => {
+            renderable.draw(ctx);
         });
     }
 
-    addComponent(component){
-        throw new Error("Cannot add component to scene");
+    getHirarchy(){
+        let hirarchy = [];
+        this.children.forEach(child => {
+            hirarchy.push(child);
+            hirarchy = hirarchy.concat(child.getHirarchy());
+        });
+        return hirarchy;
     }
 }
