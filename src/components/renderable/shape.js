@@ -1,14 +1,16 @@
 import { Renderable } from "./renderable.js";
 import { Color } from "../../basic/color.js";
 import { Transform } from "../transform.js";
+import { Maths } from "../../neptune.js";
 
 export class Shape extends Renderable {
-    constructor(geometry = Shape.CIRCLE, color = Color.fuchsia, fill = true, param = { radius: 10, width: 10, height: 10 }) {
+    constructor(geometry = Shape.CIRCLE, color = Color.fuchsia, fill = true, param = { radius: 10, width: 10, height: 10,outline:Color.black }) {
         super();
         this.properties.geometry = geometry;
         this.properties.color = color;
         this.properties.fill = fill;
         this.properties.param = param;
+
 
     }
 
@@ -29,10 +31,12 @@ export class Shape extends Renderable {
     }
 
     draw(ctx) {
+        super.draw(ctx);
         let transform = this.entity.getComponent(Transform);
-        let position = transform.getPosition();
+        let position = Maths.meterToPixelVector2(transform.getPosition());
         let rotation = transform.getRotation();
-        let scale = transform.getScale();
+        let radius = transform.getRadius();
+        let scale = Maths.meterToPixelVector2(transform.getScale());
         let param = this.properties.param;
         let fill = this.properties.fill;
         let color = this.properties.color;
@@ -42,12 +46,13 @@ export class Shape extends Renderable {
         ctx.rotate(rotation);
         ctx.scale(scale.x, scale.y);
         ctx.fillStyle = color.toString();
-
+        if (param.outline) ctx.strokeStyle = param.outline.toString();
+        if (param.thickness) ctx.lineWidth = param.thickness;
 
         switch (this.properties.geometry) {
             case Shape.CIRCLE:
                 ctx.beginPath();
-                ctx.arc(0, 0, param.radius, 0, Math.PI * 2);
+                ctx.arc(0, 0, radius, 0, Math.PI * 2);
                 break;
             case Shape.RECTANGLE:
                 ctx.beginPath();
@@ -73,6 +78,11 @@ export class Shape extends Renderable {
         } else {
             ctx.stroke();
         }
+
+        if (param.outline)
+        ctx.stroke();
+
+
 
         let children = this.entity.getComponentsInChildren(Renderable);
         for (let i = 0; i < children.length; i++) {

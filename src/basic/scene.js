@@ -16,12 +16,4 @@ export class Scene extends Entity{
         });
     }
 
-    getHirarchy(){
-        let hirarchy = [];
-        this.children.forEach(child => {
-            hirarchy.push(child);
-            hirarchy = hirarchy.concat(child.getHirarchy());
-        });
-        return hirarchy;
-    }
 }

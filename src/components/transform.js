@@ -36,6 +36,14 @@ export class Transform extends Component {
         this.properties.scale = scale;
     }
 
+    getRadius(){
+        return this.properties.radius;
+    }
+
+    setRadius(radius){
+        this.properties.radius = radius;
+    }
+
     getForward(){
         return new Vector2(Math.cos(this.properties.rotation),Math.sin(this.properties.rotation));
     }

@@ -16,7 +16,7 @@ export class Input {
     static onClick;
     static onDoubleClick;
 
-    static init(canvas) {
+    static Init(canvas) {
         Input.canvas = canvas;
         Input.pos = {
             x: 0,
@@ -34,111 +34,119 @@ export class Input {
         Input.onClick = (event) => { };
         Input.onDoubleClick = (event) => { };
 
-        Input.canvas.addEventListener("click", Input._Click.bind(this));
-        Input.canvas.addEventListener("dblclick", Input._DoubleClick.bind(this));
-        Input.canvas.addEventListener("mousedown", Input._MouseDown.bind(this));
-        Input.canvas.addEventListener("mouseup", Input._MouseUp.bind(this));
-        Input.canvas.addEventListener("mousemove", Input._MouseMove.bind(this));
-        Input.canvas.addEventListener("mouseout", Input._MouseUp.bind(this));
-        Input.canvas.addEventListener("mouseleave", Input._MouseUp.bind(this));
-        Input.canvas.addEventListener("mouseover", Input._MouseMove.bind(this));
-        Input.canvas.addEventListener("touchstart", Input._TouchStart.bind(this));
-        Input.canvas.addEventListener("touchend", Input._TouchEnd.bind(this));
-        Input.canvas.addEventListener("touchmove", Input._TouchMove.bind(this));
-        Input.canvas.addEventListener("wheel", Input._Wheel.bind(this));
-        Input.canvas.addEventListener("keydown", Input._KeyDown.bind(this));
-        Input.canvas.addEventListener("keyup", Input._KeyUp.bind(this));
+        Input.canvas.addEventListener("click", Input.Click.bind(this));
+        Input.canvas.addEventListener("dblclick", Input.DoubleClick.bind(this));
+        Input.canvas.addEventListener("mousedown", Input.MouseDown.bind(this));
+        Input.canvas.addEventListener("mouseup", Input.MouseUp.bind(this));
+        Input.canvas.addEventListener("mousemove", Input.MouseMove.bind(this));
+        Input.canvas.addEventListener("mouseout", Input.MouseUp.bind(this));
+        Input.canvas.addEventListener("mouseleave", Input.MouseUp.bind(this));
+        Input.canvas.addEventListener("mouseover", Input.MouseMove.bind(this));
+        Input.canvas.addEventListener("touchstart", Input.TouchStart.bind(this));
+        Input.canvas.addEventListener("touchend", Input.TouchEnd.bind(this));
+        Input.canvas.addEventListener("touchmove", Input.TouchMove.bind(this));
+        Input.canvas.addEventListener("wheel", Input.Wheel.bind(this));
+        Input.canvas.addEventListener("keydown", Input.KeyDown.bind(this));
+        Input.canvas.addEventListener("keyup", Input.KeyUp.bind(this));
+        Input.canvas.addEventListener("keypress", Input.KeyPress.bind(this));
     }
 
 
-    static _checkSpecialKey(event) {
+    static checkSpecialKey(event) {
         if (event.shiftKey) Input.specialKeyPressed = Input.keyCode.SHIFT;
         if (event.ctrlKey) Input.specialKeyPressed = Input.keyCode.CTRL;
         if (event.altKey) Input.specialKeyPressed = Input.keyCode.ALT;
         if (event.metaKey) Input.specialKeyPressed = Input.keyCode.META;
         else Input.specialKeyPressed = null;
     }
-
-    static _Click(event) {
+    
+    static Click(event) {
         Input.isClicked = true;
         Input.pos.x = event.offsetX;
         Input.pos.y = event.offsetY;
-
         Input.pressedButton = event.button;
-        Input._checkSpecialKey(event);
-
+        Input.checkSpecialKey(event);
+        
         Input.onClick(event);
     }
-
-    static _DoubleClick(event) {
+    
+    static DoubleClick(event) {
         Input.isDoubleClicked = true;
         Input.pos.x = event.offsetX;
         Input.pos.y = event.offsetY;
         Input.pressedButton = event.button;
-        Input._checkSpecialKey(event);
+        Input.checkSpecialKey(event);
 
         Input.onDoubleClick(event);
 
     }
 
-    static _MouseDown(event) {
+    static MouseDown(event) {
         Input.isMouseDown = true;
         Input.pos.x = event.offsetX;
         Input.pos.y = event.offsetY;
         Input.pressedButton = event.button;
-        Input._checkSpecialKey(event);
+        Input.checkSpecialKey(event);
 
     }
 
-    static _MouseUp(event) {
+    static MouseUp(event) {
         Input.isMouseDown = false;
         Input.pos.x = event.offsetX;
         Input.pos.y = event.offsetY;
         Input.pressedButton = -1;
-        Input._checkSpecialKey(event);
+        Input.checkSpecialKey(event);
     }
-
-    static _MouseMove(event) {
+    
+    static MouseMove(event) {
         Input.pos.x = event.offsetX;
         Input.pos.y = event.offsetY;
-        Input._checkSpecialKey(event);
+        Input.checkSpecialKey(event);
     }
 
-    static _TouchStart(event) {
+    static TouchStart(event) {
         Input.touches = event.touches;
         Input.pos.x = Math.round(event.changedTouches[0].pageX);
         Input.pos.y = Math.round(event.changedTouches[0].pageY);
-        Input._checkSpecialKey(event);
+        Input.checkSpecialKey(event);
     }
 
-    static _TouchEnd(event) {
+    static TouchEnd(event) {
         Input.touches = event.touches;
         Input.pos.x = Math.round(event.changedTouches[0].pageX);
         Input.pos.y = Math.round(event.changedTouches[0].pageY);
-        Input._checkSpecialKey(event);
+        Input.checkSpecialKey(event);
 
     }
 
-    static _TouchMove(event) {
+    static TouchMove(event) {
         Input.touches = event.touches;
         Input.pos.x = Math.round(event.changedTouches[0].pageX);
         Input.pos.y = Math.round(event.changedTouches[0].pageY);
-        Input._checkSpecialKey(event);
+        Input.checkSpecialKey(event);
     }
-
-    static _Wheel(event) {
+    
+    static Wheel(event) {
         Input.wheelDelta = event.deltaY;
     }
+    
+    static KeyDown(event) {
+        Input.checkSpecialKey(event);
+        Input.keyPressed[event.keyCode] = true;
 
-    static _KeyDown(event) {
-        Input.keyPressed[event.key] = true;
-        Input._checkSpecialKey(event);
+    }
+    
+    static KeyUp(event) {
+        Input.checkSpecialKey(event);
+        Input.keyPressed[event.keyCode] = false;
+        Input.keyPressed.splice(Input.keyPressed.indexOf(event.keyCode),1);
+    }
+    
+    static KeyPress(event) {
+        Input.keyPressed[event.keyCode] = true;
     }
 
-    static _KeyUp(event) {
-        Input.keyPressed[event.key] = false;
-        Input.specialKeyPressed = null;
-    }
+
 
     static leftMouseButtonDown() {
         return Input.pressedButton === 0;
@@ -215,18 +223,24 @@ export class Input {
     static getSpecialKeyPressed() {
         return Input.specialKeyPressed;
     }
+    
+    static getKeyDown(keyCode) {
+        return Input.keyPressed[keyCode];
+    }
+
+    static isKeyDown(keyCode) {
+        if (Input.keyPressed[keyCode] === undefined) return false;
+        return Input.keyPressed[keyCode];
+    }
+
     static clear() {
         Input.isClicked = false;
         Input.isDoubleClicked = false;
         Input.isMouseDown = false;
         Input.touches = 0;
-        Input.keyPressed = [];
         Input.specialKeyPressed = false;
         Input.wheelDelta = 0;
         Input.pressedButton = -1;
-    }
-    static getKeyDown(keyCode) {
-        return Input.keyPressed[keyCode];
     }
 
 }
@@ -236,16 +250,16 @@ Input.buttons = {
     RIGHT: 2
 };
 Input.keyCode = {
-    NUM_ONE: 49,
-    NUM_TWO: 50,
-    NUM_THREE: 51,
-    NUM_FOUR: 52,
-    NUM_FIVE: 53,
-    NUM_SIX: 54,
-    NUM_SEVEN: 55,
-    NUM_EIGHT: 56,
-    NUM_NINE: 57,
-    NUM_ZERO: 48,
+    NUMONE: 49,
+    NUMTWO: 50,
+    NUMTHREE: 51,
+    NUMFOUR: 52,
+    NUMFIVE: 53,
+    NUMSIX: 54,
+    NUMSEVEN: 55,
+    NUMEIGHT: 56,
+    NUMNINE: 57,
+    NUMZERO: 48,
     A: 65,
     B: 66,
     C: 67,
@@ -272,10 +286,10 @@ Input.keyCode = {
     X: 88,
     Y: 89,
     Z: 90,
-    LEFT_ARROW: 37,
-    UP_ARROW: 38,
-    RIGHT_ARROW: 39,
-    DOWN_ARROW: 40,
+    LEFTARROW: 37,
+    UPARROW: 38,
+    RIGHTARROW: 39,
+    DOWNARROW: 40,
     SPACE: 32,
     SHIFT: 16,
     CTRL: 17,
@@ -300,17 +314,17 @@ Input.keyCode = {
     F11: 122,
     F12: 123,
 
-    NUM_LOCK: 144,
-    SCROLL_LOCK: 145,
-    SEMI_COLON: 186,
-    EQUAL_SIGN: 187,
+    NUMLOCK: 144,
+    SCROLLLOCK: 145,
+    SEMICOLON: 186,
+    EQUALSIGN: 187,
     COMMA: 188,
     DASH: 189,
     PERIOD: 190,
-    FORWARD_SLASH: 191,
-    GRAVE_ACCENT: 192,
-    OPEN_BRACKET: 219,
-    BACK_SLASH: 220,
-    CLOSE_BRACKET: 221,
-    SINGLE_QUOTE: 222
+    FORWARDSLASH: 191,
+    GRAVEACCENT: 192,
+    OPENBRACKET: 219,
+    BACKSLASH: 220,
+    CLOSEBRACKET: 221,
+    SINGLEQUOTE: 222
 };

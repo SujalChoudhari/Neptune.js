@@ -87,4 +87,14 @@ export class Entity {
         return children;
     }
 
+
+    static getTree(entity){
+        let tree = {};
+        tree.name = entity.name;
+        tree.children = [];
+        entity.children.forEach(child => {
+            tree.children.push(Entity.getTree(child));
+        });
+        return tree;
+    }
 }

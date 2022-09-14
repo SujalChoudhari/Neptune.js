@@ -1,5 +1,6 @@
 import { Renderable } from "./renderable.js";
 import { Transform } from "../transform.js";
+import { PhysicsBody } from "../../neptune.js";
 
 export class Sprite extends Renderable {
     constructor(path="", width=10, height=10) {
@@ -45,13 +46,15 @@ export class Sprite extends Renderable {
     }
 
     draw(ctx) {
+        super.draw(ctx);
         let image = this.properties.image;
         let path = this.properties.path;
         let width = this.properties.width;
         let height = this.properties.height;
-        let position = this.entity.getComponent(Transform).getPosition();
-        let rotation = this.entity.getComponent(Transform).getRotation();
-        let scale = this.entity.getComponent(Transform).getScale();
+        let transform = this.entity.getComponent(Transform);
+        let position = Maths.meterToPixelVector2(transform.getPosition());
+        let rotation = transform.getRotation();
+        let scale = Maths.meterToPixelVector2(transform.getScale());
 
         ctx.save();
         ctx.translate(position.x, position.y);

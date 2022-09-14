@@ -4,37 +4,81 @@ export class Vector2 {
 		this.y = y;
 	}
 
-	add(v){
-		this.x += v.x;
-		this.y += v.y;
+	add(vector) {
+		if (vector instanceof Vector2) {
+			this.x += vector.x;
+			this.y += vector.y;
+		}else {
+			this.x += vector;
+			this.y += vector;
+		}
+		return this;
 	}
 
-	sub(v){
-		this.x -= v.x;
-		this.y -= v.y;
+	subtract(vector) {
+		if (vector instanceof Vector2) {
+			this.x -= vector.x;
+			this.y -= vector.y;
+		}else {
+			this.x -= vector;
+			this.y -= vector;
+		}
+		return this;
 	}
 
-	mul(v){
-		this.x *= v.x;
-		this.y *= v.y;
+	multiply(vector) {
+		if (vector instanceof Vector2) {
+			this.x *= vector.x;
+			this.y *= vector.y;
+		}else {
+			this.x *= vector;
+			this.y *= vector;
+		}
+		return this;
 	}
 
-	div(v){
-		this.x /= v.x;
-		this.y /= v.y;
+	divide(vector) {
+		if (vector instanceof Vector2) {
+			this.x /= vector.x;
+			this.y /= vector.y;
+		}else {
+			this.x /= vector;
+			this.y /= vector;
+		}
+		return this;
 	}
 
 	negetive(){
-		this.x = -this.x;
-		this.y = -this.y;
+		return new Vector2(-this.x,-this.y);
 	}
 
-	static zero(){
-		return new Vector2(0,0);
+	static zero() {
+		return new Vector2(0, 0);
 	}
 
-	equal(v){
-		return this.x == v.x && this.y == v.y;
+	static one() {
+		return new Vector2(1, 1);
 	}
 
+	equals(vector) {
+		return this.x == vector.x && this.y == vector.y;
+	}
+
+	copy() {
+		return new Vector2(this.x, this.y);
+	}
+
+
+	static transform(vector, transform) {
+		return new Vector2(vector.x * transform.properties.cos - vector.y * transform.properties.sin + transform.properties.positionX,
+			vector.x * transform.properties.sin + vector.y * transform.properties.cos + transform.properties.positionY);
+	}
+
+	magnitude() {
+		return Math.sqrt(this.x * this.x + this.y * this.y);
+	}
+
+	static isSafe(vector) {
+		return vector.x != null && vector.y != null && vector.x != undefined && vector.y != undefined && !isNaN(vector.x) && !isNaN(vector.y);
+	}
 }

@@ -6,6 +6,6 @@ export class Renderable extends Component {
     }
 
     draw(ctx) {
-        throw new Error("Draw function not implemented");
+        
     }
 }

@@ -5,6 +5,7 @@ import {Scene} from './basic/scene.js';
 import {Component} from './components/component.js';
 import { Transform } from "./components/transform.js";
 import { Shape } from "./components/renderable/shape.js";
+import { Polygon } from "./components/renderable/polygon.js";
 import { Sprite } from "./components/renderable/sprite.js";
 import { Sound } from "./components/audio.js";
 
@@ -17,15 +18,23 @@ import { GridContainer } from "./components/ui/containers/grid.js";
 import { Text } from "./components/ui/text.js";
 import { UISprite } from "./components/ui/sprite.js";
 
-import {Input} from './events/input.js'
-import { Vector2 } from "./maths/vec2.js";
+import { PhysicsBody } from "./physics/physicsBody.js";
+import { CollisionShape } from "./physics/collisionShape.js";
+import { PhysicsEngine } from "./physics/physicsEngine.js";
 
+import {Input} from './events/input.js'
+
+import { Vector2 } from "./maths/vec2.js";
+import { Maths } from "./maths/math.js";
 
 export {
-    Color, Entity,Scene,
-    Component,Transform,Shape,Sprite,Sound,
+    Color, Entity,Scene,Sound,
+    Component,Transform,
+    Shape,Sprite,Polygon,
     UITransform,Container,MarginContainer,VBoxContainer,HBoxContainer,GridContainer,Text,UISprite,
-    Input,Vector2
+    PhysicsBody,CollisionShape,PhysicsEngine,
+    Input,
+    Vector2,Maths
 }
 
 export class Application {
@@ -35,6 +44,7 @@ export class Application {
         this.width = window.innerWidth;
         this.height = window.innerHeight;
         this.fps = 60;
+        this.physicsTimeStep = 1;
         this.clearColor = Color.fromHex(0x334455);
 
         this.canvas = document.getElementById("neptune-canvas");
@@ -80,8 +90,12 @@ export class Application {
         }
         this.canvas.focus();
 
-        Input.init(this.canvas);
-        setInterval(this.fixedUpdate,100);
+        Input.Init(this.canvas);
+        PhysicsEngine.Init();
+        setInterval(
+            PhysicsEngine.Step
+        , this.physicsTimeStep);
+
     }
 
     Draw(ctx){}
@@ -95,13 +109,13 @@ export class Application {
         this.ctx.clearRect(0, 0, this.width, this.ctx.height);
         this.ctx.fillStyle = this.clearColor.toString() || Color.darkgray;
         this.ctx.fillRect(0, 0, this.width, this.height);
-
-        this.Update(timeStamp);
+        
+        
+        this.Update(this.deltaTime);
         this.Draw(this.ctx);
+
         Input.clear();
         requestAnimationFrame(this.Gameloop.bind(this));
     }
-    
-
 }
 
