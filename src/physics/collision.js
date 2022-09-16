@@ -13,7 +13,7 @@ export class Collision {
         let normal = Maths.normalize(centerB.copy().subtract(centerA));
         let depth = radii - distance;
 
-        return normal.multiply(depth);
+        return {normal,depth};
     }
 
     static intersectPolygon(verticesA, verticesB) {
@@ -63,7 +63,7 @@ export class Collision {
         if(Maths.dot(direction,normal) < 0) {
             normal = normal.negetive();
         }
-        return normal.multiply(depth);
+        return {normal,depth};
     }
 
 
@@ -118,7 +118,7 @@ export class Collision {
             normal = normal.negetive();
         }
 
-        return normal.multiply(depth);
+        return {normal,depth};
 
     }
 

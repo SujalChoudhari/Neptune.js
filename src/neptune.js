@@ -92,9 +92,6 @@ export class Application {
 
         Input.Init(this.canvas);
         PhysicsEngine.Init();
-        setInterval(
-            PhysicsEngine.Step
-        , this.physicsTimeStep);
 
     }
 
@@ -103,17 +100,38 @@ export class Application {
     Update(timeStamp){}
 
     Gameloop(timeStamp) {
-        this.deltaTime = (timeStamp - this.currentTimeStamp) * this.fps / 1000;
+        this.deltaTime = (timeStamp - this.currentTimeStamp) * this.fps / 1000;  //in seconds
+        this.deltaTime = Maths.clamp(this.deltaTime, 0, 1);
+        console.log(this.deltaTime);
         this.currentTimeStamp = timeStamp;
 
         this.ctx.clearRect(0, 0, this.width, this.ctx.height);
         this.ctx.fillStyle = this.clearColor.toString() || Color.darkgray;
         this.ctx.fillRect(0, 0, this.width, this.height);
-        
-        
-        this.Update(this.deltaTime);
-        this.Draw(this.ctx);
 
+        // 1x1 meter grid (), 1 meter = 10 pixels
+        this.ctx.save();
+        this.ctx.scale(10, 10);
+        this.ctx.lineWidth = 0.1;
+        this.ctx.strokeStyle = Color.gray.toString();
+        for (let i = 0; i < this.width / 10; i++) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(i, 0);
+            this.ctx.lineTo(i, this.height / 10);
+            this.ctx.stroke();
+        }
+        for (let i = 0; i < this.height / 10; i++) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(0, i);
+            this.ctx.lineTo(this.width / 10, i);
+            this.ctx.stroke();
+        }
+        this.ctx.restore();
+
+
+        this.Update(this.deltaTime);
+        PhysicsEngine.Step(this.deltaTime); //in seconds
+        this.Draw(this.ctx);
         Input.clear();
         requestAnimationFrame(this.Gameloop.bind(this));
     }

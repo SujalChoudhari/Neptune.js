@@ -6,14 +6,14 @@ export class Game extends npt.Application {
     constructor() {
         super();
         this.scene = new npt.Scene();
-        this.physicsTimeStep = 50
+        this.physicsTimeStep = 10
         this.entities = [];
         for (let i = 0; i < 10; i++) {
             let entity = new npt.Entity(`Circle${i}`);
             entity.addComponent(npt.PhysicsBody.createBoxBody(
                 npt.Maths.randomVector2(5, 50),
-                1, 3, 3, 0, false));
-            entity.addComponent(new npt.Shape(npt.Shape.RECTANGLE, npt.Color.random(), true, { width: 3, height: 3,outline:npt.Color.black }));
+                1, 3, 3, 1, false));
+            entity.addComponent(new npt.Shape(npt.Shape.RECTANGLE, npt.Color.random(), true, { width: 3, height: 3}));
             this.scene.addChild(entity);
             this.entities.push(entity);
 
@@ -22,16 +22,15 @@ export class Game extends npt.Application {
             let entity = new npt.Entity(`Circle${i}`);
             entity.addComponent(npt.PhysicsBody.createCircleBody(
                 npt.Maths.randomVector2(5, 50),
-                1, 2, 0, false));
-            entity.addComponent(new npt.Shape(npt.Shape.CIRCLE, npt.Color.random(), true, { radius: 2,outline:npt.Color.black }));
+                1, 2, 1, false));
+            entity.addComponent(new npt.Shape(npt.Shape.CIRCLE, npt.Color.random(), true, { radius: 2}));
             this.scene.addChild(entity);
             this.entities.push(entity);
 
         }
 
-        this.player = this.entities[11];
-
-
+        this.player = this.entities[19];
+        this.player.getComponent(npt.Shape).properties.color = npt.Color.red;
 
 
         this.text = new npt.Entity("Text");
@@ -67,8 +66,8 @@ export class Game extends npt.Application {
         }
 
         direction = npt.Maths.normalize(direction);
-        let velocity = direction.multiply(deltaTime).multiply(.5);
-        this.player.getComponent(npt.PhysicsBody).move(velocity);
+        let force = direction.multiply(.2)
+        this.player.getComponent(npt.PhysicsBody).addForce(force);
         
     }
 

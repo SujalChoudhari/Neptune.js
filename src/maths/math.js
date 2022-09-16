@@ -6,7 +6,7 @@ export class Maths {
     }
 
     static distance(vector1, vector2) {
-        return Maths.lenght(vector1.copy().subtract(vector2));
+        return Maths.lenght(vector2.copy().subtract(vector1));
     }
 
     static normalize(vector) {

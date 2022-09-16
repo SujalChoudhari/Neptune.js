@@ -21,6 +21,7 @@ export class PhysicsBody extends Transform {
 
         this.properties.linearVelocity = new Vector2(0,0);
         this.properties.angularVelocity = 0;
+        this.properties.force = new Vector2(0,0);
 
         if (shapeType == CollisionShape.BOX){
             this.vertices = PhysicsBody.createBoxVertices(width,height);
@@ -32,6 +33,9 @@ export class PhysicsBody extends Transform {
         PhysicsEngine.addBody(this);
     }
 
+    getLinearVelocity(){
+        return this.properties.linearVelocity;
+    }
 
     static createBoxVertices(width,height){
         let vertices = [];
@@ -89,11 +93,21 @@ export class PhysicsBody extends Transform {
         this.transformUpdateRequired = true;
     }
 
-    Step(dt){
+    Step(time){ // in seconds
         if (!this.properties.isStatic){
-            this.move(this.properties.linearVelocity.multiply(dt));
-            this.rotate(this.properties.angularVelocity * dt);
+            this.properties.linearVelocity.add(this.properties.force.multiply(time/this.properties.mass));
+            this.move(this.properties.linearVelocity.multiply(time));
+            this.properties.linearVelocity = this.properties.linearVelocity.multiply(0.99);
+            this.properties.force = new Vector2(0,0);
         }
+    }
+
+    addForce(force){
+        this.properties.force.add(force);
+    }
+
+    applyImpulse(impulse){
+        this.properties.linearVelocity.add(impulse.divide(this.properties.mass));
     }
 
     static createCircleBody(position,density,radius,restitution=0,isStatic){
