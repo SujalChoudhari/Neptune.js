@@ -3,7 +3,7 @@ export class Entity {
     constructor(name="Entity",children=[]) {
         this.name = name;
         this.children = children;
-        this.parent = undefined;
+        this.parent = null;
         this.components = [];
     }
 
@@ -47,10 +47,10 @@ export class Entity {
 
     removeChild(child){
         let index = this.children.findIndex(c => c == child);
+        this.children[index].parent = null;
         if(index > -1){
             this.children.splice(index,1);
         }
-        this.children[index].parent = undefined;
     }
 
     getComponentinChildren(type){
@@ -96,5 +96,19 @@ export class Entity {
             tree.children.push(Entity.getTree(child));
         });
         return tree;
+    }
+
+    destroy(){
+        this.components.forEach(component => {
+            component.destroy();
+        });
+
+        this.children.forEach(child => {    
+            child.destroy();
+        });
+
+        this.parent.removeChild(this);
+
+        
     }
 }

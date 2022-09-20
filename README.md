@@ -52,14 +52,15 @@ Neptune is highly portable and runs on browsers.
 Neptune is free. Released under the MIT licence, you can create open source, 
 freeware, shareware, and commercial games with it. See the licence for full details. 
 
-[Quick Start Guide?](https://neptune-js.vercel.app/tutorial-Quick%20Start%20Guide.html) |
-[Changelogs?](https://github.com/NotSujal/Neptune.js/blob/main/CHANGELOG.md)
-
 ## Easy to use
 It's Simple and easy to use. 
 Even kids can make simple game in Neptune.
 Readable code and Documentation makes it easy to use. 
 Neptune almost has all the necessary modules for a 2d game.
+
+## Entity Component based System (v3.0+)
+Now the Engine uses a entity component based system.
+This makes the engine more advance, as major engines use this system.
 
 ## Minimalist design
 Neptune is a small framework. 

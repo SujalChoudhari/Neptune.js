@@ -49,7 +49,9 @@ export class Vector2 {
 	}
 
 	negetive(){
-		return new Vector2(-this.x,-this.y);
+		if (this.x != 0) this.x = -this.x;
+		if (this.y != 0) this.y = -this.y;
+		return this;
 	}
 
 	static zero() {

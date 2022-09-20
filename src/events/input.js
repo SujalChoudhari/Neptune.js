@@ -1,10 +1,8 @@
+import { Vector2 } from "../maths/vec2.js";
 
 export class Input {
     static canvas;
-    static pos = {
-        x: 0,
-        y: 0
-    };
+    static pos = Vector2.zero();
     static pressedButton;
     static isClicked;
     static isDoubleClicked;
@@ -18,10 +16,7 @@ export class Input {
 
     static Init(canvas) {
         Input.canvas = canvas;
-        Input.pos = {
-            x: 0,
-            y: 0
-        }
+        Input.pos =Vector2.zero();
         Input.pressedButton = null;
         Input.isClicked = false;
         Input.isDoubleClicked = false;
@@ -215,7 +210,7 @@ export class Input {
         return Input.wheelDelta;
     }
     static getPosition() {
-        return Input.pos;
+        return Input.pos.copy();
     }
     static getTouchCount() {
         return Input.touchCount;

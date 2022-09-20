@@ -1,6 +1,13 @@
 import { Vector2 } from "./vec2.js";
 
 export class Maths {
+    static PI = Math.PI;
+    static EXP = Math.E;
+    static DEG_TO_RAD = Math.PI / 180;
+    static RAD_TO_DEG = 180 / Math.PI;
+    static METER_TO_PIXEL = 10;
+    static PIXEL_TO_METER = 1 / 10;
+
     static lenght(vector) {
         return Math.sqrt(vector.x * vector.x + vector.y * vector.y);
     }
@@ -14,6 +21,10 @@ export class Maths {
         if (lenght != 0) return new Vector2(vector.x / lenght, vector.y / lenght);
         else return new Vector2(0, 0);
 
+    }
+
+    static perpendicular(vector) {
+        return new Vector2(-vector.y, vector.x);
     }
 
     static dot(vector1, vector2) {
@@ -33,22 +44,23 @@ export class Maths {
     }
 
     static pixelToMeter(pixel) { // 10 pixel = 1 meter
-        return pixel / 10;
+        return pixel * this.PIXEL_TO_METER;
     }
 
     static meterToPixel(meter) { // 1 meter = 10 pixel
-        return meter * 10;
+        return meter * this.METER_TO_PIXEL
     }
 
     static pixelToMeterVector2(vector) {
-        return new Vector2(Maths.pixelToMeter(vector.x), Maths.pixelToMeter(vector.y));
+        return new Vector2(vector.x * Maths.PIXEL_TO_METER, vector.y * Maths.PIXEL_TO_METER);
     }
 
     static meterToPixelVector2(vector) {
-        return new Vector2(Maths.meterToPixel(vector.x), Maths.meterToPixel(vector.y));
+        return new Vector2(vector.x * Maths.METER_TO_PIXEL, vector.y * Maths.METER_TO_PIXEL);
     }
 
-    static perpendicular(vector) {
-        return new Vector2(-vector.y, vector.x);
-    }
+    
+
+
+
 }

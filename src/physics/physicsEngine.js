@@ -1,9 +1,10 @@
 import { Vector2 } from "../maths/vec2.js";
 import { PhysicsBody } from "./physicsBody.js";
 import { CollisionShape } from "./collisionShape.js";
-import { Collision } from "./collision.js";
+import { CollisionDetection } from "./collisiondetection.js";
 import { PhysicsTransform } from "./transform.js";
 import { Maths } from "../maths/math.js";
+import { Collision } from "./collision.js";
 export class PhysicsEngine {
     //assuming 10px == 1m
     static MIN_BODY_SIZE = 1 * 1; // area in m^2
@@ -12,14 +13,27 @@ export class PhysicsEngine {
     static MIN_DENSITY = .7; //g/cm^3
     static MAX_DENSITY = 22; //g/cm^3
 
-    static gravity = new Vector2(0, 9.81); //m/s^2
+    static MIN_ITERATIONS = 1;
+    static MAX_ITERATIONS = 128;
+    
+    static iterations = 30;
+    static gravity = new Vector2(0, 9.80 / 1000); //m/s^2
     static bodies = [];
-
-
-
-    static Init() {
-
+    
+    static collisionManifold = [];
+    
+    
+    
+    set gravity(value) {
+        PhysicsEngine.gravity = value.divide(100);
     }
+    
+    set iterations(value) {
+        Maths.clamp(value, PhysicsEngine.MIN_ITERATIONS, PhysicsEngine.MAX_ITERATIONS);
+    }
+
+
+    static Init() {}
 
     static getBodyCount() {
         return this.bodies.length;
@@ -43,72 +57,67 @@ export class PhysicsEngine {
     }
 
     static Step(time) {
-
-        // Movement
-        for (let i = 0; i < PhysicsEngine.bodies.length; i++) {
-            let body = PhysicsEngine.bodies[i];
-            if (!body.isStatic) {
-                body.Step(time);
+        for (let it = 0; it < PhysicsEngine.iterations; it++) {
+            // Movement
+            for (let i = 0; i < PhysicsEngine.bodies.length; i++) {
+                let body = PhysicsEngine.bodies[i];
+                body.Step(time/this.iterations);
             }
-        }
 
-        // Collision
-        for (let i = 0; i < PhysicsEngine.bodies.length - 1; i++) {
-            let bodyA = PhysicsEngine.bodies[i];
-            for (let j = i + 1; j < PhysicsEngine.bodies.length; j++) {
-                let bodyB = PhysicsEngine.bodies[j]
-                let out = PhysicsEngine.collide(bodyA, bodyB);
-                if (out.normal) {
-                    bodyA.addForce(out.normal.copy().multiply(-out.depth));
-                    bodyB.addForce(out.normal.copy().multiply(out.depth));
 
-                    // PhysicsEngine.resolveCollision(bodyB,bodyA, out.normal);
+            // CollisionDetection
+            PhysicsEngine.collisionManifold = [];
+            for (let i = 0; i < PhysicsEngine.bodies.length - 1; i++) {
+                let bodyA = PhysicsEngine.bodies[i];
+                for (let j = i + 1; j < PhysicsEngine.bodies.length; j++) {
+                    let bodyB = PhysicsEngine.bodies[j]
+
+                    if (bodyA.isStatic && bodyB.isStatic) continue;
+
+                    let out = CollisionDetection.collide(bodyA, bodyB);
+                    if (out.normal) {
+
+
+                        bodyA.move(out.normal.copy().multiply(-out.depth / 2));
+                        bodyB.move(out.normal.copy().multiply(out.depth / 2));
+
+                        let data = CollisionDetection.findContactPoints(bodyA, bodyB);
+
+                        let collisionManifold = new Collision(bodyA, bodyB, 
+                            out.normal, out.depth,
+                            data[0], data[1], data[2]);
+                                                
+                        PhysicsEngine.collisionManifold.push(collisionManifold);
+                    }
                 }
             }
+
+            // Collision Resolution
+            for (let i = 0; i < PhysicsEngine.collisionManifold.length; i++) {
+                PhysicsEngine.resolveCollision(PhysicsEngine.collisionManifold[i]);
+            }
         }
     }
 
-    // static resolveCollision(bodyA, bodyB, collisionNormal) {
-    //     let m1 = bodyA.properties.mass;
-    //     let m2 = bodyB.properties.mass;
-    //     let v1 = bodyA.properties.linearVelocity;
-    //     let v2 = bodyB.properties.linearVelocity;
-    //     let impulse = PhysicsEngine.calculateImpulse(bodyA, bodyB, collisionNormal);
-    //     bodyA.properties.linearVelocity = v1.subtract(impulse.copy().multiply(1 / m1));
-    //     bodyB.properties.linearVelocity = v2.add(impulse.copy().multiply(1 / m2));
-    // }
+    static resolveCollision(collision) {
 
-    // static calculateImpulse(bodyA, bodyB, collisionNormal) {
-    //     let v1 = bodyA.properties.linearVelocity;
-    //     let v2 = bodyB.properties.linearVelocity;
-    //     let relV = v2.subtract(v1);
-    //     let m1 = bodyA.properties.mass;
-    //     let m2 = bodyB.properties.mass;
-    //     let e = Math.min(bodyA.properties.restitution, bodyB.properties.restitution);
+        let bodyA = collision.bodyA;
+        let bodyB = collision.bodyB;
+        let collisionNormal = collision.normal;
+        let depth = collision.depth;
 
-    //     let j = (-(1 + e) * Maths.dot(relV, collisionNormal)) / (1 / m1 + 1 / m2);
-    //     return collisionNormal.copy().multiply(j);
-    // }
+        let relativeVelocity = bodyB.properties.linearVelocity.copy().subtract(bodyA.properties.linearVelocity.copy());
+        let e = Math.min(bodyA.properties.restitution, bodyB.properties.restitution);
+        let j = -(1 + e) * Maths.dot(relativeVelocity, collisionNormal);
+        j /= bodyA.properties.invMass + bodyB.properties.invMass;
 
-    static collide(bodyA, bodyB) {
-        if (bodyA.properties.shapeType == CollisionShape.CIRCLE && bodyB.properties.shapeType == CollisionShape.CIRCLE) {
-            let out = Collision.intersectCircles(bodyA.getPosition(), bodyA.getRadius(), bodyB.getPosition(), bodyB.getRadius());
-            if (out) return out;
-        }
-        else if (bodyA.properties.shapeType == CollisionShape.BOX && bodyB.properties.shapeType == CollisionShape.BOX) {
-            let out = Collision.intersectPolygon(bodyA.getTransformedVertices(), bodyB.getTransformedVertices())
-            if (out) return out;
-        }
-        else if (bodyA.properties.shapeType == CollisionShape.CIRCLE && bodyB.properties.shapeType == CollisionShape.BOX) {
-            let out = Collision.intersectCirclePolygon(bodyA.getPosition(), bodyA.getRadius(), bodyB.getTransformedVertices());
-            if (out) return out;
-        }
-        else if (bodyA.properties.shapeType == CollisionShape.BOX && bodyB.properties.shapeType == CollisionShape.CIRCLE) {
-            let out = Collision.intersectCirclePolygon(bodyB.getPosition(), bodyB.getRadius(), bodyA.getTransformedVertices());
-            if (out) return { normal: out.normal.negetive(), depth: out.depth };
-        }
+        let impulse = collisionNormal.copy().multiply(j);
 
-        return { normal: null, depth: 0 }
+        bodyA.addImpulse(impulse.copy().negetive());
+        bodyB.addImpulse(impulse);
+
     }
+
+    
 
 }

@@ -1,6 +1,7 @@
 import { Color } from "./basic/color.js";
 import {Entity} from './basic/entity.js';
 import {Scene} from './basic/scene.js';
+import { DestroyQueue } from "./basic/destroyQueue.js";
 
 import {Component} from './components/component.js';
 import { Transform } from "./components/transform.js";
@@ -28,7 +29,7 @@ import { Vector2 } from "./maths/vec2.js";
 import { Maths } from "./maths/math.js";
 
 export {
-    Color, Entity,Scene,Sound,
+    Color, Entity,Scene,Sound,DestroyQueue,
     Component,Transform,
     Shape,Sprite,Polygon,
     UITransform,Container,MarginContainer,VBoxContainer,HBoxContainer,GridContainer,Text,UISprite,
@@ -67,14 +68,13 @@ export class Application {
 
         document.body.appendChild(this.play_btn);
 
-        this.currentTimeStamp = performance.now();
-        this.deltaTime = 0;
-        
-
         try {
             this.play_btn.style.display = "block";
             document.getElementById("neptune-loading").remove();
         } catch (error) {}
+
+        this.currentTimeStamp = performance.now();
+        this.deltaTime = 0;
     }
 
     Init() {
@@ -102,7 +102,6 @@ export class Application {
     Gameloop(timeStamp) {
         this.deltaTime = (timeStamp - this.currentTimeStamp) * this.fps / 1000;  //in seconds
         this.deltaTime = Maths.clamp(this.deltaTime, 0, 1);
-        console.log(this.deltaTime);
         this.currentTimeStamp = timeStamp;
 
         this.ctx.clearRect(0, 0, this.width, this.ctx.height);
@@ -133,6 +132,8 @@ export class Application {
         PhysicsEngine.Step(this.deltaTime); //in seconds
         this.Draw(this.ctx);
         Input.clear();
+        DestroyQueue.destroy();
+
         requestAnimationFrame(this.Gameloop.bind(this));
     }
 }
