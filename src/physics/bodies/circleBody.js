@@ -29,6 +29,7 @@ export class CircleBody extends Body {
         this.properties.restitution = Maths.clamp(restitution, 0, 1);
         this.properties.isStatic = isStatic;
         this.properties.inertia = this.calculateRotationalInertia();
+        this.properties.rotation = 0;
 
 
         if (isStatic) {

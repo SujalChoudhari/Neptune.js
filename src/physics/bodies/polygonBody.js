@@ -35,6 +35,7 @@ export class PolygonBody extends Body {
         this.properties.restitution = Maths.clamp(restitution, 0, 1);
         this.properties.isStatic = isStatic;
         this.properties.inertia = this.calculateRotationalInertia();
+        this.properties.rotation = 0;
 
         if (isStatic) {
             this.properties.invMass = 0;
@@ -46,20 +47,23 @@ export class PolygonBody extends Body {
         }
 
         this.vertices = vertices;
+       
+
         
         PhysicsEngine.addBody(this);
     }
 
 
     calculateRotationalInertia() {
-        return 1 / 12 * this.properties.mass * (this.properties.width * this.properties.width + this.properties.height * this.properties.height);
+        let width = this.properties.area /2;
+        let height = this.properties.area /2;
+        return 1 / 12 * this.properties.mass * (width * width + height * height);
     }
 
     getAABB() {
         if (this.aabbUpdateRequired) {
             let min = new Vector2(Infinity, Infinity);
             let max = new Vector2(-Infinity, -Infinity);
-
             let vertices = this.getTransformedVertices();
             for (let i = 0; i < vertices.length; i++) {
                 let v = vertices[i];

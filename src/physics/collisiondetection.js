@@ -13,6 +13,7 @@ export class CollisionDetection {
         }
         else if (bodyA.properties.shapeType == CollisionShape.POLYGON && bodyB.properties.shapeType == CollisionShape.POLYGON) {
             let data = CollisionDetection.findContactPointsPolygonPolygon(bodyA.getTransformedVertices(), bodyB.getTransformedVertices());
+            
             return { count: data.count, contact1: data.contact1, contact2: data.contact2 };
         }
         else if (bodyA.properties.shapeType == CollisionShape.CIRCLE && bodyB.properties.shapeType == CollisionShape.POLYGON) {

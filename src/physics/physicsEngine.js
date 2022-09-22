@@ -1,5 +1,5 @@
 import { Vector2 } from "../maths/vec2.js";
-import { PhysicsBody } from "./bodies/physicsBody.js";
+import { Body } from "./bodies/body.js";
 import { CollisionDetection } from "./collisiondetection.js";
 import { Maths } from "../maths/math.js";
 import { Collision } from "./collision.js";
@@ -21,9 +21,6 @@ export class PhysicsEngine {
 
     static collisionManifold = [];
 
-    static partitionGrid = []; //5x5 Worldgrid
-    
-
     set gravity(value) {
         PhysicsEngine.gravity = value.divide(100);
     }
@@ -40,11 +37,11 @@ export class PhysicsEngine {
     }
 
     static addBody(body) {
-        if (body instanceof Transform) PhysicsEngine.bodies.push(body);
+        if (body instanceof Body) PhysicsEngine.bodies.push(body);
     }
 
     static removeBody(body) {
-        if (body instanceof PhysicsBody) {
+        if (body instanceof Body) {
             let index = PhysicsEngine.bodies.indexOf(body);
             if (index > -1) {
                 PhysicsEngine.bodies.splice(index, 1);
@@ -61,15 +58,15 @@ export class PhysicsEngine {
         for (let it = 0; it < PhysicsEngine.iterations; it++) {
             PhysicsEngine.stepBodies(time);
             PhysicsEngine.broadPhase();
-            PhysicsEngine.narrowPhase(); 
+            PhysicsEngine.narrowPhase();
         }
     }
 
-    static stepBodies(time){
+    static stepBodies(time) {
         // Movement
         for (let i = 0; i < PhysicsEngine.bodies.length; i++) {
             let body = PhysicsEngine.bodies[i];
-            body.Step(time , PhysicsEngine.iterations);
+            body.Step(time, PhysicsEngine.iterations);
         }
     }
 
@@ -82,15 +79,16 @@ export class PhysicsEngine {
             for (let j = i + 1; j < PhysicsEngine.bodies.length; j++) {
                 let bodyB = PhysicsEngine.bodies[j];
                 let bodyBaabb = bodyB.getAABB();
-                
                 if (bodyA.isStatic && bodyB.isStatic) continue;
+
                 
+
                 if (!CollisionDetection.intersectAABB(bodyAaabb, bodyBaabb)) continue;
-                
-                
+
+
                 let out = CollisionDetection.collide(bodyA, bodyB);
                 if (out.normal) {
-                    
+
                     bodyA.move(out.normal.copy().multiply(-out.depth / 2));
                     bodyB.move(out.normal.copy().multiply(out.depth / 2));
 
@@ -105,7 +103,7 @@ export class PhysicsEngine {
         }
     }
 
-    static narrowPhase(){
+    static narrowPhase() {
         // Collision Resolution
         for (let i = 0; i < PhysicsEngine.collisionManifold.length; i++) {
             PhysicsEngine.resolveCollision(PhysicsEngine.collisionManifold[i]);
@@ -118,20 +116,14 @@ export class PhysicsEngine {
         let bodyA = collision.bodyA;
         let bodyB = collision.bodyB;
         let collisionNormal = collision.normal;
-        let depth = collision.depth;
 
         let relativeVelocity = bodyB.properties.linearVelocity.copy().subtract(bodyA.properties.linearVelocity.copy());
         let e = Math.min(bodyA.properties.restitution, bodyB.properties.restitution);
         let j = -(1 + e) * Maths.dot(relativeVelocity, collisionNormal);
-        j /= bodyA.properties.invMass + bodyB.properties.invMass;
+        j /= bodyA.properties.invMass + bodyB.properties.invMass + Maths.dot(collisionNormal, collisionNormal.copy().multiply(bodyA.properties.invInertia + bodyB.properties.invInertia));
 
         let impulse = collisionNormal.copy().multiply(j);
-
         bodyA.addImpulse(impulse.copy().negetive());
         bodyB.addImpulse(impulse);
-
     }
-
-
-
 }

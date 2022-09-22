@@ -13,8 +13,9 @@ export class Body extends Transform {
         this.properties.restitution = restitution;
         this.properties.area = area;
         this.properties.isStatic = isStatic;
-
+        
         this.properties.linearVelocity = new Vector2(0, 0);
+        this.properties.rotation = 0;
         this.properties.angularVelocity = 0;
         this.properties.force = new Vector2(0, 0);
         this.properties.torque = 0;
@@ -39,8 +40,11 @@ export class Body extends Transform {
         this.properties.linearVelocity.add(PhysicsEngine.gravity.copy());
         this.properties.position.add(this.properties.linearVelocity.copy().multiply(time));
 
-        this.properties.force = new Vector2(0, 0);
+        this.properties.angularVelocity += this.properties.torque * this.properties.invInertia * time;
+        this.properties.rotation += this.properties.angularVelocity * time;
 
+        this.properties.force = new Vector2(0, 0);
+        this.properties.torque = 0;
         this.properties.linearVelocity.multiply(1 - (this.properties.airResistance / iterations));
 
 
@@ -54,6 +58,10 @@ export class Body extends Transform {
 
     addTorque(torque) {
         this.properties.torque += torque; // in Nm
+    }
+
+    addTorqueImpulse(torque) {
+        this.properties.angularVelocity += torque * this.properties.invInertia;
     }
 
     addImpulse(impulse) {

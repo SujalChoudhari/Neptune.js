@@ -1,6 +1,5 @@
 import { Renderable } from "./renderable.js";
 import { Transform } from "../transform.js";
-import { PhysicsBody } from "../../neptune.js";
 
 export class Sprite extends Renderable {
     constructor(path="", width=10, height=10) {

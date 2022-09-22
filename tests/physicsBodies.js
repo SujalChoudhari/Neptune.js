@@ -19,7 +19,7 @@ export class Game extends npt.Application {
 
         this.box = new npt.Entity("Box");
         this.box.addComponent(new npt.BoxBody(
-            new npt.Vector2(10, 40),
+            new npt.Vector2(30, 40),
             10, 10, 10, 1, false
         ));
 
@@ -27,14 +27,14 @@ export class Game extends npt.Application {
         this.scene.addChild(this.box);
 
 
-        this.circle = new npt.Entity("Circle");
-        this.circle.addComponent(new npt.CircleBody(
-            new npt.Vector2(20, 20),
-            2, 10, 1, false
-        ));
+        // this.circle = new npt.Entity("Circle");
+        // this.circle.addComponent(new npt.CircleBody(
+        //     new npt.Vector2(20, 20),
+        //     2, 10, 1, false
+        // ));
 
-        this.circle.addComponent(new npt.Shape(npt.Shape.CIRCLE, npt.Color.random(), true, { radius: 2 }));
-        this.scene.addChild(this.circle);
+        // this.circle.addComponent(new npt.Shape(npt.Shape.CIRCLE, npt.Color.random(), true, { radius: 2 }));
+        // this.scene.addChild(this.circle);
 
         this.polygon = new npt.Entity("Polygon");
         this.polygon.addComponent(new npt.PolygonBody(
@@ -73,6 +73,12 @@ export class Game extends npt.Application {
     Draw(ctx) {
         super.Draw(ctx);
         this.scene.draw(ctx);
+
+        //draw polygon aabb
+        let aabb = this.polygon.getComponent(npt.PolygonBody).aabb;
+        ctx.strokeStyle = "red";
+        ctx.strokeRect(aabb.x, aabb.y, aabb.width, aabb.height);
+        ctx.stroke();
     }
 }
 

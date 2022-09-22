@@ -79,4 +79,13 @@ export class Vector2 {
 	static isSafe(vector) {
 		return vector.x != null && vector.y != null && vector.x != undefined && vector.y != undefined && !isNaN(vector.x) && !isNaN(vector.y);
 	}
+
+	normalize() {
+		let magnitude = this.magnitude();
+		if (magnitude != 0) {
+			this.x /= magnitude;
+			this.y /= magnitude;
+		}
+		return this;
+	}
 }
