@@ -6,7 +6,7 @@ export class Game extends npt.Application {
         super();
         this.scene = new npt.Scene();
         this.physicsTimeStep = 40;
-        npt.PhysicsEngine.iterations = 1;
+        npt.PhysicsEngine.iterations = 20;
 
         this.ground = new npt.Entity("Ground");
         this.ground.addComponent(npt.PhysicsBody.createBoxBody(
@@ -21,6 +21,28 @@ export class Game extends npt.Application {
         this.text.addComponent(new npt.Text("Gravity exists!", "20px Arial", "left", npt.Color.white));
 
         this.scene.addChild(this.text);
+
+        this.polygon = new npt.Entity("Polygon");
+        this.polygon.addComponent(npt.PhysicsBody.createPolygonBody(
+            new npt.Vector2(5, 35),
+            20,[
+                new npt.Vector2(0,0),
+                new npt.Vector2(0,10),
+                new npt.Vector2(20,10),
+                new npt.Vector2(5,0)
+            ],
+            1, true));
+
+        this.polygon.addComponent(new npt.Shape(
+            npt.Shape.POLYGON,
+            npt.Color.random(),
+            true,{points:[
+                new npt.Vector2(0,0),
+                new npt.Vector2(0,10),
+                new npt.Vector2(20,10),
+                new npt.Vector2(5,0)
+            ],thickness:.3,outline:npt.Color.black}));
+        this.scene.addChild(this.polygon);
 
 
     }
@@ -67,20 +89,21 @@ export class Game extends npt.Application {
             // npt.DestroyQueue.add(entity);
 
             // console.log(npt.Entity.getTree(this.scene));
-        }
-
-        let bodies = this.scene.getChildrenWithComponent(npt.PhysicsBody);
-
-        for (let i = 0; i < bodies.length; i++) {
-            let body = bodies[i]
-            let component = body.getComponent(npt.PhysicsBody);
-            let aabb = component.getAABB();
-            if (aabb.min.y > this.height * npt.Maths.PIXEL_TO_METER) {
-                npt.DestroyQueue.add(body);
-                //    console.log("destroyed");
-                // console.log(npt.Entity.getTree(this.scene));
+            let bodies = this.scene.getChildrenWithComponent(npt.PhysicsBody);
+            for (let i = 0; i < bodies.length; i++) {
+                let body = bodies[i]
+                let component = body.getComponent(npt.PhysicsBody);
+                let aabb = component.getAABB();
+                if (aabb.min.y > this.height * npt.Maths.PIXEL_TO_METER) {
+                    npt.DestroyQueue.add(body);
+                    //    console.log("destroyed");
+                    // console.log(npt.Entity.getTree(this.scene));
+                }
             }
         }
+
+
+
 
 
 
@@ -89,8 +112,8 @@ export class Game extends npt.Application {
     Draw(ctx) {
         super.Draw(ctx);
         this.scene.draw(ctx);
+        npt.PhysicsEngine.contactPoints = [];
 
-        
     }
 }
 

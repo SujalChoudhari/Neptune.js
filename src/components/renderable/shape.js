@@ -4,7 +4,7 @@ import { Transform } from "../transform.js";
 import { Maths } from "../../neptune.js";
 
 export class Shape extends Renderable {
-    constructor(geometry = Shape.CIRCLE, color = Color.fuchsia, fill = true, param = { radius: 10, width: 10, height: 10,outline:Color.black }) {
+    constructor(geometry = Shape.CIRCLE, color = Color.fuchsia, fill = true, param = { radius: 10, width: 10, height: 10, outline: Color.black }) {
         super();
         this.properties.geometry = geometry;
         this.properties.color = color;
@@ -14,19 +14,19 @@ export class Shape extends Renderable {
 
     }
 
-    getGeometry(){
+    getGeometry() {
         return this.properties.geometry;
     }
 
-    setGeometry(geometry){
+    setGeometry(geometry) {
         this.properties.geometry = geometry;
     }
 
-    getColor(){
+    getColor() {
         return this.properties.color;
     }
 
-    setColor(color){
+    setColor(color) {
         this.properties.color = color;
     }
 
@@ -72,17 +72,21 @@ export class Shape extends Renderable {
                 ctx.lineTo(-param.width / 2, param.height / 2);
                 ctx.closePath();
                 break;
+            case Shape.POLYGON:
+                ctx.beginPath();
+                ctx.moveTo(param.points[0].x, param.points[0].y);
+                for (let i = 1; i < param.points.length; i++) {
+                    ctx.lineTo(param.points[i].x, param.points[i].y);
+                }
+                ctx.closePath();
+                break;
         }
         if (fill) {
             ctx.fill();
+            if (param.outline) ctx.stroke();
         } else {
             ctx.stroke();
         }
-
-        if (param.outline)
-        ctx.stroke();
-
-
 
         let children = this.entity.getComponentsInChildren(Renderable);
         for (let i = 0; i < children.length; i++) {
@@ -98,3 +102,4 @@ Shape.CIRCLE = "circle";
 Shape.RECTANGLE = "rectangle";
 Shape.TRIANGLE = "triangle";
 Shape.LINE = "line";
+Shape.POLYGON = "polygon";

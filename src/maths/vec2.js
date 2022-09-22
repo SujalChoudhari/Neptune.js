@@ -62,10 +62,6 @@ export class Vector2 {
 		return new Vector2(1, 1);
 	}
 
-	equals(vector) {
-		return this.x == vector.x && this.y == vector.y;
-	}
-
 	copy() {
 		return new Vector2(this.x, this.y);
 	}

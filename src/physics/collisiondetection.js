@@ -4,30 +4,115 @@ import { CollisionShape } from './collisionShape.js';
 
 
 export class CollisionDetection {
-    static findContactPoints(bodyA,bodyB){
+    static findContactPoints(bodyA, bodyB) {
         if (bodyA.properties.shapeType == CollisionShape.CIRCLE && bodyB.properties.shapeType == CollisionShape.CIRCLE) {
-            
-            let point = CollisionDetection.findContactPoint(bodyA.properties.position, bodyA.properties.radius, bodyB.position)
-            return [1,point,Vector2.zero()];
-            
+
+            let point = CollisionDetection.findContactPoint(bodyA.properties.position, bodyA.properties.radius, bodyB.properties.position)
+            return { count: 1, contact1: point, contact2: Vector2.zero() };
+
         }
-        else if (bodyA.properties.shapeType == CollisionShape.BOX && bodyB.properties.shapeType == CollisionShape.BOX) {
-            return [0,Vector2.zero(),Vector2.zero()];
+        else if (bodyA.properties.shapeType == CollisionShape.POLYGON && bodyB.properties.shapeType == CollisionShape.POLYGON) {
+            let data = CollisionDetection.findContactPointsPolygonPolygon(bodyA.getTransformedVertices(), bodyB.getTransformedVertices());
+            return { count: data.count, contact1: data.contact1, contact2: data.contact2 };
         }
-        else if (bodyA.properties.shapeType == CollisionShape.CIRCLE && bodyB.properties.shapeType == CollisionShape.BOX) {
-            return [0,Vector2.zero(),Vector2.zero()];
+        else if (bodyA.properties.shapeType == CollisionShape.CIRCLE && bodyB.properties.shapeType == CollisionShape.POLYGON) {
+            let point = CollisionDetection.findContactPointPolygonCircle(
+                bodyA.getPosition(), bodyA.getRadius(),
+                bodyB.getPosition(), bodyB.getTransformedVertices());
+            return { count: 1, contact1: point, contact2: Vector2.zero() };
         }
-        else if (bodyA.properties.shapeType == CollisionShape.BOX && bodyB.properties.shapeType == CollisionShape.CIRCLE) {
-            return [0,Vector2.zero(),Vector2.zero()];
+        else if (bodyA.properties.shapeType == CollisionShape.POLYGON && bodyB.properties.shapeType == CollisionShape.CIRCLE) {
+            let point = CollisionDetection.findContactPointPolygonCircle(
+                bodyB.getPosition(), bodyB.getRadius(),
+                bodyA.getPosition(), bodyA.getTransformedVertices());
+            return { count: 1, contact1: point, contact2: Vector2.zero() };
         }
+        else return [0, Vector2.zero(), Vector2.zero()];
     }
 
     static findContactPoint(centerA, radiusA, centerB) {
         let ab = centerB.copy().subtract(centerA);
-        direction = Maths.normalize(ab);
+        let direction = Maths.normalize(ab);
         let contactPoint = centerA.copy().add(direction.copy().multiply(radiusA));
 
-        return  contactPoint;}
+        return contactPoint;
+    }
+
+    static findContactPointPolygonCircle(center, radius, polygonCenter, vertices) {
+
+        let minSquaredDist = Math.MAX_SAFE_INTEGER;
+        let contactPoint;
+        for (let i = 0; i < vertices.length; i++) {
+            let va = vertices[i];
+            let vb = vertices[(i + 1) % vertices.length]
+
+            let out = CollisionDetection.pointSegmentDistance(center, va, vb);
+            if (out.distanceSq < minSquaredDist) {
+                minSquaredDist = out.distanceSq;
+                contactPoint = out.contact;
+            }
+
+
+        }
+        return contactPoint;
+    }
+
+    static findContactPointsPolygonPolygon(verticesA, verticesB) {
+        let count = 0; let contact1; let contact2;
+
+        let minSquaredDist = Maths.VERY_LARGE_NUMBER;
+
+        for (let i = 0; i < verticesA.length; i++) {
+            let p = verticesA[i];
+
+            for (let j = 0; j < verticesB.length; j++) {
+                let va = verticesB[j];
+                let vb = verticesB[(j + 1) % verticesB.length];
+
+                let out = CollisionDetection.pointSegmentDistance(p, va, vb);
+
+                if (Maths.nearlyEqual(out.distanceSq, minSquaredDist)) {
+                    if (!Maths.nearlyEqual(out.distanceSq, minSquaredDist)) {
+                        count = 2;
+                        contact2 = out.contact;
+                    }
+                }
+
+                if (out.distanceSq < minSquaredDist) {
+                    minSquaredDist = out.distanceSq;
+                    count = 1;
+                    contact1 = out.contact;
+                }
+
+            }
+            return { count, contact1, contact2 };
+        }
+
+        for (let i = 0; i < verticesB.length; i++) {
+            let p = verticesB[i];
+
+            for (let j = 0; j < verticesA.length; j++) {
+                let va = verticesA[j];
+                let vb = verticesA[(j + 1) % verticesA.length];
+
+                let out = CollisionDetection.pointSegmentDistance(p, va, vb);
+
+                if (Maths.nearlyEqual(out.distanceSq, minSquaredDist)) {
+                    if (!Maths.nearlyEqual(out.distanceSq, minSquaredDist)) {
+                        count = 2;
+                        contact2 = out.contact;
+                    }
+                }
+
+                if (out.distanceSq < minSquaredDist) {
+                    minSquaredDist = out.distanceSq;
+                    count = 1;
+                    contact1 = out.contact;
+                }
+
+            }
+        }
+    }
 
     static intersectCircles(centerA, radiusA, centerB, radiusB) {
         let distance = Maths.distance(centerA, centerB);
@@ -38,9 +123,10 @@ export class CollisionDetection {
         let normal = Maths.normalize(centerB.copy().subtract(centerA));
         let depth = radii - distance;
 
-        return {normal,depth};}
+        return { normal, depth };
+    }
 
-    static intersectPolygon(verticesA, verticesB,centerA,centerB) {
+    static intersectPolygon(verticesA, verticesB, centerA, centerB) {
 
         let normal = Vector2.zero();
         let depth = Number.MAX_SAFE_INTEGER;
@@ -80,12 +166,13 @@ export class CollisionDetection {
             }
         }
 
-        if(Maths.dot(direction,normal) < 0) {
+        if (Maths.dot(direction, normal) < 0) {
             normal = normal.negetive();
         }
-        return {normal,depth};}
+        return { normal, depth };
+    }
 
-    static intersectCirclePolygon(center, radius, vertices,polygonCenter) {
+    static intersectCirclePolygon(center, radius, vertices, polygonCenter) {
         let normal = Vector2.zero();
         let depth = Number.MAX_SAFE_INTEGER;
 
@@ -112,31 +199,16 @@ export class CollisionDetection {
 
         }
 
-        // let closestPoint = CollisionDetection.findClosestPointOnPolygon(center, vertices);
-
-        // let axis = Maths.normalize(closestPoint.copy().subtract(center));
-
-        // let outPolygon = CollisionDetection.projectVertices(vertices, axis);
-        // let outCircle = CollisionDetection.projectCircle(center, radius, axis);
-
-        // if (outCircle.max < outPolygon.min || outPolygon.max < outCircle.min) return false;
-        // let axisDepth = Math.min(outCircle.max - outPolygon.min, outPolygon.max - outCircle.min);
-        // if (axisDepth < depth) {
-        //     depth = axisDepth;
-        //     normal = axis;
-        // }
-
-        // polygonCenter = CollisionDetection.findAritmaticMean(vertices);
-        // direction = polygonCenter.subtract(center);
-
 
         if (Maths.dot(direction, normal) < 0) {
             normal = normal.negetive();
         }
 
-        return {normal,depth};}
+        return { normal, depth };
+    }
 
     static projectVertices(vertices, axis) {
+
         let min = Maths.dot(vertices[0], axis);
         let max = min;
 
@@ -146,7 +218,8 @@ export class CollisionDetection {
             if (dot > max) max = dot;
         }
 
-        return { min, max };}
+        return { min, max };
+    }
 
     static findClosestPointOnPolygon(circleCenter, vertices) {
         let closestPoint = vertices[0];
@@ -160,7 +233,8 @@ export class CollisionDetection {
             }
         }
 
-        return closestPoint;}
+        return closestPoint;
+    }
 
     static projectCircle(center, radius, axis) {
         let direction = Maths.normalize(axis);
@@ -176,7 +250,8 @@ export class CollisionDetection {
             min = max;
             max = temp;
         }
-        return { min, max };}
+        return { min, max };
+    }
 
     static collide(bodyA, bodyB) {
         if (bodyA.properties.shapeType == CollisionShape.CIRCLE && bodyB.properties.shapeType == CollisionShape.CIRCLE) {
@@ -188,7 +263,7 @@ export class CollisionDetection {
             if (out)
                 return out;
         }
-        else if (bodyA.properties.shapeType == CollisionShape.BOX && bodyB.properties.shapeType == CollisionShape.BOX) {
+        else if (bodyA.properties.shapeType == CollisionShape.POLYGON && bodyB.properties.shapeType == CollisionShape.POLYGON) {
             let out = CollisionDetection.intersectPolygon(
                 bodyA.getTransformedVertices(),
                 bodyB.getTransformedVertices(),
@@ -197,7 +272,7 @@ export class CollisionDetection {
             if (out)
                 return out;
         }
-        else if (bodyA.properties.shapeType == CollisionShape.CIRCLE && bodyB.properties.shapeType == CollisionShape.BOX) {
+        else if (bodyA.properties.shapeType == CollisionShape.CIRCLE && bodyB.properties.shapeType == CollisionShape.POLYGON) {
             let out = CollisionDetection.intersectCirclePolygon(
                 bodyA.getPosition(),
                 bodyA.getRadius(),
@@ -206,7 +281,7 @@ export class CollisionDetection {
             if (out)
                 return out;
         }
-        else if (bodyA.properties.shapeType == CollisionShape.BOX && bodyB.properties.shapeType == CollisionShape.CIRCLE) {
+        else if (bodyA.properties.shapeType == CollisionShape.POLYGON && bodyB.properties.shapeType == CollisionShape.CIRCLE) {
             let out = CollisionDetection.intersectCirclePolygon(
                 bodyB.getPosition(),
                 bodyB.getRadius(),
@@ -217,5 +292,38 @@ export class CollisionDetection {
 
         }
 
-        return { normal: null, depth: 0 }}
+        return { normal: null, depth: 0 }
+    }
+
+    static intersectAABB(a, b) {
+        return (a.min.x <= b.max.x && a.max.x >= b.min.x) &&
+            (a.min.y <= b.max.y && a.max.y >= b.min.y);
+    }
+
+    static pointSegmentDistance(point, a, b) {
+        let ab = b.copy().subtract(a);
+        let ap = point.copy().subtract(a);
+
+        let proj = Maths.dot(ap, ab);
+        let lenSq = Maths.lenghtSq(ab);
+
+        let d = proj / lenSq;
+
+        let contact;
+
+        if (d <= 0) {
+            contact = a;
+        }
+        else if (d >= 1) {
+            contact = b;
+        }
+        else {
+            contact = a.copy().add(ab.copy().multiply(d));
+        }
+
+        let distanceSq = Maths.distanceSq(point, contact);
+
+        return { contact, distanceSq };
+
+    }
 }

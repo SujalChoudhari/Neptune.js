@@ -1,13 +1,13 @@
-import { Transform } from "../components/transform.js";
-import { Vector2 } from "../maths/vec2.js";
-import { Maths } from "../maths/math.js";
-import { CollisionShape } from './collisionShape.js';
-import { PhysicsEngine } from './physicsEngine.js';
-import { PhysicsTransform } from "./transform.js";
-import { AABB } from "./AABB.js";
+import { Transform } from "../../components/transform.js";
+import { Vector2 } from "../../maths/vec2.js";
+import { Maths } from "../../maths/math.js";
+import { CollisionShape } from '../collisionShape.js';
+import { PhysicsEngine } from '../physicsEngine.js';
+import { PhysicsTransform } from "../transform.js";
+import { AABB } from "../AABB.js";
 
-export class PhysicsBody extends Transform {
-    constructor(position, density, mass, restitution, area, isStatic, radius, width, height, shapeType) {
+export class Body extends Transform {
+    constructor(position, density, mass, restitution, area, isStatic, radius, width, height, shapeType, vertices = null) {
         super();
         this.properties.position = position;
         this.properties.density = density;
@@ -24,26 +24,48 @@ export class PhysicsBody extends Transform {
         this.properties.angularVelocity = 0;
         this.properties.force = new Vector2(0, 0);
         this.properties.torque = 0;
-        this.properties.airResistance = .99;
+        this.properties.airResistance = .05;
 
         this.aabb = undefined;
         this.aabbUpdateRequired = true;
 
-        if (shapeType == CollisionShape.BOX) {
-            this.vertices = PhysicsBody.createBoxVertices(width, height);
+        if (shapeType == CollisionShape.POLYGON) {
+            if (vertices == null) {
+                this.vertices = Body.createBoxVertices(width, height);
+            }
+            else {
+                this.vertices = vertices;
+            }
             this.transformedVertices = [];
             this.transformUpdateRequired = true;
-            this.triangles = PhysicsBody.createBoxTriangles();
         }
 
-        if (isStatic) this.properties.invMass = 0;
-        else this.properties.invMass = 1 / mass;
+        this.properties.inertia = this.calculateRotationalInertia();
+
+        if (isStatic) {
+            this.properties.invMass = 0;
+            this.properties.invInertia = 0;
+        }
+        else {
+            this.properties.invInertia = 1 / this.properties.inertia;
+            this.properties.invMass = 1 / mass;
+        }
+
 
         PhysicsEngine.addBody(this);
     }
 
     getLinearVelocity() {
         return this.properties.linearVelocity;
+    }
+
+    calculateRotationalInertia() {
+        if (this.properties.shapeType == CollisionShape.POLYGON) {
+            return 1 / 12 * this.properties.mass * (this.properties.width * this.properties.width + this.properties.height * this.properties.height);
+        }
+        else if (this.properties.shapeType == CollisionShape.CIRCLE) {
+            return 1 / 2 * this.properties.mass * this.properties.radius * this.properties.radius;
+        }
     }
 
     static createBoxVertices(width, height) {
@@ -57,28 +79,13 @@ export class PhysicsBody extends Transform {
         return vertices;
     }
 
-    static createBoxTriangles() {
-        let triangles = [];
-
-        triangles[0] = 0;
-        triangles[1] = 1;
-        triangles[2] = 2;
-        triangles[3] = 0;
-        triangles[4] = 2;
-        triangles[5] = 3;
-
-        return triangles;
-
-    }
-
-
     getAABB() {
 
         if (this.aabbUpdateRequired) {
             let min = new Vector2(Infinity, Infinity);
             let max = new Vector2(-Infinity, -Infinity);
 
-            if (this.properties.shapeType == CollisionShape.BOX) {
+            if (this.properties.shapeType == CollisionShape.POLYGON) {
                 let vertices = this.getTransformedVertices();
                 for (let i = 0; i < vertices.length; i++) {
                     let v = vertices[i];
@@ -148,16 +155,18 @@ export class PhysicsBody extends Transform {
         this.transformUpdateRequired = true;
     }
 
-    Step(time) { // in seconds
+    Step(time,iterations) { // in seconds
         if (this.properties.isStatic) return;
+        time /= iterations;
         let acceleration = this.properties.force.copy().multiply(this.properties.invMass);
         this.properties.linearVelocity.add(acceleration.copy().multiply(time));
         this.properties.linearVelocity.add(PhysicsEngine.gravity.copy());
         this.properties.position.add(this.properties.linearVelocity.copy().multiply(time));
 
         this.properties.force = new Vector2(0, 0);
-        this.properties.linearVelocity.multiply(this.properties.airResistance);
-        // console.log(acceleration)
+
+        this.properties.linearVelocity.multiply(1 - (this.properties.airResistance/iterations));
+
 
         this.aabbUpdateRequired = true;
         this.transformUpdateRequired = true;
@@ -187,7 +196,7 @@ export class PhysicsBody extends Transform {
         }
 
         let mass = density * area;
-        let body = new PhysicsBody(position, density, mass, Maths.clamp(restitution, 0, 1), area, isStatic, radius, 0, 0, CollisionShape.CIRCLE);
+        let body = new Body(position, density, mass, Maths.clamp(restitution, 0, 1), area, isStatic, radius, 0, 0, CollisionShape.CIRCLE);
         return body;
     }
 
@@ -204,9 +213,37 @@ export class PhysicsBody extends Transform {
             console.error(`Density should be between ${PhysicsEngine.MIN_BODY_DENSITY} and ${PhysicsEngine.MAX_BODY_DENSITY}. Density is ${density}`);
         }
 
-        let body = new PhysicsBody(position, density, mass, Maths.clamp(restitution, 0, 1), area, isStatic, 0, width, height, CollisionShape.BOX);
+        let body = new Body(position, density, mass, Maths.clamp(restitution, 0, 1), area, isStatic, 0, width, height, CollisionShape.POLYGON);
         return body;
     }
+
+    static createPolygonBody(position, density, vertices, restitution, isStatic) {
+        let area = 0;
+        let j = vertices.length - 1;
+        for (let i = 0; i < vertices.length; i++) {
+            area += (vertices[j].x + vertices[i].x) * (vertices[j].y - vertices[i].y);
+            j = i;
+        }
+        area *= 0.5;
+
+        if (area < PhysicsEngine.MIN_BODY_SIZE && area > PhysicsEngine.MAX_BODY_SIZE) {
+            console.error(`Area should be between ${PhysicsEngine.MIN_BODY_SIZE} and ${PhysicsEngine.MAX_BODY_SIZE}. Area is ${area}`);
+        }
+
+        if (density < PhysicsEngine.MIN_BODY_DENSITY && density > PhysicsEngine.MAX_BODY_DENSITY) {
+            console.error(`Density should be between ${PhysicsEngine.MIN_BODY_DENSITY} and ${PhysicsEngine.MAX_BODY_DENSITY}. Density is ${density}`);
+        }
+
+        let mass = density * area;
+        let body = new Body(
+            position, density, mass,
+            Maths.clamp(restitution, 0, 1),
+            area, isStatic, 0, area / 2, area / 2,
+            CollisionShape.POLYGON, vertices);
+        return body;
+    }
+
+
 
     destroy() {
         PhysicsEngine.removeBody(this);

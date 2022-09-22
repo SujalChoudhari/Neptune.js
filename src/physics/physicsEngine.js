@@ -1,8 +1,6 @@
 import { Vector2 } from "../maths/vec2.js";
-import { PhysicsBody } from "./physicsBody.js";
-import { CollisionShape } from "./collisionShape.js";
+import { Body } from "./bodies/body.js";
 import { CollisionDetection } from "./collisiondetection.js";
-import { PhysicsTransform } from "./transform.js";
 import { Maths } from "../maths/math.js";
 import { Collision } from "./collision.js";
 export class PhysicsEngine {
@@ -15,36 +13,37 @@ export class PhysicsEngine {
 
     static MIN_ITERATIONS = 1;
     static MAX_ITERATIONS = 128;
-    
+
     static iterations = 30;
     static gravity = new Vector2(0, 9.80 / 1000); //m/s^2
     static bodies = [];
-    
+
     static collisionManifold = [];
+
+    static partitionGrid = []; //5x5 Worldgrid
     
-    
-    
+
     set gravity(value) {
         PhysicsEngine.gravity = value.divide(100);
     }
-    
+
     set iterations(value) {
         Maths.clamp(value, PhysicsEngine.MIN_ITERATIONS, PhysicsEngine.MAX_ITERATIONS);
     }
 
 
-    static Init() {}
+    static Init() { }
 
     static getBodyCount() {
         return this.bodies.length;
     }
 
     static addBody(body) {
-        if (body instanceof PhysicsBody) PhysicsEngine.bodies.push(body);
+        if (body instanceof Body) PhysicsEngine.bodies.push(body);
     }
 
     static removeBody(body) {
-        if (body instanceof PhysicsBody) {
+        if (body instanceof Body) {
             let index = PhysicsEngine.bodies.indexOf(body);
             if (index > -1) {
                 PhysicsEngine.bodies.splice(index, 1);
@@ -57,47 +56,60 @@ export class PhysicsEngine {
     }
 
     static Step(time) {
+
         for (let it = 0; it < PhysicsEngine.iterations; it++) {
-            // Movement
-            for (let i = 0; i < PhysicsEngine.bodies.length; i++) {
-                let body = PhysicsEngine.bodies[i];
-                body.Step(time/this.iterations);
-            }
+            PhysicsEngine.stepBodies(time);
+            PhysicsEngine.broadPhase();
+            PhysicsEngine.narrowPhase(); 
+        }
+    }
 
+    static stepBodies(time){
+        // Movement
+        for (let i = 0; i < PhysicsEngine.bodies.length; i++) {
+            let body = PhysicsEngine.bodies[i];
+            body.Step(time , PhysicsEngine.iterations);
+        }
+    }
 
-            // CollisionDetection
-            PhysicsEngine.collisionManifold = [];
-            for (let i = 0; i < PhysicsEngine.bodies.length - 1; i++) {
-                let bodyA = PhysicsEngine.bodies[i];
-                for (let j = i + 1; j < PhysicsEngine.bodies.length; j++) {
-                    let bodyB = PhysicsEngine.bodies[j]
+    static broadPhase() {
+        // CollisionDetection
+        PhysicsEngine.collisionManifold = [];
+        for (let i = 0; i < PhysicsEngine.bodies.length - 1; i++) {
+            let bodyA = PhysicsEngine.bodies[i];
+            let bodyAaabb = bodyA.getAABB();
 
-                    if (bodyA.isStatic && bodyB.isStatic) continue;
+            for (let j = i + 1; j < PhysicsEngine.bodies.length; j++) {
+                let bodyB = PhysicsEngine.bodies[j];
+                let bodyBaabb = bodyB.getAABB();
 
-                    let out = CollisionDetection.collide(bodyA, bodyB);
-                    if (out.normal) {
+                if (bodyA.isStatic && bodyB.isStatic) continue;
 
+                if (!CollisionDetection.intersectAABB(bodyAaabb, bodyBaabb)) continue;
 
-                        bodyA.move(out.normal.copy().multiply(-out.depth / 2));
-                        bodyB.move(out.normal.copy().multiply(out.depth / 2));
+                let out = CollisionDetection.collide(bodyA, bodyB);
+                if (out.normal) {
+                    bodyA.move(out.normal.copy().multiply(-out.depth / 2));
+                    bodyB.move(out.normal.copy().multiply(out.depth / 2));
 
-                        let data = CollisionDetection.findContactPoints(bodyA, bodyB);
+                    let data = CollisionDetection.findContactPoints(bodyA, bodyB);
+                    let collisionManifold = new Collision(bodyA, bodyB,
+                        out.normal, out.depth,
+                        data.count, data.contact1, data.contact2);
 
-                        let collisionManifold = new Collision(bodyA, bodyB, 
-                            out.normal, out.depth,
-                            data[0], data[1], data[2]);
-                                                
-                        PhysicsEngine.collisionManifold.push(collisionManifold);
-                    }
+                    PhysicsEngine.collisionManifold.push(collisionManifold);
                 }
-            }
-
-            // Collision Resolution
-            for (let i = 0; i < PhysicsEngine.collisionManifold.length; i++) {
-                PhysicsEngine.resolveCollision(PhysicsEngine.collisionManifold[i]);
             }
         }
     }
+
+    static narrowPhase(){
+        // Collision Resolution
+        for (let i = 0; i < PhysicsEngine.collisionManifold.length; i++) {
+            PhysicsEngine.resolveCollision(PhysicsEngine.collisionManifold[i]);
+        }
+    }
+
 
     static resolveCollision(collision) {
 
@@ -118,6 +130,6 @@ export class PhysicsEngine {
 
     }
 
-    
+
 
 }

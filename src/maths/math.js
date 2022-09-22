@@ -7,13 +7,23 @@ export class Maths {
     static RAD_TO_DEG = 180 / Math.PI;
     static METER_TO_PIXEL = 10;
     static PIXEL_TO_METER = 1 / 10;
+    static VERY_SMALL_NUMBER = 0.0001;
+    static VERY_LARGE_NUMBER = 1_000_000;
 
     static lenght(vector) {
         return Math.sqrt(vector.x * vector.x + vector.y * vector.y);
     }
 
+    static lenghtSq(vector){
+        return vector.x * vector.x + vector.y * vector.y;
+    }
+
     static distance(vector1, vector2) {
         return Maths.lenght(vector2.copy().subtract(vector1));
+    }
+    
+    static distanceSq(vector1, vector2) {
+        return Maths.lenghtSq(vector2.copy().subtract(vector1));
     }
 
     static normalize(vector) {
@@ -59,8 +69,14 @@ export class Maths {
         return new Vector2(vector.x * Maths.METER_TO_PIXEL, vector.y * Maths.METER_TO_PIXEL);
     }
 
-    
 
-
-
+    static nearlyEqual(a,b) {
+        if (typeof a == typeof b) {
+            return Math.abs(a - b) < Maths.VERY_SMALL_NUMBER;
+        } else if (a instanceof Vector2 && b instanceof Vector2) {
+            return Maths.nearlyEqual(a.x, b.x) && Maths.nearlyEqual(a.y, b.y);
+        } else {
+            throw new Error("nearlyEqual: a and b must be number or vector2");
+        }
+    }
 }

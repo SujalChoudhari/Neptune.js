@@ -19,7 +19,7 @@ import { GridContainer } from "./components/ui/containers/grid.js";
 import { Text } from "./components/ui/text.js";
 import { UISprite } from "./components/ui/sprite.js";
 
-import { PhysicsBody } from "./physics/physicsBody.js";
+import { Body } from "./physics/bodies/body.js";
 import { CollisionShape } from "./physics/collisionShape.js";
 import { PhysicsEngine } from "./physics/physicsEngine.js";
 
@@ -33,7 +33,7 @@ export {
     Component,Transform,
     Shape,Sprite,Polygon,
     UITransform,Container,MarginContainer,VBoxContainer,HBoxContainer,GridContainer,Text,UISprite,
-    PhysicsBody,CollisionShape,PhysicsEngine,
+    Body as PhysicsBody,CollisionShape,PhysicsEngine,
     Input,
     Vector2,Maths
 }
