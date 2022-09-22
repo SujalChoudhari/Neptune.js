@@ -1,8 +1,9 @@
 import { Vector2 } from "../maths/vec2.js";
-import { Body } from "./bodies/body.js";
+import { PhysicsBody } from "./bodies/physicsBody.js";
 import { CollisionDetection } from "./collisiondetection.js";
 import { Maths } from "../maths/math.js";
 import { Collision } from "./collision.js";
+import { Transform } from "../components/transform.js";
 export class PhysicsEngine {
     //assuming 10px == 1m
     static MIN_BODY_SIZE = 1 * 1; // area in m^2
@@ -39,11 +40,11 @@ export class PhysicsEngine {
     }
 
     static addBody(body) {
-        if (body instanceof Body) PhysicsEngine.bodies.push(body);
+        if (body instanceof Transform) PhysicsEngine.bodies.push(body);
     }
 
     static removeBody(body) {
-        if (body instanceof Body) {
+        if (body instanceof PhysicsBody) {
             let index = PhysicsEngine.bodies.indexOf(body);
             if (index > -1) {
                 PhysicsEngine.bodies.splice(index, 1);
@@ -78,17 +79,18 @@ export class PhysicsEngine {
         for (let i = 0; i < PhysicsEngine.bodies.length - 1; i++) {
             let bodyA = PhysicsEngine.bodies[i];
             let bodyAaabb = bodyA.getAABB();
-
             for (let j = i + 1; j < PhysicsEngine.bodies.length; j++) {
                 let bodyB = PhysicsEngine.bodies[j];
                 let bodyBaabb = bodyB.getAABB();
-
+                
                 if (bodyA.isStatic && bodyB.isStatic) continue;
-
+                
                 if (!CollisionDetection.intersectAABB(bodyAaabb, bodyBaabb)) continue;
-
+                
+                
                 let out = CollisionDetection.collide(bodyA, bodyB);
                 if (out.normal) {
+                    
                     bodyA.move(out.normal.copy().multiply(-out.depth / 2));
                     bodyB.move(out.normal.copy().multiply(out.depth / 2));
 
