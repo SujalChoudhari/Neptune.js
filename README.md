@@ -76,3 +76,126 @@ Neptune provides various features which can work independently to some extent.
 ## Fast
 You don't have to wory about the main loop and the event cycles. 
 Neptune handles these things under the hood, and provides you with a clean but customisable features.
+
+
+## Features
+
+<details>
+<summary> Entity Component based System </summary>
+<p>
+Neptune uses a entity component based system.
+This makes the engine more advance, as major engines use this system.
+</p>
+</details>
+
+
+<details>
+  <summary>2D Rendering</summary>
+  <p>
+    Neptune has a 2D rendering system. 
+    It uses HTML5 canvas to render the game.
+  </p>
+  <ul>
+    <details>
+      <summary> Shapes </summary>
+      <p>
+        Neptune has a built in shape renderer. 
+        It can render basic shapes like rectangle, circle, line, etc.
+      </p>
+      <ul>
+        <li>Circle</li>
+        <li>Line</li>
+        <li>Rectangle</li>
+        <li>Polygon</li>
+        <li>Triangle</li>
+      </ul>
+    </details>
+    <details>
+      <summary> UI </summary>
+      <p>
+        Neptune has a built in UI renderer. 
+        It can render basic UI elements like sprites, text, etc.
+      </p>
+      <ul>
+        <details>
+        <summary> Containers </summary>
+        <p>
+          Neptune has a built in UI container renderer. 
+          It can render basic UI containers like Margin Container, Grid Container, etc.
+        <ul>
+          <li>Margin</li>
+          <li>HBox</li>
+          <li>VBox</li>
+          <li>Grid</li>
+        </ul>
+        </details>
+        <li>Panel</li>
+        <li>Sprite</li>
+        <li>Text</li>
+    </details>
+     <summary> Text </summary>
+    <summary> Images </summary>
+  </ul>
+</details>
+
+
+
+<details>
+<summary> Events </summary>
+<p>
+Neptune has a built in event system.
+It can handle mouse, keyboard, touch, etc.
+</p>
+<ul>
+  <li>Keyboard</li>
+  <li>Mouse</li>
+  <li>Touch</li>
+</ul>
+</details>
+
+<details>
+<summary> Audio </summary>
+<p>
+Neptune has a built in audio system.
+It can play audio files.
+</p>
+<ul>
+  <li>Sound</li>
+  <li>Music</li>
+</details>
+
+<details>
+<summary> Physics </summary>
+<p>
+Neptune has a built in physics system.
+It can handle basic physics like gravity, collision, etc.
+</p>
+<ul>
+  <li> Collision Detection </li>
+  <li> Collision Resolution </li>
+  <li> Collision Response (Only Linear) </li>
+  <li> Physics World </li>
+  <li> Physics Bodies </li>
+</details>
+
+
+<details>
+<summary> Color </summary>
+<p>
+Neptune has a built in color system.
+It can handle colors.
+</p>
+<ul>
+  <li>Color</li>
+  <li>Color Templates</li>
+</details>
+
+<details>
+<summary> Math </summary>
+<p>
+Neptune has a built in math system.
+It can handle basic math functions.
+</p>
+<ul>
+  <li>Vector2</li>
+  <li>Math Library</li>

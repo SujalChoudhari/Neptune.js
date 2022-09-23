@@ -1,4 +1,12 @@
 
+/**
+ * @class Color
+ * @classdsc Represents a color.
+ * @param {number} r - Red value of the color.
+ * @param {number} g - Green value of the color.
+ * @param {number} b - Blue value of the color.
+ * @param {number} a=1 - Alpha value of the color.
+ */
 export class Color {
 
     constructor(r, g, b, a = 1) {
@@ -8,21 +16,50 @@ export class Color {
         this.a = a;
     }
 
-    static fromHex(hex) {
+    /**
+     * Generate Color from A Hexadecimal string.
+     * @param {number} hex=0x000000 - The hex value of the color.
+     * @returns  {Color} The color.
+     */
+    static fromHex(hex = 0x000000) {
         let r = hex >> 16 & 255;
         let g = hex >> 8 & 255;
         let b = hex & 255;
         return new Color(r, g, b, 1);
     }
 
+    /**
+     * Generate a color from RGB values.
+     * @param {number} r - Red value of the color.
+     * @param {number} g - Green value of the color.
+     * @param {number} b - Blue value of the color.
+     * @returns {Color} The color.
+     */
     static fromRGB(r, g, b) {
         return new Color(r, g, b, 1);
     }
 
+    /**
+     * Generate a color from RGBA values.
+     * @param {number} r - Red value of the color.
+     * @param {number} g - Green value of the color.
+     * @param {number} b - Blue value of the color.
+     * @param {number} a - Blue value of the color.
+     * @returns {Color} The color.
+     * @see 
+     */
     static fromRGBA(r, g, b, a) {
         return new Color(r, g, b, a);
     }
 
+    /**
+     * Generate a color from HSL values.
+     * @param {number} h - Hue value of the color.
+     * @param {number} s - Saturation value of the color.
+     * @param {number} l - Lightness value of the color.
+     * @returns {Color} The color.
+     * @see https://stackoverflow.com/questions/2353211/hsl-to-rgb-color-conversion
+     */
     static fromHSL(h, s, l) {
         let c = (1 - Math.abs(2 * l - 1)) * s;
         let x = c * (1 - Math.abs(h / 60 % 2 - 1));
@@ -61,10 +98,20 @@ export class Color {
         return new Color(Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255), 1);
     }
 
+    /**
+     * Generate a Random Color.
+     * @returns {Color} The color.
+     */
     static random() {
         return new Color(Math.random() * 255, Math.random() * 255, Math.random() * 255, 1);
     }
-
+    
+    /**
+     * Convert the color into RGB javascript string. 
+     * `rgba(r,g,b,a)` or `rgb(r,g,b)`.
+     * @returns {string} The color in RGB format.
+     * 
+     */
     toString() {
         return `rgba(${this.r},${this.g},${this.b},${this.a})`;
     }

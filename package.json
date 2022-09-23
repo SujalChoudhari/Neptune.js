@@ -4,6 +4,7 @@
   "description": "A JavaScript Based Game Development Framework",
   "main": "src/neptune.js",
   "scripts": {
+    "docs": "jsdoc -c ./jsdoc.json -d ./docs ./src/neptune.js"
   },
   "type": "module",
   "repository": {
@@ -22,5 +23,8 @@
     "url": "https://github.com/NotSujal/Neptune.js/issues"
   },
   "homepage": "https://github.com/NotSujal/Neptune.js#readme",
-  "dependencies": {}
+  "devDependencies": {
+    "jsdoc": "^3.6.11",
+    "clean-jsdoc-theme": "^4.1.8"
+  }
 }

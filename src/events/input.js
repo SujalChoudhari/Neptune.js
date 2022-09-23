@@ -1,5 +1,13 @@
 import { Vector2 } from "../maths/vec2.js";
 
+
+/**
+ * Input class is used to get input from the user.
+ * It allows mouse/keyboad input and touch input.
+ * User doesn't need to add any event listeners to the canvas.
+ * Input is Initialized automatically when the game starts.
+ * @class Input
+ */
 export class Input {
     static #canvas;
     static #pos = Vector2.zero();
@@ -142,93 +150,151 @@ export class Input {
     }
 
 
-
+    /**
+     * Returns true if Left Mouse Button is clicked.
+     * @returns {boolean}
+     */
     static leftMouseButtonDown() {
         return Input.#pressedButton === 0;
     }
+
+    /**
+     * Returns true if Right Mouse Button is clicked.
+     * @returns {boolean}
+     */
     static rightMouseButtonDown() {
         return Input.#pressedButton === 2;
     }
+
+    /**
+     * Returns true if Middle Mouse Button is clicked.
+     * @returns {boolean}
+     */
     static middleMouseButtonDown() {
         return Input.#pressedButton === 1;
     }
+
+    /**
+     * Returns true if Left Mouse Button is Up.
+     * @returns {boolean}
+     */
     static leftMouseButtonUp() {
         return Input.#pressedButton === 0 && !Input.#isMouseDown;
     }
+
+    /**
+     * Returns true if Right Mouse Button is Up.
+     * @returns {boolean}
+     * 
+     */
     static rightMouseButtonUp() {
         return Input.#pressedButton === 2 && !Input.#isMouseDown;
     }
+
+    /**
+     * Returns true if Middle Mouse Button is Up.
+     * @returns {boolean}
+     */
     static middleMouseButtonUp() {
         return Input.#pressedButton === 1 && !Input.#isMouseDown;
     }
+
+    /**
+     * Returns true if Left Mouse Button is clicked.
+     * @returns {boolean}
+     */
     static isLeftClicked() {
         return Input.#isClicked && Input.#pressedButton === 0;
     }
+
+    /**
+     * Returns true if Right Mouse Button is clicked.
+     * @returns {boolean}
+     */
     static isRightClicked() {
         return Input.#isClicked && Input.#pressedButton === 2;
     }
+    /**
+     * Returns true if Middle Mouse Button is clicked.
+     * @returns {boolean}
+     */
     static isMiddleClicked() {
         return Input.#isClicked && Input.#pressedButton === 1;
     }
+    /**
+     * Returns true if Left Mouse Button is pressed.
+     * @returns {boolean}
+     */
     static isLeftPressed() {
         return Input.#pressedButton === 0;
     }
+
+    /**
+     * Returns true if Right Mouse Button is pressed.
+     * @returns {boolean}
+     * 
+     */
     static isRightPressed() {
         return Input.#pressedButton === 2;
     }
+
+    /**
+     * Returns true if Middle Mouse Button is pressed.
+     * @returns {boolean}
+     */
     static isMiddlePressed() {
         return Input.#pressedButton === 1;
     }
-    static isLeftDown() {
-        return Input.#isMouseDown && Input.#pressedButton === 0;
-    }
-    static isRightDown() {
-        return Input.#isMouseDown && Input.#pressedButton === 2;
-    }
-    static isMiddleDown() {
-        return Input.#isMouseDown && Input.#pressedButton === 1;
-    }
-    static leftMouseButtonClicked() {
-        return Input.#pressedButton === 0 && Input.#isClicked;
-    }
-    static rightMouseButtonClicked() {
-        return Input.#pressedButton === 2 && Input.#isClicked;
-    }
-    static middleMouseButtonClicked() {
-        return Input.#pressedButton === 1 && Input.#isClicked;
-    }
-    static leftMouseButtonDoubleClicked() {
-        return Input.#pressedButton === 0 && Input.#isDoubleClicked;
-    }
-    static rightMouseButtonDoubleClicked() {
-        return Input.#pressedButton === 2 && Input.#isDoubleClicked;
-    }
-    static middleMouseButtonDoubleClicked() {
-        return Input.#pressedButton === 1 && Input.#isDoubleClicked;
-    }
+
+    /**
+     * Get the scroll wheel delta.
+     * @returns {number}
+     */
     static getWheelScroll() {
         return Input.#wheelDelta;
     }
+
+    /**
+     * Get the Current Mouse Position.
+     * @returns {Vector2}
+     * 
+     */
     static getPosition() {
         return Input.#pos.copy();
     }
+
+    /**
+     * Get the Touch Count.
+     * @returns {number}
+     * 
+     */
     static getTouchCount() {
         return Input.#touches.length;
     }
+
+    /**
+     * Check if SpecialKey is pressed.
+     */
     static getSpecialKeyPressed() {
         return Input.#specialKeyPressed;
     }
     
-    static getKeyDown(keyCode) {
-        return Input.#keyPressed[keyCode];
-    }
 
+    /**
+     * Check if A Key is pressed.
+     * @returns {boolean}
+     * 
+     */
     static isKeyDown(keyCode) {
         if (Input.#keyPressed[keyCode] === undefined) return false;
         return Input.#keyPressed[keyCode];
     }
 
-    static clear() {
+    /**
+     * Clear the Input. This is called automatically.
+     * Prepares for the next frame.
+     */
+    static Clear() {
         Input.#isClicked = false;
         Input.#isDoubleClicked = false;
         Input.#isMouseDown = false;
@@ -239,11 +305,23 @@ export class Input {
     }
 
 }
+
+/**
+ * The buttons of the mouse.
+ * @enum {number}
+ * @readonly
+ */
 Input.buttons = {
     LEFT: 0,
     MIDDLE: 1,
     RIGHT: 2
 };
+
+/**
+ * KeyCodes for the Keyboard.
+ * @enum {number}
+ * @readonly
+ */
 Input.keyCode = {
     NUMONE: 49,
     NUMTWO: 50,
