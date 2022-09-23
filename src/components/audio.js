@@ -1,4 +1,26 @@
 import{Component} from './component.js';
+
+/**
+ * A Sound Component is responsible for playing sounds.
+ * @class Sound
+ * @extends Component
+ * 
+ * @property {string} name  - Name of the sound.
+ * @property {string} src  - Path to the sound file.
+ * @property {number} volume=1  - Volume of the sound.
+ * @property {boolean} loop=false -  If the sound should loop.
+ * 
+ * @example
+ * // Create a sound component
+ * let sound = new Sound("Jump", "assets/sounds/jump.wav");
+ * 
+ * // Add the sound component to an entity
+ * entity.addComponent(sound);
+ * 
+ * // Play the sound
+ * sound.play();
+ * 
+ */
 export class Sound extends Component {
     #audio;
     constructor(name,src,volume=1,loop=false) {
@@ -16,6 +38,12 @@ export class Sound extends Component {
         });
     }
 
+    /** 
+     * Name of the sound. Names are not processed by the engine.
+     * Can be used for referencing the sound.
+     * @type {string}
+     * @protected
+    */
     get name() {
         return this._properties.name;
     }
@@ -24,6 +52,13 @@ export class Sound extends Component {
         this._properties.name = name;
     }
 
+    /**
+     * Source path of the sound. This is the path to the sound file. 
+     * Note: While hosting on a server, the path should be relative to the root directory.
+     * @type {string}
+     * @protected
+     * 
+     */
     get src() {
         return this._properties.src;
     }
@@ -32,6 +67,12 @@ export class Sound extends Component {
         this._properties.src = src;
     }
 
+    /**
+     * Volume of the sound. The volume should be between 0 and 1.
+     * @type {number}
+     * @protected
+     * 
+     */
     get volume() {
         return this._properties.volume;
     }
@@ -41,6 +82,11 @@ export class Sound extends Component {
         this.#audio.volume = volume;
     }
 
+    /**
+     * Loop the sound. 
+     * @type {boolean}
+     * @protected
+     */
     get loop() {
         return this._properties.loop;
     }
@@ -49,25 +95,45 @@ export class Sound extends Component {
         this._properties.loop = loop;
         this.#audio.loop = loop;
     }
-
+    
+    /**
+     * Check if the sound is playing.
+     * @type {boolean}
+     * @protected
+     * @readonly
+     * 
+     */
     get playing() {
         return this._properties.playing;
     }
 
 
 
-
+    /**
+     * Play the sound. If the sound is already playing, it will be stopped and played again.
+     * @method
+     * 
+     */
     play() {
         this.#audio.play();
         this._properties.playing = true;
     }
 
-
+    /**
+     * Stop the sound. If the sound is not playing, this will do nothing.
+     * @method
+     * 
+     */
     stop() {
         this.#audio.pause();
+        this.#audio.currentTime = 0;
         this._properties.playing = false;
     }
 
+    /**
+     * Pause a playing sound. If the sound is not playing, this will do nothing.
+     * @method
+     */
     pause() {
         this.#audio.pause();
         this._properties.playing = false;
@@ -82,6 +148,7 @@ export class Sound extends Component {
         this.loop = loop;
         this.#audio.loop = loop;
     }
+
 
     isPlaying() {
         return this.playing;

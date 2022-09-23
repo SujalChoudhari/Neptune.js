@@ -3,9 +3,32 @@ import { Vector2 } from "../../maths/vec2.js";
 import { Component } from "../component.js";
 import { Input } from "../../events/input.js"
 
+/**
+ * UI Transform Component is responsible for the position, rotation and width and height of a UI element.
+ * Every UI element must have a transform component. Without a transform component, the UI element will not be rendered.
+ * Note Scale is not supported for UI elements.
+ * Thus normal Transform Component cannot be used for UI elements, as it has scale instead of width and height.
+ * All the UI Rendering is done with pixels, so the position and width and height are in pixels. 
+ * Position vector is replaced by x and y.
+ * @class UITransform
+ * @extends Component
+ * @property {number} x=0 - The x position of the UI element.
+ * @property {number} y=0 - The y position of the UI element.
+ * @property {number} rotation=0 - The rotation of the UI element in degrees.
+ * @property {number} width=10 - The width of the UI element.
+ * @property {number} height=10 - The height of the UI element.
+ * 
+ * @example
+ * // Create a transform component
+ * let transform = new UITransform(0,0,0,10,10);
+ * 
+ * // Add the transform component to an entity
+ * entity.addComponent(transform);
+ * 
+ */
 export class UITransform extends Component {
 
-    constructor(x = 0, y = 0, width = 0, height = 0,rot=0) {
+    constructor(x = 0, y = 0, width = 10, height = 10, rot = 0) {
         super();
         this._properties.x = x;
         this._properties.y = y;
@@ -15,52 +38,73 @@ export class UITransform extends Component {
 
     }
 
-    get x(){
+    /**
+     * X position of the UI element.
+     * @type {number}
+     */
+    get x() {
         return this._properties.x;
     }
 
-    set x(x){
+    set x(x) {
         this._properties.x = x;
     }
 
-    get y(){
+    /**
+     * Y position of the UI element.
+     * @type {number}
+     */
+    get y() {
         return this._properties.y;
     }
 
-    set y(y){
+    set y(y) {
         this._properties.y = y;
     }
 
-    get width(){
+    /**
+     * Width of the UI element.
+     * @type {number}
+     */
+    get width() {
         return this._properties.width;
     }
 
-    set width(width){
+    set width(width) {
         this._properties.width = width;
     }
 
-    get height(){
+    /**
+     * Height of the UI element.
+     */
+    get height() {
         return this._properties.height;
     }
 
-    set height(height){
+    set height(height) {
         this._properties.height = height;
     }
 
-    get rotation(){
+    /**
+     * Rotation of the UI element in degrees.
+     */
+    get rotation() {
         return this._properties.rot;
     }
 
-    set rotation(rot){
+    set rotation(rot) {
         this._properties.rot = rot;
     }
 
-    get center(){
+    /**
+     * Center the UI element. Set/Get the x and y position of the UI element so that center of the UI element is as specified.
+     */
+    get center() {
         let center = new Vector2(this._properties.x + this._properties.width / 2, this._properties.y + this._properties.height / 2);
         return center;
     }
 
-    set center(center){
+    set center(center) {
         this._properties.x = center.x - this._properties.width / 2;
         this._properties.y = center.y - this._properties.height / 2;
     }
@@ -115,23 +159,43 @@ export class UITransform extends Component {
         this._properties.rot = rot;
     }
 
-    align(mode="center"){
+
+    /**
+     * Align the UI element to the parent as per the specified mode.
+     * If the UI element has no parent, it will align to the window.
+     * 
+     * @param {string} mode="center" - The mode of alignment.
+     * | Mode | Description |
+     * | --- | --- |
+     * | "top" | Align the UI element to the top of the parent. |
+     * | "middle" | Align the UI element to the middle of the parent. |
+     * | "bottom" | Align the UI element to the bottom of the parent. |
+     * | "left" | Align the UI element to the left of the parent. |
+     * | "right" | Align the UI element to the right of the parent. |
+     * | "center" | Align the UI element to the center of the parent. |
+     * 
+     * @example
+     * // Align the UI element to the top of the parent.
+     * transform.align("top");
+     * 
+     */
+    align(mode = "center") {
         let parent = this.entity.parent;
-        if (parent != undefined){
+        if (parent != undefined) {
             var parentTransform = parent.getComponent(UITransform);
             var x = parentTransform.getX();
             var y = parentTransform.getY();
             var width = parentTransform.getWidth();
             var height = parentTransform.getHeight();
         }
-        else{
+        else {
             var x = 0;
             var y = 0;
             var width = window.innerWidth;
             var height = window.innerHeight;
         }
 
-        switch(mode){
+        switch (mode) {
             case "left":
                 this._properties.x = x;
                 break;
@@ -155,23 +219,43 @@ export class UITransform extends Component {
 
     }
 
-    fill(mode="",padX=0,padY=0){
+
+    /**
+     * Fill the Entity with the parent as per the specified mode.
+     * If the UI element has no parent, it will fill the window.
+     * 
+     * @param {string} mode="both" - The mode of filling.
+     * | Mode | Description |
+     * | --- | --- |
+     * | "both" | Fill the UI element to the size of the parent. |
+     * | "x" | Fill the UI element to the width of the parent. |
+     * | "y" | Fill the UI element to the height of the parent. |
+     * 
+     * @param {number} padX=0 - Padding in the x direction.
+     * @param {number} padY=0 - Padding in the y direction.
+     * 
+     * @example
+     * // Fill the UI element to the size of the parent.
+     * this.entity.getComponent(UITransform).fill();
+     * 
+     */
+    fill(mode = "both", padX = 0, padY = 0) {
         let parent = this.entity.parent;
-        if (parent != undefined){
+        if (parent != undefined) {
             var parentTransform = parent.getComponent(UITransform);
             var x = parentTransform.getX();
             var y = parentTransform.getY();
             var width = parentTransform.getWidth();
             var height = parentTransform.getHeight();
         }
-        else{
+        else {
             var x = 0;
             var y = 0;
             var width = window.innerWidth;
             var height = window.innerHeight;
         }
 
-        switch(mode){
+        switch (mode) {
             case "both":
                 this._properties.x = x + padX;
                 this._properties.y = y + padY;
@@ -188,19 +272,28 @@ export class UITransform extends Component {
                 break;
         }
     }
-            
+
     #isPointInside(point) {
         return point.x >= this._properties.x && point.x <= this._properties.x + this._properties.width && point.y >= this._properties.y && point.y <= this._properties.y + this._properties.height;
     }
 
+    /**
+     * Check if the UI element is being hovered over.
+     * @returns {boolean} - True if the UI element is being hovered over.
+     */
     isHovered() {
         return this.#isPointInside(Input.getPosition());
     }
 
+    /**
+     * Check if the UI element is being clicked.
+     * @returns {boolean} - True if the UI element is being clicked.
+     */
     isClicked() {
         return this.isHovered() && Input.isLeftClicked();
     }
 
+    
     rotate(rot) {
         this._properties.rot += rot;
     }

@@ -296,11 +296,11 @@ export class Entity {
      */
     Destroy(){
         this._components.forEach(component => {
-            component.destroy();
+            component.Destroy();
         });
 
         this._children.forEach(child => {    
-            child.destroy();
+            child.Destroy();
         });
         this._parent.removeChild(this);
 

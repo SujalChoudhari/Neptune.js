@@ -2,7 +2,36 @@ import { Renderable } from "./renderable.js";
 import { Color } from "../../basic/color.js";
 import { Transform } from "../transform.js";
 import { Maths } from "../../neptune.js";
-
+/**
+ * Shape Component is responsible for rendering a shape to the screen.
+ * Basic Shapes such as circles, rectangles, etc. can be rendered using this component.
+ * ```
+ * Shape.CIRCLE = 0;
+ * Shape.RECTANGLE = 1;
+ * Shape.LINE = 2;
+ * Shape.TRIANGLE = 3;
+ * Shape.POLYGON = 4;
+ * ```
+ * 
+ * @class Shape
+ * @extends Renderable
+ * @property {number} geometry=Shape.CIRCLE - The Geometry of the shape.
+ * @property {Color} color=Color.fuchsia - The color of the shape.
+ * @property {boolean} fill=true - Whether the shape is filled or not.
+ * @property {Object} param - More Optional parameters for the shape.
+ * @property {number} param.radius=10 - The radius of the shape.
+ * @property {number} param.width=10 - The width of the shape.
+ * @property {number} param.height=10 - The height of the shape.
+ * @property {Color} param.outline=Color.black - The color of the outline of the shape.
+ * @property {number} param.thickness=1 - The thickness of the outline of the shape.
+ * 
+ * @example
+ * // Create a shape component
+ * let shape = new Shape(Shape.CIRCLE,Color.fuchsia,true,{radius:10});
+ * 
+ * // Add the shape component to an entity
+ * entity.addComponent(shape);
+ */
 export class Shape extends Renderable {
     constructor(geometry = Shape.CIRCLE, color = Color.fuchsia, fill = true, param = { radius: 10, width: 10, height: 10, outline: Color.black,thickness:1 }) {
         super();
@@ -14,6 +43,17 @@ export class Shape extends Renderable {
 
     }
 
+    /**
+     * Geometry of the shape. Can be one of the following:
+     * ```
+     * Shape.CIRCLE = 0;
+     * Shape.RECTANGLE = 1;
+     * Shape.LINE = 2;
+     * Shape.TRIANGLE = 3;
+     * Shape.POLYGON = 4;
+     * ```
+     * @type {number}
+     */
     get geometry() {
         return this._properties.geometry;
     }
@@ -22,6 +62,12 @@ export class Shape extends Renderable {
         this._properties.geometry = geometry;
     }
 
+
+    /**
+     * Color of the shape.
+     * @type {Color}
+     * 
+     */
     get color() {
         return this._properties.color;
     }
@@ -30,6 +76,10 @@ export class Shape extends Renderable {
         this._properties.color = color;
     }
 
+    /**
+     * Fill the shape or not.
+     * @type {boolean}
+     */
     get fill() {
         return this._properties.fill;
     }
@@ -38,6 +88,11 @@ export class Shape extends Renderable {
         this._properties.fill = fill;
     }
 
+
+    /**
+     * If shape is Circle. The radius of the circle.
+     * @type {number}
+     */
     get radius() {
         return this._properties.param.radius;
     }
@@ -46,6 +101,10 @@ export class Shape extends Renderable {
         this._properties.param.radius = radius;
     }
 
+    /**
+     * If the shape is Rectangle. The width of the rectangle.
+     * @type {number}
+     */
     get width() {
         return this._properties.param.width;
     }
@@ -54,6 +113,9 @@ export class Shape extends Renderable {
         this._properties.param.width = width;
     }
 
+    /**
+     * If the shape is Rectangle. The height of the rectangle.
+     */
     get height() {
         return this._properties.param.height;
     }
@@ -62,6 +124,10 @@ export class Shape extends Renderable {
         this._properties.param.height = height;
     }
 
+    /**
+     * Outline of the shape.
+     * @type {Color}
+     */
     get outline() {
         return this._properties.param.outline;
     }
@@ -70,6 +136,10 @@ export class Shape extends Renderable {
         this._properties.param.outline = outline;
     }
 
+    /**
+     * The thickness of the outline of the shape.
+     * @type {number}
+     */
     get thickness() {
         return this._properties.param.thickness;
     }
@@ -162,9 +232,8 @@ export class Shape extends Renderable {
     }
 }
 
-
-Shape.CIRCLE = "circle";
-Shape.RECTANGLE = "rectangle";
-Shape.TRIANGLE = "triangle";
-Shape.LINE = "line";
-Shape.POLYGON = "polygon";
+Shape.CIRCLE = 0;
+Shape.RECTANGLE = 1;
+Shape.LINE = 2;
+Shape.TRIANGLE = 3;
+Shape.POLYGON = 4;

@@ -1,11 +1,26 @@
 import { Component } from "../component.js";
 
+/**
+ * Donot use this class directly. Use Inheritance instead.
+ * This is a base class for all components that can be rendered, such as sprites, text, etc. 
+ * These components are identified by the renderer and rendered accordingly.
+ * Renderables are components that can be rendered to the screen.
+ * Every renderable inherits from this class.
+ * @class Renderable
+ * @extends Component
+ */
 export class Renderable extends Component {
     constructor() {
         super();
     }
 
+    /**
+     * This method draws the renderable to the screen.
+     * It first draws itself first and then its children.
+     * This is a callback method that is called by the renderer. Do not call this method directly.
+     * @method
+     */
     draw(ctx) {
-        
+
     }
 }

@@ -3,6 +3,30 @@ import { Color } from "../../basic/color.js";
 import { Transform } from "../transform.js";
 import { Maths } from "../../neptune.js";
 
+/**
+ * A Polygon Component is responsible for rendering a polygon to the screen.
+ * Polygons are defined by an array of points.
+ * @class Polygon
+ * @extends Renderable
+ * 
+ * @property {Vector2[]} vertices=[] - The points of the polygon.
+ * @property {Color} color=Color.fuchsia - The color of the polygon.
+ * @property {boolean} fill=true - Whether the polygon is filled or not.
+ * @property {Color} outline=Color.black - The color of the outline of the polygon.
+ * @property {number} thickness=1 - The thickness of the outline of the polygon.
+ * 
+ * @example
+ * // Create a polygon component
+ * let polygon = new Polygon(
+ *      [new Vector2(0,0),
+ *      new Vector2(100,0),
+ *      new Vector2(100,100),
+ *      new Vector2(0,100)],
+ *  Color.fuchsia,true,Color.black,1);
+ * 
+ * // Add the polygon component to an entity
+ * entity.addComponent(polygon);
+ */
 export class Polygon extends Renderable {
     constructor(vertices = [], color = Color.fuchsia, fill = true, outline = Color.black, thickness = 1) {
         super();
@@ -13,6 +37,10 @@ export class Polygon extends Renderable {
         this._properties.thickness = thickness;
     }
 
+    /**
+     * Vertices of the polygon. These are individual points that define the polygon.
+     * @type {Vector2[]}
+     */
     get vertices() {
         return this._properties.vertices;
     }
@@ -21,6 +49,10 @@ export class Polygon extends Renderable {
         this._properties.vertices = vertices;
     }
 
+    /**
+     * Color of the polygon. This is the color of the polygon if it is filled.
+     * @type {Color}
+     */
     get color() {
         return this._properties.color;
     }
@@ -29,6 +61,10 @@ export class Polygon extends Renderable {
         this._properties.color = color;
     }
 
+    /**
+     * Fill the polygon with the specified color. If false, the polygon will be drawn as an outline.
+     * @param {boolean} fill - Whether the polygon is filled or not.
+     */
     get fill() {
         return this._properties.fill;
     }
@@ -37,6 +73,10 @@ export class Polygon extends Renderable {
         this._properties.fill = fill;
     }
 
+    /**
+     * Specifies outline color. If left undefined, the polygon will not have an outline.
+     * @type {Color}
+     */
     get outline() {
         return this._properties.outline;
     }
@@ -45,6 +85,12 @@ export class Polygon extends Renderable {
         this._properties.outline = outline;
     }
 
+    /**
+     * Thickness of the outline of the polygon. Note: it is in meters.
+     * @type {number}
+     * @default 1
+     * 
+     */
     get thickness() {
         return this._properties.thickness;
     }
@@ -60,6 +106,8 @@ export class Polygon extends Renderable {
     setVertices(vertices) {
         this._properties.vertices = vertices;
     }
+
+
 
     draw(ctx) {
         super.draw(ctx);

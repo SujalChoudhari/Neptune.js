@@ -84,7 +84,7 @@ Neptune handles these things under the hood, and provides you with a clean but c
 <summary> Entity Component based System </summary>
 <p>
 Neptune uses a entity component based system.
-This makes the engine more advance, as major engines use this system.
+This system is suitable for editor based engines.
 </p>
 </details>
 

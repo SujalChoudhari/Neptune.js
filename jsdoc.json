@@ -52,7 +52,7 @@
 					"content": "2d game engine for javascript"
 				}
 			],
-			"exclude_inherited": true
+			"exclude_inherited": false
 		}
 	},
 	"markdown": {
