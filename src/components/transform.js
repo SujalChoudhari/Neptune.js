@@ -4,7 +4,7 @@ import {Vector2} from "../maths/vec2.js";
 export class Transform extends Component {
     constructor(pos = Vector2.zero(),rot = 0, scale = Vector2.one(),radius = 0){
         super();
-        this.properties = {
+        this._properties = {
             position : pos,
             rotation : rot,
             scale : scale,
@@ -12,52 +12,85 @@ export class Transform extends Component {
         }
     }
 
+    get position(){
+        return this._properties.position.copy();
+    }
+
+    set position(position){
+        this._properties.position = position;
+    }
+
+    get rotation(){
+        return this._properties.rotation;
+    }
+
+    set rotation(rotation){
+        this._properties.rotation = rotation;
+    }
+
+    get scale(){
+        return this._properties.scale.copy();
+    }
+
+    set scale(scale){
+        this._properties.scale = scale;
+    }
+
+    get radius(){
+        return this._properties.radius;
+    }
+
+    set radius(radius){
+        this._properties.radius = radius;
+    }
+
+
     getPosition(){
-        return this.properties.position.copy();
+        return this._properties.position.copy();
     }
 
     setPosition(position){
-        this.properties.position = position;
+        this._properties.position = position;
     }
 
     getRotation(){
-        return this.properties.rotation;
+        return this._properties.rotation;
     }
 
     setRotation(rotation){
-        this.properties.rotation = rotation;
+        this._properties.rotation = rotation;
     }
 
     getScale(){
-        return this.properties.scale.copy();
+        return this._properties.scale.copy();
     }
 
     setScale(scale){
-        this.properties.scale = scale;
+        this._properties.scale = scale;
     }
 
     getRadius(){
-        return this.properties.radius;
+        return this._properties.radius;
     }
 
     setRadius(radius){
-        this.properties.radius = radius;
+        this._properties.radius = radius;
     }
 
     getForward(){
-        return new Vector2(Math.cos(this.properties.rotation),Math.sin(this.properties.rotation));
+        return new Vector2(Math.cos(this._properties.rotation),Math.sin(this._properties.rotation));
     }
 
     translate(translation){
-        this.properties.position.add(translation);
+        this._properties.position.add(translation);
     }
 
     rotate(rotation){
-        this.properties.rotation += rotation;
+        this._properties.rotation += rotation;
     }
 
     scale(scale){
-        this.properties.scale.x *= scale.x;
-        this.properties.scale.y *= scale.y;
+        this._properties.scale.x *= scale.x;
+        this._properties.scale.y *= scale.y;
     }
 }

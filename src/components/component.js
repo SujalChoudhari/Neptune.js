@@ -1,11 +1,12 @@
 export class Component{
     constructor(entity=null){
         this.entity = entity;
-        this.properties = {};
+        this._properties = {};
     }
 
+
     destroy(){
-        this.properties = null;
+        this._properties = null;
         this.entity = null;
 
     }

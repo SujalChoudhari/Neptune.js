@@ -7,61 +7,112 @@ export class UITransform extends Component {
 
     constructor(x = 0, y = 0, width = 0, height = 0,rot=0) {
         super();
-        this.properties.x = x;
-        this.properties.y = y;
-        this.properties.width = width;
-        this.properties.height = height;
-        this.properties.rot = rot;
+        this._properties.x = x;
+        this._properties.y = y;
+        this._properties.width = width;
+        this._properties.height = height;
+        this._properties.rot = rot;
 
     }
 
+    get x(){
+        return this._properties.x;
+    }
+
+    set x(x){
+        this._properties.x = x;
+    }
+
+    get y(){
+        return this._properties.y;
+    }
+
+    set y(y){
+        this._properties.y = y;
+    }
+
+    get width(){
+        return this._properties.width;
+    }
+
+    set width(width){
+        this._properties.width = width;
+    }
+
+    get height(){
+        return this._properties.height;
+    }
+
+    set height(height){
+        this._properties.height = height;
+    }
+
+    get rotation(){
+        return this._properties.rot;
+    }
+
+    set rotation(rot){
+        this._properties.rot = rot;
+    }
+
+    get center(){
+        let center = new Vector2(this._properties.x + this._properties.width / 2, this._properties.y + this._properties.height / 2);
+        return center;
+    }
+
+    set center(center){
+        this._properties.x = center.x - this._properties.width / 2;
+        this._properties.y = center.y - this._properties.height / 2;
+    }
+
+
     getX() {
-        return this.properties.x;
+        return this._properties.x;
     }
 
     setX(x) {
-        this.properties.x = x;
+        this._properties.x = x;
     }
 
     getY() {
-        return this.properties.y;
+        return this._properties.y;
     }
 
     setY(y) {
-        this.properties.y = y;
+        this._properties.y = y;
     }
 
     getWidth() {
-        return this.properties.width;
+        return this._properties.width;
     }
 
     setWidth(width) {
-        this.properties.width = width;
+        this._properties.width = width;
     }
 
     getHeight() {
-        return this.properties.height;
+        return this._properties.height;
     }
 
     setHeight(height) {
-        this.properties.height = height;
+        this._properties.height = height;
     }
 
     getCenter() {
-        return new Vector2(this.properties.x + this.properties.width / 2, this.properties.y + this.properties.height / 2);
+        return new Vector2(this._properties.x + this._properties.width / 2, this._properties.y + this._properties.height / 2);
     }
 
     setCenter(center) {
-        this.properties.x = center.x - this.properties.width / 2;
-        this.properties.y = center.y - this.properties.height / 2;
+        this._properties.x = center.x - this._properties.width / 2;
+        this._properties.y = center.y - this._properties.height / 2;
     }
 
     getRot() {
-        return this.properties.rot;
+        return this._properties.rot;
     }
 
     setRot(rot) {
-        this.properties.rot = rot;
+        this._properties.rot = rot;
     }
 
     align(mode="center"){
@@ -82,22 +133,22 @@ export class UITransform extends Component {
 
         switch(mode){
             case "left":
-                this.properties.x = x;
+                this._properties.x = x;
                 break;
             case "right":
-                this.properties.x = x + width - this.properties.width;
+                this._properties.x = x + width - this._properties.width;
                 break;
             case "top":
-                this.properties.y = y;
+                this._properties.y = y;
                 break;
             case "bottom":
-                this.properties.y = y + height - this.properties.height;
+                this._properties.y = y + height - this._properties.height;
                 break;
             case "center":
-                this.properties.x = x + width / 2 - this.properties.width / 2;
+                this._properties.x = x + width / 2 - this._properties.width / 2;
                 break;
             case "middle":
-                this.properties.y = y + height / 2 - this.properties.height / 2;
+                this._properties.y = y + height / 2 - this._properties.height / 2;
                 break;
         }
 
@@ -122,29 +173,28 @@ export class UITransform extends Component {
 
         switch(mode){
             case "both":
-                this.properties.x = x + padX;
-                this.properties.y = y + padY;
-                this.properties.width = width - padX * 2;
-                this.properties.height = height - padY * 2;
+                this._properties.x = x + padX;
+                this._properties.y = y + padY;
+                this._properties.width = width - padX * 2;
+                this._properties.height = height - padY * 2;
                 break;
             case "x":
-                this.properties.x = x + padX;
-                this.properties.width = width - padX * 2;
+                this._properties.x = x + padX;
+                this._properties.width = width - padX * 2;
                 break;
             case "y":
-                this.properties.y = y + padY;
-                this.properties.height = height - padY * 2;
+                this._properties.y = y + padY;
+                this._properties.height = height - padY * 2;
                 break;
         }
     }
             
-
-    isPointInside(point) {
-        return point.x >= this.properties.x && point.x <= this.properties.x + this.properties.width && point.y >= this.properties.y && point.y <= this.properties.y + this.properties.height;
+    #isPointInside(point) {
+        return point.x >= this._properties.x && point.x <= this._properties.x + this._properties.width && point.y >= this._properties.y && point.y <= this._properties.y + this._properties.height;
     }
 
     isHovered() {
-        return this.isPointInside(Input.getPosition());
+        return this.#isPointInside(Input.getPosition());
     }
 
     isClicked() {
@@ -152,6 +202,6 @@ export class UITransform extends Component {
     }
 
     rotate(rot) {
-        this.properties.rot += rot;
+        this._properties.rot += rot;
     }
 }

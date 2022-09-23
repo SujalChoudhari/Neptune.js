@@ -68,8 +68,8 @@ export class Vector2 {
 
 
 	static transform(vector, transform) {
-		return new Vector2(vector.x * transform.properties.cos - vector.y * transform.properties.sin + transform.properties.positionX,
-			vector.x * transform.properties.sin + vector.y * transform.properties.cos + transform.properties.positionY);
+		return new Vector2(vector.x * transform._properties.cos - vector.y * transform._properties.sin + transform._properties.positionX,
+			vector.x * transform._properties.sin + vector.y * transform._properties.cos + transform._properties.positionY);
 	}
 
 	magnitude() {

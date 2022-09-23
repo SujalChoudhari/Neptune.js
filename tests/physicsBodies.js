@@ -45,7 +45,7 @@ export class Game extends npt.Application {
                 new npt.Vector2(30, 5),
                 new npt.Vector2(5, 0)
             ],
-            22 , 1, false
+            22, 1, false
         ));
 
         this.polygon.addComponent(new npt.Shape(npt.Shape.POLYGON, npt.Color.random(), true, {
@@ -68,17 +68,36 @@ export class Game extends npt.Application {
     Update(deltaTime) {
         super.Update(deltaTime);
 
+        if (npt.Input.isLeftDown()) {
+            let entity = new npt.Entity("Box");
+            entity.addComponent(new npt.BoxBody(
+                npt.Maths.pixelToMeterVector2(npt.Input.getPosition()),
+                10, 10, 2, 1, false));
+
+            entity.addComponent(new npt.Shape(npt.Shape.RECTANGLE, npt.Color.random(), true, { width: 10, height: 10 }));
+
+            this.scene.addChild(entity);
+            console.log(this.scene.getTree());
+        }
+
+
+        let bodies = this.scene.getChildrenWithComponent(npt.BoxBody);
+            for (let i = 0; i < bodies.length; i++) {
+                let body = bodies[i]
+                let component = body.getComponent(npt.BoxBody);
+                let aabb = component.getAABB();
+                if (aabb.min.y > this.height * npt.Maths.PIXEL_TO_METER) {
+                    npt.DestroyQueue.add(body);
+                    //    console.log("destroyed");
+                    // console.log(npt.Entity.getTree(this.scene));
+                }
+            }
+
     }
 
     Draw(ctx) {
         super.Draw(ctx);
         this.scene.draw(ctx);
-
-        //draw polygon aabb
-        let aabb = this.polygon.getComponent(npt.PolygonBody).aabb;
-        ctx.strokeStyle = "red";
-        ctx.strokeRect(aabb.x, aabb.y, aabb.width, aabb.height);
-        ctx.stroke();
     }
 }
 

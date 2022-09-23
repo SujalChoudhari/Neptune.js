@@ -1,241 +1,241 @@
 import { Vector2 } from "../maths/vec2.js";
 
 export class Input {
-    static canvas;
-    static pos = Vector2.zero();
-    static pressedButton;
-    static isClicked;
-    static isDoubleClicked;
-    static isMouseDown;
-    static touches = [];
-    static keyPressed = [];
-    static specialKeyPressed;
-    static wheelDelta;
-    static onClick;
-    static onDoubleClick;
+    static #canvas;
+    static #pos = Vector2.zero();
+    static #pressedButton;
+    static #isClicked;
+    static #isDoubleClicked;
+    static #isMouseDown;
+    static #touches = [];
+    static #keyPressed = [];
+    static #specialKeyPressed;
+    static #wheelDelta;
+    static #onClick;
+    static #onDoubleClick;
 
     static Init(canvas) {
-        Input.canvas = canvas;
-        Input.pos =Vector2.zero();
-        Input.pressedButton = null;
-        Input.isClicked = false;
-        Input.isDoubleClicked = false;
-        Input.isMouseDown = false;
-        Input.touches = [];
+        Input.#canvas = canvas;
+        Input.#pos =Vector2.zero();
+        Input.#pressedButton = null;
+        Input.#isClicked = false;
+        Input.#isDoubleClicked = false;
+        Input.#isMouseDown = false;
+        Input.#touches = [];
 
-        Input.keyPressed = [];
-        Input.specialKeyPressed = null;
-        Input.wheelDelta = 0;
-        Input.onClick = (event) => { };
-        Input.onDoubleClick = (event) => { };
+        Input.#keyPressed = [];
+        Input.#specialKeyPressed = null;
+        Input.#wheelDelta = 0;
+        Input.#onClick = (event) => { };
+        Input.#onDoubleClick = (event) => { };
 
-        Input.canvas.addEventListener("click", Input.Click.bind(this));
-        Input.canvas.addEventListener("dblclick", Input.DoubleClick.bind(this));
-        Input.canvas.addEventListener("mousedown", Input.MouseDown.bind(this));
-        Input.canvas.addEventListener("mouseup", Input.MouseUp.bind(this));
-        Input.canvas.addEventListener("mousemove", Input.MouseMove.bind(this));
-        Input.canvas.addEventListener("mouseout", Input.MouseUp.bind(this));
-        Input.canvas.addEventListener("mouseleave", Input.MouseUp.bind(this));
-        Input.canvas.addEventListener("mouseover", Input.MouseMove.bind(this));
-        Input.canvas.addEventListener("touchstart", Input.TouchStart.bind(this));
-        Input.canvas.addEventListener("touchend", Input.TouchEnd.bind(this));
-        Input.canvas.addEventListener("touchmove", Input.TouchMove.bind(this));
-        Input.canvas.addEventListener("wheel", Input.Wheel.bind(this));
-        Input.canvas.addEventListener("keydown", Input.KeyDown.bind(this));
-        Input.canvas.addEventListener("keyup", Input.KeyUp.bind(this));
-        Input.canvas.addEventListener("keypress", Input.KeyPress.bind(this));
+        Input.#canvas.addEventListener("click", Input.#Click.bind(this));
+        Input.#canvas.addEventListener("dblclick", Input.#DoubleClick.bind(this));
+        Input.#canvas.addEventListener("mousedown", Input.#MouseDown.bind(this));
+        Input.#canvas.addEventListener("mouseup", Input.#MouseUp.bind(this));
+        Input.#canvas.addEventListener("mousemove", Input.#MouseMove.bind(this));
+        Input.#canvas.addEventListener("mouseout", Input.#MouseUp.bind(this));
+        Input.#canvas.addEventListener("mouseleave", Input.#MouseUp.bind(this));
+        Input.#canvas.addEventListener("mouseover", Input.#MouseMove.bind(this));
+        Input.#canvas.addEventListener("touchstart", Input.#TouchStart.bind(this));
+        Input.#canvas.addEventListener("touchend", Input.#TouchEnd.bind(this));
+        Input.#canvas.addEventListener("touchmove", Input.#TouchMove.bind(this));
+        Input.#canvas.addEventListener("wheel", Input.#Wheel.bind(this));
+        Input.#canvas.addEventListener("keydown", Input.#KeyDown.bind(this));
+        Input.#canvas.addEventListener("keyup", Input.#KeyUp.bind(this));
+        Input.#canvas.addEventListener("keypress", Input.#KeyPress.bind(this));
     }
 
 
-    static checkSpecialKey(event) {
-        if (event.shiftKey) Input.specialKeyPressed = Input.keyCode.SHIFT;
-        if (event.ctrlKey) Input.specialKeyPressed = Input.keyCode.CTRL;
-        if (event.altKey) Input.specialKeyPressed = Input.keyCode.ALT;
-        if (event.metaKey) Input.specialKeyPressed = Input.keyCode.META;
-        else Input.specialKeyPressed = null;
+    static #checkSpecialKey(event) {
+        if (event.shiftKey) Input.#specialKeyPressed = Input.keyCode.SHIFT;
+        if (event.ctrlKey) Input.#specialKeyPressed = Input.keyCode.CTRL;
+        if (event.altKey) Input.#specialKeyPressed = Input.keyCode.ALT;
+        if (event.metaKey) Input.#specialKeyPressed = Input.keyCode.META;
+        else Input.#specialKeyPressed = null;
     }
     
-    static Click(event) {
-        Input.isClicked = true;
-        Input.pos.x = event.offsetX;
-        Input.pos.y = event.offsetY;
-        Input.pressedButton = event.button;
-        Input.checkSpecialKey(event);
+    static #Click(event) {
+        Input.#isClicked = true;
+        Input.#pos.x = event.offsetX;
+        Input.#pos.y = event.offsetY;
+        Input.#pressedButton = event.button;
+        Input.#checkSpecialKey(event);
         
-        Input.onClick(event);
+        Input.#onClick(event);
     }
     
-    static DoubleClick(event) {
-        Input.isDoubleClicked = true;
-        Input.pos.x = event.offsetX;
-        Input.pos.y = event.offsetY;
-        Input.pressedButton = event.button;
-        Input.checkSpecialKey(event);
+    static #DoubleClick(event) {
+        Input.#isDoubleClicked = true;
+        Input.#pos.x = event.offsetX;
+        Input.#pos.y = event.offsetY;
+        Input.#pressedButton = event.button;
+        Input.#checkSpecialKey(event);
 
-        Input.onDoubleClick(event);
-
-    }
-
-    static MouseDown(event) {
-        Input.isMouseDown = true;
-        Input.pos.x = event.offsetX;
-        Input.pos.y = event.offsetY;
-        Input.pressedButton = event.button;
-        Input.checkSpecialKey(event);
+        Input.#onDoubleClick(event);
 
     }
 
-    static MouseUp(event) {
-        Input.isMouseDown = false;
-        Input.pos.x = event.offsetX;
-        Input.pos.y = event.offsetY;
-        Input.pressedButton = -1;
-        Input.checkSpecialKey(event);
-    }
-    
-    static MouseMove(event) {
-        Input.pos.x = event.offsetX;
-        Input.pos.y = event.offsetY;
-        Input.checkSpecialKey(event);
-    }
-
-    static TouchStart(event) {
-        Input.touches = event.touches;
-        Input.pos.x = Math.round(event.changedTouches[0].pageX);
-        Input.pos.y = Math.round(event.changedTouches[0].pageY);
-        Input.checkSpecialKey(event);
-    }
-
-    static TouchEnd(event) {
-        Input.touches = event.touches;
-        Input.pos.x = Math.round(event.changedTouches[0].pageX);
-        Input.pos.y = Math.round(event.changedTouches[0].pageY);
-        Input.checkSpecialKey(event);
+    static #MouseDown(event) {
+        Input.#isMouseDown = true;
+        Input.#pos.x = event.offsetX;
+        Input.#pos.y = event.offsetY;
+        Input.#pressedButton = event.button;
+        Input.#checkSpecialKey(event);
 
     }
 
-    static TouchMove(event) {
-        Input.touches = event.touches;
-        Input.pos.x = Math.round(event.changedTouches[0].pageX);
-        Input.pos.y = Math.round(event.changedTouches[0].pageY);
-        Input.checkSpecialKey(event);
+    static #MouseUp(event) {
+        Input.#isMouseDown = false;
+        Input.#pos.x = event.offsetX;
+        Input.#pos.y = event.offsetY;
+        Input.#pressedButton = -1;
+        Input.#checkSpecialKey(event);
     }
     
-    static Wheel(event) {
-        Input.wheelDelta = event.deltaY;
+    static #MouseMove(event) {
+        Input.#pos.x = event.offsetX;
+        Input.#pos.y = event.offsetY;
+        Input.#checkSpecialKey(event);
+    }
+
+    static #TouchStart(event) {
+        Input.#touches = event.#touches;
+        Input.#pos.x = Math.round(event.changedTouches[0].pageX);
+        Input.#pos.y = Math.round(event.changedTouches[0].pageY);
+        Input.#checkSpecialKey(event);
+    }
+
+    static #TouchEnd(event) {
+        Input.#touches = event.#touches;
+        Input.#pos.x = Math.round(event.changedTouches[0].pageX);
+        Input.#pos.y = Math.round(event.changedTouches[0].pageY);
+        Input.#checkSpecialKey(event);
+
+    }
+
+    static #TouchMove(event) {
+        Input.#touches = event.#touches;
+        Input.#pos.x = Math.round(event.changedTouches[0].pageX);
+        Input.#pos.y = Math.round(event.changedTouches[0].pageY);
+        Input.#checkSpecialKey(event);
     }
     
-    static KeyDown(event) {
-        Input.checkSpecialKey(event);
-        Input.keyPressed[event.keyCode] = true;
+    static #Wheel(event) {
+        Input.#wheelDelta = event.deltaY;
+    }
+    
+    static #KeyDown(event) {
+        Input.#checkSpecialKey(event);
+        Input.#keyPressed[event.keyCode] = true;
 
     }
     
-    static KeyUp(event) {
-        Input.checkSpecialKey(event);
-        Input.keyPressed[event.keyCode] = false;
-        Input.keyPressed.splice(Input.keyPressed.indexOf(event.keyCode),1);
+    static #KeyUp(event) {
+        Input.#checkSpecialKey(event);
+        Input.#keyPressed[event.keyCode] = false;
+        Input.#keyPressed.splice(Input.#keyPressed.indexOf(event.keyCode),1);
     }
     
-    static KeyPress(event) {
-        Input.keyPressed[event.keyCode] = true;
+    static #KeyPress(event) {
+        Input.#keyPressed[event.keyCode] = true;
     }
 
 
 
     static leftMouseButtonDown() {
-        return Input.pressedButton === 0;
+        return Input.#pressedButton === 0;
     }
     static rightMouseButtonDown() {
-        return Input.pressedButton === 2;
+        return Input.#pressedButton === 2;
     }
     static middleMouseButtonDown() {
-        return Input.pressedButton === 1;
+        return Input.#pressedButton === 1;
     }
     static leftMouseButtonUp() {
-        return Input.pressedButton === 0 && !Input.isMouseDown;
+        return Input.#pressedButton === 0 && !Input.#isMouseDown;
     }
     static rightMouseButtonUp() {
-        return Input.pressedButton === 2 && !Input.isMouseDown;
+        return Input.#pressedButton === 2 && !Input.#isMouseDown;
     }
     static middleMouseButtonUp() {
-        return Input.pressedButton === 1 && !Input.isMouseDown;
+        return Input.#pressedButton === 1 && !Input.#isMouseDown;
     }
     static isLeftClicked() {
-        return Input.isClicked && Input.pressedButton === 0;
+        return Input.#isClicked && Input.#pressedButton === 0;
     }
     static isRightClicked() {
-        return Input.isClicked && Input.pressedButton === 2;
+        return Input.#isClicked && Input.#pressedButton === 2;
     }
     static isMiddleClicked() {
-        return Input.isClicked && Input.pressedButton === 1;
+        return Input.#isClicked && Input.#pressedButton === 1;
     }
     static isLeftPressed() {
-        return Input.pressedButton === 0;
+        return Input.#pressedButton === 0;
     }
     static isRightPressed() {
-        return Input.pressedButton === 2;
+        return Input.#pressedButton === 2;
     }
     static isMiddlePressed() {
-        return Input.pressedButton === 1;
+        return Input.#pressedButton === 1;
     }
     static isLeftDown() {
-        return Input.isMouseDown && Input.pressedButton === 0;
+        return Input.#isMouseDown && Input.#pressedButton === 0;
     }
     static isRightDown() {
-        return Input.isMouseDown && Input.pressedButton === 2;
+        return Input.#isMouseDown && Input.#pressedButton === 2;
     }
     static isMiddleDown() {
-        return Input.isMouseDown && Input.pressedButton === 1;
+        return Input.#isMouseDown && Input.#pressedButton === 1;
     }
     static leftMouseButtonClicked() {
-        return Input.pressedButton === 0 && Input.isClicked;
+        return Input.#pressedButton === 0 && Input.#isClicked;
     }
     static rightMouseButtonClicked() {
-        return Input.pressedButton === 2 && Input.isClicked;
+        return Input.#pressedButton === 2 && Input.#isClicked;
     }
     static middleMouseButtonClicked() {
-        return Input.pressedButton === 1 && Input.isClicked;
+        return Input.#pressedButton === 1 && Input.#isClicked;
     }
     static leftMouseButtonDoubleClicked() {
-        return Input.pressedButton === 0 && Input.isDoubleClicked;
+        return Input.#pressedButton === 0 && Input.#isDoubleClicked;
     }
     static rightMouseButtonDoubleClicked() {
-        return Input.pressedButton === 2 && Input.isDoubleClicked;
+        return Input.#pressedButton === 2 && Input.#isDoubleClicked;
     }
     static middleMouseButtonDoubleClicked() {
-        return Input.pressedButton === 1 && Input.isDoubleClicked;
+        return Input.#pressedButton === 1 && Input.#isDoubleClicked;
     }
     static getWheelScroll() {
-        return Input.wheelDelta;
+        return Input.#wheelDelta;
     }
     static getPosition() {
-        return Input.pos.copy();
+        return Input.#pos.copy();
     }
     static getTouchCount() {
-        return Input.touchCount;
+        return Input.#touches.length;
     }
     static getSpecialKeyPressed() {
-        return Input.specialKeyPressed;
+        return Input.#specialKeyPressed;
     }
     
     static getKeyDown(keyCode) {
-        return Input.keyPressed[keyCode];
+        return Input.#keyPressed[keyCode];
     }
 
     static isKeyDown(keyCode) {
-        if (Input.keyPressed[keyCode] === undefined) return false;
-        return Input.keyPressed[keyCode];
+        if (Input.#keyPressed[keyCode] === undefined) return false;
+        return Input.#keyPressed[keyCode];
     }
 
     static clear() {
-        Input.isClicked = false;
-        Input.isDoubleClicked = false;
-        Input.isMouseDown = false;
-        Input.touches = 0;
-        Input.specialKeyPressed = false;
-        Input.wheelDelta = 0;
-        Input.pressedButton = -1;
+        Input.#isClicked = false;
+        Input.#isDoubleClicked = false;
+        Input.#isMouseDown = false;
+        Input.#touches = 0;
+        Input.#specialKeyPressed = false;
+        Input.#wheelDelta = 0;
+        Input.#pressedButton = -1;
     }
 
 }

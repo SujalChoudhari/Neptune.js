@@ -5,42 +5,75 @@ import { UITransform } from "./transform.js";
 export class Text extends Renderable {
     constructor(text, font,align, color) {
         super();
-        this.properties.text = text;
-        this.properties.font = font;
-        this.properties.align = align;
-        this.properties.color = color;
+        this._properties.text = text;
+        this._properties.font = font;
+        this._properties.align = align;
+        this._properties.color = color;
     }
 
+    get text(){
+        return this._properties.text;
+    }
+
+    set text(text){
+        this._properties.text = text;
+    }
+
+    get font(){
+        return this._properties.font;
+    }
+
+    set font(font){
+        this._properties.font = font;
+    }
+
+    get align(){
+        return this._properties.align;
+    }
+
+    set align(align){
+        this._properties.align = align;
+    }
+
+    get color(){
+        return this._properties.color;
+    }
+
+    set color(color){
+        this._properties.color = color;
+    }
+
+
     getText() {
-        return this.properties.text;
+        return this._properties.text;
     }
 
     setText(text) {
-        this.properties.text = text;
+        this._properties.text = text;
     }
 
     getFont() {
-        return this.properties.font;
+        return this._properties.font;
     }
 
     setFont(font) {
-        this.properties.font = font;
+        this._properties.font = font;
     }
 
     getColor() {
-        return this.properties.color;
+        return this._properties.color;
     }
 
     setColor(color) {
-        this.properties.color = color;
+        this._properties.color = color;
     }
 
     getAlign() {
-        return this.properties.align;
+        return this._properties.align;
     }
 
     setAlign(align) {
-        this.properties.align = align;
+        this._properties.align = align;
     }
 
     draw(ctx){

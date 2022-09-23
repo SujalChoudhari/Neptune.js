@@ -20,29 +20,29 @@ export class CircleBody extends Body {
             throw new Error(`Density should be between ${PhysicsEngine.MIN_BODY_DENSITY} and ${PhysicsEngine.MAX_BODY_DENSITY}. Density is ${density}`);
         }
 
-        this.properties.shapeType = CollisionShape.CIRCLE;
-        this.properties.position = position;
-        this.properties.radius = radius;
-        this.properties.area = area;
-        this.properties.density = density;
-        this.properties.mass = mass;
-        this.properties.restitution = Maths.clamp(restitution, 0, 1);
-        this.properties.isStatic = isStatic;
-        this.properties.inertia = this.calculateRotationalInertia();
-        this.properties.rotation = 0;
+        this._properties.shapeType = CollisionShape.CIRCLE;
+        this._properties.position = position;
+        this._properties.radius = radius;
+        this._properties.area = area;
+        this._properties.density = density;
+        this._properties.mass = mass;
+        this._properties.restitution = Maths.clamp(restitution, 0, 1);
+        this._properties.isStatic = isStatic;
+        this._properties.inertia = this.calculateRotationalInertia();
+        this._properties.rotation = 0;
 
 
         if (isStatic) {
-            this.properties.invMass = 0;
-            this.properties.invInertia = 0;
+            this._properties.invMass = 0;
+            this._properties.invInertia = 0;
         }
 
         else {
-            this.properties.invMass = 1 / mass;
-            this.properties.invInertia = 1 / this.properties.inertia;
+            this._properties.invMass = 1 / mass;
+            this._properties.invInertia = 1 / this._properties.inertia;
         }
 
-        this.vertices = this.createVertices();
+        this._vertices = this.createVertices();
 
         PhysicsEngine.addBody(this);
 
@@ -50,22 +50,22 @@ export class CircleBody extends Body {
 
     getAABB() {
 
-        if (this.aabbUpdateRequired) {
+        if (this._aabbUpdateRequired) {
             let min = new Vector2(Infinity, Infinity);
             let max = new Vector2(-Infinity, -Infinity);
 
-            let pos = this.properties.position;
-            let rad = this.properties.radius;
+            let pos = this._properties.position;
+            let rad = this._properties.radius;
             min.x = pos.x - rad;
             min.y = pos.y - rad;
             max.x = pos.x + rad;
             max.y = pos.y + rad;
 
 
-            this.aabb = new AABB(min, max);
-            this.aabbUpdateRequired = false;
+            this._aabb = new AABB(min, max);
+            this._aabbUpdateRequired = false;
         }
-        return this.aabb;
+        return this._aabb;
     }
 
     createVertices() {
@@ -74,8 +74,8 @@ export class CircleBody extends Body {
         let angle = 0;
         let angleIncrement = 2 * Math.PI / numPoints;
         for (let i = 0; i < numPoints; i++) {
-            let x = this.properties.radius * Math.cos(angle);
-            let y = this.properties.radius * Math.sin(angle);
+            let x = this._properties.radius * Math.cos(angle);
+            let y = this._properties.radius * Math.sin(angle);
             vertices.push(new Vector2(x, y));
             angle += angleIncrement;
         }
@@ -83,7 +83,7 @@ export class CircleBody extends Body {
     }
 
     calculateRotationalInertia() {
-        return 1 / 2 * this.properties.mass * this.properties.radius * this.properties.radius;
+        return 1 / 2 * this._properties.mass * this._properties.radius * this._properties.radius;
 
     }
 }

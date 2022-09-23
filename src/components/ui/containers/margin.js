@@ -4,43 +4,76 @@ import { UITransform } from "../transform.js";
 export class MarginContainer extends Container {
     constructor(left,right,top,bottom){
         super();
-        this.properties.left = left;
-        this.properties.right = right;
-        this.properties.top = top;
-        this.properties.bottom = bottom;
+        this._properties.left = left;
+        this._properties.right = right;
+        this._properties.top = top;
+        this._properties.bottom = bottom;
 
     }
 
+    get left(){
+        return this._properties.left;
+    }
+
+    set left(left){
+        this._properties.left = left;
+    }
+
+    get right(){
+        return this._properties.right;
+    }
+
+    set right(right){
+        this._properties.right = right;
+    }
+
+    get top(){
+        return this._properties.top;
+    }
+
+    set top(top){
+        this._properties.top = top;
+    }
+
+    get bottom(){
+        return this._properties.bottom;
+    }
+
+    set bottom(bottom){
+        this._properties.bottom = bottom;
+    }
+
+
     getLeft(){
-        return this.properties.left;
+        return this._properties.left;
     }
 
     setLeft(left){
-        this.properties.left = left;
+        this._properties.left = left;
     }
 
     getRight(){
-        return this.properties.right;
+        return this._properties.right;
     }
 
     setRight(right){
-        this.properties.right = right;
+        this._properties.right = right;
     }
 
     getTop(){
-        return this.properties.top;
+        return this._properties.top;
     }
 
     setTop(top){
-        this.properties.top = top;
+        this._properties.top = top;
     }
 
     getBottom(){
-        return this.properties.bottom;
+        return this._properties.bottom;
     }
 
     setBottom(bottom){
-        this.properties.bottom = bottom;
+        this._properties.bottom = bottom;
     }
 
     update(){

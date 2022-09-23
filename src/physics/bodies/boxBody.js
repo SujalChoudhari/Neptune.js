@@ -19,28 +19,28 @@ export class BoxBody extends Body {
         if (density < PhysicsEngine.MIN_BODY_DENSITY && density > PhysicsEngine.MAX_BODY_DENSITY) {
             throw new Error(`Density should be between ${PhysicsEngine.MIN_BODY_DENSITY} and ${PhysicsEngine.MAX_BODY_DENSITY}. Density is ${density}`);
         }
-        this.properties.shapeType = CollisionShape.POLYGON;
-        this.properties.position = position;
-        this.properties.width = width;
-        this.properties.height = height;
-        this.properties.area = area;
-        this.properties.density = density;
-        this.properties.mass = mass;
-        this.properties.restitution = Maths.clamp(restitution, 0, 1);
-        this.properties.isStatic = isStatic;
-        this.properties.inertia = this.calculateRotationalInertia();
-        this.properties.rotation = 0;
+        this._properties.shapeType = CollisionShape.POLYGON;
+        this._properties.position = position;
+        this._properties.width = width;
+        this._properties.height = height;
+        this._properties.area = area;
+        this._properties.density = density;
+        this._properties.mass = mass;
+        this._properties.restitution = Maths.clamp(restitution, 0, 1);
+        this._properties.isStatic = isStatic;
+        this._properties.inertia = this.calculateRotationalInertia();
+        this._properties.rotation = 0;
 
         if (isStatic) {
-            this.properties.invMass = 0;
-            this.properties.invInertia = 0;
+            this._properties.invMass = 0;
+            this._properties.invInertia = 0;
         }
         else {
-            this.properties.invMass = 1 / mass;
-            this.properties.invInertia = 1 / this.properties.inertia;
+            this._properties.invMass = 1 / mass;
+            this._properties.invInertia = 1 / this._properties.inertia;
         }
 
-        this.vertices = this.createBoxVertices();
+        this._vertices = this.createBoxVertices();
         
         PhysicsEngine.addBody(this);
 
@@ -48,8 +48,8 @@ export class BoxBody extends Body {
     }
 
     createBoxVertices() {
-        let width = this.properties.width;
-        let height = this.properties.height;
+        let width = this._properties.width;
+        let height = this._properties.height;
         let vertices = [];
         vertices.push(new Vector2(-width / 2, -height / 2));
         vertices.push(new Vector2(width / 2, -height / 2));
@@ -60,11 +60,11 @@ export class BoxBody extends Body {
     }
 
     calculateRotationalInertia() {
-        return 1 / 12 * this.properties.mass * (this.properties.width * this.properties.width + this.properties.height * this.properties.height);
+        return 1 / 12 * this._properties.mass * (this._properties.width * this._properties.width + this._properties.height * this._properties.height);
     }
 
     getAABB() {
-        if (this.aabbUpdateRequired) {
+        if (this._aabbUpdateRequired) {
             let min = new Vector2(Infinity, Infinity);
             let max = new Vector2(-Infinity, -Infinity);
 
@@ -80,9 +80,9 @@ export class BoxBody extends Body {
 
 
 
-            this.aabb = new AABB(min, max);
-            this.aabbUpdateRequired = false;
+            this._aabb = new AABB(min, max);
+            this._aabbUpdateRequired = false;
         }
-        return this.aabb;
+        return this._aabb;
     }
 }

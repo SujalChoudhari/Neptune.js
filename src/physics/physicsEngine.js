@@ -6,14 +6,12 @@ import { Collision } from "./collision.js";
 import { Transform } from "../components/transform.js";
 export class PhysicsEngine {
     //assuming 10px == 1m
-    static MIN_BODY_SIZE = 1 * 1; // area in m^2
-    static MAX_BODY_SIZE = 10 * 10; //area of 10x10pixels
-
-    static MIN_DENSITY = .7; //g/cm^3
-    static MAX_DENSITY = 22; //g/cm^3
-
-    static MIN_ITERATIONS = 1;
-    static MAX_ITERATIONS = 128;
+    static get MIN_BODY_SIZE() {return 1*1;} // area in m^2
+    static get MAX_BODY_SIZE() {return 100*100;} // area in m^2
+    static get MIN_DENSITY() {return 0.7;} // g/cm^3
+    static get MAX_DENSITY() {return 22;} // g/cm^3
+    static get MIN_ITERATIONS() {return 1;} 
+    static get MAX_ITERATIONS() {return 64;}
 
     static iterations = 30;
     static gravity = new Vector2(0, 9.80 / 1000); //m/s^2
@@ -21,14 +19,14 @@ export class PhysicsEngine {
 
     static collisionManifold = [];
 
-    set gravity(value) {
+
+    static set gravity(value) {
         PhysicsEngine.gravity = value.divide(100);
     }
 
-    set iterations(value) {
+    static set iterations(value) {
         Maths.clamp(value, PhysicsEngine.MIN_ITERATIONS, PhysicsEngine.MAX_ITERATIONS);
     }
-
 
     static Init() { }
 
@@ -81,7 +79,6 @@ export class PhysicsEngine {
                 let bodyBaabb = bodyB.getAABB();
                 if (bodyA.isStatic && bodyB.isStatic) continue;
 
-                
 
                 if (!CollisionDetection.intersectAABB(bodyAaabb, bodyBaabb)) continue;
 
@@ -117,10 +114,10 @@ export class PhysicsEngine {
         let bodyB = collision.bodyB;
         let collisionNormal = collision.normal;
 
-        let relativeVelocity = bodyB.properties.linearVelocity.copy().subtract(bodyA.properties.linearVelocity.copy());
-        let e = Math.min(bodyA.properties.restitution, bodyB.properties.restitution);
+        let relativeVelocity = bodyB._properties.linearVelocity.copy().subtract(bodyA._properties.linearVelocity.copy());
+        let e = Math.min(bodyA._properties.restitution, bodyB._properties.restitution);
         let j = -(1 + e) * Maths.dot(relativeVelocity, collisionNormal);
-        j /= bodyA.properties.invMass + bodyB.properties.invMass + Maths.dot(collisionNormal, collisionNormal.copy().multiply(bodyA.properties.invInertia + bodyB.properties.invInertia));
+        j /= bodyA._properties.invMass + bodyB._properties.invMass + Maths.dot(collisionNormal, collisionNormal.copy().multiply(bodyA._properties.invInertia + bodyB._properties.invInertia));
 
         let impulse = collisionNormal.copy().multiply(j);
         bodyA.addImpulse(impulse.copy().negetive());

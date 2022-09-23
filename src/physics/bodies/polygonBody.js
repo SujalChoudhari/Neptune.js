@@ -27,26 +27,26 @@ export class PolygonBody extends Body {
         if (density < PhysicsEngine.MIN_BODY_DENSITY && density > PhysicsEngine.MAX_BODY_DENSITY) {
             throw new Error(`Density should be between ${PhysicsEngine.MIN_BODY_DENSITY} and ${PhysicsEngine.MAX_BODY_DENSITY}. Density is ${density}`);
         }
-        this.properties.shapeType = CollisionShape.POLYGON;
-        this.properties.position = position;
-        this.properties.area = area;
-        this.properties.density = density;
-        this.properties.mass = mass;
-        this.properties.restitution = Maths.clamp(restitution, 0, 1);
-        this.properties.isStatic = isStatic;
-        this.properties.inertia = this.calculateRotationalInertia();
-        this.properties.rotation = 0;
+        this._properties.shapeType = CollisionShape.POLYGON;
+        this._properties.position = position;
+        this._properties.area = area;
+        this._properties.density = density;
+        this._properties.mass = mass;
+        this._properties.restitution = Maths.clamp(restitution, 0, 1);
+        this._properties.isStatic = isStatic;
+        this._properties.inertia = this.calculateRotationalInertia();
+        this._properties.rotation = 0;
 
         if (isStatic) {
-            this.properties.invMass = 0;
-            this.properties.invInertia = 0;
+            this._properties.invMass = 0;
+            this._properties.invInertia = 0;
         }
         else {
-            this.properties.invMass = 1 / mass;
-            this.properties.invInertia = 1 / this.properties.inertia;
+            this._properties.invMass = 1 / mass;
+            this._properties.invInertia = 1 / this._properties.inertia;
         }
 
-        this.vertices = vertices;
+        this._vertices = vertices;
        
 
         
@@ -55,13 +55,13 @@ export class PolygonBody extends Body {
 
 
     calculateRotationalInertia() {
-        let width = this.properties.area /2;
-        let height = this.properties.area /2;
-        return 1 / 12 * this.properties.mass * (width * width + height * height);
+        let width = this._properties.area /2;
+        let height = this._properties.area /2;
+        return 1 / 12 * this._properties.mass * (width * width + height * height);
     }
 
     getAABB() {
-        if (this.aabbUpdateRequired) {
+        if (this._aabbUpdateRequired) {
             let min = new Vector2(Infinity, Infinity);
             let max = new Vector2(-Infinity, -Infinity);
             let vertices = this.getTransformedVertices();
@@ -73,9 +73,9 @@ export class PolygonBody extends Body {
                 if (v.x > max.x) max.x = v.x;
                 if (v.y > max.y) max.y = v.y;
             }
-            this.aabb = new AABB(min, max);
-            this.aabbUpdateRequired = false;
+            this._aabb = new AABB(min, max);
+            this._aabbUpdateRequired = false;
         }
-        return this.aabb;
+        return this._aabb;
     }
 }

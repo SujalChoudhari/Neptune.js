@@ -4,15 +4,24 @@ import {UITransform} from "./transform.js";
 export class Panel extends Renderable {
     constructor(color) {
         super();
-        this.properties.color = color;
+        this._properties.color = color;
     }
 
+    get color() {
+        return this._properties.color;
+    }
+
+    set color(color) {
+        this._properties.color = color;
+    }
+
+
     getColor() {
-        return this.properties.color;
+        return this._properties.color;
     }
 
     setColor(color) {
-        this.properties.color = color;
+        this._properties.color = color;
     }
 
     draw(ctx) {
@@ -24,7 +33,7 @@ export class Panel extends Renderable {
 
         ctx.save();
         ctx.translate(x, y);
-        ctx.fillStyle = this.properties.color;
+        ctx.fillStyle = this._properties.color;
         ctx.fillRect(0, 0, width, height);
 
         let children = this.entity.getComponentsInChildren(Renderable);

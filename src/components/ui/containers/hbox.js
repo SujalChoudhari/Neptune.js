@@ -3,15 +3,23 @@ import { Container } from "./container.js";
 export class HBoxContainer extends Container {
     constructor(spacing){
         super();
-        this.properties.spacing = spacing;
+        this._properties.spacing = spacing;
+    }
+
+    get spacing(){
+        return this._properties.spacing;
+    }
+
+    set spacing(spacing){
+        this._properties.spacing = spacing;
     }
 
     getSpacing(){
-        return this.properties.spacing;
+        return this._properties.spacing;
     }
 
     setSpacing(spacing){
-        this.properties.spacing = spacing;
+        this._properties.spacing = spacing;
     }
 
     update(){

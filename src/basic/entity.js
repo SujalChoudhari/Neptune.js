@@ -1,61 +1,86 @@
 
 export class Entity {
-    constructor(name="Entity",children=[]) {
-        this.name = name;
-        this.children = children;
-        this.parent = null;
-        this.components = [];
+    constructor(name="Entity") {
+        this._name = name;
+        this._children = [];
+        this._parent = null;
+        this._components = [];
     }
 
+    get name(){
+        return this._name;
+    }
+
+    set name(name){
+        this._name = name;
+    }
+
+    get parent(){
+        return this._parent;
+    }
+
+    set parent(parent){
+        this._parent = parent;
+    }
+
+    get children(){
+        return this._children;
+    }
+
+    get components(){
+        return this._components;
+    }
+
+
     getComponent(type){
-        return this.components.find(component => component instanceof type);
+        return this._components.find(component => component instanceof type);
     }
 
     hasComponent(type){
-        return this.components.some(component => component instanceof type);
+        return this._components.some(component => component instanceof type);
     }
 
     getChildren(){
-        return this.children;
+        return this._children;
     }
 
     getParent(){
-        return this.parent;
+        return this._parent;
     }
 
     removeComponent(type){
-        let index = this.components.findIndex(component => component instanceof type);
+        let index = this._components.findIndex(component => component instanceof type);
         if(index > -1){
-            this.components.splice(index,1);
+            this._components.splice(index,1);
         }
     }
 
     addComponent(component){
         if (!this.hasComponent(component.constructor)) {
             component.entity = this;
-            this.components.push(component);
+            this._components.push(component);
         }
     }
 
     addChild(child){
-        if (this.children == null) {
-            this.children = [];
+        if (this._children == null) {
+            this._children = [];
         }
-        this.children.push(child);
+        this._children.push(child);
         child.parent = this;
     }
 
     removeChild(child){
-        let index = this.children.findIndex(c => c == child);
-        this.children[index].parent = null;
+        let index = this._children.findIndex(c => c == child);
+        this._children[index].parent = null;
         if(index > -1){
-            this.children.splice(index,1);
+            this._children.splice(index,1);
         }
     }
 
     getComponentinChildren(type){
         let component = null;
-        this.children.forEach(child => {
+        this._children.forEach(child => {
             if(child.hasComponent(type)){
                 component = child.getComponent(type);
             }
@@ -65,7 +90,7 @@ export class Entity {
 
     getComponentsInChildren(type){
         let components = [];
-        this.children.forEach(child => {
+        this._children.forEach(child => {
             if(child.hasComponent(type)){
                 components.push(child.getComponent(type));
             }
@@ -74,12 +99,12 @@ export class Entity {
     }
 
     getChildWithComponent(type){
-        return this.children.filter(child => child.hasComponent(type));
+        return this._children.filter(child => child.hasComponent(type));
     }
 
     getChildrenWithComponent(type){
         let children = [];
-        this.children.forEach(child => {
+        this._children.forEach(child => {
             if(child.hasComponent(type)){
                 children.push(child);
             }
@@ -88,26 +113,26 @@ export class Entity {
     }
 
 
-    static getTree(entity){
+    getTree(){
         let tree = {};
-        tree.name = entity.name;
+        tree.name = this.name;
         tree.children = [];
-        entity.children.forEach(child => {
-            tree.children.push(Entity.getTree(child));
+        this._children.forEach(child => {
+            tree.children.push(child.getTree());
         });
         return tree;
     }
 
     destroy(){
-        this.components.forEach(component => {
+        this._components.forEach(component => {
             component.destroy();
         });
 
-        this.children.forEach(child => {    
+        this._children.forEach(child => {    
             child.destroy();
         });
 
-        this.parent.removeChild(this);
+        this._parent.removeChild(this);
 
         
     }

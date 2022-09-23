@@ -1,4 +1,4 @@
-export var CollisionShape = {
-    CIRCLE: 0,
-    POLYGON : 1
+export class CollisionShape {
+    static get CIRCLE() { return 0; }
+    static get RECTANGLE() { return 1; }
 }

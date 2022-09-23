@@ -7,73 +7,128 @@ import { PhysicsTransform } from "../transform.js";
 export class Body extends Transform {
     constructor(position, density, mass, restitution, area, isStatic) {
         super();
-        this.properties.position = position;
-        this.properties.density = density;
-        this.properties.mass = mass;
-        this.properties.restitution = restitution;
-        this.properties.area = area;
-        this.properties.isStatic = isStatic;
-        
-        this.properties.linearVelocity = new Vector2(0, 0);
-        this.properties.rotation = 0;
-        this.properties.angularVelocity = 0;
-        this.properties.force = new Vector2(0, 0);
-        this.properties.torque = 0;
-        this.properties.airResistance = 0.03;
-        this.properties.inertia = 0;
-        this.properties.invMass = 0;
-        this.properties.invInertia = 0;
+        this._properties.position = position;
+        this._properties.density = density;
+        this._properties.mass = mass;
+        this._properties.restitution = restitution;
+        this._properties.area = area;
+        this._properties.isStatic = isStatic;
+        this._properties.linearVelocity = new Vector2(0, 0);
+        this._properties.rotation = 0;
+        this._properties.angularVelocity = 0;
+        this._properties.force = new Vector2(0, 0);
+        this._properties.torque = 0;
+        this._properties.airResistance = 0.03;
+        this._properties.inertia = 0;
+        this._properties.invMass = 0;
+        this._properties.invInertia = 0;
 
-
-        this.aabb = null;
-        this.aabbUpdateRequired = true;
-        this.vertices = [];
-        this.transformedVertices = [];
-        this.transformUpdateRequired = true;
+        this._aabb = null;
+        this._aabbUpdateRequired = true;
+        this._vertices = [];
+        this._transformedVertices = [];
+        this._transformUpdateRequired = true;
     }
 
+    get position() {
+        return this._properties.position;
+    }
+
+    get rotation() {
+        return this._properties.rotation;
+    }
+
+    get linearVelocity() {
+        return this._properties.linearVelocity;
+    }
+
+    get angularVelocity() {
+        return this._properties.angularVelocity;
+    }
+
+    get restitution() {
+        return this._properties.restitution;
+    }
+
+    get mass() {
+        return this._properties.mass;
+    }
+
+    get invMass() {
+        return this._properties.invMass;
+    }
+
+    get invInertia() {
+        return this._properties.invInertia;
+    }
+
+    get inertia() {
+        return this._properties.inertia;
+    }
+
+    get isStatic() {
+        return this._properties.isStatic;
+    }
+
+    get shapeType() {
+        return this._properties.shapeType;
+    }
+
+    get vertices() {
+        return this._vertices;
+    }
+
+    get area() {
+        return this._properties.area;
+    }
+
+    get density() {
+        return this._properties.density;
+    }
+
+
     Step(time, iterations) { // in seconds
-        if (this.properties.isStatic) return;
+        if (this._properties.isStatic) return;
         time /= iterations;
-        let acceleration = this.properties.force.copy().multiply(this.properties.invMass);
-        this.properties.linearVelocity.add(acceleration.copy().multiply(time));
-        this.properties.linearVelocity.add(PhysicsEngine.gravity.copy());
-        this.properties.position.add(this.properties.linearVelocity.copy().multiply(time));
+        let acceleration = this._properties.force.copy().multiply(this._properties.invMass);
+        this._properties.linearVelocity.add(acceleration.copy().multiply(time));
+        this._properties.linearVelocity.add(PhysicsEngine.gravity.copy());
+        this._properties.position.add(this._properties.linearVelocity.copy().multiply(time));
 
-        this.properties.angularVelocity += this.properties.torque * this.properties.invInertia * time;
-        this.properties.rotation += this.properties.angularVelocity * time;
+        this._properties.angularVelocity += this._properties.torque * this._properties.invInertia * time;
+        this._properties.rotation += this._properties.angularVelocity * time;
 
-        this.properties.force = new Vector2(0, 0);
-        this.properties.torque = 0;
-        this.properties.linearVelocity.multiply(1 - (this.properties.airResistance / iterations));
+        this._properties.force = new Vector2(0, 0);
+        this._properties.torque = 0;
+        this._properties.linearVelocity.multiply(1 - (this._properties.airResistance / iterations));
 
 
-        this.aabbUpdateRequired = true;
-        this.transformUpdateRequired = true;
+        this._aabbUpdateRequired = true;
+        this._transformUpdateRequired = true;
     }
 
     addForce(force) {
-        this.properties.force.add(force);
+        this._properties.force.add(force);
     }
 
     addTorque(torque) {
-        this.properties.torque += torque; // in Nm
+        this._properties.torque += torque; // in Nm
     }
 
     addTorqueImpulse(torque) {
-        this.properties.angularVelocity += torque * this.properties.invInertia;
+        this._properties.angularVelocity += torque * this._properties.invInertia;
     }
 
     addImpulse(impulse) {
-        this.properties.linearVelocity.add(impulse.copy().multiply(this.properties.invMass));
+        this._properties.linearVelocity.add(impulse.copy().multiply(this._properties.invMass));
     }
 
     calculateRotationalInertia() {
-        if (this.properties.shapeType == CollisionShape.POLYGON) {
-            return 1 / 12 * this.properties.mass * (this.properties.width * this.properties.width + this.properties.height * this.properties.height);
+        if (this._properties.shapeType == CollisionShape.POLYGON) {
+            return 1 / 12 * this._properties.mass * (this._properties.width * this._properties.width + this._properties.height * this._properties.height);
         }
-        else if (this.properties.shapeType == CollisionShape.CIRCLE) {
-            return 1 / 2 * this.properties.mass * this.properties.radius * this.properties.radius;
+        else if (this._properties.shapeType == CollisionShape.CIRCLE) {
+            return 1 / 2 * this._properties.mass * this._properties.radius * this._properties.radius;
         }
     }
 
@@ -82,24 +137,24 @@ export class Body extends Transform {
     }
 
     getTransformedVertices() {
-        if (this.transformUpdateRequired) {
-            let transform = new PhysicsTransform(this.properties.position.x, this.properties.position.y, this.properties.rotation);
-            for (let i = 0; i < this.vertices.length; i++) {
-                this.transformedVertices[i] = Vector2.transform(this.vertices[i], transform);
+        if (this._transformUpdateRequired) {
+            let transform = new PhysicsTransform(this._properties.position.x, this._properties.position.y, this._properties.rotation);
+            for (let i = 0; i < this._vertices.length; i++) {
+                this._transformedVertices[i] = Vector2.transform(this._vertices[i], transform);
             }
-            this.transformUpdateRequired = false;
+            this._transformUpdateRequired = false;
         }
-        return this.transformedVertices;
+        return this._transformedVertices;
     }
 
     move(translation) {
-        if (this.properties.invMass == 0) return;
-        this.properties.position.add(translation);
+        if (this._properties.invMass == 0) return;
+        this._properties.position.add(translation);
 
     }
 
     moveTowards(target, dt) {
-        let direction = target.sub(this.properties.position);
+        let direction = target.sub(this._properties.position);
         let distance = direction.magnitude();
         direction.normalize();
         let speed = distance / dt;
@@ -108,12 +163,12 @@ export class Body extends Transform {
 
     rotate(rotation) { // in radians
         rotation *= Math.PI / 180;
-        this.properties.rotation += rotation;
-        this.transformUpdateRequired = true;
+        this._properties.rotation += rotation;
+        this._transformUpdateRequired = true;
     }
 
     rotateTowards(target, dt) {
-        let direction = target.sub(this.properties.position);
+        let direction = target.sub(this._properties.position);
         let distance = direction.magnitude();
         direction.normalize();
         let speed = distance / dt;
@@ -121,24 +176,24 @@ export class Body extends Transform {
     }
 
     moveAt(position){
-        this.properties.position = position;
-        this.aabbUpdateRequired = true;
-        this.transformUpdateRequired = true;
+        this._properties.position = position;
+        this._aabbUpdateRequired = true;
+        this._transformUpdateRequired = true;
     }
 
     rotateAt(rotation){
-        this.properties.rotation = rotation;
-        this.aabbUpdateRequired = true;
-        this.transformUpdateRequired = true;
+        this._properties.rotation = rotation;
+        this._aabbUpdateRequired = true;
+        this._transformUpdateRequired = true;
     }
 
     destroy() {
         PhysicsEngine.removeBody(this);
-        this.properties = null;
-        this.vertices = null;
-        this.transformedVertices = null;
-        this.aabb = null;
-        this.aabbUpdateRequired = null;
+        this._properties = null;
+        this._vertices = null;
+        this._transformedVertices = null;
+        this._aabb = null;
+        this._aabbUpdateRequired = null;
 
     }
 }

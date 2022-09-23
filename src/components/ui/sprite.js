@@ -3,32 +3,36 @@ import { Renderable } from "../renderable/renderable.js";
 import { Component } from "../component.js";
 
 export class UISprite extends Renderable {
+    #image;
     constructor(path){
         super();
-        this.properties.path = path;
-        this.properties.image = new Image();
-        this.properties.image.src = path;
+        this._properties.path = path;
+        this.#image = new Image();
+        this.#image.src = path;
     }
 
+    get path(){
+        return this._properties.path;
+    }
+
+    set path(path){
+        this._properties.path = path;
+        this.#image.src = path;
+    }
+    
+
     getPath() {
-        return this.properties.path;
+        return this._properties.path;
     }
 
     setPath(path) {
-        this.properties.path = path;
+        this._properties.path = path;
     }
 
-    getImage() {
-        return this.properties.image;
-    }   
-
-    setImage(image) {
-        this.properties.image = image;
-    }
 
     draw(ctx) {
-        let image = this.properties.image;
-        let path = this.properties.path;
+        let image = this.#image;
+        let path = this._properties.path;
         let transform = this.entity.getComponent(UITransform);
         let x = transform.getX();
         let y = transform.getY();

@@ -4,30 +4,95 @@ import { Transform } from "../transform.js";
 import { Maths } from "../../neptune.js";
 
 export class Shape extends Renderable {
-    constructor(geometry = Shape.CIRCLE, color = Color.fuchsia, fill = true, param = { radius: 10, width: 10, height: 10, outline: Color.black }) {
+    constructor(geometry = Shape.CIRCLE, color = Color.fuchsia, fill = true, param = { radius: 10, width: 10, height: 10, outline: Color.black,thickness:1 }) {
         super();
-        this.properties.geometry = geometry;
-        this.properties.color = color;
-        this.properties.fill = fill;
-        this.properties.param = param;
+        this._properties.geometry = geometry;
+        this._properties.color = color;
+        this._properties.fill = fill;
+        this._properties.param = param;
 
 
     }
 
+    get geometry() {
+        return this._properties.geometry;
+    }
+
+    set geometry(geometry) {
+        this._properties.geometry = geometry;
+    }
+
+    get color() {
+        return this._properties.color;
+    }
+
+    set color(color) {
+        this._properties.color = color;
+    }
+
+    get fill() {
+        return this._properties.fill;
+    }
+
+    set fill(fill) {
+        this._properties.fill = fill;
+    }
+
+    get radius() {
+        return this._properties.param.radius;
+    }
+
+    set radius(radius) {
+        this._properties.param.radius = radius;
+    }
+
+    get width() {
+        return this._properties.param.width;
+    }
+
+    set width(width) {
+        this._properties.param.width = width;
+    }
+
+    get height() {
+        return this._properties.param.height;
+    }
+
+    set height(height) {
+        this._properties.param.height = height;
+    }
+
+    get outline() {
+        return this._properties.param.outline;
+    }
+
+    set outline(outline) {
+        this._properties.param.outline = outline;
+    }
+
+    get thickness() {
+        return this._properties.param.thickness;
+    }
+
+    set thickness(thickness) {
+        this._properties.param.thickness = thickness;
+    }
+
+
     getGeometry() {
-        return this.properties.geometry;
+        return this._properties.geometry;
     }
 
     setGeometry(geometry) {
-        this.properties.geometry = geometry;
+        this._properties.geometry = geometry;
     }
 
     getColor() {
-        return this.properties.color;
+        return this._properties.color;
     }
 
     setColor(color) {
-        this.properties.color = color;
+        this._properties.color = color;
     }
 
     draw(ctx) {
@@ -37,9 +102,9 @@ export class Shape extends Renderable {
         let rotation = transform.getRotation();
         let radius = transform.getRadius();
         let scale = Maths.meterToPixelVector2(transform.getScale());
-        let param = this.properties.param;
-        let fill = this.properties.fill;
-        let color = this.properties.color;
+        let param = this._properties.param;
+        let fill = this._properties.fill;
+        let color = this._properties.color;
 
         ctx.save();
         ctx.translate(position.x, position.y);
@@ -49,7 +114,7 @@ export class Shape extends Renderable {
         if (param.outline) ctx.strokeStyle = param.outline.toString();
         if (param.thickness) ctx.lineWidth = param.thickness;
 
-        switch (this.properties.geometry) {
+        switch (this._properties.geometry) {
             case Shape.CIRCLE:
                 ctx.beginPath();
                 ctx.arc(0, 0, radius, 0, Math.PI * 2);
