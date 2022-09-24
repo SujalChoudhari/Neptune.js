@@ -2,6 +2,7 @@ import { Color } from "./basic/color.js";
 import { Entity } from './basic/entity.js';
 import { Scene } from './basic/scene.js';
 import { DestroyQueue } from "./basic/destroyQueue.js";
+import { SceneManager } from "./basic/sceneManager.js";
 
 import { Component } from './components/component.js';
 import { Transform } from "./components/transform.js";
@@ -31,7 +32,7 @@ import { Vector2 } from "./maths/vec2.js";
 import { Maths } from "./maths/math.js";
 
 export {
-    Color, Entity, Scene, Sound, DestroyQueue,
+    Color, Entity, Scene, Sound, DestroyQueue, SceneManager,
     Component, Transform,
     Shape, Sprite, Polygon,
     UITransform, Container, MarginContainer, VBoxContainer, HBoxContainer, GridContainer, Text, UISprite,
@@ -201,7 +202,9 @@ export class Application {
      * @callback
      * @method
      */
-    Draw(ctx) { }
+    Draw(ctx) {
+        SceneManager.Draw(ctx);
+    }
 
     /**
      * This function is called every frame. Use this function to update your entities.

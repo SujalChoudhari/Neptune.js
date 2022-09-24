@@ -68,7 +68,7 @@ export class Game extends npt.Application {
     Update(deltaTime) {
         super.Update(deltaTime);
 
-        if (npt.Input.isLeftDown()) {
+        if (npt.Input.isLeftClicked()) {
             let entity = new npt.Entity("Box");
             entity.addComponent(new npt.BoxBody(
                 npt.Maths.pixelToMeterVector2(npt.Input.getPosition()),
@@ -88,16 +88,8 @@ export class Game extends npt.Application {
             let aabb = component.getAABB();
             if (aabb.min.y > this.height * npt.Maths.PIXEL_TO_METER) {
                 npt.DestroyQueue.add(body);
-                //    console.log("destroyed");
-                // console.log(npt.Entity.getTree(this.scene));
             }
         }
-
-    }
-
-    Draw(ctx) {
-        super.Draw(ctx);
-        this.scene.draw(ctx);
     }
 }
 

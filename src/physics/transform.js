@@ -11,53 +11,12 @@
  */
 export class PhysicsTransform {
     constructor(x,y,angle){
-        super();
         this.positionX = x;
         this.positionY = y;
         this.sin = Math.sin(angle);
         this.cos = Math.cos(angle);
     }
 
-    get x(){
-        return this.positionX;
-    }
-
-    set x(x){
-        this.positionX = x;
-    }
-
-    get y(){
-        return this.positionY;
-    }
-
-    set y(y){
-        this.positionY = y;
-    }
-
-    get angle(){
-        return Math.atan2(this.sin,this.cos);
-    }
-
-    set angle(angle){
-        this.sin = Math.sin(angle);
-        this.cos = Math.cos(angle);
-    }
-
-    get sin(){
-        return this.sin;
-    }
-
-    set sin(sin){
-        this.sin = sin;
-    }
-
-    get cos(){
-        return this.cos;
-    }
-
-    set cos(cos){
-        this.cos = cos;
-    }
 
     /**
      * Creates a blank PhysicsTransform with all values set to 0.

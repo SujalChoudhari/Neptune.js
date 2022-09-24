@@ -1,10 +1,13 @@
 import { Renderable } from "../components/renderable/renderable.js";
 import { Entity } from "./entity.js";
+import { SceneManager } from "./sceneManager.js";
 
 
 export class Scene extends Entity{
-    constructor(name){
+    constructor(name,id=0){
         super(name);
+        this.id = id;
+        SceneManager.addScene(this);
     }
 
     init(){
