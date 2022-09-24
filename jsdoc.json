@@ -1,7 +1,6 @@
 {
 	"plugins": [
-		"plugins/markdown",
-		"plugins/summarize"
+		"plugins/markdown"
 	],
 	"recurseDepth": 10,
 	"source": {
@@ -28,7 +27,7 @@
 		"theme_opts": {
 			"theme": "dark",
 			"title": "Neptune.js",
-			"homepageTitle": "Neptune.JS",
+			"homepageTitle": "Neptune.js",
 			"footer": "MIT License | Copyright (c) 2022 Sujal Choudhari",
 			"menu": [
 				{
@@ -49,7 +48,11 @@
 				},
 				{
 					"name": "description",
-					"content": "2d game engine for javascript"
+					"content": "A 2D framework for making games completely made in JavaScript."
+				},
+				{
+					"name":"keywords",
+					"content":"2D,javascript,game,engine,framework,neptune.js,neptunejs,easy,modular,lightweight,complete,open source"
 				}
 			],
 			"exclude_inherited": false

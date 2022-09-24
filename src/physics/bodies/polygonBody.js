@@ -7,6 +7,11 @@ import { PhysicsEngine } from '../physicsEngine.js';
 import { AABB } from "../AABB.js";
 
     
+/**
+ * PolygonBody enables to use Convex polygon in the engine.
+ * @class PolygonBody
+ * @extends Body
+ */
 export class PolygonBody extends Body {
     constructor(position, vertices, density, restitution, isStatic) {
         super();

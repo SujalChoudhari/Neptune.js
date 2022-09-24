@@ -1,11 +1,22 @@
 import { Container } from "./container.js";
 
+/**
+ * Horizontal Box Container or HBoxContainer is a container that arranges its children horizontally.
+ * @class HBoxContainer
+ * @extends Container
+ * 
+ * @property {number} spacing=0 - The spacing between the children.
+ */
 export class HBoxContainer extends Container {
     constructor(spacing){
         super();
         this._properties.spacing = spacing;
     }
 
+    /**
+     * Space between the children.
+     * @type {number}
+     */
     get spacing(){
         return this._properties.spacing;
     }

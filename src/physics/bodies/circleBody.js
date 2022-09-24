@@ -6,6 +6,15 @@ import { PhysicsEngine } from '../physicsEngine.js';
 import { PhysicsTransform } from "../transform.js";
 import { AABB } from "../AABB.js";
 import { Body } from "./body.js";
+
+/**
+ * CircleBody is a circle body. It enable to use circular collision detection.
+ * CollisionShape of this body is a Circle.
+ * @class CircleBody
+ * @extends Body
+ * 
+ * 
+ */
 export class CircleBody extends Body {
     constructor(position, radius, density, restitution, isStatic) {
         super();
@@ -46,6 +55,15 @@ export class CircleBody extends Body {
 
         PhysicsEngine.addBody(this);
 
+    }
+
+    /**
+     * Radius of the body
+     * @type {number}
+     * @readonly
+     */
+    get radius(){
+        return this._properties.radius;
     }
 
     getAABB() {

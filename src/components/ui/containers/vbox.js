@@ -1,11 +1,21 @@
 import { Container } from "./container.js";
 
+/**
+ * VerticalBoxContainer or VBoxContainer is a container that arranges its children vertically.
+ * @class VBoxContainer
+ * @extends Container
+ * 
+ * @property {number} spacing=0 - The spacing between the children.
+ */
 export class VBoxContainer extends Container {
     constructor(spacing){
         super();
         this._properties.spacing = spacing;
     }
 
+    /**
+     * The spacing between the children.
+     */
     get spacing(){
         return this._properties.spacing;
     }

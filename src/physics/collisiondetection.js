@@ -2,8 +2,23 @@ import { Maths } from "../maths/math.js";
 import { Vector2 } from "../maths/vec2.js";
 import { CollisionShape } from './collisionShape.js';
 
-
+/**
+ * Collision Detection is used by the physics engine to detect the collisions.
+ * @class CollisionDetection
+ * 
+ */
 export class CollisionDetection {
+
+    /**
+     * Get collision points between two Bodies
+     * @param {Body} bodyA
+     * @param {Body} bodyB
+     * 
+     * @returns {Array[number|Vector2]} - [count, contact1, contact2]
+     *  count: number of contacts
+     *  contact1: first contact point
+     *  contact2: second contact point
+     */
     static findContactPoints(bodyA, bodyB) {
         if (bodyA._properties.shapeType == CollisionShape.CIRCLE && bodyB._properties.shapeType == CollisionShape.CIRCLE) {
 
@@ -222,20 +237,26 @@ export class CollisionDetection {
         return { min, max };
     }
 
-    static findClosestPointOnPolygon(circleCenter, vertices) {
-        let closestPoint = vertices[0];
-        let closestDistance = Maths.distance(circleCenter, vertices[0]);
+    // /**
+    //  * 
+    //  * @param {*} circleCenter 
+    //  * @param {*} vertices 
+    //  * @returns 
+    //  */
+    // static findClosestPointOnPolygon(circleCenter, vertices) {
+    //     let closestPoint = vertices[0];
+    //     let closestDistance = Maths.distance(circleCenter, vertices[0]);
 
-        for (let i = 1; i < vertices.length; i++) {
-            let distance = Maths.distance(circleCenter, vertices[i]);
-            if (distance < closestDistance) {
-                closestDistance = distance;
-                closestPoint = vertices[i];
-            }
-        }
+    //     for (let i = 1; i < vertices.length; i++) {
+    //         let distance = Maths.distance(circleCenter, vertices[i]);
+    //         if (distance < closestDistance) {
+    //             closestDistance = distance;
+    //             closestPoint = vertices[i];
+    //         }
+    //     }
 
-        return closestPoint;
-    }
+    //     return closestPoint;
+    // }
 
     static #projectCircle(center, radius, axis) {
         let direction = Maths.normalize(axis);
@@ -254,6 +275,13 @@ export class CollisionDetection {
         return { min, max };
     }
 
+
+    /**
+     * Checks if two Bodies are colliding
+     * @param {Body} bodyA
+     * @param {Body} bodyB
+     * @returns {boolean}
+     */
     static collide(bodyA, bodyB) {
         if (bodyA._properties.shapeType == CollisionShape.CIRCLE && bodyB._properties.shapeType == CollisionShape.CIRCLE) {
             let out = CollisionDetection.#intersectCircles(
@@ -296,6 +324,12 @@ export class CollisionDetection {
         return { normal: null, depth: 0 }
     }
 
+    /**
+     * Checks if 2 AABB (Axis Aligned Bounding Box) are colliding
+     * @param {AABB} a - First AABB
+     * @param {AABB} b - Second AABB
+     * @returns {boolean} - True if colliding, false otherwise
+     */
     static intersectAABB(a, b) {
         return (a.min.x <= b.max.x && a.max.x >= b.min.x) &&
             (a.min.y <= b.max.y && a.max.y >= b.min.y);

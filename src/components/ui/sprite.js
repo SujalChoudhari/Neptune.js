@@ -2,6 +2,21 @@ import { UITransform } from "./transform.js";
 import { Renderable } from "../renderable/renderable.js";
 import { Component } from "../component.js";
 
+/**
+ * UISprite is a special Sprite class wihch is used to render Images on UI elements.
+ * This is a UI component, so it should be added to an entity with a UITransform component.
+ * @class UISprite
+ * @extends Renderable
+ * 
+ * @property {string} path="" - The path to the image to display.
+ * 
+ * @example
+ * // Create a new entity with a UITransform component and a UISprite component.
+ * let entity = new Entity();
+ * entity.addComponent(new UITransform());
+ * entity.addComponent(new UISprite("assets/sprites/texture.png"));
+ * 
+ */
 export class UISprite extends Renderable {
     #image;
     constructor(path){
@@ -11,6 +26,11 @@ export class UISprite extends Renderable {
         this.#image.src = path;
     }
 
+    /**
+     * The path to the image to display.
+     * Note: While hosting the game on a server, this might give errors thus use path with hhtps:// or http://
+     * @type {string}
+     */
     get path(){
         return this._properties.path;
     }

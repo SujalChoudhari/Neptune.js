@@ -1,12 +1,31 @@
 import { Renderable } from "../renderable/renderable.js";
 import {UITransform} from "./transform.js";
 
+/**
+ * A flat color rectangle that can be used to display UI elements.
+ * This is a UI component, so it should be added to an entity with a UITransform component.
+ * 
+ * @class Panel
+ * @extends Renderable
+ * 
+ * @property {Color} color=Color.white - The color of the panel.
+ * 
+ * @example
+ * // Create a new entity with a UITransform component and a Panel component.
+ * let entity = new Entity();
+ * entity.addComponent(new UITransform());
+ * entity.addComponent(new Panel(Color.white));
+ */
 export class Panel extends Renderable {
     constructor(color) {
         super();
         this._properties.color = color;
     }
 
+    /**
+     * The color of the panel.
+     * @type {Color}
+     */
     get color() {
         return this._properties.color;
     }

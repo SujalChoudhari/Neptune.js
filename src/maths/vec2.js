@@ -129,8 +129,8 @@ export class Vector2 {
 	 * @returns {Vector2} - The new vector.
 	 */
 	static transform(vector, transform) {
-		return new Vector2(vector.x * transform._properties.cos - vector.y * transform._properties.sin + transform._properties.positionX,
-			vector.x * transform._properties.sin + vector.y * transform._properties.cos + transform._properties.positionY);
+		return new Vector2(vector.x * transform.cos - vector.y * transform.sin + transform.positionX,
+			vector.x * transform.sin + vector.y * transform.cos + transform.positionY);
 	}
 
 	/**

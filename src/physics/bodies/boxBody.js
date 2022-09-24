@@ -5,7 +5,13 @@ import { CollisionShape } from '../collisionShape.js';
 import { PhysicsEngine } from '../physicsEngine.js';
 import { AABB } from "../AABB.js";
 
-    
+/**
+ * BoxBody is a Rectangle body.
+ * CollisionShape of this body is a Polygon.
+ * @class BoxBody
+ * @extends Body
+ * 
+ */
 export class BoxBody extends Body {
     constructor(position, width, height, density, restitution, isStatic) {
         super();
@@ -45,6 +51,24 @@ export class BoxBody extends Body {
         PhysicsEngine.addBody(this);
 
         
+    }
+
+    /**
+     * Width of the box
+     * @type {number}
+     * @readonly
+     */
+    get width(){
+        return this._properties.width;
+    }
+
+    /**
+     * Height of the box
+     * @type {number}
+     * @readonly
+     */
+    get height(){
+        return this._properties.height;
     }
 
     createBoxVertices() {

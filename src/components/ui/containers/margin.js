@@ -1,6 +1,18 @@
 import { Container } from "./container.js";
 import { UITransform } from "../transform.js";
 
+/**
+ * MarginContainer is a container that arranges its children with margins.
+ * Note: The margins are added to this container's UITransform component.
+ * 
+ * @class MarginContainer
+ * @extends Container   
+ * 
+ * @property {number} top=0 - The top margin.
+ * @property {number} bottom=0 - The bottom margin.
+ * @property {number} left=0 - The left margin.
+ * @property {number} right=0 - The right margin.
+ */
 export class MarginContainer extends Container {
     constructor(left,right,top,bottom){
         super();
@@ -10,7 +22,11 @@ export class MarginContainer extends Container {
         this._properties.bottom = bottom;
 
     }
-
+    
+    /**
+     * The left margin.
+     * @type {number}
+     */
     get left(){
         return this._properties.left;
     }
@@ -19,6 +35,10 @@ export class MarginContainer extends Container {
         this._properties.left = left;
     }
 
+    /**
+     * The right margin.
+     * @type {number}
+     */
     get right(){
         return this._properties.right;
     }
@@ -27,6 +47,10 @@ export class MarginContainer extends Container {
         this._properties.right = right;
     }
 
+    /**
+     * The bottom margin.
+     * @type {number}
+     */
     get top(){
         return this._properties.top;
     }
@@ -35,6 +59,10 @@ export class MarginContainer extends Container {
         this._properties.top = top;
     }
 
+    /**
+     * The bottom margin.
+     * @type {number}
+     */
     get bottom(){
         return this._properties.bottom;
     }

@@ -8,6 +8,7 @@ import { Component } from "../component.js";
  * Every renderable inherits from this class.
  * @class Renderable
  * @extends Component
+ * @interface
  */
 export class Renderable extends Component {
     constructor() {

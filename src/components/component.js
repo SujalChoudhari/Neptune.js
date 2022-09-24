@@ -4,7 +4,7 @@
  * Every component is unique and can only be attached to one entity at a time.
  * A component describes the behaviour of a game object, and is not a entity itself.
  * @class Component
- * 
+ * @interface
  * @property {Entity} entity The entity that this component is attached to.
  */
 export class Component{

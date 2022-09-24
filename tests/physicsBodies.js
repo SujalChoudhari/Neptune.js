@@ -82,16 +82,16 @@ export class Game extends npt.Application {
 
 
         let bodies = this.scene.getChildrenWithComponent(npt.BoxBody);
-            for (let i = 0; i < bodies.length; i++) {
-                let body = bodies[i]
-                let component = body.getComponent(npt.BoxBody);
-                let aabb = component.getAABB();
-                if (aabb.min.y > this.height * npt.Maths.PIXEL_TO_METER) {
-                    npt.DestroyQueue.add(body);
-                    //    console.log("destroyed");
-                    // console.log(npt.Entity.getTree(this.scene));
-                }
+        for (let i = 0; i < bodies.length; i++) {
+            let body = bodies[i]
+            let component = body.getComponent(npt.BoxBody);
+            let aabb = component.getAABB();
+            if (aabb.min.y > this.height * npt.Maths.PIXEL_TO_METER) {
+                npt.DestroyQueue.add(body);
+                //    console.log("destroyed");
+                // console.log(npt.Entity.getTree(this.scene));
             }
+        }
 
     }
 
