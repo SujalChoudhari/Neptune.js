@@ -58,38 +58,29 @@ export class Game extends npt.Application {
         }));
         this.scene.addChild(this.polygon);
 
-    }
+        this.scene.addComponent(new npt.Script("Physics", null, () => {
+            if (npt.Input.isLeftClicked()) {
+                let entity = new npt.Entity("Box");
+                entity.addComponent(new npt.BoxBody(
+                    npt.Maths.pixelToMeterVector2(npt.Input.getPosition()),
+                    10, 10, 2, 1, false));
 
-    Init() {
-        super.Init();
+                entity.addComponent(new npt.Shape(npt.Shape.RECTANGLE, npt.Color.random(), true, { width: 10, height: 10 }));
 
-    }
-
-    Update(deltaTime) {
-        super.Update(deltaTime);
-
-        if (npt.Input.isLeftClicked()) {
-            let entity = new npt.Entity("Box");
-            entity.addComponent(new npt.BoxBody(
-                npt.Maths.pixelToMeterVector2(npt.Input.getPosition()),
-                10, 10, 2, 1, false));
-
-            entity.addComponent(new npt.Shape(npt.Shape.RECTANGLE, npt.Color.random(), true, { width: 10, height: 10 }));
-
-            this.scene.addChild(entity);
-            console.log(this.scene.getTree());
-        }
-
-
-        let bodies = this.scene.getChildrenWithComponent(npt.BoxBody);
-        for (let i = 0; i < bodies.length; i++) {
-            let body = bodies[i]
-            let component = body.getComponent(npt.BoxBody);
-            let aabb = component.getAABB();
-            if (aabb.min.y > this.height * npt.Maths.PIXEL_TO_METER) {
-                npt.DestroyQueue.add(body);
+                this.scene.addChild(entity);
             }
-        }
+
+            let bodies = this.scene.getChildrenWithComponent(npt.BoxBody);
+            for (let i = 0; i < bodies.length; i++) {
+                let body = bodies[i]
+                let component = body.getComponent(npt.BoxBody);
+                let aabb = component.getAABB();
+                if (aabb.min.y > this.height * npt.Maths.PIXEL_TO_METER) {
+                    npt.DestroyQueue.add(body);
+                }
+            }
+
+        }));
     }
 }
 

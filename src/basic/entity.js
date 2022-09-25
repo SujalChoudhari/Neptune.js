@@ -12,7 +12,7 @@
  * 
  */
 export class Entity {
-    constructor(name="Entity") {
+    constructor(name = "Entity") {
         this._name = name;
         this._children = [];
         this._parent = null;
@@ -24,11 +24,11 @@ export class Entity {
      * @type {string}
      * @protected
      */
-    get name(){
+    get name() {
         return this._name;
     }
 
-    set name(name){
+    set name(name) {
         this._name = name;
     }
 
@@ -38,11 +38,11 @@ export class Entity {
      * @readonly
      * @protected
      */
-    get parent(){
+    get parent() {
         return this._parent;
     }
 
-    set parent(parent){
+    set parent(parent) {
         this._parent = parent;
     }
 
@@ -52,7 +52,7 @@ export class Entity {
      * @readonly
      * @protected
      */
-    get children(){
+    get children() {
         return this._children;
     }
 
@@ -62,7 +62,7 @@ export class Entity {
      * @readonly
      * @protected
      */
-    get components(){
+    get components() {
         return this._components;
     }
 
@@ -76,7 +76,7 @@ export class Entity {
      * let transform = entity.getComponent(Transform);
      * 
      */
-    getComponent(type){
+    getComponent(type) {
         return this._components.find(component => component instanceof type);
     }
 
@@ -89,17 +89,17 @@ export class Entity {
      * // Check if the entity has a transform component
      * let hasTransform = entity.hasComponent(Transform);
      */
-    hasComponent(type){
+    hasComponent(type) {
         return this._components.some(component => component instanceof type);
     }
 
 
-    getChildren(){
+    getChildren() {
         return this._children;
     }
 
 
-    getParent(){
+    getParent() {
         return this._parent;
     }
 
@@ -112,10 +112,10 @@ export class Entity {
      * entity.removeComponent(Transform);
      * 
      */
-    removeComponent(type){
+    removeComponent(type) {
         let index = this._components.findIndex(component => component instanceof type);
-        if(index > -1){
-            this._components.splice(index,1);
+        if (index > -1) {
+            this._components.splice(index, 1);
         }
         else console.warn("Component not found");
     }
@@ -130,7 +130,7 @@ export class Entity {
      * entity.addComponent(new Transform());
      * 
      */
-    addComponent(component){
+    addComponent(component) {
         if (!this.hasComponent(component.constructor)) {
             component.entity = this;
             this._components.push(component);
@@ -152,7 +152,7 @@ export class Entity {
      * // Add the child entity to the parent entity
      * entity.addChild(child);
      */
-    addChild(child){
+    addChild(child) {
         if (this._children == null) {
             this._children = [];
         }
@@ -179,11 +179,11 @@ export class Entity {
      * // Remove the child entity from the parent entity
      * entity.removeChild(child);
      */
-    removeChild(child){
+    removeChild(child) {
         let index = this._children.findIndex(c => c == child);
         this._children[index].parent = null;
-        if(index > -1){
-            this._children.splice(index,1);
+        if (index > -1) {
+            this._children.splice(index, 1);
         }
     }
 
@@ -198,10 +198,10 @@ export class Entity {
      * let transform = entity.getComponentinChildren(Transform);
      * 
      */
-    getComponentinChildren(type){
+    getComponentinChildren(type) {
         let component = null;
         this._children.forEach(child => {
-            if(child.hasComponent(type)){
+            if (child.hasComponent(type)) {
                 component = child.getComponent(type);
                 return component;
             }
@@ -218,10 +218,10 @@ export class Entity {
      *  
      * @example
      */
-    getComponentsInChildren(type){
+    getComponentsInChildren(type) {
         let components = [];
         this._children.forEach(child => {
-            if(child.hasComponent(type)){
+            if (child.hasComponent(type)) {
                 components.push(child.getComponent(type));
             }
         });
@@ -240,7 +240,7 @@ export class Entity {
      * 
      * 
      */
-    getChildWithComponent(type){
+    getChildWithComponent(type) {
         return this._children.filter(child => child.hasComponent(type));
     }
 
@@ -256,14 +256,40 @@ export class Entity {
      * let children = entity.getChildrenWithComponent(Transform);
      * 
      */
-    getChildrenWithComponent(type){
+    getChildrenWithComponent(type) {
         let children = [];
         this._children.forEach(child => {
-            if(child.hasComponent(type)){
+            if (child.hasComponent(type)) {
                 children.push(child);
             }
         });
         return children;
+    }
+
+    /**
+     * Once a scene is loaded, this function is called.
+     * This function is called by the SceneManager.
+     * @method
+     */
+    Init() {
+        this._components.forEach(component => {
+            component.Init();
+            
+        });
+        this._children.forEach(child => {
+            child.Init();
+        });
+    }
+
+
+    /**
+     * A callback function that is called every frame.
+     * @method
+     */
+    Update() {
+        this._components.forEach(component => {
+            component.Update();
+        });
     }
 
 
@@ -277,7 +303,7 @@ export class Entity {
      * // Generate a tree with the children of the entity
      * let tree = entity.generateTree();
      */
-    getTree(){
+    getTree() {
         let tree = {};
         tree.name = this.name;
         tree.children = [];
@@ -294,16 +320,16 @@ export class Entity {
      * This doesn't deletes the entity, it just removes it from the scene and allows it to be garbage collected.
      * @method
      */
-    Destroy(){
+    Destroy() {
         this._components.forEach(component => {
             component.Destroy();
         });
 
-        this._children.forEach(child => {    
+        this._children.forEach(child => {
             child.Destroy();
         });
         this._parent.removeChild(this);
 
-        
+
     }
 }

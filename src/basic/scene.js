@@ -17,13 +17,6 @@ export class Scene extends Entity{
         SceneManager.addScene(this);
     }
 
-    /**
-     * Once a scene is loaded, this function is called.
-     * This function is called by the SceneManager.
-     * @method
-     */
-    Init(){
-    }
 
     /**
      * Draw the scene. This will draw all the entities in the scene.
@@ -36,5 +29,6 @@ export class Scene extends Entity{
             renderable.draw(ctx);
         });
     }
+
 
 }

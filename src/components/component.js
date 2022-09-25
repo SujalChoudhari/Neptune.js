@@ -26,4 +26,19 @@ export class Component{
         this.entity = null;
 
     }
+
+    /**
+     * This function is called once before the first frame.
+     * This is a callback method that is called by the engine.
+     * Do not call this method directly.
+     */
+    Init(){}
+
+    /**
+     * This function is called every frame. This is a callback method that is called by the engine.
+     * Do not call this method directly.
+     * @method
+     */
+    Update(){}
+
 }

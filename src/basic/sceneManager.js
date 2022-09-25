@@ -20,10 +20,7 @@ export class SceneManager{
     static addScene(scene){
         if (! scene instanceof Scene) { console.error("scene is not an instance of Scene"); return;}
         SceneManager.#scenes.push(scene);
-        if (SceneManager.#scenes.length == 1) SceneManager.loadScene(0);
-
         SceneManager.#scenes.sort((a,b) => a.id - b.id);
-
     }
 
     /**
@@ -72,6 +69,12 @@ export class SceneManager{
         SceneManager.#loadedScenes.splice(1,SceneManager.#loadedScenes.length-1);
     }
 
+    static Init(){
+        if(SceneManager.#currentSceneIndex == -1){
+            SceneManager.loadScene(0);
+        }
+    }
+
     /**
      * Draw all loaded scenes. This will draw all the entities in the scene.
      * This method is called automatically by the game loop.
@@ -86,7 +89,19 @@ export class SceneManager{
         });
     }
     
-        
+    /**
+     * Update all loaded scenes. This will update all the entities in the scene.
+     * This method is called automatically by the game loop.
+     * Order of updating is based on the order of the scenes in the SceneManager or the order of scene Ids.
+     * @param {number} dt - Delta time.
+     * @method
+     */
+    static Update(deltaTime){
+        SceneManager.#loadedScenes.forEach(scene => {
+            scene.Update(deltaTime);
+        });
+    }
+
 
 
 

@@ -10,6 +10,7 @@ import { Shape } from "./components/renderable/shape.js";
 import { Polygon } from "./components/renderable/polygon.js";
 import { Sprite } from "./components/renderable/sprite.js";
 import { Sound } from "./components/audio.js";
+import { Script } from "./components/script.js";
 
 import { UITransform } from './components/ui/transform.js';
 import { Container } from './components/ui/containers/container.js';
@@ -33,7 +34,7 @@ import { Maths } from "./maths/math.js";
 
 export {
     Color, Entity, Scene, Sound, DestroyQueue, SceneManager,
-    Component, Transform,
+    Component, Transform,Script,
     Shape, Sprite, Polygon,
     UITransform, Container, MarginContainer, VBoxContainer, HBoxContainer, GridContainer, Text, UISprite,
     CollisionShape, PhysicsEngine, BoxBody, CircleBody, PolygonBody,
@@ -94,7 +95,7 @@ export class Application {
         this.#ctx = this.#canvas.getContext("2d");
 
         this.#playBtn.onclick = () => {
-            this.#Gameloop(0)
+            this.#Gameloop(0);
             try {
                 this.#playBtn.remove();
                 this.#canvas.style.display = "block";
@@ -193,6 +194,7 @@ export class Application {
 
         Input.Init(this.#canvas);
         PhysicsEngine.Init();
+        SceneManager.Init();
     }
 
 
@@ -213,7 +215,9 @@ export class Application {
      * @method
      * 
      */
-    Update(timeStamp) { }
+    Update(timeStamp) {
+        SceneManager.Update(timeStamp);
+    }
 
 
     /**
