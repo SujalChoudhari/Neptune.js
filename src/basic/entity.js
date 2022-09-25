@@ -217,6 +217,9 @@ export class Entity {
      * @method
      *  
      * @example
+     * // Get the transform components of all the children of the entity
+     * let transforms = entity.getComponentsinChildren(Transform);
+     * 
      */
     getComponentsInChildren(type) {
         let components = [];
@@ -266,31 +269,10 @@ export class Entity {
         return children;
     }
 
-    /**
-     * Once a scene is loaded, this function is called.
-     * This function is called by the SceneManager.
-     * @method
-     */
-    Init() {
-        this._components.forEach(component => {
-            component.Init();
-            
-        });
-        this._children.forEach(child => {
-            child.Init();
-        });
-    }
 
 
-    /**
-     * A callback function that is called every frame.
-     * @method
-     */
-    Update() {
-        this._components.forEach(component => {
-            component.Update();
-        });
-    }
+
+
 
 
     /**

@@ -14,7 +14,7 @@ export class CollisionDetection {
      * @param {Body} bodyA
      * @param {Body} bodyB
      * 
-     * @returns {Array[number|Vector2]} - [count, contact1, contact2]
+     * @returns {Array} - [count, contact1, contact2]
      *  count: number of contacts
      *  contact1: first contact point
      *  contact2: second contact point

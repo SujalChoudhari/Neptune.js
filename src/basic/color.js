@@ -46,7 +46,6 @@ export class Color {
      * @param {number} b - Blue value of the color.
      * @param {number} a - Blue value of the color.
      * @returns {Color} The color.
-     * @see 
      */
     static fromRGBA(r, g, b, a) {
         return new Color(r, g, b, a);

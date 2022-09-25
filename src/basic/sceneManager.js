@@ -48,7 +48,6 @@ export class SceneManager{
         SceneManager.#unloadScene(this.#currentSceneIndex);
         SceneManager.#currentSceneIndex = id;
         SceneManager.#loadedScenes.push(SceneManager.getScene(id));
-        SceneManager.#scenes[id].Init();
     }
 
     /**
@@ -58,7 +57,6 @@ export class SceneManager{
      */
     static loadSceneAdditive(id){
         SceneManager.#loadedScenes.push(SceneManager.getScene(id));
-        SceneManager.#scenes[id].Init();
     }
 
     /**
@@ -88,21 +86,4 @@ export class SceneManager{
             scene.Draw(ctx);
         });
     }
-    
-    /**
-     * Update all loaded scenes. This will update all the entities in the scene.
-     * This method is called automatically by the game loop.
-     * Order of updating is based on the order of the scenes in the SceneManager or the order of scene Ids.
-     * @param {number} dt - Delta time.
-     * @method
-     */
-    static Update(deltaTime){
-        SceneManager.#loadedScenes.forEach(scene => {
-            scene.Update(deltaTime);
-        });
-    }
-
-
-
-
 }

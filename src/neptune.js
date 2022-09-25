@@ -10,7 +10,9 @@ import { Shape } from "./components/renderable/shape.js";
 import { Polygon } from "./components/renderable/polygon.js";
 import { Sprite } from "./components/renderable/sprite.js";
 import { Sound } from "./components/audio.js";
-import { Script } from "./components/script.js";
+
+import { Script, Global,Behaviour } from "./components/scripts/script.js";
+import { ScriptManager } from "./components/scripts/scriptManager.js";
 
 import { UITransform } from './components/ui/transform.js';
 import { Container } from './components/ui/containers/container.js';
@@ -34,7 +36,8 @@ import { Maths } from "./maths/math.js";
 
 export {
     Color, Entity, Scene, Sound, DestroyQueue, SceneManager,
-    Component, Transform,Script,
+    Component, Transform,
+    Script, Global, Behaviour,
     Shape, Sprite, Polygon,
     UITransform, Container, MarginContainer, VBoxContainer, HBoxContainer, GridContainer, Text, UISprite,
     CollisionShape, PhysicsEngine, BoxBody, CircleBody, PolygonBody,
@@ -195,6 +198,7 @@ export class Application {
         Input.Init(this.#canvas);
         PhysicsEngine.Init();
         SceneManager.Init();
+        ScriptManager.BehaviourInit();
     }
 
 
@@ -216,7 +220,7 @@ export class Application {
      * 
      */
     Update(timeStamp) {
-        SceneManager.Update(timeStamp);
+        ScriptManager.BehaviourUpdate(timeStamp);
     }
 
 
