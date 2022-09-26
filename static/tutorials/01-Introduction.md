@@ -8,7 +8,7 @@ After this Introduction, you can decide if Neptune is what you are looking for.
 
 This article will help you to understand what Neptune.js is and what it can do for you. What are the features of Neptune.js and how can you use them.
 
-This will be a exhaustive overview of the features of Neptune.js. It will be explained how to use them and how they work.
+This is not a exhaustive overview of the features of Neptune.js. It will be explained how to use them and how they work.
 
 ## What is Neptune.js?
 
