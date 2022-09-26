@@ -1,5 +1,5 @@
 {
-  "name": "@neptune-js/neptune",
+  "name": "@sujalchoudhari/neptune-js",
   "version": "3.1.1",
   "description": "A JavaScript Based Game Development Framework",
   "main": "src/neptune.js",

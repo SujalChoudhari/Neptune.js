@@ -14,7 +14,7 @@ There is some template code that you can use to get started with Neptune.js. You
 You can install Neptune.js using npm. You can use the following command to install Neptune.js.
 
 ```bash
-npm install @neptune-js/neptune
+npm i @sujalchoudhari/neptune-js
 ```
 
 Or Use the available ZIP file from the [GitHub Repository](https://github.com/SujalChoudhari/Neptune.js).
