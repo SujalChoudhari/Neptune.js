@@ -24,6 +24,7 @@ import{Component} from './component.js';
 export class Sound extends Component {
     #audio;
     constructor(name,src,volume=1,loop=false) {
+        super();
         this._properties.name = name;
         this._properties.src = src;
         this._properties.volume = volume;

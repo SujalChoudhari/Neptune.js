@@ -20,6 +20,7 @@
 	"opts": {
 		"template": "node_modules/clean-jsdoc-theme",
 		"destination": "./docs/",
+		"tutorials": "./static/tutorials",
 		"recurse": true,
 		"verbose": true,
 		"readme": "README.md",
@@ -29,6 +30,7 @@
 			"title": "Neptune.js",
 			"homepageTitle": "Neptune.js",
 			"footer": "MIT License | Copyright (c) 2022 Sujal Choudhari",
+			"static_dir": ["./static"],
 			"menu": [
 				{
 					"title": "Github",
@@ -55,7 +57,8 @@
 					"content":"2D,javascript,game,engine,framework,neptune.js,neptunejs,easy,modular,lightweight,complete,open source"
 				}
 			],
-			"exclude_inherited": false
+			"exclude_inherited": false,
+			"sections":["Tutorials","Interfaces","Classes"]
 		}
 	},
 	"markdown": {

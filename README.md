@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/NotSujal/Neptune.js/main/static/images/logo_big.png" />
-</p>
+<h1 align="center"> Neptune.js </h1>
 
 <p align="center">
 GitHub Stats: <br>
@@ -61,6 +59,7 @@ Neptune almost has all the necessary modules for a 2d game.
 ## Entity Component based System (v3.0+)
 Now the Engine uses a entity component based system.
 This makes the engine more advance, as major engines use this system.
+Due to more advance Systems, the learning curve is moderate.
 
 ## Minimalist design
 Neptune is a small framework. 
