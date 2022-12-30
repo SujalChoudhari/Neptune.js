@@ -1,7 +1,7 @@
 import { Renderable } from "./renderable.js";
 import { Color } from "../../basic/color.js";
 import { Transform } from "../transform.js";
-import { Maths } from "../../neptune.js";
+import { Maths } from "../../maths/math.js";
 /**
  * Shape Component is responsible for rendering a shape to the screen.
  * Basic Shapes such as circles, rectangles, etc. can be rendered using this component.

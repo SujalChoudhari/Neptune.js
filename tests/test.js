@@ -1,17 +1,42 @@
-import * as npt from "../src/neptune.js"; 
-
+import *  as npt from "../src/neptune.js"
+import { Color, Entity } from "../src/basic/basic__.js";
+import { Sound,Shape } from "../src/components/components__.js";
+import { BoxBody, CircleBody } from "../src/physics/physics__.js";
+import { Vector2 } from "../src/maths/maths__.js";
 
 class MyNewGame extends npt.Application {
     constructor() {
         super();
 
-        this.audio = new npt.Entity("Audio");
-        this.audio.addComponent(new npt.Sound("piece", "https://sampleswap.org/mp3/artist/36239/LEE423_Violent-Vortex-160.mp3"));
+        this.audio = new Entity("Audio");
+        this.audio.addComponent(new Sound("piece", "https://sampleswap.org/mp3/artist/36239/LEE423_Violent-Vortex-160.mp3"));
+
+        this.box = new Entity("Box");
+        this.box.addComponent(new BoxBody(new Vector2(10,10),10,10,3,0.1,false));
+        this.box.addComponent(new Shape(Shape.RECTANGLE,Color.aliceblue,true,{width:10,height:10}));
+
+        this.circle = new Entity("Circle");
+        this.circle.addComponent(new CircleBody(new Vector2(5,30),5,5,0.1,false));
+        this.circle.addComponent(new Shape(Shape.CIRCLE,Color.aqua,true,{radius:5,outline:Color.black,thickness:1}));
+
+        this.ground = new Entity("Ground");
+        this.ground.addComponent(new BoxBody(new Vector2(10,60),40,10,3,0.1,true));
+        this.ground.addComponent(new Shape(Shape.RECTANGLE,Color.yellow,true,{width:40,height:10}));
 
     }
 
-    Init(){
-        this.audio.getComponent(npt.Sound).play()
+    Init() {
+        this.audio.getComponent(Sound).play()
+    }
+
+    Update(timeStamp){
+        
+    }
+
+    Draw(ctx){
+        this.box.getComponent(Shape).draw(ctx);
+        this.circle.getComponent(Shape).draw(ctx);
+        this.ground.getComponent(Shape).draw(ctx);
     }
 
 }

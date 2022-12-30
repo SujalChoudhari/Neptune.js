@@ -1,49 +1,10 @@
 import { Color } from "./basic/color.js";
-import { Entity } from './basic/entity.js';
-import { Scene } from './basic/scene.js';
 import { DestroyQueue } from "./basic/destroyQueue.js";
 import { SceneManager } from "./basic/sceneManager.js";
-
-import { Component } from './components/component.js';
-import { Transform } from "./components/transform.js";
-import { Shape } from "./components/renderable/shape.js";
-import { Polygon } from "./components/renderable/polygon.js";
-import { Sprite } from "./components/renderable/sprite.js";
-import { Sound } from "./components/audio.js";
-
-import { Script, Global,Behaviour } from "./components/scripts/script.js";
 import { ScriptManager } from "./components/scripts/scriptManager.js";
-
-import { UITransform } from './components/ui/transform.js';
-import { Container } from './components/ui/containers/container.js';
-import { MarginContainer } from "./components/ui/containers/margin.js";
-import { VBoxContainer } from "./components/ui/containers/vbox.js";
-import { HBoxContainer } from "./components/ui/containers/hbox.js";
-import { GridContainer } from "./components/ui/containers/grid.js";
-import { Text } from "./components/ui/text.js";
-import { UISprite } from "./components/ui/sprite.js";
-
-import { BoxBody } from "./physics/bodies/boxBody.js";
-import { CircleBody } from "./physics/bodies/circleBody.js";
-import { PolygonBody } from "./physics/bodies/polygonBody.js";
-import { CollisionShape } from "./physics/collisionShape.js";
 import { PhysicsEngine } from "./physics/physicsEngine.js";
-
 import { Input } from './events/input.js'
-
-import { Vector2 } from "./maths/vec2.js";
 import { Maths } from "./maths/math.js";
-
-export {
-    Color, Entity, Scene, Sound, DestroyQueue, SceneManager,
-    Component, Transform,
-    Script, Global, Behaviour,
-    Shape, Sprite, Polygon,
-    UITransform, Container, MarginContainer, VBoxContainer, HBoxContainer, GridContainer, Text, UISprite,
-    CollisionShape, PhysicsEngine, BoxBody, CircleBody, PolygonBody,
-    Input,
-    Vector2, Maths
-}
 
 /**
  * @class Application
