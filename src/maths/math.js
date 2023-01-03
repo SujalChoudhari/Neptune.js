@@ -57,7 +57,7 @@ export class Maths {
      * @readonly
      * 
      */
-    static get VERY_SMALL_NUMBER() { return 0.0001; }
+    static get VERY_SMALL_NUMBER() { return 0.01; }
 
     /**
      * Very large number.

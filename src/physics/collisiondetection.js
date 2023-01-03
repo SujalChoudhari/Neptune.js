@@ -20,6 +20,7 @@ export class CollisionDetection {
      *  contact2: second contact point
      */
     static findContactPoints(bodyA, bodyB) {
+        
         if (bodyA._properties.shapeType == CollisionShape.CIRCLE && bodyB._properties.shapeType == CollisionShape.CIRCLE) {
 
             let point = CollisionDetection.#findContactPoint(bodyA._properties.position, bodyA._properties.radius, bodyB._properties.position)
@@ -28,7 +29,7 @@ export class CollisionDetection {
         }
         else if (bodyA._properties.shapeType == CollisionShape.POLYGON && bodyB._properties.shapeType == CollisionShape.POLYGON) {
             let data = CollisionDetection.#findContactPointsPolygonPolygon(bodyA.getTransformedVertices(), bodyB.getTransformedVertices());
-            
+            if(data.count == 2) debugger;
             return { count: data.count, contact1: data.contact1, contact2: data.contact2 };
         }
         else if (bodyA._properties.shapeType == CollisionShape.CIRCLE && bodyB._properties.shapeType == CollisionShape.POLYGON) {
@@ -55,14 +56,16 @@ export class CollisionDetection {
     }
 
     static #findContactPointPolygonCircle(center, radius, polygonCenter, vertices) {
-
-        let minSquaredDist = Math.MAX_SAFE_INTEGER;
+        
+        let minSquaredDist = Maths.VERY_LARGE_NUMBER;
         let contactPoint;
         for (let i = 0; i < vertices.length; i++) {
             let va = vertices[i];
             let vb = vertices[(i + 1) % vertices.length]
 
             let out = CollisionDetection.#pointSegmentDistance(center, va, vb);
+
+            
             if (out.distanceSq < minSquaredDist) {
                 minSquaredDist = out.distanceSq;
                 contactPoint = out.contact;
@@ -75,18 +78,17 @@ export class CollisionDetection {
 
     static #findContactPointsPolygonPolygon(verticesA, verticesB) {
         let count = 0; let contact1; let contact2;
-
+        // debugger;
         let minSquaredDist = Maths.VERY_LARGE_NUMBER;
 
         for (let i = 0; i < verticesA.length; i++) {
             let p = verticesA[i];
 
             for (let j = 0; j < verticesB.length; j++) {
-                let va = verticesB[j];
+                let va = verticesA[j];
                 let vb = verticesB[(j + 1) % verticesB.length];
 
                 let out = CollisionDetection.#pointSegmentDistance(p, va, vb);
-
                 if (Maths.nearlyEqual(out.distanceSq, minSquaredDist)) {
                     if (!Maths.nearlyEqual(out.distanceSq, minSquaredDist)) {
                         count = 2;

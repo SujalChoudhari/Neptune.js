@@ -1,4 +1,5 @@
 import { Transform } from "../../components/transform.js";
+import { Maths } from "../../maths/math.js";
 import { Vector2 } from "../../maths/vec2.js";
 import { CollisionShape } from '../collisionShape.js';
 import { PhysicsEngine } from '../physicsEngine.js';
@@ -206,7 +207,7 @@ export class Body extends Transform {
         this._properties.force = new Vector2(0, 0);
         this._properties.torque = 0;
         this._properties.linearVelocity.multiply(1 - (this._properties.airResistance / iterations));
-
+        this._properties.angularVelocity *= (1 - (this._properties.airResistance / iterations));
 
         this._aabbUpdateRequired = true;
         this._transformUpdateRequired = true;
@@ -237,6 +238,7 @@ export class Body extends Transform {
      */
     addTorqueImpulse(torque) {
         this._properties.angularVelocity += torque * this._properties.invInertia;
+        console.log(torque * this._properties.invInertia)
     }
 
     /**
@@ -338,7 +340,7 @@ export class Body extends Transform {
      * @method
      * @param {Vector2} position - The target point.
      */
-    moveAt(position){
+    moveAt(position) {
         this._properties.position = position;
         this._aabbUpdateRequired = true;
         this._transformUpdateRequired = true;
@@ -349,7 +351,7 @@ export class Body extends Transform {
      * @method
      * @param {number} rotation - The rotation angle.
      */
-    rotateAt(rotation){
+    rotateAt(rotation) {
         this._properties.rotation = rotation;
         this._aabbUpdateRequired = true;
         this._transformUpdateRequired = true;

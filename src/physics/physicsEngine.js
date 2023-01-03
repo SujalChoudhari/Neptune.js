@@ -13,14 +13,14 @@ import { Collision } from "./collision.js";
  * 
  */
 export class PhysicsEngine {
-    
+
     /**
      * Minimum area of the body required to be simulated. 
      * Bodies with area less than this will not be simulated/created. (in m^2)
      * @type {number}
      * @readonly
      */
-    static get MIN_BODY_SIZE() {return 1*1;} // area in m^2
+    static get MIN_BODY_SIZE() { return 1 * 1; } // area in m^2
 
     /**
      * Maximum area of the body required to be simulated.
@@ -28,7 +28,7 @@ export class PhysicsEngine {
      * @type {number}
      * @readonly
      */
-    static get MAX_BODY_SIZE() {return 100*100;} // area in m^2
+    static get MAX_BODY_SIZE() { return 100 * 100; } // area in m^2
 
     /**
      * Minimum density of the body required to be simulated.
@@ -36,7 +36,7 @@ export class PhysicsEngine {
      * @type {number}
      * @readonly
      */
-    static get MIN_DENSITY() {return 0.7;} // g/cm^3
+    static get MIN_DENSITY() { return 0.7; } // g/cm^3
 
     /**
      * Maximum density of the body required to be simulated.
@@ -44,21 +44,21 @@ export class PhysicsEngine {
      * @type {number}
      * @readonly
      */
-    static get MAX_DENSITY() {return 22;} // g/cm^3
+    static get MAX_DENSITY() { return 22; } // g/cm^3
 
     /**
      * Minimum iterations of the physics engine in each frame.
      * @type {number}
      * @readonly
      */
-    static get MIN_ITERATIONS() {return 1;} 
+    static get MIN_ITERATIONS() { return 1; }
 
     /**
      * Maximum iterations of the physics engine in each frame.
      * @type {number}
      * @readonly
      */
-    static get MAX_ITERATIONS() {return 64;}
+    static get MAX_ITERATIONS() { return 64; }
 
 
     /**
@@ -170,7 +170,7 @@ export class PhysicsEngine {
             PhysicsEngine.#narrowPhase();
         }
     }
-    
+
     static #stepBodies(time) {
         // Movement
         for (let i = 0; i < PhysicsEngine.bodies.length; i++) {
@@ -214,24 +214,93 @@ export class PhysicsEngine {
     static #narrowPhase() {
         // Collision Resolution
         for (let i = 0; i < PhysicsEngine.collisionManifold.length; i++) {
-            PhysicsEngine.#resolveCollision(PhysicsEngine.collisionManifold[i]);
+            PhysicsEngine.#resolveCollisionWithRotation(PhysicsEngine.collisionManifold[i]);
         }
     }
 
 
-    static #resolveCollision(collision) {
+    static #resolveCollisionBasic(collision) {
 
         let bodyA = collision.bodyA;
         let bodyB = collision.bodyB;
         let collisionNormal = collision.normal;
 
-        let relativeVelocity = bodyB._properties.linearVelocity.copy().subtract(bodyA._properties.linearVelocity.copy());
-        let e = Math.min(bodyA._properties.restitution, bodyB._properties.restitution);
+        let relativeVelocity = bodyB.linearVelocity.copy().subtract(bodyA.linearVelocity.copy());
+        if (Maths.dot(relativeVelocity, collisionNormal) > 0) return;
+
+        let e = Math.min(bodyA.restitution, bodyB.restitution); // Restitution
         let j = -(1 + e) * Maths.dot(relativeVelocity, collisionNormal);
-        j /= bodyA._properties.invMass + bodyB._properties.invMass + Maths.dot(collisionNormal, collisionNormal.copy().multiply(bodyA._properties.invInertia + bodyB._properties.invInertia));
+        j /= bodyA.invMass + bodyB.invMass
 
         let impulse = collisionNormal.copy().multiply(j);
         bodyA.addImpulse(impulse.copy().negetive());
         bodyB.addImpulse(impulse);
+    }
+
+    static #resolveCollisionWithRotation(collision) {
+        let bodyA = collision.bodyA;
+        let bodyB = collision.bodyB;
+        let normal = collision.normal;
+        let contactPoint1 = collision.contactPoint1;
+        let contactPoint2 = collision.contactPoint2;
+        let contactPointCount = collision.contactPointCount;
+
+        let contactList = [contactPoint1, contactPoint2];
+        let impulseList = [];
+        let raList = [];
+        let rbList = [];
+
+        let e = (bodyA.restitution + bodyB.restitution) / 2; // Restitution
+
+        for (let i = 0; i < contactPointCount; i++) {
+            let ra = contactList[i].copy().subtract(bodyA.position);
+            let rb = contactList[i].copy().subtract(bodyB.position);
+            raList[i] = ra;
+            rbList[i] = rb;
+
+            let raPerpendicular = new Vector2(-ra.y, ra.x);
+            let rbPerpendicular = new Vector2(-rb.y, rb.x);
+
+            let angularLinearVelocityA = raPerpendicular.copy().multiply(bodyA.angularVelocity);
+            let angularLinearVelocityB = rbPerpendicular.copy().multiply(bodyB.angularVelocity);
+
+            let bLinearAngular = bodyB.linearVelocity.copy().add(angularLinearVelocityB)
+            let aLinearAngular = bodyA.linearVelocity.copy().add(angularLinearVelocityA)
+            let relativeVelocity = bLinearAngular.subtract(aLinearAngular);
+
+
+            let contactVelocityMagnitude = Maths.dot(relativeVelocity, normal);
+
+            if (Maths.dot(relativeVelocity, normal) > 0) continue;
+
+            let raPerpendicularDotNormal = Maths.dot(raPerpendicular, normal);
+            let rbPerpendicularDotNormal = Maths.dot(rbPerpendicular, normal);
+
+            let j = -(1 + e) * contactVelocityMagnitude;
+            j /= bodyA.invMass + bodyB.invMass +
+                (raPerpendicularDotNormal * raPerpendicularDotNormal) * bodyA.invInertia +
+                (rbPerpendicularDotNormal * rbPerpendicularDotNormal) * bodyB.invInertia;
+
+            j /= contactPointCount;
+
+            let impulse = normal.copy().multiply(j);
+            impulseList[i] = impulse;
+        }
+
+        for (let j = 0; j < contactPointCount; j++) {
+
+            let impulse = impulseList[j];
+            if (impulse == undefined) continue;
+
+
+            let ra = raList[j];
+            let rb = rbList[j];
+            bodyA.addTorqueImpulse(-Maths.cross(ra, impulse));
+            bodyB.addTorqueImpulse(Maths.cross(rb, impulse));
+
+            bodyA.addImpulse(impulse.copy().negetive());
+            bodyB.addImpulse(impulse);
+
+        }
     }
 }
