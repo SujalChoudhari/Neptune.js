@@ -20,15 +20,15 @@ class MyNewGame extends npt.Application {
         this.circle.addComponent(new Shape(Shape.CIRCLE,Color.aqua,true,{radius:5,outline:Color.black,thickness:1}));
 
         this.ground = new Entity("Ground");
-        this.ground.addComponent(new BoxBody(new Vector2(10,60),80,10,3,0.1,true));
-        this.ground.addComponent(new Shape(Shape.RECTANGLE,Color.yellow,true,{width:80,height:10}));
+        this.ground.addComponent(new BoxBody(new Vector2(10,60),130,10,3,0.1,true));
+        this.ground.addComponent(new Shape(Shape.RECTANGLE,Color.yellow,true,{width:130,height:10}));
 
     }
 
     Init() {
         // this.audio.getComponent(Sound).volume = 0.1;
         // this.audio.getComponent(Sound).play()
-        this.ground.getComponent(BoxBody).rotate(1);
+        // this.ground.getComponent(BoxBody).rotate(1);
     }
 
     Update(timeStamp){

@@ -201,7 +201,7 @@ export class Body extends Transform {
         this._properties.linearVelocity.add(PhysicsEngine.gravity.copy());
         this._properties.position.add(this._properties.linearVelocity.copy().multiply(time));
 
-        this._properties.angularVelocity += this._properties.torque * this._properties.invInertia * time;
+        this._properties.angularVelocity += this._properties.torque * this._properties.invInertia;
         this._properties.rotation += this._properties.angularVelocity * time;
 
         this._properties.force = new Vector2(0, 0);
@@ -237,8 +237,7 @@ export class Body extends Transform {
      * @param {number} torque - The torque impulse to add.
      */
     addTorqueImpulse(torque) {
-        this._properties.angularVelocity += torque * this._properties.invInertia;
-        console.log(torque * this._properties.invInertia)
+        this._properties.torque += torque;
     }
 
     /**

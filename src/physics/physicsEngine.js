@@ -65,7 +65,7 @@ export class PhysicsEngine {
      * Current Iterations of the physics engine in each frame.
      * @type {number}
      */
-    static iterations = 30;
+    static iterations = 2;
 
     /**
      * The gravity vector of the physics engine. in m/s^2
@@ -204,7 +204,6 @@ export class PhysicsEngine {
                     let collisionManifold = new Collision(bodyA, bodyB,
                         out.normal, out.depth,
                         data.count, data.contact1, data.contact2);
-
                     PhysicsEngine.collisionManifold.push(collisionManifold);
                 }
             }
@@ -277,9 +276,8 @@ export class PhysicsEngine {
             let rbPerpendicularDotNormal = Maths.dot(rbPerpendicular, normal);
 
             let j = -(1 + e) * contactVelocityMagnitude;
-            j /= bodyA.invMass + bodyB.invMass +
-                (raPerpendicularDotNormal * raPerpendicularDotNormal) * bodyA.invInertia +
-                (rbPerpendicularDotNormal * rbPerpendicularDotNormal) * bodyB.invInertia;
+            j /= bodyA.invMass + bodyB.invMass +((raPerpendicularDotNormal * raPerpendicularDotNormal) * bodyA.invInertia +
+            (rbPerpendicularDotNormal * rbPerpendicularDotNormal) * bodyB.invInertia)
 
             j /= contactPointCount;
 
@@ -295,6 +293,7 @@ export class PhysicsEngine {
 
             let ra = raList[j];
             let rb = rbList[j];
+            
             bodyA.addTorqueImpulse(-Maths.cross(ra, impulse));
             bodyB.addTorqueImpulse(Maths.cross(rb, impulse));
 
