@@ -61,14 +61,14 @@ export class Polygon extends Renderable {
         this._properties.color = color;
     }
 
+    get fill() {
+        return this._properties.fill;
+    }
+    
     /**
      * Fill the polygon with the specified color. If false, the polygon will be drawn as an outline.
      * @param {boolean} fill - Whether the polygon is filled or not.
      */
-    get fill() {
-        return this._properties.fill;
-    }
-
     set fill(fill) {
         this._properties.fill = fill;
     }
