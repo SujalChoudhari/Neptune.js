@@ -1,2 +1,5 @@
 # folders
 node_modules
+docs
+build
+tests

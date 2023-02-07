@@ -4,11 +4,12 @@ import { Sound,Shape,Line,Transform} from "../src/components/components__.js";
 import { BoxBody, CircleBody } from "../src/physics/physics__.js";
 import { Vector2 } from "../src/maths/maths__.js";
 
+import { createEmptyEntity } from "../helper.js";
+
 class MyNewGame extends Application {
     constructor() {
         super();
-        this.entity = new Entity("entity");
-        this.entity.addComponent(new Transform(new Vector2(2,2),0));
+        this.entity = createEmptyEntity("One");
         this.line = new Line(new Vector2(2,2),Color.white);
         this.entity.addComponent(this.line);
 
