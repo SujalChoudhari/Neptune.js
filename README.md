@@ -32,12 +32,10 @@ Issues: <br>
 
 
 <p align="center">
-Neptune is still under development,
-Soon after testing the modules, 
-it will be released as a stable version.
-Thanks for your patience.
-<a href="https://GitHub.com/Notsujal/neptune.js"> Follow along the development </a> or check out the <a href="
-https://neptune-js.vercel.app/"> documentation </a>
+Neptune is far from complete but it can be used as an Interface between a Backend and GUI.
+Various features are being added, every now and then so,
+<a href="https://GitHub.com/Notsujal/neptune.js"> Follow along the development </a> or check out the 
+<a href="https://neptune-js.vercel.app/"> documentation </a>
 Note: Quickstart Guide and Examples are not uptodate with the latest version.
 </p>
 
