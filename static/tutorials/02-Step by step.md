@@ -209,8 +209,6 @@ A renderable component houses the data required to render the Entity.
 The Input System is responsible for handling the input events.
 It can be used to get the input from the keyboard, mouse, touch, etc.
 
-- **Physics System**
-The Physics System is responsible for handling the physics of the game.
 
 - **SceneManager System**
 The SceneManager System is responsible for managing the Scenes.

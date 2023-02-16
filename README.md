@@ -164,21 +164,6 @@ It can play audio files.
 </details>
 
 <details>
-<summary> Physics </summary>
-<p>
-Neptune has a built in physics system.
-It can handle basic physics like gravity, collision, etc.
-</p>
-<ul>
-  <li> Collision Detection </li>
-  <li> Collision Resolution </li>
-  <li> Collision Response (Only Linear) </li>
-  <li> Physics World </li>
-  <li> Physics Bodies </li>
-</details>
-
-
-<details>
 <summary> Color </summary>
 <p>
 Neptune has a built in color system.

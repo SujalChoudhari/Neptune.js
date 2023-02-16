@@ -1,8 +1,8 @@
 import { Color } from "../../basic/color.js";
 import { Renderable } from "./renderable.js";
 import { Vector2 } from "../../maths/vec2.js";
-import {Transform} from "../transform.js";
-import {Maths} from "../../maths/math.js";
+import { Transform } from "../transform.js";
+import { Maths } from "../../maths/math.js";
 
 
 /**
@@ -31,9 +31,9 @@ import {Maths} from "../../maths/math.js";
  * 
  * 
  */
-export class Line extends Renderable  {
-    
-    constructor(lineToPoint,color = Color.fuchsia ,thickness=2) {
+export class Line extends Renderable {
+
+    constructor(lineToPoint, color = Color.fuchsia, thickness = 2) {
         super();
         this._properties.end = lineToPoint;
         this._properties.color = color;
@@ -45,13 +45,13 @@ export class Line extends Renderable  {
      * @type {Vector2}
      */
     get lineToPoint() { return this._properties.end; }
-    
+
     /**
      * Get the color to use for the line
      * @type {Color}
      */
     get color() { return this._properties.color; }
-    
+
     /**
      * Get the thickness of the line in (pixels)
      * @type {Number}
@@ -64,19 +64,19 @@ export class Line extends Renderable  {
      * @param {number} value Value in Meters
      */
     set lineToPoint(value) { this._properties.end = value; }
-    
+
     /**
      * Set the color of the line
      */
     set color(value) { this._properties.color = value; }
-    
+
     /**
      * Set the thickness of the line in (pixels)
      */
     set thickness(value) { this._properties.thickness = value; }
 
 
-    draw(ctx){
+    draw(ctx) {
         let transform = this.entity.getComponent(Transform);
         let position = Maths.meterToPixelVector2(transform.position);
         let endPosition = Maths.meterToPixelVector2(this.lineToPoint);
@@ -95,8 +95,8 @@ export class Line extends Renderable  {
 
 
         ctx.beginPath();
-        ctx.moveTo(position.x,position.y);
-        ctx.lineTo(position.x +endPosition.x, position.y +endPosition.y);
+        ctx.moveTo(position.x, position.y);
+        ctx.lineTo(position.x + endPosition.x, position.y + endPosition.y);
         ctx.stroke();
         ctx.closePath();
 
@@ -106,5 +106,5 @@ export class Line extends Renderable  {
         }
         ctx.restore();
     }
-    
+
 };

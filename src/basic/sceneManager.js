@@ -69,7 +69,8 @@ export class SceneManager{
 
     static Init(){
         if(SceneManager.#scenes.length == 0){
-            throw new Error("No scenes added to SceneManager");
+            console.error("No scenes added to SceneManager");
+            return;
         }
 
         if(SceneManager.#currentSceneIndex == -1){

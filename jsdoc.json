@@ -8,8 +8,7 @@
 			"src/basic",
 			"src/components",
 			"src/events",
-			"src/maths",
-			"src/physics"
+			"src/maths"
 		]
 	},
 	"sourceType": "module",

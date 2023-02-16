@@ -2,9 +2,9 @@ import { Color } from "./basic/color.js";
 import { DestroyQueue } from "./basic/destroyQueue.js";
 import { SceneManager } from "./basic/sceneManager.js";
 import { ScriptManager } from "./components/scripts/scriptManager.js";
-import { PhysicsEngine } from "./physics/physicsEngine.js";
 import { Input } from './events/input.js'
 import { Maths } from "./maths/math.js";
+
 
 /**
  * @class Application
@@ -57,7 +57,6 @@ export class Application {
 
         this.#canvas.style.display = "none";
         this.#ctx = this.#canvas.getContext("2d");
-
         this.#playBtn.onclick = () => {
             this.#Gameloop(0);
             try {
@@ -157,9 +156,9 @@ export class Application {
         this.#canvas.focus();
 
         Input.Init(this.#canvas);
-        PhysicsEngine.Init();
         SceneManager.Init();
         ScriptManager.BehaviourInit();
+
     }
 
 
@@ -202,7 +201,6 @@ export class Application {
         this.#ctx.fillRect(0, 0, this._width, this._height);
 
         this.Update(this._deltaTime);
-        PhysicsEngine.Step(this._deltaTime); //in seconds
         this.Draw(this.#ctx);
         Input.Clear();
         DestroyQueue.Destroy();

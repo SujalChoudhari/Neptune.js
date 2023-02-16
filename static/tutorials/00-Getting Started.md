@@ -17,7 +17,7 @@ You can install Neptune.js using npm. You can use the following command to insta
 npm i @sujalchoudhari/neptune-js
 ```
 
-Or Use the available ZIP file from the [GitHub Repository](https://github.com/SujalChoudhari/Neptune.js).
+Or Use the available ZIP files in the releases section from the [GitHub Repository](https://github.com/SujalChoudhari/Neptune.js).
 
 
 ### HTML File
@@ -53,7 +53,7 @@ The template code is as follows:
 
 ```js
 
-import * as npt from "../src/neptune.js"; // import neptune.js
+import * as npt from "@sujalchoudhari/neptune-js"; // import neptune.js
 
 // Create a new game
 class MyNewGame extends npt.Application {
