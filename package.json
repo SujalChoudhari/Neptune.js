@@ -1,6 +1,6 @@
 {
   "name": "@sujalchoudhari/neptune-js",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "description": "A JavaScript Based Game Development Framework",
   "main": "src/index.js",
   "scripts": {
@@ -12,9 +12,13 @@
     "url": "git+https://github.com/NotSujal/Neptune.js.git"
   },
   "keywords": [
-    "events","inputs",
-    "graphic","html5 canvas",
-    "2d", "engine","neptunejs"
+    "events",
+    "inputs",
+    "graphic",
+    "html5 canvas",
+    "2d",
+    "engine",
+    "neptunejs"
   ],
   "author": "Sujal Choudhari",
   "license": "MIT",
