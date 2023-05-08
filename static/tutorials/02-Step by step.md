@@ -13,7 +13,7 @@ This behaviour is similar to the DOM in HTML. Thus allows to create hierarchies 
 ### Creating an Entity
 
 ```js
-import * as npt from "../src/neptune.js";
+import * as npt from "../Neptune.js-main/src/index.js";
 
 class MyNewGame extends npt.Application {
     constructor() {
@@ -49,8 +49,7 @@ The scnenes are managed by a SceneManager. The SceneManager is a singleton class
 
 ```js
 
-import * as npt from "../src/neptune.js"; 
-
+import * as npt from "../Neptune.js-main/src/index.js";
 
 class MyNewGame extends npt.Application {
     constructor() {
@@ -79,8 +78,7 @@ new MyNewGame();
 ### Adding An Entity to a Scene
 
 ```js
-import * as npt from "../src/neptune.js"; 
-
+import * as npt from "../Neptune.js-main/src/index.js";
 
 class MyNewGame extends npt.Application {
     constructor() {
@@ -123,8 +121,7 @@ All the components will be explained in detail in later tutorials.
 ### Creating a Component
 
 ```js   
-import * as npt from "../src/neptune.js"; 
-
+import * as npt from "../Neptune.js-main/src/index.js";
 
 class MyNewGame extends npt.Application {
     constructor() {
@@ -162,8 +159,7 @@ The Application is the main class of Neptune. It is the entry point of the game.
 Application holds the responsibility of Starting the Game, Updating the various Systems, Rendering the Scene, Managing the Game Loop, etc.
 
 ```js
-import * as npt from "../src/neptune.js"; 
-
+import * as npt from "../Neptune.js-main/src/index.js";
 
 class MyNewGame extends npt.Application {
     constructor() {
