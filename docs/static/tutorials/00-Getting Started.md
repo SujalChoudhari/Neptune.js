@@ -11,13 +11,8 @@ There is some template code that you can use to get started with Neptune.js. You
 
 ### Installation
 
-You can install Neptune.js using npm. You can use the following command to install Neptune.js.
-
-```bash
-npm i @sujalchoudhari/neptune-js
-```
-
-Or Use the available ZIP files in the releases section from the [GitHub Repository](https://github.com/SujalChoudhari/Neptune.js).
+You can install Neptune.js using npm.
+Use the available ZIP files in the releases section from the [GitHub Repository](https://github.com/SujalChoudhari/Neptune.js).
 
 
 ### HTML File
@@ -31,7 +26,7 @@ The template code is as follows:
 <head>
     <title>My New Game</title>
 </head>
-<body>
+<body style="margin:0;" >
 
     <!-- Play Button -->
     <button id="neptune-play">Play</button>
@@ -53,7 +48,7 @@ The template code is as follows:
 
 ```js
 
-import * as npt from "@sujalchoudhari/neptune-js"; // import neptune.js
+import * as npt from "../Neptune.js-main/src/index.js"; // Import Neptune.js aka the index file.
 
 // Create a new game
 class MyNewGame extends npt.Application {
