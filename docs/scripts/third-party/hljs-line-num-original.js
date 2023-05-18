@@ -255,7 +255,7 @@
 
     function getSingleLineOption (options) {
         var defaultValue = false;
-        if (!!options.singleLine) {
+        if (options.singleLine) {
             return options.singleLine;
         }
         return defaultValue;
