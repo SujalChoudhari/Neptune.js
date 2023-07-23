@@ -229,6 +229,7 @@ export class Entity {
             }
         });
         return components;
+
     }
 
     /**

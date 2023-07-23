@@ -43,17 +43,24 @@ export class Application {
     #canvas;
     #ctx;
     #currentTimeStamp;
+    #width;
+    #height;
+    #clearColor;
+    #fps;
     constructor() {
+        this.#pageSetup();
 
-        this._width = window.innerWidth;
-        this._height = window.innerHeight;
-        this._fps = 60;
-        this._clearColor = Color.fromHex(0x334455);
+        this.#width = window.innerWidth;
+        this.#height = window.innerHeight;
+        this.#fps = 60;
+        this.#clearColor = Color.fromHex(0x334455);
 
         this.#playBtn = document.getElementById("neptune-play");
         this.#canvas = document.getElementById("neptune-canvas");
         this.#canvas.setAttribute("height", window.innerHeight);
         this.#canvas.setAttribute("width", window.innerWidth);
+
+        
 
         this.#canvas.style.display = "none";
         this.#ctx = this.#canvas.getContext("2d");
@@ -86,7 +93,7 @@ export class Application {
      * @type {number}
      */
     get width() {
-        return this._width;
+        return this.#width;
     }
 
 
@@ -97,11 +104,11 @@ export class Application {
      * @type {number}
      */
     get height() {
-        return this._height;
+        return this.#height;
     }
 
     get fps() {
-        return this._fps;
+        return this.#fps;
     }
 
     /**
@@ -110,7 +117,7 @@ export class Application {
      * @type {number}
      */
     set fps(value) {
-        this._fps = value;
+        this.#fps = value;
     }
 
     /**
@@ -119,12 +126,12 @@ export class Application {
      * @type {Color}
      */
     get clearColor() {
-        return this._clearColor;
+        return this.#clearColor;
     }
 
 
     set clearColor(value) {
-        this._clearColor = value;
+        this.#clearColor = value;
     }
 
     /**
@@ -148,10 +155,10 @@ export class Application {
 
         window.onresize = () => {
             console.log("Resized");
-            this._width = window.innerWidth;
-            this._height = window.innerHeight;
-            this.#canvas.width = this._width;
-            this.#canvas.height = this._height;
+            this.#width = window.innerWidth;
+            this.#height = window.innerHeight;
+            this.#canvas.width = this.#width;
+            this.#canvas.height = this.#height;
         }
         this.#canvas.focus();
 
@@ -192,13 +199,13 @@ export class Application {
      * 
      */
     #Gameloop(timeStamp) {
-        this._deltaTime = (timeStamp - this.#currentTimeStamp) * this._fps / 1000;  //in seconds
+        this._deltaTime = (timeStamp - this.#currentTimeStamp) * this.#fps / 1000;  //in seconds
         this._deltaTime = Maths.clamp(this._deltaTime, 0, 1);
         this.#currentTimeStamp = timeStamp;
 
-        this.#ctx.clearRect(0, 0, this._width, this.#ctx.height);
-        this.#ctx.fillStyle = this._clearColor.toString() || Color.darkgray;
-        this.#ctx.fillRect(0, 0, this._width, this._height);
+        this.#ctx.clearRect(0, 0, this.#width, this.#ctx.height);
+        this.#ctx.fillStyle = this.#clearColor.toString() || Color.darkgray;
+        this.#ctx.fillRect(0, 0, this.#width, this.#height);
 
         this.Update(this._deltaTime);
         this.Draw(this.#ctx);
@@ -207,5 +214,54 @@ export class Application {
 
         requestAnimationFrame(this.#Gameloop.bind(this));
     }
+
+   /**
+ * @description Sets up the default CSS for the game and adds necessary elements to the page.
+ * @method
+ * @private
+ */
+#pageSetup() {
+    const playBtn = document.createElement("button");
+    playBtn.setAttribute("type", "button");
+    playBtn.setAttribute("id", "neptune-play");
+    playBtn.textContent = "Play Game";
+    document.body.appendChild(playBtn);
+
+    const canvas = document.createElement("canvas");
+    canvas.setAttribute("id", "neptune-canvas");
+    document.body.appendChild(canvas);
+
+
+    let style = document.createElement("style");
+    style.innerHTML = `
+    body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+    #neptune-play {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: #334455;
+        color: white;
+        border: none;
+        padding: 20px;
+        font-size: 20px;
+        cursor: pointer;
+        display: none;
+    }
+
+    #neptune-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: -1;
+    }
+    `;
+    document.head.appendChild(style);
+}
+
 }
 

@@ -9,8 +9,8 @@ import { Maths } from "../../maths/math.js"
  * @extends Renderable
  * 
  * @property {string} path="" - The path to the image.
- * @property {number} width=10 - The width of the sprite.
- * @property {number} height=10 - The height of the sprite.
+ * @property {number} scaleX=1 - The width of the sprite.
+ * @property {number} scaleY=1 - The height of the sprite.
  * 
  * @example
  * // Create a sprite component
@@ -21,11 +21,11 @@ import { Maths } from "../../maths/math.js"
  */
 export class Sprite extends Renderable {
     #image;
-    constructor(path="", width=10, height=10) {
+    constructor(path="", scaleX=1, scaleY=1) {
         super();
         this._properties.path = path;
-        this._properties.width = width;
-        this._properties.height = height;
+        this._properties.width = scaleX;
+        this._properties.height = scaleY;
         this.#image = new Image();
         this.#image.src = path;
 

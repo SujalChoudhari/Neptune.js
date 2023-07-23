@@ -22,6 +22,8 @@ import {Input} from './events/input.js'
 import {Maths} from "./maths/math.js";
 import { Vector2 } from "./maths/vec2.js";
 
+let application = new Application();
+
 export { 
     Application,
     
@@ -34,5 +36,6 @@ export {
     Input,
 
     Maths,Vector2,
-    
+
+    application
 }

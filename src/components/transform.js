@@ -23,13 +23,12 @@ import {Vector2} from "../maths/vec2.js";
  * 
  */
 export class Transform extends Component {
-    constructor(pos = Vector2.zero(),rot = 0, scale = Vector2.one(),radius = 0){
+    constructor(pos = Vector2.zero(),rot = 0, scale = Vector2.one()){
         super();
         this._properties = {
             position : pos,
             rotation : rot,
-            scale : scale,
-            radius : radius,
+            scale : scale
         }
     }
 
@@ -74,18 +73,6 @@ export class Transform extends Component {
         this._properties.scale = scale;
     }
 
-    /**
-     * Radius of the entity.
-     * If the entity doesn't require a radius, set it to 0.
-     * @type {number}
-     */
-    get radius(){
-        return this._properties.radius;
-    }
-
-    set radius(radius){
-        this._properties.radius = radius;
-    }
 
 
     getPosition(){
@@ -112,13 +99,6 @@ export class Transform extends Component {
         this._properties.scale = scale;
     }
 
-    getRadius(){
-        return this._properties.radius;
-    }
-
-    setRadius(radius){
-        this._properties.radius = radius;
-    }
 
     getForward(){
         return new Vector2(Math.cos(this._properties.rotation),Math.sin(this._properties.rotation));

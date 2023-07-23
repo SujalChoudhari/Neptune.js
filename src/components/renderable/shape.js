@@ -170,7 +170,7 @@ export class Shape extends Renderable {
         let transform = this.entity.getComponent(Transform);
         let position = Maths.meterToPixelVector2(transform.getPosition());
         let rotation = transform.getRotation();
-        let radius = transform.getRadius();
+        let radius = this._properties.param.radius;
         let scale = Maths.meterToPixelVector2(transform.getScale());
         let param = this._properties.param;
         let fill = this._properties.fill;
