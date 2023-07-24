@@ -21,22 +21,18 @@ The template code is as follows:
 
 ```html
 <!-- index.html -->
-<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>My New Game</title>
+    <title>Demo Game</title>
 </head>
-<body style="margin:0;" >
-
-    <!-- Play Button -->
-    <button id="neptune-play">Play</button>
-
-    <!-- Canvas used for rendering -->
-    <canvas tabindex="1" id="neptune-canvas"></canvas>
-
-    <!-- Game Javascript file -->
-    <script type="module" src="myNewGame.js"></script>
-
+<body>
+    <div id="neptune-gamepage">
+        <!-- Elements here will be removed once game starts -->
+    </div>
+    <div id="neptune-loading">
+        <!-- Elements here will be removes once the game is ready to play -->
+    </div>
+    <script type="module" src="./index.js"></script>
 </body>
 </html>
 
@@ -48,25 +44,10 @@ The template code is as follows:
 
 ```js
 
-import * as npt from "../Neptune.js-main/src/index.js"; // Import Neptune.js aka the index file.
+import * as npt from "../src/index.js"; // Import Neptune.js aka the index file.
 
-// Create a new game
-class MyNewGame extends npt.Application {
-    constructor() {
-        super();
+// And thats it! You are ready to start creating your game.
 
-        // Creations of Entities/ Scenes
-
-    }
-
-    Init(){
-
-        // Initialization of Entities/ Scenes
-
-    }
-}
-
-new MyNewGame(); // Start the game
 ```
 
 Thats it! Now you are ready to start creating your own game.

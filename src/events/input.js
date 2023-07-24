@@ -13,7 +13,6 @@ export class Input {
     static #pos = Vector2.zero();
     static #pressedButton;
     static #isClicked;
-    static #isDoubleClicked;
     static #isMouseDown;
     static #touches = [];
     static #keyPressed = [];
