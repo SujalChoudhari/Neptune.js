@@ -19,7 +19,7 @@ import { Component } from "../component.js";
  */
 export class UISprite extends Renderable {
     #image;
-    constructor(path){
+    constructor(path) {
         super();
         this._properties.path = path;
         this.#image = new Image();
@@ -31,15 +31,15 @@ export class UISprite extends Renderable {
      * Note: While hosting the game on a server, this might give errors thus use path with hhtps:// or http://
      * @type {string}
      */
-    get path(){
+    get path() {
         return this._properties.path;
     }
 
-    set path(path){
+    set path(path) {
         this._properties.path = path;
         this.#image.src = path;
     }
-    
+
 
     getPath() {
         return this._properties.path;
@@ -49,7 +49,7 @@ export class UISprite extends Renderable {
         this._properties.path = path;
     }
 
-
+    /** @private */
     draw(ctx) {
         let image = this.#image;
         let path = this._properties.path;
@@ -62,12 +62,12 @@ export class UISprite extends Renderable {
         ctx.save();
         ctx.translate(x, y);
         ctx.drawImage(image, 0, 0, width, height);
-        
+
         let children = this.entity.getComponentsInChildren(Renderable);
         for (let i = 0; i < children.length; i++) {
             children[i].draw(ctx);
         }
-        
+
         ctx.restore();
 
     }

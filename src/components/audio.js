@@ -35,7 +35,7 @@ export class Sound extends Component {
         this.#audio.volume = this.volume;
         this.#audio.loop = this.loop;
         this.#audio.addEventListener('ended', () => {
-            this.playing = false;
+            this._properties.playing = false;
         });
     }
 
@@ -115,7 +115,7 @@ export class Sound extends Component {
      * @method
      * 
      */
-    play() {
+    Play() {
         this.#audio.play();
         this._properties.playing = true;
     }
@@ -125,7 +125,7 @@ export class Sound extends Component {
      * @method
      * 
      */
-    stop() {
+    Stop() {
         this.#audio.pause();
         this.#audio.currentTime = 0;
         this._properties.playing = false;
@@ -135,23 +135,8 @@ export class Sound extends Component {
      * Pause a playing sound. If the sound is not playing, this will do nothing.
      * @method
      */
-    pause() {
+    Pause() {
         this.#audio.pause();
         this._properties.playing = false;
-    }
-
-    setVolume(volume) {
-        this.volume = volume;
-        this.#audio.volume = volume;
-    }
-
-    setLoop(loop) {
-        this.loop = loop;
-        this.#audio.loop = loop;
-    }
-
-
-    isPlaying() {
-        return this.playing;
     }
 }

@@ -14,7 +14,7 @@ import { UITransform } from "../transform.js";
  * @property {number} right=0 - The right margin.
  */
 export class MarginContainer extends Container {
-    constructor(left,right,top,bottom){
+    constructor(left, right, top, bottom) {
         super();
         this._properties.left = left;
         this._properties.right = right;
@@ -22,16 +22,16 @@ export class MarginContainer extends Container {
         this._properties.bottom = bottom;
 
     }
-    
+
     /**
      * The left margin.
      * @type {number}
      */
-    get left(){
+    get left() {
         return this._properties.left;
     }
 
-    set left(left){
+    set left(left) {
         this._properties.left = left;
     }
 
@@ -39,11 +39,11 @@ export class MarginContainer extends Container {
      * The right margin.
      * @type {number}
      */
-    get right(){
+    get right() {
         return this._properties.right;
     }
 
-    set right(right){
+    set right(right) {
         this._properties.right = right;
     }
 
@@ -51,11 +51,11 @@ export class MarginContainer extends Container {
      * The bottom margin.
      * @type {number}
      */
-    get top(){
+    get top() {
         return this._properties.top;
     }
 
-    set top(top){
+    set top(top) {
         this._properties.top = top;
     }
 
@@ -63,48 +63,49 @@ export class MarginContainer extends Container {
      * The bottom margin.
      * @type {number}
      */
-    get bottom(){
+    get bottom() {
         return this._properties.bottom;
     }
 
-    set bottom(bottom){
+    set bottom(bottom) {
         this._properties.bottom = bottom;
     }
 
 
-    getLeft(){
+    getLeft() {
         return this._properties.left;
     }
 
-    setLeft(left){
+    setLeft(left) {
         this._properties.left = left;
     }
 
-    getRight(){
+    getRight() {
         return this._properties.right;
     }
 
-    setRight(right){
+    setRight(right) {
         this._properties.right = right;
     }
 
-    getTop(){
+    getTop() {
         return this._properties.top;
     }
 
-    setTop(top){
+    setTop(top) {
         this._properties.top = top;
     }
 
-    getBottom(){
+    getBottom() {
         return this._properties.bottom;
     }
 
-    setBottom(bottom){
+    setBottom(bottom) {
         this._properties.bottom = bottom;
     }
 
-    update(){
+    /**@private */
+    update() {
         let x = this.entity.getComponent(UITransform).getX();
         let y = this.entity.getComponent(UITransform).getY();
         let width = this.entity.getComponent(UITransform).getWidth();
@@ -118,7 +119,7 @@ export class MarginContainer extends Container {
         let children = this.entity.getChildren();
         let childWidth = width / children.length;
 
-        for(let i = 0; i < children.length; i++){
+        for (let i = 0; i < children.length; i++) {
             let child = children[i];
             child.getComponent(UITransform).setX(x + i * (childWidth + left + right));
             child.getComponent(UITransform).setY(y + top);

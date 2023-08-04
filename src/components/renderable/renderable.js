@@ -15,12 +15,7 @@ export class Renderable extends Component {
         super();
     }
 
-    /**
-     * This method draws the renderable to the screen.
-     * It first draws itself first and then its children.
-     * This is a callback method that is called by the renderer. Do not call this method directly.
-     * @method
-     */
+    /** @private */
     draw(ctx) {
 
     }

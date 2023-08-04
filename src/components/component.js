@@ -18,10 +18,10 @@ export class Component{
      * Destroys the component. This will remove the component from the entity it is attached to.
      * This is a callback method that is called when the entity is destroyed. Do not call this method directly.
      * @method
-     * @protected
+     * @private
      * @returns {void}
      */
-    Destroy(){
+    destroy(){
         this._properties = null;
         this.entity = null;
 

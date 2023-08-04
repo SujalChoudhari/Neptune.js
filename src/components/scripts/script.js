@@ -8,8 +8,8 @@ import { ScriptManager } from "./scriptManager.js";
  * 
  * 
  */
-export class Script extends Component{
-    constructor(name="New Script"){
+export class Script extends Component {
+    constructor(name = "New Script") {
         super();
         this.name = name;
         ScriptManager.AddScript(this);
@@ -44,14 +44,14 @@ export class Script extends Component{
  * entity.AddComponent(behaviour);
  * 
  */
-export class Behaviour extends Script{
-    constructor(name="New Behaviour"){
+export class Behaviour extends Script {
+    constructor(name = "New Behaviour") {
         super(name);
     }
 
-    Init(){}
+    Init() { }
 
-    Update(deltaTime){}
+    Update(deltaTime) { }
 }
 
 /**
@@ -73,5 +73,4 @@ export class Behaviour extends Script{
  * // Access the global variable
  * console.log(window.MyGlobal.myVariable);
  */
-export class Global extends Script{
-}
+export class Global extends Script { }

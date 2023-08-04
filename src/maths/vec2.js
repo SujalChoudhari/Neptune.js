@@ -19,11 +19,11 @@ export class Vector2 {
 	 * @returns {Vector2} - The new vector.
 	 * @method
 	 */
-	add(vector) {
+	Add(vector) {
 		if (vector instanceof Vector2) {
 			this.x += vector.x;
 			this.y += vector.y;
-		}else {
+		} else {
 			this.x += vector;
 			this.y += vector;
 		}
@@ -37,11 +37,11 @@ export class Vector2 {
 	 * @returns {Vector2} - The new vector.
 	 * @method
 	 */
-	subtract(vector) {
+	Subtract(vector) {
 		if (vector instanceof Vector2) {
 			this.x -= vector.x;
 			this.y -= vector.y;
-		}else {
+		} else {
 			this.x -= vector;
 			this.y -= vector;
 		}
@@ -54,11 +54,11 @@ export class Vector2 {
 	 * @param {Vector2} vector - The vector to multiply. It can be a Vector2 or a number.
 	 * @returns {Vector2} - The new vector.
 	 */
-	multiply(vector) {
+	Multiply(vector) {
 		if (vector instanceof Vector2) {
 			this.x *= vector.x;
 			this.y *= vector.y;
-		}else {
+		} else {
 			this.x *= vector;
 			this.y *= vector;
 		}
@@ -72,11 +72,11 @@ export class Vector2 {
 	 * @returns {Vector2} - The new vector.
 	 * @method
 	 */
-	divide(vector) {
+	Divide(vector) {
 		if (vector instanceof Vector2) {
 			this.x /= vector.x;
 			this.y /= vector.y;
-		}else {
+		} else {
 			this.x /= vector;
 			this.y /= vector;
 		}
@@ -90,7 +90,7 @@ export class Vector2 {
 	 * 
 	 * @returns {Vector2} - The new vector.
 	 */
-	negetive(){
+	Negetive() {
 		if (this.x != 0) this.x = -this.x;
 		if (this.y != 0) this.y = -this.y;
 		return this;
@@ -100,7 +100,7 @@ export class Vector2 {
 	 * Returns a new vector with elements as Zero.
 	 * @returns {Vector2} - The new vector.
 	 */
-	static zero() {
+	static Zero() {
 		return new Vector2(0, 0);
 	}
 
@@ -108,7 +108,7 @@ export class Vector2 {
 	 * Returns a new vector with elements as One.
 	 * @returns {Vector2} - The new vector.
 	 */
-	static one() {
+	static One() {
 		return new Vector2(1, 1);
 	}
 
@@ -117,27 +117,16 @@ export class Vector2 {
 	 * Creates a new copy of the vector. Useful for when you want to keep the original vector especially when using the Vector2 mathamatical functions.
 	 * @returns {Vector2} - The new vector.
 	 */
-	copy() {
+	Copy() {
 		return new Vector2(this.x, this.y);
 	}
 
-	/**
-	 * Transforms the Vector based on the given PhysicsTransform.
-	 * This rotates the vector based on the rotation of the transform.
-	 * @param {Vector2} vector - The vector to transform.
-	 * @param {PhysicsTransform} transform - The transform to use.
-	 * @returns {Vector2} - The new vector.
-	 */
-	static transform(vector, transform) {
-		return new Vector2(vector.x * transform.cos - vector.y * transform.sin + transform.positionX,
-			vector.x * transform.sin + vector.y * transform.cos + transform.positionY);
-	}
 
 	/**
 	 * Returns the magnitude of the vector.
 	 * @returns {number} - The magnitude of the vector.
 	 */
-	magnitude() {
+	Magnitude() {
 		return Math.sqrt(this.x * this.x + this.y * this.y);
 	}
 
@@ -145,7 +134,7 @@ export class Vector2 {
 	 * Checks if the values of the Vector are Safe Numbers.
 	 * @returns {boolean} - True if the values are safe numbers.
 	 */
-	static isSafe(vector) {
+	static IsSafe(vector) {
 		return vector.x != null && vector.y != null && vector.x != undefined && vector.y != undefined && !isNaN(vector.x) && !isNaN(vector.y);
 	}
 
@@ -155,8 +144,8 @@ export class Vector2 {
 	 * This returns a new vector, as well as changing the original vector.
 	 * @returns {Vector2} - The new vector.
 	 */
-	normalize() {
-		let magnitude = this.magnitude();
+	Normalize() {
+		let magnitude = this.Magnitude();
 		if (magnitude != 0) {
 			this.x /= magnitude;
 			this.y /= magnitude;

@@ -165,13 +165,14 @@ export class Shape extends Renderable {
         this._properties.color = color;
     }
 
+    /** @private */
     draw(ctx) {
         super.draw(ctx);
-        let transform = this.entity.getComponent(Transform);
-        let position = Maths.meterToPixelVector2(transform.getPosition());
+        let transform = this.entity.GetComponent(Transform);
+        let position = Maths.MeterToPixelVector2(transform.getPosition());
         let rotation = transform.getRotation();
         let radius = this._properties.param.radius;
-        let scale = Maths.meterToPixelVector2(transform.getScale());
+        let scale = Maths.MeterToPixelVector2(transform.getScale());
         let param = this._properties.param;
         let fill = this._properties.fill;
         let color = this._properties.color;
@@ -223,7 +224,7 @@ export class Shape extends Renderable {
             ctx.stroke();
         }
 
-        let children = this.entity.getComponentsInChildren(Renderable);
+        let children = this.entity.GetComponentsInChildren(Renderable);
         for (let i = 0; i < children.length; i++) {
             children[i].draw(ctx);
         }

@@ -21,7 +21,7 @@ import { Maths } from "../../maths/math.js"
  */
 export class Sprite extends Renderable {
     #image;
-    constructor(path="", scaleX=1, scaleY=1) {
+    constructor(path = "", scaleX = 1, scaleY = 1) {
         super();
         this._properties.path = path;
         this._properties.width = scaleX;
@@ -36,11 +36,11 @@ export class Sprite extends Renderable {
      * @type {string}
      * 
      */
-    get path(){
+    get path() {
         return this._properties.path;
     }
 
-    set path(path){
+    set path(path) {
         this._properties.path = path;
         this.#image.src = path;
     }
@@ -48,22 +48,22 @@ export class Sprite extends Renderable {
     /**
      * Width of the sprite in meters.
      */
-    get width(){
+    get width() {
         return this._properties.width;
     }
 
-    set width(width){
+    set width(width) {
         this._properties.width = width;
     }
 
     /**
      * Height of the sprite in meters.
      */
-    get height(){
+    get height() {
         return this._properties.height;
     }
 
-    set height(height){
+    set height(height) {
         this._properties.height = height;
     }
 
@@ -92,7 +92,7 @@ export class Sprite extends Renderable {
         this._properties.height = height;
     }
 
-
+    /** @private */
     draw(ctx) {
         super.draw(ctx);
         let image = this.#image;
@@ -124,5 +124,5 @@ export class Sprite extends Renderable {
     }
 
 
-        
+
 }

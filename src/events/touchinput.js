@@ -4,35 +4,36 @@ export class TouchInput {
     static #canvas;
     static #touches = [];
 
-    static Init(canvas) {
+    /**@private */
+    static init(canvas) {
         TouchInput.#canvas = canvas;
         TouchInput.#touches = [];
 
-        TouchInput.#canvas.addEventListener("touchstart", TouchInput.#TouchStart);
-        TouchInput.#canvas.addEventListener("touchend", TouchInput.#TouchEnd);
-        TouchInput.#canvas.addEventListener("touchmove", TouchInput.#TouchMove);
+        TouchInput.#canvas.addEventListener("touchstart", TouchInput.#touchStart, { passive: true });
+        TouchInput.#canvas.addEventListener("touchend", TouchInput.#touchEnd, { passive: true });
+        TouchInput.#canvas.addEventListener("touchmove", TouchInput.#touchMove, { passive: true });
     }
-
-    static #TouchStart(event) {
+    /**@private */
+    static #touchStart(event) {
         TouchInput.#touches = event.touches;
         // Handle special keys here if needed
     }
-
-    static #TouchEnd(event) {
+    /**@private */
+    static #touchEnd(event) {
         TouchInput.#touches = event.touches;
         // Handle special keys here if needed
     }
-
-    static #TouchMove(event) {
+    /**@private */
+    static #touchMove(event) {
         TouchInput.#touches = event.touches;
         // Handle special keys here if needed
     }
-
-    static getTouchCount() {
+    /**@private */
+    static GetTouchCount() {
         return TouchInput.#touches.length;
     }
 
-    static getTouch(index) {
+    static GetTouch(index) {
         if (index >= 0 && index < TouchInput.#touches.length) {
             const touch = TouchInput.#touches[index];
             return new Vector2(touch.pageX - TouchInput.#canvas.offsetLeft, touch.pageY - TouchInput.#canvas.offsetTop);
@@ -40,11 +41,12 @@ export class TouchInput {
         return null;
     }
 
-    static isTouchActive(index) {
+    static IsTouchActive(index) {
         return index >= 0 && index < TouchInput.#touches.length;
     }
 
-    static Clear() {
+    /**@private */
+    static clear() {
         TouchInput.#touches = [];
     }
 }

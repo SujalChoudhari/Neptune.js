@@ -32,6 +32,7 @@ export class VBoxContainer extends Container {
         this._properties.spacing = spacing;
     }
 
+    /**@private */
     update(){
         let x = this.entity.getComponent(UITransform).getX();
         let y = this.entity.getComponent(UITransform).getY();

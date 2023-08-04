@@ -3,15 +3,25 @@ export class KeyboardInput {
     static #keyPressed = [];
     static #specialKeyPressed;
 
-    static Init(canvas) {
+    static IsKeyDown(keyCode) {
+        if (KeyboardInput.#keyPressed[keyCode] === undefined) return false;
+        return KeyboardInput.#keyPressed[keyCode];
+    }
+
+    static GetSpecialKeyPressed() {
+        return KeyboardInput.#specialKeyPressed;
+    }
+
+    /**@private */
+    static init(canvas) {
         KeyboardInput.#canvas = canvas;
         KeyboardInput.#keyPressed = [];
         KeyboardInput.#specialKeyPressed = null;
 
-        KeyboardInput.#canvas.addEventListener("keydown", KeyboardInput.#KeyDown);
-        KeyboardInput.#canvas.addEventListener("keyup", KeyboardInput.#KeyUp);
+        KeyboardInput.#canvas.addEventListener("keydown", KeyboardInput.#keyDown);
+        KeyboardInput.#canvas.addEventListener("keyup", KeyboardInput.#keyUp);
     }
-
+    /**@private */
     static #checkSpecialKey(event) {
         if (event.shiftKey) KeyboardInput.#specialKeyPressed = KeyboardInput.keyCode.SHIFT;
         else if (event.ctrlKey) KeyboardInput.#specialKeyPressed = KeyboardInput.keyCode.CTRL;
@@ -19,29 +29,22 @@ export class KeyboardInput {
         else if (event.metaKey) KeyboardInput.#specialKeyPressed = KeyboardInput.keyCode.META;
         else KeyboardInput.#specialKeyPressed = null;
     }
-
-    static #KeyDown(event) {
+    /**@private */
+    static #keyDown(event) {
         if (!KeyboardInput.#keyPressed[event.keyCode]) {
             KeyboardInput.#checkSpecialKey(event);
             KeyboardInput.#keyPressed[event.keyCode] = true;
         }
     }
 
-    static #KeyUp(event) {
+    /**@private */
+    static #keyUp(event) {
         KeyboardInput.#checkSpecialKey(event);
         KeyboardInput.#keyPressed[event.keyCode] = false;
     }
 
-    static isKeyDown(keyCode) {
-        if (KeyboardInput.#keyPressed[keyCode] === undefined) return false;
-        return KeyboardInput.#keyPressed[keyCode];
-    }
-
-    static getSpecialKeyPressed() {
-        return KeyboardInput.#specialKeyPressed;
-    }
-
-    static Clear() {
+    /**@private */
+    static clear() {
         KeyboardInput.#specialKeyPressed = null;
     }
 }

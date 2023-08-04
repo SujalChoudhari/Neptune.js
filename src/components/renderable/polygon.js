@@ -108,7 +108,7 @@ export class Polygon extends Renderable {
     }
 
 
-
+    /** @private */
     draw(ctx) {
         super.draw(ctx);
         let transform = this.entity.getComponent(Transform);

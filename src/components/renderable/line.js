@@ -75,7 +75,7 @@ export class Line extends Renderable {
      */
     set thickness(value) { this._properties.thickness = value; }
 
-
+    /** @private */
     draw(ctx) {
         let transform = this.entity.getComponent(Transform);
         let position = Maths.meterToPixelVector2(transform.position);

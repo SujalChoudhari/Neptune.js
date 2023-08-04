@@ -1,7 +1,7 @@
 
 import { Vector2 } from "../../maths/vec2.js";
 import { Component } from "../component.js";
-import { Input } from "../../events/input.js"
+import { MouseInput } from "../../events/mouseinput.js";
 
 /**
  * UI Transform Component is responsible for the position, rotation and width and height of a UI element.
@@ -164,7 +164,7 @@ export class UITransform extends Component {
      * Align the UI element to the parent as per the specified mode.
      * If the UI element has no parent, it will align to the window.
      * 
-     * @param {string} mode="center" - The mode of alignment.
+     * @param {string} mode - The mode of alignment.
      * | Mode | Description |
      * | --- | --- |
      * | "top" | Align the UI element to the top of the parent. |
@@ -179,7 +179,7 @@ export class UITransform extends Component {
      * transform.align("top");
      * 
      */
-    align(mode = "center") {
+    Align(mode = "center") {
         let parent = this.entity.parent;
         if (parent != undefined) {
             var parentTransform = parent.getComponent(UITransform);
@@ -239,7 +239,7 @@ export class UITransform extends Component {
      * this.entity.getComponent(UITransform).fill();
      * 
      */
-    fill(mode = "both", padX = 0, padY = 0) {
+    Fill(mode = "both", padX = 0, padY = 0) {
         let parent = this.entity.parent;
         if (parent != undefined) {
             var parentTransform = parent.getComponent(UITransform);
@@ -273,28 +273,35 @@ export class UITransform extends Component {
         }
     }
 
+
     #isPointInside(point) {
         return point.x >= this._properties.x && point.x <= this._properties.x + this._properties.width && point.y >= this._properties.y && point.y <= this._properties.y + this._properties.height;
     }
 
     /**
-     * Check if the UI element is being hovered over.
-     * @returns {boolean} - True if the UI element is being hovered over.
+     * Check if the UI element is clicked.
+     * @returns {boolean} True if the UI element is clicked.
      */
-    isHovered() {
-        return this.#isPointInside(Input.getPosition());
+    IsClicked() {
+        if (MouseInput.IsLeftClicked()) {
+            return this.#isPointInside(MouseInput.getPosition());
+        }
     }
 
     /**
-     * Check if the UI element is being clicked.
-     * @returns {boolean} - True if the UI element is being clicked.
+     * Check if the UI element is hovered.
+     * @returns {boolean} True if the UI element is hovered.
      */
-    isClicked() {
-        return this.isHovered() && Input.isLeftClicked();
+    IsHovered() {
+        return this.#isPointInside(MouseInput.getPosition());
     }
 
-    
-    rotate(rot) {
+
+    /**
+     * Rotate the UI element by the specified amount.
+     * @param {number} rot - The amount to rotate the UI element by.
+     */
+    Rotate(rot) {
         this._properties.rot += rot;
     }
 }

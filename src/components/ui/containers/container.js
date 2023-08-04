@@ -11,10 +11,6 @@ import { Component } from "../../component.js";
  */
 export class Container extends Component {
 
-    /**
-     * Update all the children's UITransform components.
-     * Every time there is a change in the children,or sizes of the container, this method should be called.
-     * @method
-     */
+    /**@private */
     update() { }
 }

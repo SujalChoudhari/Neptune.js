@@ -108,7 +108,7 @@ export class Transform extends Component {
      * Translates the entity by the given vector.
      * @param {Vector2} translation The vector by which the entity is translated.
      */
-    translate(translation){
+    Translate(translation){
         this._properties.position.add(translation);
     }
 
@@ -116,7 +116,7 @@ export class Transform extends Component {
      * Rotates the entity by the given angle.
      * @param {number} angle The angle by which the entity is rotated.
      */
-    rotate(rotation){
+    Rotate(rotation){
         this._properties.rotation += rotation;
     }
 
@@ -124,7 +124,7 @@ export class Transform extends Component {
      * Scales the entity by the given vector.
      * @param {Vector2} scale The vector by which the entity is scaled.
      */
-    scale(scale){
+    Scale(scale){
         this._properties.scale.x *= scale.x;
         this._properties.scale.y *= scale.y;
     }

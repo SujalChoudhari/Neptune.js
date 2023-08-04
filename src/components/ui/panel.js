@@ -43,6 +43,7 @@ export class Panel extends Renderable {
         this._properties.color = color;
     }
 
+    /** @private */
     draw(ctx) {
         let transform = this.entity.getComponent(UITransform);
         let x = transform.getX();

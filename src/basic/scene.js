@@ -17,15 +17,9 @@ export class Scene extends Entity{
         SceneManager.addScene(this);
     }
 
-
-    /**
-     * Draw the scene. This will draw all the entities in the scene.
-     * This function is called by the SceneManager.
-     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw on.
-     * 
-     */
-    Draw(ctx){
-        this.getComponentsInChildren(Renderable).forEach(renderable => {
+    /** @private */
+    draw(ctx){
+        this.GetComponentsInChildren(Renderable).forEach(renderable => {
             renderable.draw(ctx);
         });
     }

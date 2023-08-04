@@ -72,7 +72,7 @@ export class Maths {
      * @param {Vector2} vector 
      * @returns {number}
      */
-    static lenght(vector) {
+    static Lenght(vector) {
         return Math.sqrt(vector.x * vector.x + vector.y * vector.y);
     }
 
@@ -82,7 +82,7 @@ export class Maths {
      * @param {Vector2} vector
      * @returns {number}
      */
-    static lenghtSq(vector) {
+    static LenghtSq(vector) {
         return vector.x * vector.x + vector.y * vector.y;
     }
 
@@ -93,8 +93,8 @@ export class Maths {
      * @returns {number}
      * 
      */
-    static distance(vector1, vector2) {
-        return Maths.lenght(vector2.copy().subtract(vector1));
+    static Distance(vector1, vector2) {
+        return Maths.Lenght(vector2.Copy().Subtract(vector1));
     }
 
     /**
@@ -104,8 +104,8 @@ export class Maths {
      * @param {Vector2} vector2
      * @returns {number}
      */
-    static distanceSq(vector1, vector2) {
-        return Maths.lenghtSq(vector2.copy().subtract(vector1));
+    static DistanceSq(vector1, vector2) {
+        return Maths.LenghtSq(vector2.Copy().Subtract(vector1));
     }
 
     /**
@@ -113,8 +113,8 @@ export class Maths {
      * @param {Vector2} vector
      * @returns {Vector2}
      */
-    static normalize(vector) {
-        let lenght = Maths.lenght(vector);
+    static Normalize(vector) {
+        let lenght = Maths.Lenght(vector);
         if (lenght != 0) return new Vector2(vector.x / lenght, vector.y / lenght);
         else return new Vector2(0, 0);
 
@@ -126,7 +126,7 @@ export class Maths {
      * @returns {Vector2}
      * 
      */
-    static perpendicular(vector) {
+    static Perpendicular(vector) {
         return new Vector2(-vector.y, vector.x);
     }
 
@@ -136,7 +136,7 @@ export class Maths {
      * @param {Vector2} vector2
      * @returns {number}
      */
-    static dot(vector1, vector2) {
+    static Dot(vector1, vector2) {
         return vector1.x * vector2.x + vector1.y * vector2.y;
     }
 
@@ -146,7 +146,7 @@ export class Maths {
      * @param {Vector2} vector2
      * @returns {number}
      */
-    static cross(vector1, vector2) {
+    static Cross(vector1, vector2) {
         return vector1.x * vector2.y - vector1.y * vector2.x;
     }
 
@@ -157,7 +157,7 @@ export class Maths {
      * @param {number} max
      * @returns {number}
      */
-    static clamp(value, min, max) {
+    static Clamp(value, min, max) {
         return Math.max(min, Math.min(value, max));
     }
 
@@ -168,7 +168,7 @@ export class Maths {
      * @returns {Vector2} - A random vector between min and max.
      * 
      */
-    static randomVector2(min, max) {
+    static RandomVector2(min, max) {
         return new Vector2(Math.random() * (max - min) + min, Math.random() * (max - min) + min);
     }
 
@@ -177,7 +177,7 @@ export class Maths {
      * @param {number} pixel
      * @returns {number}
      */
-    static pixelToMeter(pixel) { // 10 pixel = 1 meter
+    static PixelToMeter(pixel) { // 10 pixel = 1 meter
         return pixel * this.PIXEL_TO_METER;
     }
 
@@ -186,7 +186,7 @@ export class Maths {
      * @param {number} meter
      * @returns {number}
      */
-    static meterToPixel(meter) { // 1 meter = 10 pixel
+    static MeterToPixel(meter) { // 1 meter = 10 pixel
         return meter * this.METER_TO_PIXEL
     }
 
@@ -195,7 +195,7 @@ export class Maths {
      * @param {Vector2} pixel
      * @returns {Vector2}
      */
-    static pixelToMeterVector2(vector) {
+    static PixelToMeterVector2(vector) {
         return new Vector2(vector.x * Maths.PIXEL_TO_METER, vector.y * Maths.PIXEL_TO_METER);
     }
 
@@ -204,7 +204,7 @@ export class Maths {
      * @param {Vector2} meter
      * @returns {Vector2}
      */
-    static meterToPixelVector2(vector) {
+    static MeterToPixelVector2(vector) {
         return new Vector2(vector.x * Maths.METER_TO_PIXEL, vector.y * Maths.METER_TO_PIXEL);
     }
 
@@ -214,11 +214,11 @@ export class Maths {
      * @param {number} b - can be a number or a Vector2.
      * @returns {boolean}
      */
-    static nearlyEqual(a, b) {
+    static NearlyEqual(a, b) {
         if (typeof a == typeof b) {
             return Math.abs(a - b) < Maths.VERY_SMALL_NUMBER;
         } else if (a instanceof Vector2 && b instanceof Vector2) {
-            return Maths.nearlyEqual(a.x, b.x) && Maths.nearlyEqual(a.y, b.y);
+            return Maths.NearlyEqual(a.x, b.x) && Maths.NearlyEqual(a.y, b.y);
         } else {
             throw new Error("nearlyEqual: a and b must be number or vector2");
         }

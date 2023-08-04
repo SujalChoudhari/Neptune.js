@@ -3,7 +3,8 @@ import { Component } from "../components/component.js";
 
 /**
  * @class DestroyQueue
- * @classdesc A queue of entities to be destroyed. This is used to prevent entities from being destroyed while they are being iterated over.
+ * @classdesc A queue of entities to be destroyed. 
+ * This is used to prevent entities from being destroyed while they are being iterated over.
  * 
  */
 export class DestroyQueue{
@@ -15,7 +16,7 @@ export class DestroyQueue{
      * @param {Entity} object The entity to be destroyed. or the component of the entity to be destroyed.
      * @returns {void}
      */
-    static add(object){
+    static Add(object){
         if (object instanceof Entity) {
             DestroyQueue.#queue.push(object);
         }
@@ -24,15 +25,10 @@ export class DestroyQueue{
         }
     }
 
-    /**
-     * Destroys all entities in the destroy queue. This is called automatically by the engine.
-     * All the entities in the destroy queue will be destroyed at the end of the current frame.
-     * @returns {void}
-     * @method
-     */
-    static Destroy(){
+
+    static destroy(){
         DestroyQueue.#queue.forEach(entity => {
-            entity.Destroy();
+            entity.destroy();
         });
 
         DestroyQueue.#queue = [];

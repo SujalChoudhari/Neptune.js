@@ -14,4 +14,6 @@ jsdoc.json
 README.md
 SECURITY.md
 CHANGELOG.md
+package-lock.json
+pnpm-lock.yaml
 *.tgz

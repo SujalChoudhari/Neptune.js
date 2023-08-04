@@ -1,11 +1,26 @@
 import { Color } from "./basic/color.js";
+import { Entity } from './basic/entity.js';
+import { Scene } from './basic/scene.js';
 import { DestroyQueue } from "./basic/destroyQueue.js";
 import { SceneManager } from "./basic/sceneManager.js";
+
+import { Component } from './components/component.js';
+import { Transform } from "./components/transform.js";
+import { Shape } from "./components/renderable/shape.js";
+import { Line } from './components/renderable/line.js';
+import { Polygon } from "./components/renderable/polygon.js";
+import { Sprite } from "./components/renderable/sprite.js";
+import { Sound } from "./components/audio.js";
+
+import { Script, Global, Behaviour } from "./components/scripts/script.js";
 import { ScriptManager } from "./components/scripts/scriptManager.js";
+
 import { MouseInput } from "./events/mouseinput.js";
 import { KeyboardInput } from "./events/keyboardinput.js";
 import { TouchInput } from "./events/touchinput.js";
+
 import { Maths } from "./maths/math.js";
+import { Vector2 } from "./maths/vec2.js";
 
 
 /**
@@ -40,7 +55,7 @@ import { Maths } from "./maths/math.js";
  * 
  * @hideconstructor
  */
-export class Application {
+class Application {
     #playBtn;
     #canvas;
     #ctx;
@@ -55,7 +70,7 @@ export class Application {
         this.#width = window.innerWidth;
         this.#height = window.innerHeight;
         this.#fps = 60;
-        this.#clearColor = Color.fromHex(0x334455);
+        this.#clearColor = Color.FromHex(0x334455);
 
         this.#playBtn = document.getElementById("neptune-play");
         this.#canvas = document.getElementById("neptune-canvas");
@@ -67,14 +82,14 @@ export class Application {
         this.#canvas.style.display = "none";
         this.#ctx = this.#canvas.getContext("2d");
         this.#playBtn.onclick = () => {
-            this.#Gameloop(0);
+            this.#gameloop(0);
             try {
                 this.#playBtn.remove();
                 this.#canvas.style.display = "block";
                 document.getElementById("neptune-gamepage").remove();
             } catch (error) { }
             this.#canvas.setAttribute("tabindex", "1");
-            this.Init();
+            this.init();
         }
 
         document.body.appendChild(this.#playBtn);
@@ -151,7 +166,7 @@ export class Application {
      * @callback
      * @method
      */
-    Init() {
+    init() {
         this.#canvas.setAttribute("height", window.innerHeight);
         this.#canvas.setAttribute("width", window.innerWidth);
 
@@ -168,7 +183,7 @@ export class Application {
         KeyboardInput.Init(this.#canvas);
         TouchInput.Init(this.#canvas);
 
-        SceneManager.Init();
+        SceneManager.init();
         ScriptManager.BehaviourInit();
 
     }
@@ -180,8 +195,8 @@ export class Application {
      * @callback
      * @method
      */
-    Draw(ctx) {
-        SceneManager.Draw(ctx);
+    draw(ctx) {
+        SceneManager.draw(ctx);
     }
 
     /**
@@ -191,7 +206,7 @@ export class Application {
      * @method
      * 
      */
-    Update(timeStamp) {
+    update(timeStamp) {
         ScriptManager.BehaviourUpdate(timeStamp);
     }
 
@@ -203,7 +218,7 @@ export class Application {
      * @private
      * 
      */
-    #Gameloop(timeStamp) {
+    #gameloop(timeStamp) {
         this._deltaTime = (timeStamp - this.#currentTimeStamp) * this.#fps / 1000;  //in seconds
         this._deltaTime = Maths.clamp(this._deltaTime, 0, 1);
         this.#currentTimeStamp = timeStamp;
@@ -212,16 +227,16 @@ export class Application {
         this.#ctx.fillStyle = this.#clearColor.toString() || Color.darkgray;
         this.#ctx.fillRect(0, 0, this.#width, this.#height);
 
-        this.Update(this._deltaTime);
-        this.Draw(this.#ctx);
-        
+        this.update(this._deltaTime);
+        this.draw(this.#ctx);
+
         MouseInput.Clear();
         KeyboardInput.Clear();
         TouchInput.Clear();
 
-        DestroyQueue.Destroy();
+        DestroyQueue.destroy();
 
-        requestAnimationFrame(this.#Gameloop.bind(this));
+        requestAnimationFrame(this.#gameloop.bind(this));
     }
 
     /**
@@ -274,3 +289,18 @@ export class Application {
 
 }
 
+let application = new Application();
+
+export {
+    Application, application,
+
+    Color, Entity, Scene, DestroyQueue, SceneManager,
+
+    Component, Transform, Line, Shape, Script, Polygon, ScriptManager, Sprite, Sound,
+
+    Global, Behaviour,
+
+    MouseInput, KeyboardInput, TouchInput,
+
+    Maths, Vector2,
+}

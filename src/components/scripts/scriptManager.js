@@ -13,14 +13,15 @@ export class ScriptManager{
             window[script.constructor.name] = script;
         }
     }
-
-    static BehaviourInit(){
+    /** @private */
+    static behaviourInit(){
         this.#behaviours.forEach(behaviour => {
             behaviour.Init();
         });
     }
 
-    static BehaviourUpdate(deltaTime){
+    /** @private */
+    static behaviourUpdate(deltaTime){
         this.#behaviours.forEach(behaviour => {
             behaviour.Update(deltaTime);
         });

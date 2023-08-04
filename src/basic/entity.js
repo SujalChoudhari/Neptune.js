@@ -76,7 +76,7 @@ export class Entity {
      * let transform = entity.getComponent(Transform);
      * 
      */
-    getComponent(type) {
+    GetComponent(type) {
         return this._components.find(component => component instanceof type);
     }
 
@@ -89,17 +89,17 @@ export class Entity {
      * // Check if the entity has a transform component
      * let hasTransform = entity.hasComponent(Transform);
      */
-    hasComponent(type) {
+    HasComponent(type) {
         return this._components.some(component => component instanceof type);
     }
 
 
-    getChildren() {
+    GetChildren() {
         return this._children;
     }
 
 
-    getParent() {
+    GetParent() {
         return this._parent;
     }
 
@@ -112,7 +112,7 @@ export class Entity {
      * entity.removeComponent(Transform);
      * 
      */
-    removeComponent(type) {
+    RemoveComponent(type) {
         let index = this._components.findIndex(component => component instanceof type);
         if (index > -1) {
             this._components.splice(index, 1);
@@ -130,8 +130,8 @@ export class Entity {
      * entity.addComponent(new Transform());
      * 
      */
-    addComponent(component) {
-        if (!this.hasComponent(component.constructor)) {
+    AddComponent(component) {
+        if (!this.HasComponent(component.constructor)) {
             component.entity = this;
             this._components.push(component);
         } else console.warn("Component already attached");
@@ -152,7 +152,7 @@ export class Entity {
      * // Add the child entity to the parent entity
      * entity.addChild(child);
      */
-    addChild(child) {
+    AddChild(child) {
         if (this._children == null) {
             this._children = [];
         }
@@ -179,12 +179,14 @@ export class Entity {
      * // Remove the child entity from the parent entity
      * entity.removeChild(child);
      */
-    removeChild(child) {
-        let index = this._children.findIndex(c => c == child);
-        this._children[index].parent = null;
-        if (index > -1) {
-            this._children.splice(index, 1);
+    GetComponentsInChildren(type) {
+        const components = [];
+        for (const child of this._children) {
+            if (child.HasComponent(type)) {
+                components.push(child.GetComponent(type));
+            }
         }
+        return components;
     }
 
     /**
@@ -198,7 +200,7 @@ export class Entity {
      * let transform = entity.getComponentinChildren(Transform);
      * 
      */
-    getComponentinChildren(type) {
+    GetComponentinChildren(type) {
         let component = null;
         this._children.forEach(child => {
             if (child.hasComponent(type)) {
@@ -221,15 +223,14 @@ export class Entity {
      * let transforms = entity.getComponentsinChildren(Transform);
      * 
      */
-    getComponentsInChildren(type) {
-        let components = [];
-        this._children.forEach(child => {
-            if (child.hasComponent(type)) {
-                components.push(child.getComponent(type));
+    GetComponentsInChildren(type) {
+        const components = [];
+        for (const child of this._children) {
+            if (child.HasComponent(type)) {
+                components.push(child.GetComponent(type));
             }
-        });
+        }
         return components;
-
     }
 
     /**
@@ -244,7 +245,7 @@ export class Entity {
      * 
      * 
      */
-    getChildWithComponent(type) {
+    GetChildWithComponent(type) {
         return this._children.filter(child => child.hasComponent(type));
     }
 
@@ -260,14 +261,17 @@ export class Entity {
      * let children = entity.getChildrenWithComponent(Transform);
      * 
      */
-    getChildrenWithComponent(type) {
-        let children = [];
-        this._children.forEach(child => {
-            if (child.hasComponent(type)) {
-                children.push(child);
-            }
-        });
-        return children;
+    destroy() {
+        for (let i = this._components.length - 1; i >= 0; i--) {
+            this._components[i].destroy();
+        }
+
+        for (let i = this._children.length - 1; i >= 0; i--) {
+            this._children[i].destroy();
+        }
+
+        this._parent.RemoveChild(this);
+        this._children = [];
     }
 
 
@@ -284,9 +288,9 @@ export class Entity {
      * 
      * @example
      * // Generate a tree with the children of the entity
-     * let tree = entity.generateTree();
+     * let tree = entity.GetTree();
      */
-    getTree() {
+    GetTree() {
         let tree = {};
         tree.name = this.name;
         tree.children = [];
@@ -297,22 +301,15 @@ export class Entity {
     }
 
 
-    /**
-     * Destroy the entity,all its components and all its children.
-     * Strictly use DestroyQueue to destroy entities.
-     * This doesn't deletes the entity, it just removes it from the scene and allows it to be garbage collected.
-     * @method
-     */
-    Destroy() {
+    destroy() {
         this._components.forEach(component => {
-            component.Destroy();
+            component.destroy();
         });
 
         this._children.forEach(child => {
-            child.Destroy();
+            child.destroy();
         });
-        this._parent.removeChild(this);
-
+        this._parent.RemoveChild(this);
 
     }
 }

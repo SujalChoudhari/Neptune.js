@@ -117,6 +117,7 @@ export class Text extends Renderable {
         this._properties.align = align;
     }
 
+    /** @private */
     draw(ctx){
         let transform = this.entity.getComponent(UITransform);
         ctx.font = this.getFont();
