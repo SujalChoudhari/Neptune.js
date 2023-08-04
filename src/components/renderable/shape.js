@@ -181,6 +181,7 @@ export class Shape extends Renderable {
         ctx.translate(position.x, position.y);
         ctx.rotate(rotation);
         ctx.scale(scale.x, scale.y);
+        ctx.globalCompositeOperation = this.blendMode;
         ctx.fillStyle = color.toString();
         if (param.outline) ctx.strokeStyle = param.outline.toString();
         if (param.thickness) ctx.lineWidth = param.thickness;

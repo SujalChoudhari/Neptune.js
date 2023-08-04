@@ -11,9 +11,9 @@ import { SceneManager } from "./sceneManager.js";
  * @property {number} id - Id of the scene. This is used to load the scene.
  */
 export class Scene extends Entity{
-    constructor(name,id=0){
+    constructor(name){
         super(name);
-        this.id = id;
+        this.id = SceneManager.getIdForNewScene();
         SceneManager.addScene(this);
     }
 

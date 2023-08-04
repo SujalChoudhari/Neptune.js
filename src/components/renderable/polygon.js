@@ -123,6 +123,7 @@ export class Polygon extends Renderable {
         ctx.translate(position.x, position.y);
         ctx.rotate(rotation);
         ctx.scale(scale.x, scale.y);
+        ctx.globalCompositeOperation = this.blendMode;
         ctx.fillStyle = color.toString();
         if (this._properties.outline) ctx.strokeStyle = this._properties.outline.toString();
         if (this._properties.thickness) ctx.lineWidth = this._properties.thickness;

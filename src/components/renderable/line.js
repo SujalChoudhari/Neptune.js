@@ -77,6 +77,7 @@ export class Line extends Renderable {
 
     /** @private */
     draw(ctx) {
+        super.draw(ctx);
         let transform = this.entity.getComponent(Transform);
         let position = Maths.meterToPixelVector2(transform.position);
         let endPosition = Maths.meterToPixelVector2(this.lineToPoint);
@@ -85,11 +86,11 @@ export class Line extends Renderable {
         let color = this._properties.color;
 
         ctx.save();
+        ctx.globalCompositeOperation = this.blendMode;
         ctx.translate(position.x, position.y);
         ctx.rotate(rotation);
         ctx.scale(scale.x, scale.y);
         ctx.fillStyle = color.toString();
-
         ctx.strokeStyle = color.toString();
         ctx.lineWidth = this.thickness;
 
@@ -100,10 +101,11 @@ export class Line extends Renderable {
         ctx.stroke();
         ctx.closePath();
 
-        let children = this.entity.getComponentsInChildren(Renderable);
+        let children = this.entity.GetComponentsInChildren(Renderable);
         for (let i = 0; i < children.length; i++) {
             children[i].draw(ctx);
         }
+
         ctx.restore();
     }
 

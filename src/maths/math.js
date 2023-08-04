@@ -7,6 +7,8 @@ import { Vector2 } from "./vec2.js";
  * @class Maths
  */
 export class Maths {
+    static INITIAL_METER_TO_PIXEL_CONVERSION_FACTOR = 10;
+    static #METER_TO_PIXEL_CONVERSION_FACTOR = Maths.INITIAL_METER_TO_PIXEL_CONVERSION_FACTOR;
 
     /**
      * The Value of PI. Same as Math.PI
@@ -41,14 +43,14 @@ export class Maths {
      * @type {number}
      * @readonly
      */
-    static get METER_TO_PIXEL() { return 10; }
+    static get METER_TO_PIXEL() { return Maths.#METER_TO_PIXEL_CONVERSION_FACTOR; }
 
     /**
      * Constant to multiply by to convert from Pixel to Meter.
      * @type {number}
      * @readonly
      */
-    static get PIXEL_TO_METER() { return 1 / 10; }
+    static get PIXEL_TO_METER() { return 1 / Maths.#METER_TO_PIXEL_CONVERSION_FACTOR; }
 
     /**
      * Very small number.
@@ -222,5 +224,15 @@ export class Maths {
         } else {
             throw new Error("nearlyEqual: a and b must be number or vector2");
         }
+    }
+
+
+    static generateMeterToPixelConversionFactor(originalCanvasWidth, originalCanvasHeight, newWidth, newHeight) {
+        //assuming aspect ratio is same
+        let widthRatio = newWidth / originalCanvasWidth;
+        let heightRatio = newHeight / originalCanvasHeight;
+        let ratio = widthRatio < heightRatio ? widthRatio : heightRatio;
+        Maths.#METER_TO_PIXEL_CONVERSION_FACTOR = Maths.INITIAL_METER_TO_PIXEL_CONVERSION_FACTOR * ratio;
+
     }
 }

@@ -87,7 +87,7 @@ export class Entity {
      * @method
      * @example
      * // Check if the entity has a transform component
-     * let hasTransform = entity.hasComponent(Transform);
+     * let hasTransform = entity.HasComponent(Transform);
      */
     HasComponent(type) {
         return this._components.some(component => component instanceof type);
@@ -150,7 +150,7 @@ export class Entity {
      * let child = new Entity("Child");
      * 
      * // Add the child entity to the parent entity
-     * entity.addChild(child);
+     * entity.AddChild(child);
      */
     AddChild(child) {
         if (this._children == null) {
@@ -160,6 +160,27 @@ export class Entity {
             child.parent = this;
             this._children.push(child);
         } else console.warn("Child already attached");
+    }
+
+    /**
+     * Adds multiple child entities to this entity.
+     * @param {Entity[]} children The child entities to be added.
+     * @method
+     * @example
+     * // Create a new entity
+     * let entity = new Entity("Box");
+     * let childEntity1 = new Entity("Child1");
+     * let childEntity2 = new Entity("Child2");
+     * let childEntity3 = new Entity("Child3");
+     * 
+     * // Add the child entities to the parent entity
+     * entity.AddChildren(childEntity1, childEntity2, childEntity3);
+     * 
+     */
+    AddChildren(...children) {
+        children.forEach(child => {
+            this.AddChild(child);
+        });
     }
 
     /**
@@ -187,28 +208,6 @@ export class Entity {
             }
         }
         return components;
-    }
-
-    /**
-     * Get a component of the given type attached to children of this entity.
-     * Gets the component of the first child with the given type.
-     * @param {Component} type The type of the component to be returned.
-     * @returns {Component} The component of the given type attached to children of this entity.
-     * @method
-     * @example
-     * // Get the transform component of the first child of the entity
-     * let transform = entity.getComponentinChildren(Transform);
-     * 
-     */
-    GetComponentinChildren(type) {
-        let component = null;
-        this._children.forEach(child => {
-            if (child.hasComponent(type)) {
-                component = child.getComponent(type);
-                return component;
-            }
-        });
-        return null;
     }
 
     /**
@@ -246,34 +245,8 @@ export class Entity {
      * 
      */
     GetChildWithComponent(type) {
-        return this._children.filter(child => child.hasComponent(type));
+        return this._children.filter(child => child.HasComponent(type));
     }
-
-
-    /**
-     * Gets all the children with the specified component type.
-     * @param {Component} type The type of the component to be returned.
-     * @returns {Entity[]} The children with the specified component type.
-     * @method
-     * 
-     * @example
-     * // Get all the children with a transform component
-     * let children = entity.getChildrenWithComponent(Transform);
-     * 
-     */
-    destroy() {
-        for (let i = this._components.length - 1; i >= 0; i--) {
-            this._components[i].destroy();
-        }
-
-        for (let i = this._children.length - 1; i >= 0; i--) {
-            this._children[i].destroy();
-        }
-
-        this._parent.RemoveChild(this);
-        this._children = [];
-    }
-
 
 
 
@@ -295,12 +268,13 @@ export class Entity {
         tree.name = this.name;
         tree.children = [];
         this._children.forEach(child => {
-            tree.children.push(child.getTree());
+            tree.children.push(child.GetTree());
         });
         return tree;
     }
 
 
+    /**@private */
     destroy() {
         this._components.forEach(component => {
             component.destroy();
@@ -310,6 +284,8 @@ export class Entity {
             child.destroy();
         });
         this._parent.RemoveChild(this);
+        this._children = [];
 
     }
+
 }

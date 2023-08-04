@@ -6,6 +6,7 @@ import { SceneManager } from "./basic/sceneManager.js";
 
 import { Component } from './components/component.js';
 import { Transform } from "./components/transform.js";
+import { Renderable } from "./components/renderable/renderable.js";
 import { Shape } from "./components/renderable/shape.js";
 import { Line } from './components/renderable/line.js';
 import { Polygon } from "./components/renderable/polygon.js";
@@ -64,11 +65,13 @@ class Application {
     #height;
     #clearColor;
     #fps;
+    #initialCanvasSize = { width: 0, height: 0 };
     constructor() {
         this.#pageSetup();
 
         this.#width = window.innerWidth;
         this.#height = window.innerHeight;
+        this.#initialCanvasSize = { width: window.outerWidth, height: window.outerHeight };
         this.#fps = 60;
         this.#clearColor = Color.FromHex(0x334455);
 
@@ -76,8 +79,6 @@ class Application {
         this.#canvas = document.getElementById("neptune-canvas");
         this.#canvas.setAttribute("height", window.innerHeight);
         this.#canvas.setAttribute("width", window.innerWidth);
-
-
 
         this.#canvas.style.display = "none";
         this.#ctx = this.#canvas.getContext("2d");
@@ -90,6 +91,11 @@ class Application {
             } catch (error) { }
             this.#canvas.setAttribute("tabindex", "1");
             this.init();
+            
+            this.#width = window.innerWidth;
+            this.#height = window.innerHeight;
+            this.#initialCanvasSize = { width: window.outerWidth, height: window.outerHeight };
+            Maths.generateMeterToPixelConversionFactor(this.#initialCanvasSize.width, this.#initialCanvasSize.height, this.#width, this.#height);
         }
 
         document.body.appendChild(this.#playBtn);
@@ -103,23 +109,10 @@ class Application {
         this._deltaTime = 0;
     }
 
-    /**
-     * @description Width of the screen(in pixels). Uses `window.innerWidth` by default.
-     * @readonly
-     * @protected
-     * @type {number}
-     */
     get width() {
         return this.#width;
     }
 
-
-    /**
-     * @description Height of the screen(in pixels). Uses `window.innerHeight` by default.
-     * @protected
-     * @readonly
-     * @type {number}
-     */
     get height() {
         return this.#height;
     }
@@ -128,20 +121,10 @@ class Application {
         return this.#fps;
     }
 
-    /**
-     * @description The suggested/ Maximum FPS (Frame per seconds) of the game. Default is 60.
-     * @protected
-     * @type {number}
-     */
     set fps(value) {
         this.#fps = value;
     }
 
-    /**
-     * @description The background color of the game. Default is `#334455`.
-     * @protected
-     * @type {Color}
-     */
     get clearColor() {
         return this.#clearColor;
     }
@@ -151,12 +134,6 @@ class Application {
         this.#clearColor = value;
     }
 
-    /**
-     * @description The time passed since the last frame.
-     * @protected
-     * @readonly
-     * @type {number}
-     */
     get deltaTime() {
         return this._deltaTime;
     }
@@ -171,20 +148,22 @@ class Application {
         this.#canvas.setAttribute("width", window.innerWidth);
 
         window.onresize = () => {
-            console.log("Resized");
             this.#width = window.innerWidth;
             this.#height = window.innerHeight;
             this.#canvas.width = this.#width;
             this.#canvas.height = this.#height;
+
+            Maths.generateMeterToPixelConversionFactor(this.#initialCanvasSize.width, this.#initialCanvasSize.height, this.#width, this.#height);
+
         }
         this.#canvas.focus();
 
-        MouseInput.Init(this.#canvas);
-        KeyboardInput.Init(this.#canvas);
-        TouchInput.Init(this.#canvas);
+        MouseInput.init(this.#canvas);
+        KeyboardInput.init(this.#canvas);
+        TouchInput.init(this.#canvas);
 
         SceneManager.init();
-        ScriptManager.BehaviourInit();
+        ScriptManager.behaviourInit();
 
     }
 
@@ -207,7 +186,7 @@ class Application {
      * 
      */
     update(timeStamp) {
-        ScriptManager.BehaviourUpdate(timeStamp);
+        ScriptManager.behaviourUpdate(timeStamp);
     }
 
 
@@ -219,8 +198,9 @@ class Application {
      * 
      */
     #gameloop(timeStamp) {
+
         this._deltaTime = (timeStamp - this.#currentTimeStamp) * this.#fps / 1000;  //in seconds
-        this._deltaTime = Maths.clamp(this._deltaTime, 0, 1);
+        this._deltaTime = Maths.Clamp(this._deltaTime, 0, 1);
         this.#currentTimeStamp = timeStamp;
 
         this.#ctx.clearRect(0, 0, this.#width, this.#ctx.height);
@@ -230,9 +210,9 @@ class Application {
         this.update(this._deltaTime);
         this.draw(this.#ctx);
 
-        MouseInput.Clear();
-        KeyboardInput.Clear();
-        TouchInput.Clear();
+        MouseInput.clear();
+        KeyboardInput.clear();
+        TouchInput.clear();
 
         DestroyQueue.destroy();
 
@@ -296,7 +276,7 @@ export {
 
     Color, Entity, Scene, DestroyQueue, SceneManager,
 
-    Component, Transform, Line, Shape, Script, Polygon, ScriptManager, Sprite, Sound,
+    Component, Transform, Renderable, Line, Shape, Script, Polygon, ScriptManager, Sprite, Sound,
 
     Global, Behaviour,
 

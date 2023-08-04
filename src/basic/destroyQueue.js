@@ -30,7 +30,6 @@ export class DestroyQueue{
         DestroyQueue.#queue.forEach(entity => {
             entity.destroy();
         });
-
         DestroyQueue.#queue = [];
     }
 }

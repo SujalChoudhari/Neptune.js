@@ -107,4 +107,13 @@ export class SceneManager {
             scene.draw(ctx);
         });
     }
+
+    /**
+     * Get a id for a new Scene
+     * @returns {number} The id for a new scene.
+     * @private
+     */
+    static getIdForNewScene() {
+        return SceneManager.#scenes.length;
+    }
 }

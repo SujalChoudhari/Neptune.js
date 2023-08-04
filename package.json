@@ -2,14 +2,14 @@
   "name": "@sujalchoudhari/neptune-js",
   "version": "3.3.0",
   "description": "A JavaScript Based Game Development Framework",
-  "main": "src/index.js",
+  "main": "src/neptune.js",
   "scripts": {
     "docs": "jsdoc -c ./jsdoc.json -d ./docs ./src/neptune.js"
   },
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NotSujal/Neptune.js.git"
+    "url": "git+https://github.com/SujalChoudhari/Neptune.js.git"
   },
   "keywords": [
     "events",
@@ -23,12 +23,12 @@
   "author": "Sujal Choudhari",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/NotSujal/Neptune.js/issues"
+    "url": "https://github.com/SujalChoudhari/Neptune.js/issues"
   },
-  "homepage": "https://github.com/NotSujal/Neptune.js#readme",
+  "homepage": "https://github.com/SujalChoudhari/Neptune.js#readme",
   "devDependencies": {
     "clean-jsdoc-theme": "^4.1.8",
-    "jsdoc": "^3.6.11",
-    "fs-extra": "^11.1.0"
+    "fs-extra": "^11.1.0",
+    "jsdoc": "^3.6.11"
   }
 }

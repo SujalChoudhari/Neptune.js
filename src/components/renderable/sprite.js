@@ -97,17 +97,18 @@ export class Sprite extends Renderable {
         super.draw(ctx);
         let image = this.#image;
         let path = this._properties.path;
-        let width = this._properties.width * Maths.METER_TO_PIXEL;
-        let height = this._properties.height * Maths.METER_TO_PIXEL;
-        let transform = this.entity.getComponent(Transform);
-        let position = Maths.meterToPixelVector2(transform.getPosition());
+        let width = this._properties.width;
+        let height = this._properties.height;
+        let transform = this.entity.GetComponent(Transform);
+        let position = Maths.MeterToPixelVector2(transform.getPosition());
         let rotation = transform.getRotation();
-        let scale = Maths.meterToPixelVector2(transform.getScale());
+        let scale = Maths.MeterToPixelVector2(transform.getScale());
 
         ctx.save();
         ctx.translate(position.x, position.y);
         ctx.rotate(rotation);
         ctx.scale(scale.x, scale.y);
+        ctx.globalCompositeOperation = this.blendMode;
 
         if (image.src != path) {
             image.src = path;
@@ -115,7 +116,7 @@ export class Sprite extends Renderable {
         ctx.drawImage(image, -width / 2, -height / 2, width, height);
 
 
-        let children = this.entity.getComponentsInChildren(Renderable);
+        let children = this.entity.GetComponentsInChildren(Renderable);
         for (let i = 0; i < children.length; i++) {
             children[i].draw(ctx);
         }

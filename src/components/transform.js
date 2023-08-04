@@ -66,7 +66,7 @@ export class Transform extends Component {
      * 
      */
     get scale(){
-        return this._properties.scale.copy();
+        return this._properties.scale.Copy();
     }
 
     set scale(scale){
@@ -76,7 +76,7 @@ export class Transform extends Component {
 
 
     getPosition(){
-        return this._properties.position.copy();
+        return this._properties.position.Copy();
     }
 
     setPosition(position){
@@ -92,7 +92,7 @@ export class Transform extends Component {
     }
 
     getScale(){
-        return this._properties.scale.copy();
+        return this._properties.scale.Copy();
     }
 
     setScale(scale){
