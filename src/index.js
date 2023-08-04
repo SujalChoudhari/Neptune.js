@@ -17,7 +17,9 @@ import { Sound } from "./components/audio.js";
 import { Script, Global, Behaviour } from "./components/scripts/script.js";
 import { ScriptManager } from "./components/scripts/scriptManager.js";
 
-import {Input} from './events/input.js'
+import { MouseInput } from "./events/mouseinput.js";
+import { KeyboardInput } from "./events/keyboardinput.js";
+import { TouchInput } from "./events/touchinput.js";
 
 import {Maths} from "./maths/math.js";
 import { Vector2 } from "./maths/vec2.js";
@@ -33,7 +35,7 @@ export {
     
     Global, Behaviour,
 
-    Input,
+    MouseInput,KeyboardInput,TouchInput,
 
     Maths,Vector2,
 

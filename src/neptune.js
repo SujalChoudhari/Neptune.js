@@ -2,7 +2,9 @@ import { Color } from "./basic/color.js";
 import { DestroyQueue } from "./basic/destroyQueue.js";
 import { SceneManager } from "./basic/sceneManager.js";
 import { ScriptManager } from "./components/scripts/scriptManager.js";
-import { Input } from './events/input.js'
+import { MouseInput } from "./events/mouseinput.js";
+import { KeyboardInput } from "./events/keyboardinput.js";
+import { TouchInput } from "./events/touchinput.js";
 import { Maths } from "./maths/math.js";
 
 
@@ -60,7 +62,7 @@ export class Application {
         this.#canvas.setAttribute("height", window.innerHeight);
         this.#canvas.setAttribute("width", window.innerWidth);
 
-        
+
 
         this.#canvas.style.display = "none";
         this.#ctx = this.#canvas.getContext("2d");
@@ -162,7 +164,10 @@ export class Application {
         }
         this.#canvas.focus();
 
-        Input.Init(this.#canvas);
+        MouseInput.Init(this.#canvas);
+        KeyboardInput.Init(this.#canvas);
+        TouchInput.Init(this.#canvas);
+
         SceneManager.Init();
         ScriptManager.BehaviourInit();
 
@@ -209,31 +214,35 @@ export class Application {
 
         this.Update(this._deltaTime);
         this.Draw(this.#ctx);
-        Input.Clear();
+        
+        MouseInput.Clear();
+        KeyboardInput.Clear();
+        TouchInput.Clear();
+
         DestroyQueue.Destroy();
 
         requestAnimationFrame(this.#Gameloop.bind(this));
     }
 
-   /**
- * @description Sets up the default CSS for the game and adds necessary elements to the page.
- * @method
- * @private
- */
-#pageSetup() {
-    const playBtn = document.createElement("button");
-    playBtn.setAttribute("type", "button");
-    playBtn.setAttribute("id", "neptune-play");
-    playBtn.textContent = "Play Game";
-    document.body.appendChild(playBtn);
+    /**
+  * @description Sets up the default CSS for the game and adds necessary elements to the page.
+  * @method
+  * @private
+  */
+    #pageSetup() {
+        const playBtn = document.createElement("button");
+        playBtn.setAttribute("type", "button");
+        playBtn.setAttribute("id", "neptune-play");
+        playBtn.textContent = "Play Game";
+        document.body.appendChild(playBtn);
 
-    const canvas = document.createElement("canvas");
-    canvas.setAttribute("id", "neptune-canvas");
-    document.body.appendChild(canvas);
+        const canvas = document.createElement("canvas");
+        canvas.setAttribute("id", "neptune-canvas");
+        document.body.appendChild(canvas);
 
 
-    let style = document.createElement("style");
-    style.innerHTML = `
+        let style = document.createElement("style");
+        style.innerHTML = `
     body {
         margin: 0;
         padding: 0;
@@ -257,11 +266,11 @@ export class Application {
         position: absolute;
         top: 0;
         left: 0;
-        z-index: -1;
+        z-index: 1;
     }
     `;
-    document.head.appendChild(style);
-}
+        document.head.appendChild(style);
+    }
 
 }
 
