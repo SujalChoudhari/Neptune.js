@@ -8,6 +8,7 @@ import "./shape.test.js"
 import "./sprite.test.js"
 import "./script.test.js"
 import "./audio.test.js"
+import "./ui.test.js"
 
 printResults();
 

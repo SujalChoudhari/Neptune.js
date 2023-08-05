@@ -11,7 +11,7 @@ import { Shape } from "./components/renderable/shape.js";
 import { Sprite } from "./components/renderable/sprite.js";
 import { Sound } from "./components/audio.js";
 
-import * as UI from "./components/ui/ui.js"
+// import * as UI from "./components/ui/ui.js"
 
 import { Script, Global, Behaviour } from "./components/scripts/script.js";
 import { ScriptManager } from "./components/scripts/scriptManager.js";
@@ -266,7 +266,7 @@ export {
 
     Sound,
 
-    UI,
+    // UI,
 
     Script, ScriptManager, Global, Behaviour,
 
