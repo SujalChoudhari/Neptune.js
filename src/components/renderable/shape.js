@@ -33,14 +33,16 @@ import { Maths } from "../../maths/math.js";
  * entity.addComponent(shape);
  */
 export class Shape extends Renderable {
-    constructor(geometry = Shape.CIRCLE, color = Color.fuchsia, fill = true, param = { radius: 10, width: 10, height: 10, outline: Color.black,thickness:1 }) {
+    _properties = {
+        geometry: Shape.CIRCLE,
+        param: { radius: 10, color: Color.fuchsia, fill: true, width: 10, height: 10, outline: Color.black, thickness: 1, points: [] }
+    }
+
+    constructor(geometry = Shape.CIRCLE, param = { radius: 10, color: Color.fuchsia, fill: true, width: 10, height: 10, outline: Color.black, thickness: 1, points: [] }) {
         super();
         this._properties.geometry = geometry;
-        this._properties.color = color;
-        this._properties.fill = fill;
-        this._properties.param = param;
 
-
+        param = Object.assign(this._properties.param, param);
     }
 
     /**
@@ -69,11 +71,11 @@ export class Shape extends Renderable {
      * 
      */
     get color() {
-        return this._properties.color;
+        return this._properties.param.color;
     }
 
     set color(color) {
-        this._properties.color = color;
+        this._properties.param.color = color;
     }
 
     /**
@@ -81,11 +83,11 @@ export class Shape extends Renderable {
      * @type {boolean}
      */
     get fill() {
-        return this._properties.fill;
+        return this._properties.param.fill;
     }
 
     set fill(fill) {
-        this._properties.fill = fill;
+        this._properties.param.fill = fill;
     }
 
 
@@ -158,11 +160,11 @@ export class Shape extends Renderable {
     }
 
     getColor() {
-        return this._properties.color;
+        return this._properties.param.color;
     }
 
     setColor(color) {
-        this._properties.color = color;
+        this._properties.param.color = color;
     }
 
     /** @private */
@@ -174,15 +176,14 @@ export class Shape extends Renderable {
         let radius = this._properties.param.radius;
         let scale = Maths.MeterToPixelVector2(transform.getScale());
         let param = this._properties.param;
-        let fill = this._properties.fill;
-        let color = this._properties.color;
+        let fill = this._properties.param.fill;
 
         ctx.save();
         ctx.translate(position.x, position.y);
         ctx.rotate(rotation);
         ctx.scale(scale.x, scale.y);
         ctx.globalCompositeOperation = this.blendMode;
-        ctx.fillStyle = color.toString();
+        ctx.fillStyle = param.color.toString();
         if (param.outline) ctx.strokeStyle = param.outline.toString();
         if (param.thickness) ctx.lineWidth = param.thickness;
 
@@ -198,8 +199,8 @@ export class Shape extends Renderable {
             case Shape.LINE:
                 ctx.beginPath();
                 ctx.moveTo(0, 0);
+                ctx.strokeStyle = param.color.toString();
                 ctx.lineTo(param.width, param.height);
-                ctx.lineWidth = param.thickness || 5;
                 ctx.stroke();
                 break;
             case Shape.TRIANGLE:

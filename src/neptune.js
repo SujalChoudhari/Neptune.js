@@ -8,10 +8,10 @@ import { Component } from './components/component.js';
 import { Transform } from "./components/transform.js";
 import { Renderable } from "./components/renderable/renderable.js";
 import { Shape } from "./components/renderable/shape.js";
-import { Line } from './components/renderable/line.js';
-import { Polygon } from "./components/renderable/polygon.js";
 import { Sprite } from "./components/renderable/sprite.js";
 import { Sound } from "./components/audio.js";
+
+import * as UI from "./components/ui/ui.js"
 
 import { Script, Global, Behaviour } from "./components/scripts/script.js";
 import { ScriptManager } from "./components/scripts/scriptManager.js";
@@ -28,33 +28,6 @@ import { Vector2 } from "./maths/vec2.js";
  * @class Application
  * @description The main class of the engine. Inherit from this class to create your own game.
  * 
- * @example
- * class MyGame extends Application {
- *    constructor() {
- *      super();
- * 
- *      // Game Entities should be created here. 
- *    }
- * 
- *  Init() {
- *     super.Init();
- *      // This code will be executed when the game is initialized.
- *     }
- * 
- * Update(deltaTime) {
- *    super.Update();
- *      // update is called every frame
- *    }
- * 
- * Draw(ctx) {
- *      super.Draw();
- *      // After the Update function, the Draw function is called.
- *    }
- * }
- * 
- * new MyGame();
- * 
- * @hideconstructor
  */
 class Application {
     #playBtn;
@@ -67,43 +40,44 @@ class Application {
     #fps;
     #initialCanvasSize = { width: 0, height: 0 };
     constructor() {
+        // Setup the GamePage
         this.#pageSetup();
+        document.getElementById("neptune-loading")?.remove();
 
+        // Initialize the application
         this.#width = window.innerWidth;
         this.#height = window.innerHeight;
         this.#initialCanvasSize = { width: window.outerWidth, height: window.outerHeight };
         this.#fps = 60;
         this.#clearColor = Color.FromHex(0x334455);
 
-        this.#playBtn = document.getElementById("neptune-play");
+        // Setup the canvas
         this.#canvas = document.getElementById("neptune-canvas");
         this.#canvas.setAttribute("height", window.innerHeight);
         this.#canvas.setAttribute("width", window.innerWidth);
-
         this.#canvas.style.display = "none";
+        this.#canvas.focus();
         this.#ctx = this.#canvas.getContext("2d");
+
+        // Setup the play button
+        this.#playBtn = document.getElementById("neptune-play");
+        this.#playBtn.style.display = "block";
         this.#playBtn.onclick = () => {
-            this.#gameloop(0);
-            try {
-                this.#playBtn.remove();
-                this.#canvas.style.display = "block";
-                document.getElementById("neptune-gamepage").remove();
-            } catch (error) { }
+            this.#playBtn.remove();
+            document.getElementById("neptune-gamepage")?.remove();
+
             this.#canvas.setAttribute("tabindex", "1");
-            this.init();
-            
+            this.#canvas.style.display = "block";
+            this.#canvas.focus();
+
             this.#width = window.innerWidth;
             this.#height = window.innerHeight;
             this.#initialCanvasSize = { width: window.outerWidth, height: window.outerHeight };
             Maths.generateMeterToPixelConversionFactor(this.#initialCanvasSize.width, this.#initialCanvasSize.height, this.#width, this.#height);
+
+            this.init();
+            this.#gameloop(0);
         }
-
-        document.body.appendChild(this.#playBtn);
-
-        try {
-            this.#playBtn.style.display = "block";
-            document.getElementById("neptune-loading").remove();
-        } catch (error) { }
 
         this.#currentTimeStamp = performance.now();
         this._deltaTime = 0;
@@ -144,9 +118,12 @@ class Application {
      * @method
      */
     init() {
+        // Resize the canvas
         this.#canvas.setAttribute("height", window.innerHeight);
         this.#canvas.setAttribute("width", window.innerWidth);
+        
 
+        // Keep the canvas size constant
         window.onresize = () => {
             this.#width = window.innerWidth;
             this.#height = window.innerHeight;
@@ -158,10 +135,12 @@ class Application {
         }
         this.#canvas.focus();
 
+        // Initialize the input
         MouseInput.init(this.#canvas);
         KeyboardInput.init(this.#canvas);
         TouchInput.init(this.#canvas);
 
+        // Initialize the managers
         SceneManager.init();
         ScriptManager.behaviourInit();
 
@@ -198,32 +177,37 @@ class Application {
      * 
      */
     #gameloop(timeStamp) {
-
+        // Calculate the time passed since the last frame
         this._deltaTime = (timeStamp - this.#currentTimeStamp) * this.#fps / 1000;  //in seconds
         this._deltaTime = Maths.Clamp(this._deltaTime, 0, 1);
         this.#currentTimeStamp = timeStamp;
 
+        // Clear the canvas
         this.#ctx.clearRect(0, 0, this.#width, this.#ctx.height);
         this.#ctx.fillStyle = this.#clearColor.toString() || Color.darkgray;
         this.#ctx.fillRect(0, 0, this.#width, this.#height);
 
+        // Update and draw the entities
         this.update(this._deltaTime);
         this.draw(this.#ctx);
 
+        // Clear the input
         MouseInput.clear();
         KeyboardInput.clear();
         TouchInput.clear();
 
+        // Destroy the entities
         DestroyQueue.destroy();
 
+        // Call the next frame
         requestAnimationFrame(this.#gameloop.bind(this));
     }
 
     /**
-  * @description Sets up the default CSS for the game and adds necessary elements to the page.
-  * @method
-  * @private
-  */
+     * @description Sets up the default CSS for the game and adds necessary elements to the page.
+     * @method
+     * @private
+     */
     #pageSetup() {
         const playBtn = document.createElement("button");
         playBtn.setAttribute("type", "button");
@@ -269,16 +253,22 @@ class Application {
 
 }
 
-let application = new Application();
+const application = new Application();
 
 export {
     Application, application,
 
     Color, Entity, Scene, DestroyQueue, SceneManager,
 
-    Component, Transform, Renderable, Line, Shape, Script, Polygon, ScriptManager, Sprite, Sound,
+    Component, Transform,
 
-    Global, Behaviour,
+    Renderable, Shape, Sprite,
+
+    Sound,
+
+    UI,
+
+    Script, ScriptManager, Global, Behaviour,
 
     MouseInput, KeyboardInput, TouchInput,
 

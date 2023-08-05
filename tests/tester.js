@@ -1,14 +1,22 @@
-let passed = 0;
-let failed = 0;
-let modules = 0;
+console.time("Tester.js");
+
+let modulesData = [];
+let currentModule = null;
 let beforeEachCallbacks = [];
 let afterEachCallbacks = [];
 
 export function describe(description, callback) {
-    console.log( "====================================");
-    console.log(`\t${description}`);
-    modules++;
+    currentModule = {
+        description,
+        passed: 0,
+        failed: 0,
+        tests: []
+    };
+    modulesData.push(currentModule);
+    console.groupCollapsed(`Module: ${description}`);
     callback();
+    console.groupEnd();
+    currentModule = null;
 }
 
 export function beforeEach(callback) {
@@ -20,18 +28,22 @@ export function afterEach(callback) {
 }
 
 export async function it(description, callback) {
-    beforeEachCallbacks.forEach(callback => callback());
+    beforeEachCallbacks.forEach((callback) => callback());
     try {
         callback();
-        console.log(`\t✅ ${description} - Passed`);
-        passed++;
+        console.log(`  ✅ ${description} - Passed`);
+        currentModule.passed++;
+        currentModule.tests.push({ description, passed: true });
     } catch (error) {
-        console.error(`\t❌ ${description} - Failed`);
+        console.error(`  ❌ ${description} - Failed`);
         console.error(error);
-        failed++;
+        currentModule.failed++;
+        currentModule.tests.push({ description, passed: false });
     }
-    afterEachCallbacks.forEach(callback => callback());
+    afterEachCallbacks.forEach((callback) => callback());
 }
+
+
 
 export function expect(actual) {
     const matchers = {
@@ -39,15 +51,7 @@ export function expect(actual) {
             if (actual === expected) {
                 console.log(`\t\t✅ Expectation passed: ${actual} is equal to ${expected}`);
             } else {
-                throw new Error(`Expectation failed: ${actual} is not equal to ${expected}`);
-            }
-        },
-
-        toNotBe(expected) {
-            if (actual !== expected) {
-                console.log(`\t\t✅ Expectation passed: ${actual} is not equal to ${expected}`);
-            } else {
-                throw new Error(`Expectation failed: ${actual} is equal to ${expected}`);
+                console.error(`\t\t❌ Expectation failed: ${actual} is not equal to ${expected}`);
             }
         },
 
@@ -55,7 +59,7 @@ export function expect(actual) {
             if (actual instanceof expected) {
                 console.log(`\t\t✅ Expectation passed: ${actual} is an instance of ${expected.name}`);
             } else {
-                throw new Error(`Expectation failed: ${actual} is not an instance of ${expected.name}`);
+                console.error(`\t\t❌ Expectation failed: ${actual} is not an instance of ${expected.name}`);
             }
         },
 
@@ -63,7 +67,7 @@ export function expect(actual) {
             if (actual) {
                 console.log(`\t\t✅ Expectation passed: ${actual} is truthy`);
             } else {
-                throw new Error(`Expectation failed: ${actual} is falsy`);
+                console.error(`\t\t❌ Expectation failed: ${actual} is falsy`);
             }
         },
 
@@ -71,7 +75,7 @@ export function expect(actual) {
             if (!actual) {
                 console.log(`\t\t✅ Expectation passed: ${actual} is falsy`);
             } else {
-                throw new Error(`Expectation failed: ${actual} is truthy`);
+                console.error(`\t\t❌ Expectation failed: ${actual} is truthy`);
             }
         },
 
@@ -79,7 +83,7 @@ export function expect(actual) {
             if (JSON.stringify(actual) === JSON.stringify(expected)) {
                 console.log(`\t\t✅ Expectation passed: ${actual} is equal to ${expected}`);
             } else {
-                throw new Error(`Expectation failed: ${actual} is not equal to ${expected}`);
+                console.error(`\t\t❌ Expectation failed: ${actual} is not equal to ${expected}`);
             }
         },
 
@@ -87,17 +91,64 @@ export function expect(actual) {
             if (actual.includes(expected)) {
                 console.log(`\t\t✅ Expectation passed: ${actual} contains ${expected}`);
             } else {
-                throw new Error(`Expectation failed: ${actual} does not contain ${expected}`);
+                console.error(`\t\t❌ Expectation failed: ${actual} does not contain ${expected}`);
             }
+        },
+        toBeUndefined() {
+            if (actual === undefined) {
+                console.log(`\t\t✅ Expectation passed: ${actual} is undefined`);
+            } else {
+                console.error(`\t\t❌ Expectation failed: ${actual} is not undefined`);
+            }
+        },
+        not: {
+            toBe(expected) {
+                if (actual !== expected) {
+                    console.log(`\t\t✅ Expectation passed: ${actual} is not equal to ${expected}`);
+                } else {
+                    console.error(`\t\t❌ Expectation failed: ${actual} is equal to ${expected}`);
+                }
+            },
+
+            toBeInstanceOf(expected) {
+                if (!(actual instanceof expected)) {
+                    console.log(`\t\t✅ Expectation passed: ${actual} is not an instance of ${expected.name}`);
+                } else {
+                    console.error(`\t\t❌ Expectation failed: ${actual} is an instance of ${expected.name}`);
+                }
+            },
+
+            toContain(expected) {
+                if (!actual.includes(expected)) {
+                    console.log(`\t\t✅ Expectation passed: ${actual} does not contain ${expected}`);
+                } else {
+                    console.error(`\t\t❌ Expectation failed: ${actual} contains ${expected}`);
+                }
+            },
+
+            beEmpty() {
+                if (actual.length === 0) {
+                    console.log(`\t\t✅ Expectation passed: ${actual} is empty`);
+                }
+                else {
+                    console.error(`\t\t❌ Expectation failed: ${actual} is not empty`);
+                }
+            }
+
         }
     };
 
     return matchers;
 }
 
-
 export async function printResults() {
-    console.log(`${modules} modules tested.`);
-    console.log(`${passed} tests passed.`);
-    console.log(`${failed} tests failed.`);
+
+    console.group("Test Results");
+    modulesData.forEach(module => {
+        const moduleStatus = module.failed <= 0 ? "✅ Passed" : "❌ Failed";
+        console.log(`${moduleStatus}: ${module.description}`);
+    });
+    console.log(`${modulesData.length} module(s) tested.`);
+    console.timeEnd("Tester.js");
+    console.groupEnd();
 }

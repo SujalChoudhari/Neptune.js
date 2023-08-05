@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "./tester.js";
-import { Entity, Component, Scene, SceneManager } from "../src/neptune.js";
+import { Entity, Component, Scene, SceneManager, Shape, Color, Transform, Vector2, application } from "../src/neptune.js";
 
 describe('Entity', () => {
     let entity;
@@ -18,7 +18,7 @@ describe('Entity', () => {
         expect(entity.components).toContain(mockComponent);
     });
 
-    it('Correctly responds to HasComponent',()=>{
+    it('Correctly responds to HasComponent', () => {
         expect(entity.HasComponent(mockComponent.constructor)).toBe(true);
         expect(entity.HasComponent(Scene)).toBe(false);
     });
@@ -28,9 +28,9 @@ describe('Entity', () => {
         expect(entity.components.length).toBe(1);
     });
 
-    it("Returns the correct component",()=>{
+    it("Returns the correct component", () => {
         expect(entity.GetComponent(mockComponent.constructor)).toBe(mockComponent);
-        expect(entity.GetComponent(mockComponent.constructor)).toNotBe(new Component());
+        expect(entity.GetComponent(mockComponent.constructor)).not.toBe(new Component());
     });
 
     it('RemoveComponent removes a component', () => {
@@ -54,35 +54,35 @@ describe('Entity', () => {
         expect(entity.children.length).toBe(1);
     });
 
-    it('Gets the correct Children',()=>{
+    it('Gets the correct Children', () => {
         const child1 = new Entity('Child1');
         const child2 = new Entity('Child2');
         entity.AddChildren(child1, child2);
         expect(entity.GetChildren().length).toEqual(2);
     });
 
-    it('Gets the correct Parent',()=>{
+    it('Gets the correct Parent', () => {
         const parent = new Entity('Parent');
         parent.AddChild(entity);
         expect(entity.GetParent()).toBe(parent);
     });
 
-    it("Gets correct Components in Children",()=>{
+    it("Gets correct Components in Children", () => {
         const child1 = new Entity('Child4');
         const child2 = new Entity('Child2');
         child1.AddComponent(mockComponent);
         entity.AddChildren(child1, child2);
         expect(entity.GetComponentsInChildren(Component)[0]).toBe(mockComponent);
-        expect(entity.GetComponentsInChildren(Component)[0]).toNotBe(new Component());
+        expect(entity.GetComponentsInChildren(Component)[0]).not.toBe(new Component());
     });
 
-    it("Gets child with a Component",()=>{
+    it("Gets child with a Component", () => {
         const child1 = new Entity('Child4');
         const child2 = new Entity('Child2');
         child1.AddComponent(mockComponent);
         entity.AddChildren(child1, child2);
         expect(entity.GetChildWithComponent(Component)[0]).toBe(child1);
-        expect(entity.GetChildWithComponent(Component)[0]).toNotBe(child2);
+        expect(entity.GetChildWithComponent(Component)[0]).not.toBe(child2);
     });
 
     it('GetTree generates the correct tree structure', () => {

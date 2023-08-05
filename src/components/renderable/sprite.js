@@ -21,11 +21,11 @@ import { Maths } from "../../maths/math.js"
  */
 export class Sprite extends Renderable {
     #image;
-    constructor(path = "", scaleX = 1, scaleY = 1) {
+    constructor(path = "", width = 1, height = 1) {
         super();
         this._properties.path = path;
-        this._properties.width = scaleX;
-        this._properties.height = scaleY;
+        this._properties.width = width;
+        this._properties.height = height;
         this.#image = new Image();
         this.#image.src = path;
 

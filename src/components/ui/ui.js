@@ -7,4 +7,4 @@ import { GridContainer } from "./containers/grid.js";
 import { Text } from "./text.js";
 import { UISprite } from "./sprite.js";
 
-export { UITransform, Container, MarginContainer, VBoxContainer, HBoxContainer, GridContainer, Text, UISprite }
+export const UI =  { UITransform, Container, MarginContainer, VBoxContainer, HBoxContainer, GridContainer, Text, UISprite }

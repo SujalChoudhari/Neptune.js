@@ -25,7 +25,7 @@ export class DestroyQueue{
         }
     }
 
-
+    /**@private */
     static destroy(){
         DestroyQueue.#queue.forEach(entity => {
             entity.destroy();

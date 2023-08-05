@@ -23,6 +23,15 @@ export class SceneManager {
     }
 
     /**
+     * Get a scene by name.
+     * @param {string} name - Name of the scene.
+     * @returns {Scene} The scene with the specified name.
+     */
+    static GetSceneByName(name) {
+        return SceneManager.#scenes.find(scene => scene.name === name);
+    }
+
+    /**
      * Load a scene by id. This will unload the current scene and load the new scene.
      * @param {number} id - Id of the scene to be loaded.
      * @method
@@ -115,5 +124,12 @@ export class SceneManager {
      */
     static getIdForNewScene() {
         return SceneManager.#scenes.length;
+    }
+    
+    /**@private */
+    static removeAllScenes() {
+        SceneManager.#scenes = [];
+        SceneManager.#loadedScenes = [];
+        SceneManager.#currentSceneIndex = -1;
     }
 }
