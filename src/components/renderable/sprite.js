@@ -21,6 +21,7 @@ import { Maths } from "../../maths/math.js"
  */
 export class Sprite extends Renderable {
     #image;
+    #transform;
     constructor(path = "", width = 1, height = 1) {
         super();
         this._properties.path = path;
@@ -95,14 +96,17 @@ export class Sprite extends Renderable {
     /** @private */
     draw(ctx) {
         super.draw(ctx);
+        if (this.#transform == null)
+        this.#transform = this.entity.GetComponent(Transform);
+
+
         let image = this.#image;
         let path = this._properties.path;
         let width = this._properties.width;
         let height = this._properties.height;
-        let transform = this.entity.GetComponent(Transform);
-        let position = Maths.MeterToPixelVector2(transform.getPosition());
-        let rotation = transform.getRotation();
-        let scale = Maths.MeterToPixelVector2(transform.getScale());
+        let position = Maths.MeterToPixelVector2(this.#transform.getPosition());
+        let rotation = this.#transform.getRotation();
+        let scale = Maths.MeterToPixelVector2(this.#transform.getScale());
 
         ctx.save();
         ctx.translate(position.x, position.y);

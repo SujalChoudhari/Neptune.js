@@ -11,7 +11,7 @@ import { Shape } from "./components/renderable/shape.js";
 import { Sprite } from "./components/renderable/sprite.js";
 import { Sound } from "./components/audio.js";
 
-// import * as UI from "./components/ui/ui.js"
+import * as UI from "./ui/ui.js"
 
 import { Script, Global, Behaviour } from "./components/scripts/script.js";
 import { ScriptManager } from "./components/scripts/scriptManager.js";
@@ -75,7 +75,7 @@ class Application {
             this.#initialCanvasSize = { width: window.outerWidth, height: window.outerHeight };
             Maths.generateMeterToPixelConversionFactor(this.#initialCanvasSize.width, this.#initialCanvasSize.height, this.#width, this.#height);
 
-            this.init();
+            this.#init();
             this.#gameloop(0);
         }
 
@@ -112,16 +112,13 @@ class Application {
         return this._deltaTime;
     }
 
-    /**
-     * This function is called when the game is initialized. Use this function to Setup your entities.
-     * @callback
-     * @method
-     */
-    init() {
+
+
+    #init() {
         // Resize the canvas
         this.#canvas.setAttribute("height", window.innerHeight);
         this.#canvas.setAttribute("width", window.innerWidth);
-        
+
 
         // Keep the canvas size constant
         window.onresize = () => {
@@ -147,35 +144,14 @@ class Application {
     }
 
 
-    /**
-     * This function is called every frame. Use this function to draw your entities.
-     * @param {HtmlCanvasContext} ctx - The canvas context.
-     * @callback
-     * @method
-     */
-    draw(ctx) {
+    #draw(ctx) {
         SceneManager.draw(ctx);
     }
 
-    /**
-     * This function is called every frame. Use this function to update your entities.
-     * @param {number} timeStamp - The time passed since the game started.
-     * @callback
-     * @method
-     * 
-     */
-    update(timeStamp) {
+    #update(timeStamp) {
         ScriptManager.behaviourUpdate(timeStamp);
     }
 
-
-    /**
-     * The main game loop.
-     * @param {number} timeStamp  - The time passed since the game started.
-     * @method
-     * @private
-     * 
-     */
     #gameloop(timeStamp) {
         // Calculate the time passed since the last frame
         this._deltaTime = (timeStamp - this.#currentTimeStamp) * this.#fps / 1000;  //in seconds
@@ -188,8 +164,8 @@ class Application {
         this.#ctx.fillRect(0, 0, this.#width, this.#height);
 
         // Update and draw the entities
-        this.update(this._deltaTime);
-        this.draw(this.#ctx);
+        this.#update(this._deltaTime);
+        this.#draw(this.#ctx);
 
         // Clear the input
         MouseInput.clear();
@@ -203,11 +179,6 @@ class Application {
         requestAnimationFrame(this.#gameloop.bind(this));
     }
 
-    /**
-     * @description Sets up the default CSS for the game and adds necessary elements to the page.
-     * @method
-     * @private
-     */
     #pageSetup() {
         const playBtn = document.createElement("button");
         playBtn.setAttribute("type", "button");
@@ -222,31 +193,31 @@ class Application {
 
         let style = document.createElement("style");
         style.innerHTML = `
-    body {
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-    }
-    #neptune-play {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background-color: #334455;
-        color: white;
-        border: none;
-        padding: 20px;
-        font-size: 20px;
-        cursor: pointer;
-        display: none;
-    }
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+#neptune-play {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #334455;
+    color: white;
+    border: none;
+    padding: 20px;
+    font-size: 20px;
+    cursor: pointer;
+    display: none;
+}
 
-    #neptune-canvas {
-        position: absolute;
-        top: 0;
-        left: 0;
-        z-index: 1;
-    }
+#neptune-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
     `;
         document.head.appendChild(style);
     }
@@ -257,20 +228,12 @@ const application = new Application();
 
 export {
     Application, application,
-
     Color, Entity, Scene, DestroyQueue, SceneManager,
-
     Component, Transform,
-
     Renderable, Shape, Sprite,
-
     Sound,
-
-    // UI,
-
+    UI,
     Script, ScriptManager, Global, Behaviour,
-
     MouseInput, KeyboardInput, TouchInput,
-
     Maths, Vector2,
 }

@@ -38,10 +38,10 @@ export class Shape extends Renderable {
         param: { radius: 10, color: Color.fuchsia, fill: true, width: 10, height: 10, outline: Color.black, thickness: 1, points: [] }
     }
 
+    #transform;
     constructor(geometry = Shape.CIRCLE, param = { radius: 10, color: Color.fuchsia, fill: true, width: 10, height: 10, outline: Color.black, thickness: 1, points: [] }) {
         super();
         this._properties.geometry = geometry;
-
         param = Object.assign(this._properties.param, param);
     }
 
@@ -170,11 +170,13 @@ export class Shape extends Renderable {
     /** @private */
     draw(ctx) {
         super.draw(ctx);
-        let transform = this.entity.GetComponent(Transform);
-        let position = Maths.MeterToPixelVector2(transform.getPosition());
-        let rotation = transform.getRotation();
+        if (this.#transform == null)
+            this.#transform = this.entity.GetComponent(Transform);
+
+        let position = Maths.MeterToPixelVector2(this.#transform.getPosition());
+        let rotation = this.#transform.getRotation();
         let radius = this._properties.param.radius;
-        let scale = Maths.MeterToPixelVector2(transform.getScale());
+        let scale = Maths.MeterToPixelVector2(this.#transform.getScale());
         let param = this._properties.param;
         let fill = this._properties.param.fill;
 
