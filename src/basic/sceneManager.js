@@ -37,14 +37,15 @@ export class SceneManager {
      * @method
      */
     static LoadScene(id) {
-        if (id === SceneManager.#currentSceneIndex) {
-            console.warn("Scene already loaded");
-            return;
-        }
+        const scene = SceneManager.GetScene(id);
 
-        SceneManager.#unloadScene(SceneManager.#currentSceneIndex);
-        SceneManager.#currentSceneIndex = id;
-        SceneManager.#loadedScenes.push(SceneManager.GetScene(id));
+        if (scene) {
+            SceneManager.#unloadScene(SceneManager.#currentSceneIndex);
+            scene.OnSceneUnloadAdditive(); // Call the unload additive callback of the current scene
+            scene.OnSceneLoad(); // Call the load callback of the new scene
+            SceneManager.#loadedScenes.push(scene);
+            SceneManager.#currentSceneIndex = id;
+        }
     }
 
     /**
@@ -53,7 +54,11 @@ export class SceneManager {
      * @method
      */
     static LoadSceneAdditive(id) {
-        SceneManager.#loadedScenes.push(SceneManager.GetScene(id));
+        const scene = SceneManager.GetScene(id);
+        if (scene) {
+            scene.OnSceneLoadAdditive(); // Call the load additive callback of the new scene
+            SceneManager.#loadedScenes.push(scene);
+        }
     }
 
     /**
@@ -61,7 +66,10 @@ export class SceneManager {
      * @method
      */
     static UnloadAllAdditiveScenes() {
-        SceneManager.#loadedScenes = SceneManager.#loadedScenes.slice(0, 1);
+        SceneManager.#loadedScenes.forEach(scene => {
+            scene.OnSceneUnloadAdditive(); // Call the unload additive callback of each loaded scene
+        });
+        SceneManager.#loadedScenes = [];
     }
 
     /**
@@ -74,7 +82,6 @@ export class SceneManager {
             console.error("No scenes added to SceneManager");
             return;
         }
-
         if (SceneManager.#currentSceneIndex === -1) {
             SceneManager.LoadScene(0);
         }
@@ -86,12 +93,10 @@ export class SceneManager {
      * @private
      */
     static addScene(scene) {
-        if (!(scene instanceof Scene)) {
-            console.error(scene + " is not an instance of Scene");
-            return;
+        if (SceneManager.#scenes.indexOf(scene) === -1) {
+            scene.id = SceneManager.getIdForNewScene();
+            SceneManager.#scenes.push(scene);
         }
-        SceneManager.#scenes.push(scene);
-        SceneManager.#scenes.sort((a, b) => a.id - b.id);
     }
 
     /**
@@ -102,6 +107,7 @@ export class SceneManager {
     static #unloadScene(id) {
         const scene = SceneManager.GetScene(id);
         if (scene) {
+            scene.OnSceneUnload();
             SceneManager.#loadedScenes = SceneManager.#loadedScenes.filter(s => s !== scene);
         }
     }
@@ -125,7 +131,7 @@ export class SceneManager {
     static getIdForNewScene() {
         return SceneManager.#scenes.length;
     }
-    
+
     /**@private */
     static removeAllScenes() {
         SceneManager.#scenes = [];

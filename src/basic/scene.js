@@ -10,19 +10,27 @@ import { SceneManager } from "./sceneManager.js";
  * @extends Entity
  * @property {number} id - Id of the scene. This is used to load the scene.
  */
-export class Scene extends Entity{
-    constructor(name){
+export class Scene extends Entity {
+
+    /** Called when The scene is loaded */
+    OnSceneLoad = () => { };
+    /** Called when the scene is unloaded */
+    OnSceneUnload = () => { };
+    /** Called when the scene is loaded in additive mode */
+    OnSceneLoadAdditive = () => { };
+    /** Called when the scene is unloaded in additive mode */
+    OnSceneUnloadAdditive = () => { };
+
+    constructor(name) {
         super(name);
         this.id = SceneManager.getIdForNewScene();
         SceneManager.addScene(this);
     }
 
     /** @private */
-    draw(ctx){
+    draw(ctx) {
         this.GetComponentsInChildren(Renderable).forEach(renderable => {
             renderable.draw(ctx);
         });
     }
-
-
 }

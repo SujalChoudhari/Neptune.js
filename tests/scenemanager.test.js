@@ -26,12 +26,28 @@ describe("SceneManager", () => {
     });
 
     it("should unload all additive scenes except the current scene", () => {
-        const scene1 = new Scene(1);
-        const scene2 = new Scene(2);
+        const scene1 = new Scene("One");
+        const scene2 = new Scene("Two");
 
-        SceneManager.LoadScene(1);
-        SceneManager.LoadSceneAdditive(2);
+        SceneManager.LoadScene(scene1.id);
+        SceneManager.LoadSceneAdditive(scene2.id);
+        expect(SceneManager.GetSceneByName("One")).toBe(scene1);
+    });
+
+    it("should properly call the callbacks", () => {
+        const scene1 = new Scene("One");
+        const scene2 = new Scene("Two");
+
+        scene1.OnSceneLoad = () => { console.log("Scene 1 loaded"); };
+        scene1.OnSceneUnload = () => { console.log("Scene 1 unloaded"); };
+        scene1.OnSceneLoadAdditive = () => { console.log("Scene 1 loaded additive"); };
+        scene1.OnSceneUnloadAdditive = () => { console.log("Scene 1 unloaded additive"); };
+
+        SceneManager.LoadScene(scene1.id);
+        SceneManager.LoadScene(scene2.id);
+        SceneManager.LoadSceneAdditive(scene1.id);
         SceneManager.UnloadAllAdditiveScenes();
+
     });
 
 });
