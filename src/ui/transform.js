@@ -1,6 +1,7 @@
 import { Vector2 } from "../maths/vec2.js";
 import { Component } from "../components/component.js";
 import { MouseInput } from "../events/mouseinput.js"
+import { Maths } from "../maths/math.js"
 
 /**
  * UI Transform Component is responsible for the position, rotation and width and height of a UI element.
@@ -132,17 +133,17 @@ export class Transform extends Component {
     Align(mode = "center") {
         let parent = this.entity.parent;
         if (parent != undefined) {
-            var parentTransform = parent.getComponent(UITransform);
-            var x = parentTransform.getX();
-            var y = parentTransform.getY();
-            var width = parentTransform.getWidth();
-            var height = parentTransform.getHeight();
+            var parentTransform = parent.GetComponent(Transform);
+            var x = parentTransform.x;
+            var y = parentTransform.y;
+            var width = parentTransform.width;
+            var height = parentTransform.height;
         }
         else {
             var x = 0;
             var y = 0;
-            var width = window.innerWidth;
-            var height = window.innerHeight;
+            var width = window.innerWidth * Maths.PIXEL_TO_METER;
+            var height = window.innerHeight * Maths.PIXEL_TO_METER;
         }
 
         switch (mode) {
@@ -191,20 +192,19 @@ export class Transform extends Component {
      */
     Fill(mode = "both", padX = 0, padY = 0) {
         let parent = this.entity.parent;
-        if (parent != undefined) {
+        if (parent && parent.HasComponent(Transform)) {
             var parentTransform = parent.GetComponent(Transform);
-            var x = parentTransform.getX();
-            var y = parentTransform.getY();
-            var width = parentTransform.getWidth();
-            var height = parentTransform.getHeight();
-        }
-        else {
+            var x = parentTransform.x;
+            var y = parentTransform.y;
+            var width = parentTransform.width;
+            var height = parentTransform.height;   
+        } else {
             var x = 0;
             var y = 0;
-            var width = window.innerWidth;
-            var height = window.innerHeight;
+            var width = window.innerWidth * Maths.PIXEL_TO_METER;
+            var height = window.innerHeight * Maths.PIXEL_TO_METER;
         }
-
+    
         switch (mode) {
             case "both":
                 this._properties.x = x + padX;
@@ -222,6 +222,7 @@ export class Transform extends Component {
                 break;
         }
     }
+    
 
     #isPointInside(point) {
         return point.x >= this._properties.x && point.x <= this._properties.x + this._properties.width && point.y >= this._properties.y && point.y <= this._properties.y + this._properties.height;
@@ -232,7 +233,7 @@ export class Transform extends Component {
      * @returns {boolean} - True if the UI element is being hovered over.
      */
     IsHovered() {
-        return this.#isPointInside(MouseInput.GetPosition());
+        return this.#isPointInside(Maths.PixelToMeterVector2(MouseInput.GetPosition()));
     }
 
     /**
@@ -243,8 +244,8 @@ export class Transform extends Component {
         return this.IsHovered() && MouseInput.IsLeftClicked();
     }
 
-    
+
     Rotate(rot) {
         this._properties.rot += rot;
     }
-}
+}   

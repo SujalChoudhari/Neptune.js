@@ -7,8 +7,8 @@ import { Vector2 } from "./vec2.js";
  * @class Maths
  */
 export class Maths {
-    static INITIAL_METER_TO_PIXEL_CONVERSION_FACTOR = 10;
-    static #METER_TO_PIXEL_CONVERSION_FACTOR = Maths.INITIAL_METER_TO_PIXEL_CONVERSION_FACTOR;
+    static #INITIAL_METER_TO_PIXEL_CONVERSION_FACTOR = 20;
+    static #METER_TO_PIXEL_CONVERSION_FACTOR = Maths.#INITIAL_METER_TO_PIXEL_CONVERSION_FACTOR;
 
     /**
      * The Value of PI. Same as Math.PI
@@ -232,7 +232,7 @@ export class Maths {
         let widthRatio = newWidth / originalCanvasWidth;
         let heightRatio = newHeight / originalCanvasHeight;
         let ratio = widthRatio < heightRatio ? widthRatio : heightRatio;
-        Maths.#METER_TO_PIXEL_CONVERSION_FACTOR = Maths.INITIAL_METER_TO_PIXEL_CONVERSION_FACTOR * ratio;
+        Maths.#METER_TO_PIXEL_CONVERSION_FACTOR = Maths.#INITIAL_METER_TO_PIXEL_CONVERSION_FACTOR * ratio;
 
     }
 }

@@ -45,13 +45,13 @@ export class Script extends Component {
  * 
  */
 export class Behaviour extends Script {
-    constructor(name = "New Behaviour") {
+    
+    
+    constructor(name = "New Behaviour", Init = () => { }, Update = () => { }) {
         super(name);
+        this.Init = Init;
+        this.Update = Update;
     }
-
-    Init() { }
-
-    Update(deltaTime) { }
 }
 
 /**

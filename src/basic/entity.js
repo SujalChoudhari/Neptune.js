@@ -184,33 +184,6 @@ export class Entity {
     }
 
     /**
-     * Removes the child entity from this entity.
-     * @param {Entity} child The child entity to be removed.
-     * @method
-     * @example
-     * // Create a new entity
-     * let entity = new Entity("Box");
-     * 
-     * // Create a new child entity
-     * let child = new Entity("Child");
-     * 
-     * // Add the child entity to the parent entity
-     * entity.addChild(child);
-     * 
-     * // Remove the child entity from the parent entity
-     * entity.removeChild(child);
-     */
-    GetComponentsInChildren(type) {
-        const components = [];
-        for (const child of this._children) {
-            if (child.HasComponent(type)) {
-                components.push(child.GetComponent(type));
-            }
-        }
-        return components;
-    }
-
-    /**
      * Get a component of the given type attached to the children.
      * Returns all the components of the given type attached to all the children.
      * @param {Component} type The type of the component to be returned.
