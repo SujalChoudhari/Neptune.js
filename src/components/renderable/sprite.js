@@ -113,6 +113,7 @@ export class Sprite extends Renderable {
         ctx.rotate(rotation);
         ctx.scale(scale.x, scale.y);
         ctx.globalCompositeOperation = this.blendMode;
+        ctx.filter = this.filter;
 
         if (image.src != path) {
             image.src = path;

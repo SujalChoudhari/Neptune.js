@@ -1,3 +1,4 @@
+import { Filter } from "../../basic/filter.js";
 import { Component } from "../component.js";
 
 /**
@@ -12,7 +13,8 @@ import { Component } from "../component.js";
  */
 export class Renderable extends Component {
     /** Blend mode of the object */
-    blendMode = "source-over";
+    blendMode = Renderable.BLEND_MODE.NORMAL;
+    filter = new Filter();
     constructor() {
         super();
     }
@@ -26,7 +28,7 @@ export class Renderable extends Component {
 /**
  * Available blend modes for the renderable.
  */
-Renderable.BLEND_MODES = {
+Renderable.BLEND_MODE = {
     NORMAL: 'source-over',
     MULTIPLY: 'multiply',
     SCREEN: 'screen',

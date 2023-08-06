@@ -57,6 +57,7 @@ export class Panel extends Renderable {
         ctx.save();
         ctx.rotate(transform.rotation);
         ctx.globalCompositeOperation = this.blendMode;
+        ctx.filter = this.filter;
         ctx.fillStyle = this._properties.color;
         ctx.fillRect(x, y, width, height);
 

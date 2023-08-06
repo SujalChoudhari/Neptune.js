@@ -13,17 +13,10 @@ const sprite = new npt.Entity("Sprite");
 sprite.AddComponent(new npt.UI.Transform(0, 0, 1, 1, 0));
 sprite.AddComponent(new npt.UI.Sprite("https://st.depositphotos.com/1008768/3573/i/450/depositphotos_35732355-stock-photo-example-button.jpg"));
 sprite.AddComponent(new npt.Behaviour("Sprite", () => {
-    // Any additional sprite behavior
+    sprite.GetComponent(npt.UI.Sprite).filter.Add(npt.Filter.TYPE.BLUR,"3px");
+    sprite.GetComponent(npt.UI.Sprite).blendMode = npt.Renderable.BLEND_MODE.MULTIPLY;
 }));
 
-// const sprite2 = new npt.Entity("Sprite");
-// sprite2.AddComponent(new npt.UI.Transform(0, 0, 1, 1, 0));
-// sprite2.AddComponent(new npt.UI.Sprite("https://st.depositphotos.com/1008768/3573/i/450/depositphotos_35732355-stock-photo-example-button.jpg"));
-// sprite2.AddComponent(new npt.Behaviour("Sprite", () => {
-//     // Any additional sprite behavior
-// },(deltaTime)=>{
-    
-// }));
 
 canvas.AddChildren(sprite); // Add sprites as children before Update
 

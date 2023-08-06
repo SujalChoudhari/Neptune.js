@@ -1,4 +1,5 @@
 import { Color } from "./basic/color.js";
+import { Filter } from "./basic/filter.js";
 import { Entity } from './basic/entity.js';
 import { Scene } from './basic/scene.js';
 import { DestroyQueue } from "./basic/destroyQueue.js";
@@ -228,7 +229,7 @@ const application = new Application();
 
 export {
     Application, application,
-    Color, Entity, Scene, DestroyQueue, SceneManager,
+    Color,Filter, Entity, Scene, DestroyQueue, SceneManager,
     Component, Transform,
     Renderable, Shape, Sprite,
     Sound,
