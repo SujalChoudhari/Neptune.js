@@ -9,6 +9,6 @@ import "./sprite.test.js"
 import "./script.test.js"
 import "./audio.test.js"
 import "./ui.test.js"
-
+import "./storage.test.js"
 printResults();
 
