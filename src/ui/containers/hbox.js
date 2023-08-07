@@ -1,5 +1,5 @@
 import { Container } from "./container.js";
-import { Transform } from "../transform.js";
+import { Transform } from "../uitransform.js";
 /**
  * Horizontal Box Container or HBoxContainer is a container that arranges its children horizontally.
  * @class HBoxContainer

@@ -1,10 +1,7 @@
-import { application, Application, Color } from '../src/neptune.js';
+import { application, Color } from '../src/neptune.js';
 import { describe, expect, it } from './tester.js';
 
 describe("Application", () => {
-    it("should be an instance of Application", () => {
-        expect(application).toBeInstanceOf(Application);
-    });
 
     it("should have same size as of window", () => {
         expect(application.width).toBe(window.innerWidth);

@@ -1,4 +1,4 @@
-import{Component} from './component.js';
+import { Component } from './component.js';
 
 /**
  * A Sound Component is responsible for playing sounds.
@@ -15,22 +15,22 @@ import{Component} from './component.js';
  * let sound = new Sound("Jump", "assets/sounds/jump.wav");
  * 
  * // Add the sound component to an entity
- * entity.addComponent(sound);
+ * entity.AddComponent(sound);
  * 
  * // Play the sound
- * sound.play();
+ * sound.Play();
  * 
  */
 export class Sound extends Component {
     #audio;
-    constructor(name,src,volume=1,loop=false) {
+    constructor(name, src, volume = 1, loop = false) {
         super();
         this._properties.name = name;
         this._properties.src = src;
         this._properties.volume = volume;
         this._properties.loop = loop;
         this._properties.playing = false;
-        
+
         this.#audio = new Audio(this.src);
         this.#audio.volume = this.volume;
         this.#audio.loop = this.loop;
@@ -58,7 +58,6 @@ export class Sound extends Component {
      * Note: While hosting on a server, the path should be relative to the root directory.
      * @type {string}
      * @protected
-     * 
      */
     get src() {
         return this._properties.src;
@@ -96,7 +95,7 @@ export class Sound extends Component {
         this._properties.loop = loop;
         this.#audio.loop = loop;
     }
-    
+
     /**
      * Check if the sound is playing.
      * @type {boolean}

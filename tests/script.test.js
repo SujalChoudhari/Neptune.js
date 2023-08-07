@@ -31,4 +31,9 @@ describe("Behaviour", () => {
         expect(behaviour).toBeInstanceOf(Behaviour);
     });
 
+    it("can create using inheritance", () => {
+        
+
+    });
+
 });

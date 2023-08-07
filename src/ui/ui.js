@@ -1,4 +1,4 @@
-import { Transform } from "./transform.js";
+import { Transform } from "./uitransform.js";
 import { Text } from "./text.js";
 import {Sprite} from "./sprite.js"
 import { Panel } from "./panel.js";
@@ -11,9 +11,9 @@ import { MarginContainer } from "./containers/margin.js";
 
 
 export {
-    Transform,
+    Transform as UITransform,
     Text,
-    Sprite,
+    Sprite as UISprite,
     Panel,
 
     Container,

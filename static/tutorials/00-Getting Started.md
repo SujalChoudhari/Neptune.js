@@ -27,12 +27,12 @@ The template code is as follows:
 </head>
 <body>
     <div id="neptune-gamepage">
-        <!-- Elements here will be removed once game starts -->
+        <!-- Elements here will be removed once game starts (optional) -->
     </div>
-    <div id="neptune-loading">
-        <!-- Elements here will be removes once the game is ready to play -->
+    <div id="neptune-loading"> 
+        <!-- Elements here will be removes once the game is ready to play (optional) -->
     </div>
-    <script type="module" src="./index.js"></script>
+    <script type="module" src="./yourfile.js"></script> <!-- Your custom file (which imports Neptune.js)-->
 </body>
 </html>
 
@@ -44,7 +44,7 @@ The template code is as follows:
 
 ```js
 
-import * as npt from "../src/index.js"; // Import Neptune.js aka the index file.
+import * as npt from "../src/neptune.js"; // Import Neptune.js
 
 // And thats it! You are ready to start creating your game.
 

@@ -151,32 +151,16 @@ export class Shape extends Renderable {
     }
 
 
-    getGeometry() {
-        return this._properties.geometry;
-    }
-
-    setGeometry(geometry) {
-        this._properties.geometry = geometry;
-    }
-
-    getColor() {
-        return this._properties.param.color;
-    }
-
-    setColor(color) {
-        this._properties.param.color = color;
-    }
-
     /** @private */
     draw(ctx) {
         super.draw(ctx);
         if (this.#transform == null)
             this.#transform = this.entity.GetComponent(Transform);
 
-        let position = Maths.MeterToPixelVector2(this.#transform.getPosition());
-        let rotation = this.#transform.getRotation();
+        let position = Maths.MeterToPixelVector2(this.#transform.position);
+        let rotation = this.#transform.rotation;
         let radius = this._properties.param.radius;
-        let scale = Maths.MeterToPixelVector2(this.#transform.getScale());
+        let scale = Maths.MeterToPixelVector2(this.#transform.scale);
         let param = this._properties.param;
         let fill = this._properties.param.fill;
 

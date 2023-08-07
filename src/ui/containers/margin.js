@@ -1,5 +1,5 @@
 import { Container } from "./container.js";
-import { Transform } from "../transform.js";
+import { Transform } from "../uitransform.js";
 
 /**
  * MarginContainer is a container that arranges its children with margins.

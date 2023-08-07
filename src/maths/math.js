@@ -226,7 +226,7 @@ export class Maths {
         }
     }
 
-
+    /**@private */
     static generateMeterToPixelConversionFactor(originalCanvasWidth, originalCanvasHeight, newWidth, newHeight) {
         //assuming aspect ratio is same
         let widthRatio = newWidth / originalCanvasWidth;

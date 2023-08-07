@@ -1,4 +1,4 @@
-import { Transform } from "./transform.js";
+import { Transform } from "./uitransform.js";
 import { Renderable } from "../components/renderable/renderable.js";
 import { Maths } from "../maths/math.js"
 
@@ -13,8 +13,8 @@ import { Maths } from "../maths/math.js"
  * @example
  * // Create a new entity with a UITransform component and a UISprite component.
  * let entity = new Entity();
- * entity.addComponent(new UITransform());
- * entity.addComponent(new UISprite("assets/sprites/texture.png"));
+ * entity.AddComponent(new UITransform());
+ * entity.AddComponent(new UISprite("assets/sprites/texture.png"));
  * 
  */
 export class Sprite extends Renderable {

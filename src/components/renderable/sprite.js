@@ -69,30 +69,6 @@ export class Sprite extends Renderable {
     }
 
 
-    getPath() {
-        return this._properties.path;
-    }
-
-    setPath(path) {
-        this._properties.path = path;
-    }
-
-    getWidth() {
-        return this._properties.width;
-    }
-
-    setWidth(width) {
-        this._properties.width = width;
-    }
-
-    getHeight() {
-        return this._properties.height;
-    }
-
-    setHeight(height) {
-        this._properties.height = height;
-    }
-
     /** @private */
     draw(ctx) {
         super.draw(ctx);
@@ -104,9 +80,9 @@ export class Sprite extends Renderable {
         let path = this._properties.path;
         let width = this._properties.width;
         let height = this._properties.height;
-        let position = Maths.MeterToPixelVector2(this.#transform.getPosition());
-        let rotation = this.#transform.getRotation();
-        let scale = Maths.MeterToPixelVector2(this.#transform.getScale());
+        let position = Maths.MeterToPixelVector2(this.#transform.position);
+        let rotation = this.#transform.rotation;
+        let scale = Maths.MeterToPixelVector2(this.#transform.scale);
 
         ctx.save();
         ctx.translate(position.x, position.y);

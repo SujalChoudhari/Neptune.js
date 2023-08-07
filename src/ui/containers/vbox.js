@@ -1,5 +1,5 @@
 import { Container } from "./container.js";
-import { Transform } from "../transform.js";
+import { Transform } from "../uitransform.js";
 /**
  * VerticalBoxContainer or VBoxContainer is a container that arranges its children vertically.
  * @class VBoxContainer

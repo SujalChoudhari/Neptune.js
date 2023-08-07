@@ -2,33 +2,33 @@
 
 <p align="center">
 GitHub Stats: <br>
-<img src="https://badgen.net/github/stars/notsujal/neptune.js"/>
-<img src="https://badgen.net/github/forks/notsujal/neptune.js"/>
-<img src="https://badgen.net/github/tags/notsujal/neptune.js"/>
+<img src="https://badgen.net/github/stars/SujalChoudhari/neptune.js"/>
+<img src="https://badgen.net/github/forks/SujalChoudhari/neptune.js"/>
+<img src="https://badgen.net/github/tags/SujalChoudhari/neptune.js"/>
 <br>
 <br>
 Contributors: <br>
-<img src="https://badgen.net/github/contributors/notsujal/neptune.js"/>
+<img src="https://badgen.net/github/contributors/SujalChoudhari/neptune.js"/>
 <br>
-<a href="https://github.com/NotSujal/Neptune.js/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=NotSujal/Neptune.js" />
+<a href="https://github.com/SujalChoudhari/Neptune.js/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=SujalChoudhari/Neptune.js" />
 </a>
 <br>
 <br>
 Releases: <br>
-<img src="https://badgen.net/github/tag/notsujal/neptune.js"/>
-<img src="https://badgen.net/github/releases/notsujal/neptune.js"/>
-<img src="https://badgen.net/github/license/notsujal/neptune.js"/>
+<img src="https://badgen.net/github/tag/SujalChoudhari/neptune.js"/>
+<img src="https://badgen.net/github/releases/SujalChoudhari/neptune.js"/>
+<img src="https://badgen.net/github/license/SujalChoudhari/neptune.js"/>
 <br>
 <br>
 Issues: <br>
-<img src="https://badgen.net/github/issues/notsujal/neptune.js"/>
-<img src="https://badgen.net/github/closed-issues/notsujal/neptune.js"/>
-<img src="https://badgen.net/github/open-issues/notsujal/neptune.js"/>
-<img src="https://badgen.net/github/label-issues/Notsujal/neptune.js/enhancement"/>
-<img src="https://badgen.net/github/label-issues/Notsujal/neptune.js/help wanted"/>
-<img src="https://badgen.net/github/label-issues/Notsujal/neptune.js/fixed"/>
-<img src="https://badgen.net/github/label-issues/Notsujal/neptune.js/bug"/>
+<img src="https://badgen.net/github/issues/SujalChoudhari/neptune.js"/>
+<img src="https://badgen.net/github/closed-issues/SujalChoudhari/neptune.js"/>
+<img src="https://badgen.net/github/open-issues/SujalChoudhari/neptune.js"/>
+<img src="https://badgen.net/github/label-issues/SujalChoudhari/neptune.js/enhancement"/>
+<img src="https://badgen.net/github/label-issues/SujalChoudhari/neptune.js/help wanted"/>
+<img src="https://badgen.net/github/label-issues/SujalChoudhari/neptune.js/fixed"/>
+<img src="https://badgen.net/github/label-issues/SujalChoudhari/neptune.js/bug"/>
 
 
 ## What is Neptune.js?

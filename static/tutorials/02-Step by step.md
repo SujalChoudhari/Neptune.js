@@ -12,7 +12,7 @@ To create an Entity, you need to follow these steps:
 2. Then, you can create an Entity using the following code:
 
 ```javascript
-import * as npt from "../src/index.js";
+import * as npt from "../src/neptune.js";
 
 let myEntity = new npt.Entity();
 ```
@@ -26,7 +26,7 @@ A "Scene" is a special type of Entity that acts as the root of your game. You ca
 Creating a Scene is straightforward:
 
 ```javascript
-import * as npt from "../src/index.js";
+import * as npt from "../src/neptune.js";
 
 let myScene = new npt.Scene();
 ```
@@ -36,12 +36,12 @@ let myScene = new npt.Scene();
 To add an Entity to a Scene, you can use the following code:
 
 ```javascript
-import * as npt from "../src/index.js";
+import * as npt from "../src/neptune.js";
 
 let myScene = new npt.Scene();
 let myEntity = new npt.Entity();
 
-myScene.addChild(myEntity);
+myScene.AddChild(myEntity);
 ```
 
 ## Components
@@ -53,7 +53,7 @@ Components are the building blocks of an Entity. They add functionality and data
 Let's create a few Components and attach them to an Entity:
 
 ```javascript
-import * as npt from "../src/index.js";
+import * as npt from "../src/neptune.js";
 
 let myEntity = new npt.Entity();
 
@@ -67,9 +67,9 @@ let spriteComponent = new npt.Sprite("https://example.com/my-image.png", 1, 1);
 let circleShapeComponent = new npt.Shape(npt.Shape.CIRCLE, npt.Color.wheat, true, { radius: 10, thickness: 4 });
 
 // Add the Components to the Entity
-myEntity.addComponent(transformComponent);
-myEntity.addComponent(spriteComponent);
-myEntity.addComponent(circleShapeComponent);
+myEntity.AddComponent(transformComponent);
+myEntity.AddComponent(spriteComponent);
+myEntity.AddComponent(circleShapeComponent);
 ```
 
 ## Putting It All Together
@@ -77,7 +77,7 @@ myEntity.addComponent(circleShapeComponent);
 Now, let's assemble our Scene with the Entity we created and visualize it:
 
 ```javascript
-import * as npt from "../src/index.js";
+import * as npt from "../src/neptune.js";
 
 // Create a new Scene
 let myScene = new npt.Scene();
@@ -86,12 +86,13 @@ let myScene = new npt.Scene();
 let myEntity = new npt.Entity();
 
 // Add Components to the Entity
-myEntity.addComponent(new npt.Transform(new npt.Vector2(1, 1), 0, new npt.Vector2(1, 1)));
-myEntity.addComponent(new npt.Sprite("https://example.com/my-image.png", 1, 1));
-myEntity.addComponent(new npt.Shape(npt.Shape.CIRCLE, npt.Color.wheat, true, { radius: 10, thickness: 4 }));
+myEntity.AddComponent(new npt.Transform(new npt.Vector2(1, 1), 0, new npt.Vector2(1, 1)));
+myEntity.AddComponent(new npt.Sprite("https://example.com/my-image.png", 1, 1));
+myEntity.AddComponent(new npt.Shape(npt.Shape.CIRCLE, npt.Color.wheat, true, { radius: 10, thickness: 4 }));
 
 // Add the Entity to the Scene
-myScene.addChild(myEntity);
+myScene.AddChild(myEntity);
 ```
 
-With these simple steps, you have created an Entity, added Components to it, and placed it in a Scene. Now you can expand your game by adding more Entities, Components, and Scenes to create a fully functional and interactive game!
+With these simple steps, you have created an Entity, added Components to it, and placed it in a Scene. 
+Now you can expand your game by adding more Entities, Components, and Scenes to create a fully functional and interactive game!

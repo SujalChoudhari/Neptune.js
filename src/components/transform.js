@@ -11,14 +11,13 @@ import {Vector2} from "../maths/vec2.js";
  * @property {Vector2} position=Vector2.zero() - The position of the entity.
  * @property {number} rotation=0 - The rotation of the entity in degrees.
  * @property {Vector2} scale=Vector2.one() - The scale of the entity.
- * @property {number} radius=0 - The radius of the entity.
  * 
  * @example
  * // Create a transform component
  * let transform = new Transform(new Vector2(0,0),0,new Vector2(1,1));
  * 
  * // Add the transform component to an entity
- * entity.addComponent(transform);
+ * entity.AddComponent(transform);
  * 
  * 
  */
@@ -38,7 +37,7 @@ export class Transform extends Component {
      * 
      */
     get position(){
-        return this._properties.position.copy();
+        return this._properties.position.Copy();
     }
 
     set position(position){
@@ -73,34 +72,12 @@ export class Transform extends Component {
         this._properties.scale = scale;
     }
 
-
-
-    getPosition(){
-        return this._properties.position.Copy();
-    }
-
-    setPosition(position){
-        this._properties.position = position;
-    }
-
-    getRotation(){
-        return this._properties.rotation;
-    }
-
-    setRotation(rotation){
-        this._properties.rotation = rotation;
-    }
-
-    getScale(){
-        return this._properties.scale.Copy();
-    }
-
-    setScale(scale){
-        this._properties.scale = scale;
-    }
-
-
-    getForward(){
+    /**
+     * Returns the forward vector of the entity.
+     * @returns {Vector2} The forward vector of the entity.
+     * 
+     */
+    GetForward(){
         return new Vector2(Math.cos(this._properties.rotation),Math.sin(this._properties.rotation));
     }
 

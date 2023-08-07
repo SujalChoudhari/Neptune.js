@@ -35,8 +35,6 @@ export class Entity {
     /**
      * Parent Entity of this entity. If this entity is the root entity, this will be null.
      * @type {Entity}
-     * @readonly
-     * @protected
      */
     get parent() {
         return this._parent;
@@ -49,8 +47,6 @@ export class Entity {
     /**
      * Children of this entity.
      * @type {Entity[]}
-     * @readonly
-     * @protected
      */
     get children() {
         return this._children;
@@ -73,7 +69,7 @@ export class Entity {
      * @method
      * @example
      * // Get the transform component of the entity
-     * let transform = entity.getComponent(Transform);
+     * let transform = entity.GetComponent(Transform);
      * 
      */
     GetComponent(type) {
@@ -93,12 +89,19 @@ export class Entity {
         return this._components.some(component => component instanceof type);
     }
 
-
+    /**
+     * Get all children of this entity.
+     * @returns {Entity[]} The children of this entity.
+     */
     GetChildren() {
         return this._children;
     }
 
 
+    /**
+     * Returns the parent of this entity.
+     * @returns {Entity} The parent of this entity.
+     */
     GetParent() {
         return this._parent;
     }
@@ -109,7 +112,7 @@ export class Entity {
      * @method
      * @example
      * // Remove the transform component from the entity
-     * entity.removeComponent(Transform);
+     * entity.RemoveComponent(Transform);
      * 
      */
     RemoveComponent(type) {
@@ -127,7 +130,7 @@ export class Entity {
      * @method
      * @example
      * // Add a transform component to the entity
-     * entity.addComponent(new Transform());
+     * entity.AddComponent(new Transform());
      * 
      */
     AddComponent(component) {
@@ -192,7 +195,7 @@ export class Entity {
      *  
      * @example
      * // Get the transform components of all the children of the entity
-     * let transforms = entity.getComponentsinChildren(Transform);
+     * let transforms = entity.GetComponentsInChildren(Transform);
      * 
      */
     GetComponentsInChildren(type) {
@@ -213,7 +216,7 @@ export class Entity {
      *  
      * @example
      * // Get the first child entity with a transform component 
-     * let child = entity.getChildWithComponent(Transform);
+     * let child = entity.GetChildWithComponent(Transform);
      * 
      * 
      */

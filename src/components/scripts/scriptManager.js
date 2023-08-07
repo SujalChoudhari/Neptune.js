@@ -1,12 +1,11 @@
 import { Behaviour } from "./script.js";
 import { Global } from "./script.js";
-/**
- * Manages all the Script components.
- */
+
 export class ScriptManager{
     static #behaviours = [];
 
-    static AddScript(script){
+    /**@private */
+    static addScript(script){
         if(script instanceof Behaviour){
             this.#behaviours.push(script);
         }else if(script instanceof Global){

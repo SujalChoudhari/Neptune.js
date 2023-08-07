@@ -1,11 +1,20 @@
 import { Maths } from "../maths/math.js"
 
+/**
+ * A Font class to store font information.
+ * @class Font
+ * @property {string} family - The font family.
+ * @property {number} size - The font size.
+ * @property {Font.STYLE} style - The font style.
+ * @property {Font.WEIGHT} weight - The font weight.
+ * 
+ */
 export class Font {
     #family;
     #size;
     #style;
     #weight;
-    constructor(family = "Arial", size = 30, style = Font.STYLE_NORMAL, weight = Font.WEIGHT_NORMAL) {
+    constructor(family = "Arial", size = 30, style = Font.STYLE.NORMAL, weight = Font.WEIGHT.NORMAL) {
         this.#family = family;
         this.#size = size;
         this.#style = style;
@@ -44,7 +53,34 @@ export class Font {
         this.#weight = weight;
     }
 
+    /**
+     * Returns the font as a string.
+     * @returns {string} The font as a string.
+     */
     toString() {
         return `${this.#style} ${this.#weight} ${this.#size}px ${this.#family}`;
     }
+}
+
+/**
+ * Font style.
+ * @readonly
+ * @enum {string}
+ */
+Font.STYLE = {
+    NORMAL: "normal",
+    ITALIC: "italic",
+    OBLIQUE: "oblique"
+}
+
+/**
+ * Font weight.
+ * @readonly
+ * @enum {string}
+ */
+Font.WEIGHT = {
+    NORMAL: "normal",
+    BOLD: "bold",
+    BOLDER: "bolder",
+    LIGHTER: "lighter"
 }

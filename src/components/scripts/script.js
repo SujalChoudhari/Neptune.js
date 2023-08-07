@@ -1,18 +1,12 @@
 import { Component } from "../component.js";
 import { ScriptManager } from "./scriptManager.js";
-/**
- * A Script can be used to add custom functionality to an Entity.
- * A Script is a Component thus, making possible to make new/custom Components.
- * @interface Script
- * @extends Component
- * 
- * 
- */
+
+
 export class Script extends Component {
     constructor(name = "New Script") {
         super();
         this.name = name;
-        ScriptManager.AddScript(this);
+        ScriptManager.addScript(this);
     }
 }
 
@@ -24,29 +18,24 @@ export class Script extends Component {
  * 
  * @example
  * // Create a new Behaviour
- * class MyBehaviour extends Behaviour{
- *    constructor(){
- *       super();
- *   }
- * 
- *  Init(){
- *     // Called when the behaviour is created
+ * const MyBehaviour = new Behaviour("My Behaviour");
+ * MyBehaviour.Init = () => {
+ *  console.log("Behaviour Created");
+ * }
+ * MyBehaviour.Update = () => {
+ *  console.log("Behaviour Updated");
  * }
  * 
- * Update(deltaTime){
- *    // Called every frame
- * }
- * }
- * 
- * // Attach the behaviour to an entity
- * let entity = new Entity("Box");
- * let behaviour = new MyBehaviour();
- * entity.AddComponent(behaviour);
  * 
  */
 export class Behaviour extends Script {
-    
-    
+
+    /**
+     * Creates a new Behaviour
+     * @param {string} name - Name of the Behaviour
+     * @param {Function} Init - Function called when the Behaviour is created
+     * @param {Function} Update - Function called every frame
+     */
     constructor(name = "New Behaviour", Init = () => { }, Update = () => { }) {
         super(name);
         this.Init = Init;

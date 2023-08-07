@@ -1,5 +1,5 @@
 import { Renderable } from "../components/renderable/renderable.js";
-import { Transform } from "./transform.js";
+import { Transform } from "./uitransform.js";
 import { Maths } from "../maths/math.js"
 import { Color } from "../basic/color.js"
 
@@ -9,14 +9,13 @@ import { Color } from "../basic/color.js"
  * 
  * @class Panel
  * @extends Renderable
- * 
  * @property {Color} color=Color.white - The color of the panel.
  * 
  * @example
  * // Create a new entity with a UITransform component and a Panel component.
  * let entity = new Entity();
- * entity.addComponent(new UITransform());
- * entity.addComponent(new Panel(Color.white));
+ * entity.AddComponent(new UITransform());
+ * entity.AddComponent(new Panel(Color.white));
  */
 export class Panel extends Renderable {
     constructor(color = Color.fuchsia) {
@@ -36,15 +35,7 @@ export class Panel extends Renderable {
         this._properties.color = color;
     }
 
-
-    getColor() {
-        return this._properties.color;
-    }
-
-    setColor(color) {
-        this._properties.color = color;
-    }
-
+    /** @private */
     draw(ctx) {
         super.draw(ctx);
         let transform = this.entity.GetComponent(Transform);

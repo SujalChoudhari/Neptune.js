@@ -1,6 +1,6 @@
 import { Color } from "../basic/color.js"
 import { Renderable } from "../components/renderable/renderable.js";
-import { Transform } from "./transform.js";
+import { Transform } from "./uitransform.js";
 import { Font } from "../basic/font.js";
 import { Maths } from "../maths/math.js"
 
@@ -12,16 +12,16 @@ import { Maths } from "../maths/math.js"
  * @extends Renderable
  * 
  * @property {string} text="Hello, World!" - The text to display.
- * @property {string} font=20px Arial bold - The font to use.
- * @property {string} align=Text.ALIGN_CENTER - The alignment of the text.
+ * @property {Font} font=20px Arial bold - The font to use.
+ * @property {Text.ALIGN} align=Text.ALIGN_CENTER - The alignment of the text.
  * @property {Color} color=Color.white - The color of the text.
  * 
  * @example
- * let text = new Text("Hello World!", "20px Arial", Text.ALIGN_LEFT, Color.white);
+ * let text = new Text("Hello World!", new Font(), Text.ALIGN_LEFT, Color.white);
  */
 export class Text extends Renderable {
     #transform;
-    constructor(text = "Hello, World!", font = new Font(), align = Text.ALIGN_LEFT, color = Color.white) {
+    constructor(text = "Hello, World!", font = new Font(), align = Text.ALIGN.LEFT, color = Color.white) {
         super();
         this._properties.text = text;
         this._properties.font = font;
@@ -107,9 +107,15 @@ export class Text extends Renderable {
     }
 }
 
-
-Text.ALIGN_LEFT = "left";
-Text.ALIGN_RIGHT = "right";
-Text.ALIGN_CENTER = "center";
-Text.ALIGN_START = "start";
-Text.ALIGN_END = "end";
+/**
+ * Align the text
+ * @readonly
+ * @enum {string}
+ */
+Text.ALIGN = {
+    LEFT: "left",
+    CENTER: "center",
+    RIGHT: "right",
+    START: "start",
+    END: "end"
+}

@@ -1,13 +1,34 @@
+/**
+ * @class KeyboardInput
+ * @classdesc KeyboardInput class to handle keyboard input
+ * @static
+ * @hideconstructor
+ * @example
+ * // Check if the key with the keycode 65 (A) is pressed
+ * KeyboardInput.IsKeyDown(KeyBoardInput.KEY_CODE.A);
+ * 
+ */
 export class KeyboardInput {
     static #canvas;
     static #keyPressed = [];
     static #specialKeyPressed;
 
+    /**
+     * Checks if the key with the given keycode is pressed.
+     * @param {KeyboardInput.KEY_CODE} keyCode The keycode of the key to check.
+     * @returns {boolean} True if the key with the given keycode is pressed.
+     * @method
+     * @example
+     */
     static IsKeyDown(keyCode) {
         if (KeyboardInput.#keyPressed[keyCode] === undefined) return false;
         return KeyboardInput.#keyPressed[keyCode];
     }
 
+    /**
+     * Returns the keycode of the special key pressed.
+     * @returns {number} The keycode of the special key pressed.
+     */
     static GetSpecialKeyPressed() {
         return KeyboardInput.#specialKeyPressed;
     }
@@ -23,10 +44,10 @@ export class KeyboardInput {
     }
     /**@private */
     static #checkSpecialKey(event) {
-        if (event.shiftKey) KeyboardInput.#specialKeyPressed = KeyboardInput.keyCode.SHIFT;
-        else if (event.ctrlKey) KeyboardInput.#specialKeyPressed = KeyboardInput.keyCode.CTRL;
-        else if (event.altKey) KeyboardInput.#specialKeyPressed = KeyboardInput.keyCode.ALT;
-        else if (event.metaKey) KeyboardInput.#specialKeyPressed = KeyboardInput.keyCode.META;
+        if (event.shiftKey) KeyboardInput.#specialKeyPressed = KeyboardInput.KEY_CODE.SHIFT;
+        else if (event.ctrlKey) KeyboardInput.#specialKeyPressed = KeyboardInput.KEY_CODE.CTRL;
+        else if (event.altKey) KeyboardInput.#specialKeyPressed = KeyboardInput.KEY_CODE.ALT;
+        else if (event.metaKey) KeyboardInput.#specialKeyPressed = KeyboardInput.KEY_CODE.META;
         else KeyboardInput.#specialKeyPressed = null;
     }
     /**@private */
@@ -50,7 +71,7 @@ export class KeyboardInput {
 }
 
 
-KeyboardInput.keyCode = {
+KeyboardInput.KEY_CODE = {
     NUMONE: 49,
     NUMTWO: 50,
     NUMTHREE: 51,

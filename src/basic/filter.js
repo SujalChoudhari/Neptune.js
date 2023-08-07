@@ -1,3 +1,9 @@
+
+/**
+ * A class representing a filter.
+ * @class Filter
+ * @classdesc A class representing a filter.
+ */
 export class Filter {
     constructor() {
         this.filters = [];
@@ -39,6 +45,24 @@ export class Filter {
     }
 }
 
+
+/**
+ * @enum {string}
+ * @readonly
+ * @protected
+ * @memberof Filter
+ * @property {string} NONE - No filter.
+ * @property {string} GRAYSCALE - Grayscale filter.
+ * @property {string} SEPIA - Sepia filter.
+ * @property {string} INVERT - Invert filter.
+ * @property {string} BRIGHTNESS - Brightness filter.
+ * @property {string} CONTRAST - Contrast filter.
+ * @property {string} BLUR - Blur filter.
+ * @property {string} HUE_ROTATE - Hue rotate filter.
+ * @property {string} SATURATE - Saturate filter.
+ * @property {string} OPACITY - Opacity filter.
+ * @property {string} DROP_SHADOW - Drop shadow filter.
+ */
 Filter.TYPE = {
     NONE: "none",
     GRAYSCALE: "grayscale",

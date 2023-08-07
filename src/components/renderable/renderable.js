@@ -10,10 +10,14 @@ import { Component } from "../component.js";
  * @class Renderable
  * @extends Component
  * @interface
+ * 
+ * @property {BLEND_MODE} blendMode=Renderable.BLEND_MODE.NORMAL - Blend mode of the object.
+ * @property {Filter} filter - The filter applied to the object.
  */
 export class Renderable extends Component {
     /** Blend mode of the object */
     blendMode = Renderable.BLEND_MODE.NORMAL;
+    /** The filter applied to the object */
     filter = new Filter();
     constructor() {
         super();
@@ -27,6 +31,8 @@ export class Renderable extends Component {
 
 /**
  * Available blend modes for the renderable.
+ * @readonly
+ * @enum {string}
  */
 Renderable.BLEND_MODE = {
     NORMAL: 'source-over',

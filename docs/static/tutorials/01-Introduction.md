@@ -42,5 +42,4 @@ For example, a player entity can have a Transform component, a Sprite component,
 All the components are explained in this tutorial.
 
 
-
 Check out Step by Step Guide to learn how to use Neptune.js.

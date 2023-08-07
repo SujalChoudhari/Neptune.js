@@ -1,5 +1,26 @@
 {
-    "00-Getting Started":{"title":"Getting started"},
-    "01-Introduction":{"title":"Introduction"},
-    "02-Step by step":{"title":"Step by step"}
+    "00-Getting Started": {
+        "title": "Getting started"
+    },
+    "01-Introduction": {
+        "title": "Introduction"
+    },
+    "02-Step by step": {
+        "title": "Step by step"
+    },
+    "03-Systems": {
+        "title": "Systems and Managers"
+    },
+    "04-Multiple Scenes": {
+        "title": "Multiple Scenes"
+    },
+    "05-Inputs": {
+        "title": "Inputs"
+    },
+    "06-Scripts": {
+        "title": "Scripts"
+    },
+    "07-Beyond": {
+        "title": "Beyond the basics"
+    }
 }

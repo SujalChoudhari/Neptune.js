@@ -6,22 +6,28 @@
  * @class Component
  * @interface
  * @property {Entity} entity The entity that this component is attached to.
+ * @property {object} properties The properties of the component. [Read only]
  */
-export class Component{
-    constructor(entity=null){
+export class Component {
+    constructor(entity = null) {
         this.entity = entity;
         this._properties = {};
     }
 
+    /**
+     * The entity that this component is attached to.
+     * @readonly
+     */
+    get properties() {
+        return this._properties;
+    }
+
 
     /**
-     * Destroys the component. This will remove the component from the entity it is attached to.
-     * This is a callback method that is called when the entity is destroyed. Do not call this method directly.
-     * @method
      * @private
      * @returns {void}
      */
-    destroy(){
+    destroy() {
         this._properties = null;
         this.entity = null;
 
