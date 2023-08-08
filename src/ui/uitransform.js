@@ -158,8 +158,6 @@ export class Transform extends Component {
                 this._properties.y = y + height / 2 - this._properties.height / 2;
                 break;
         }
-
-
     }
 
 
@@ -189,14 +187,14 @@ export class Transform extends Component {
             var x = parentTransform.x;
             var y = parentTransform.y;
             var width = parentTransform.width;
-            var height = parentTransform.height;   
+            var height = parentTransform.height;
         } else {
             var x = 0;
             var y = 0;
             var width = window.innerWidth * Maths.PIXEL_TO_METER;
             var height = window.innerHeight * Maths.PIXEL_TO_METER;
         }
-    
+
         switch (mode) {
             case "both":
                 this._properties.x = x + padX;
@@ -213,26 +211,5 @@ export class Transform extends Component {
                 this._properties.height = height - padY * 2;
                 break;
         }
-    }
-    
-
-    #isPointInside(point) {
-        return point.x >= this._properties.x && point.x <= this._properties.x + this._properties.width && point.y >= this._properties.y && point.y <= this._properties.y + this._properties.height;
-    }
-
-    /**
-     * Check if the UI element is being hovered over.
-     * @returns {boolean} - True if the UI element is being hovered over.
-     */
-    IsHovered() {
-        return this.#isPointInside(Maths.PixelToMeterVector2(MouseInput.GetPosition()));
-    }
-
-    /**
-     * Check if the UI element is being clicked.
-     * @returns {boolean} - True if the UI element is being clicked.
-     */
-    IsClicked() {
-        return this.IsHovered() && MouseInput.IsLeftClicked();
     }
 }   

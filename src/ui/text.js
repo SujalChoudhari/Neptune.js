@@ -95,14 +95,20 @@ export class Text extends Renderable {
 
         ctx.save();
         ctx.translate(this.#transform.x * Maths.METER_TO_PIXEL, this.#transform.y * Maths.METER_TO_PIXEL);
-        
         ctx.rotate(this.#transform.rotate);
         ctx.scale(Maths.METER_TO_PIXEL, Maths.METER_TO_PIXEL);
 
         ctx.font = this.font.toString();
         ctx.fillStyle = this.color.toString();
         ctx.textAlign = this.align;
-        ctx.fillText(this.text, 0,this.font.size/4);
+        ctx.fillText(this.text, 0, this.font.size, this.#transform.width * Maths.METER_TO_PIXEL);
+
+
+        let children = this.entity.GetComponentsInChildren(Renderable);
+        for (let i = 0; i < children.length; i++) {
+            children[i].draw(ctx);
+        }
+
         ctx.restore();
     }
 }

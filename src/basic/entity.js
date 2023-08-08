@@ -1,4 +1,4 @@
-
+import { Behaviour } from "../components/scripts/script.js";
 /**
  * An entity is a game object. 
  * All the Objects in the game are entities. 
@@ -17,6 +17,7 @@ export class Entity {
         this._children = [];
         this._parent = null;
         this._components = [];
+        this._behaviours = {};
     }
 
     /**
@@ -140,6 +141,19 @@ export class Entity {
         } else console.warn("Component already attached");
     }
 
+
+    AddBehaviour(behaviour) {
+        this._behaviours[behaviour.name] = behaviour;
+    }
+
+    GetBehaviour(name) {
+        return this._behaviours[name];
+    }
+
+    RemoveBehaviour(name) {
+        delete this._behaviours[name];
+    }
+
     /**
      * Adds a child entity to this entity. This checks if the child is already added to the entity.
      * If it is, it will not be added again.
@@ -261,6 +275,10 @@ export class Entity {
         });
         this._parent.RemoveChild(this);
         this._children = [];
+        this._components = [];
+        this._parent = null;
+        this._behaviours = [];
+
 
     }
 

@@ -14,7 +14,7 @@ export class Font {
     #size;
     #style;
     #weight;
-    constructor(family = "Arial", size = 30, style = Font.STYLE.NORMAL, weight = Font.WEIGHT.NORMAL) {
+    constructor(family = "Arial", size = 2, style = Font.STYLE.NORMAL, weight = Font.WEIGHT.NORMAL) {
         this.#family = family;
         this.#size = size;
         this.#style = style;

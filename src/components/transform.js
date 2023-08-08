@@ -1,5 +1,5 @@
 import { Component } from "./component.js";
-import {Vector2} from "../maths/vec2.js";
+import { Vector2 } from "../maths/vec2.js";
 
 /**
  * A Transform Component is responsible for the position, rotation and scale of an entity.
@@ -22,12 +22,18 @@ import {Vector2} from "../maths/vec2.js";
  * 
  */
 export class Transform extends Component {
-    constructor(pos = Vector2.Zero(),rot = 0, scale = Vector2.One()){
+    constructor(pos = Vector2.Zero(), rot = 0, scale = Vector2.One()) {
         super();
         this._properties = {
-            position : pos,
-            rotation : rot,
-            scale : scale
+            position: pos,
+            rotation: rot,
+            scale: scale
+        }
+
+        this._debug = {
+            globalPosition: Vector2.Zero(),
+            globalRotation: 0,
+            globalScale: Vector2.One()
         }
     }
 
@@ -36,11 +42,11 @@ export class Transform extends Component {
      * @type {Vector2}
      * 
      */
-    get position(){
+    get position() {
         return this._properties.position.Copy();
     }
 
-    set position(position){
+    set position(position) {
         this._properties.position = position;
     }
 
@@ -48,11 +54,11 @@ export class Transform extends Component {
      * Thr rotation of the entity.
      * @type {number}
      */
-    get rotation(){
+    get rotation() {
         return this._properties.rotation;
     }
 
-    set rotation(rotation){
+    set rotation(rotation) {
         this._properties.rotation = rotation;
     }
 
@@ -64,11 +70,11 @@ export class Transform extends Component {
      * @type {Vector2}
      * 
      */
-    get scale(){
+    get scale() {
         return this._properties.scale.Copy();
     }
 
-    set scale(scale){
+    set scale(scale) {
         this._properties.scale = scale;
     }
 
@@ -77,15 +83,15 @@ export class Transform extends Component {
      * @returns {Vector2} The forward vector of the entity.
      * 
      */
-    GetForward(){
-        return new Vector2(Math.cos(this._properties.rotation),Math.sin(this._properties.rotation));
+    GetForward() {
+        return new Vector2(Math.cos(this._properties.rotation), Math.sin(this._properties.rotation));
     }
 
     /**
      * Translates the entity by the given vector.
      * @param {Vector2} translation The vector by which the entity is translated.
      */
-    Translate(translation){
+    Translate(translation) {
         this._properties.position.add(translation);
     }
 
@@ -93,7 +99,7 @@ export class Transform extends Component {
      * Rotates the entity by the given angle.
      * @param {number} angle The angle by which the entity is rotated.
      */
-    Rotate(rotation){
+    Rotate(rotation) {
         this._properties.rotation += rotation;
     }
 
@@ -101,7 +107,7 @@ export class Transform extends Component {
      * Scales the entity by the given vector.
      * @param {Vector2} scale The vector by which the entity is scaled.
      */
-    Scale(scale){
+    Scale(scale) {
         this._properties.scale.x *= scale.x;
         this._properties.scale.y *= scale.y;
     }

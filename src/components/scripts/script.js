@@ -2,9 +2,9 @@ import { Component } from "../component.js";
 import { ScriptManager } from "./scriptManager.js";
 
 
-export class Script extends Component {
+export class Script {
     constructor(name = "New Script") {
-        super();
+
         this.name = name;
         ScriptManager.addScript(this);
     }
