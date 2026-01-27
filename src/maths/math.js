@@ -217,10 +217,10 @@ export class Maths {
      * @returns {boolean}
      */
     static NearlyEqual(a, b) {
-        if (typeof a == typeof b) {
-            return Math.abs(a - b) < Maths.VERY_SMALL_NUMBER;
-        } else if (a instanceof Vector2 && b instanceof Vector2) {
+        if (a instanceof Vector2 && b instanceof Vector2) {
             return Maths.NearlyEqual(a.x, b.x) && Maths.NearlyEqual(a.y, b.y);
+        } else if (typeof a === 'number' && typeof b === 'number') {
+            return Math.abs(a - b) < Maths.VERY_SMALL_NUMBER;
         } else {
             throw new Error("nearlyEqual: a and b must be number or vector2");
         }

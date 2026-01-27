@@ -96,8 +96,6 @@ describe('Entity', () => {
         expect(tree.children[0].name).toBe('Child1');
         expect(tree.children[1].name).toBe('Child2');
     });
-
-    it
 });
 
 
