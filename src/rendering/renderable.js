@@ -1,5 +1,5 @@
-import { Filter } from "../../basic/filter.js";
-import { Component } from "../component.js";
+import { Filter } from "./filter.js";
+import { Component } from "../components/component.js";
 
 /**
  * Donot use this class directly. Use Inheritance instead.
@@ -25,7 +25,7 @@ export class Renderable extends Component {
 
     /** @private */
     draw(ctx) {
-        
+
     }
 }
 

@@ -1,4 +1,4 @@
-import { Component } from "../component.js";
+import { Component } from "../components/component.js";
 import { ScriptManager } from "./scriptManager.js";
 
 

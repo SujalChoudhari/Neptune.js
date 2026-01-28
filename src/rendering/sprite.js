@@ -1,6 +1,6 @@
 import { Renderable } from "./renderable.js";
-import { Transform } from "../transform.js";
-import { Maths } from "../../maths/math.js"
+import { Transform } from "../components/transform.js";
+import { Maths } from "../math/math.js"
 
 /**
  * A Sprite Component is responsible for rendering a sprite to the screen.
@@ -73,7 +73,7 @@ export class Sprite extends Renderable {
     draw(ctx) {
         super.draw(ctx);
         if (this.#transform == null)
-        this.#transform = this.entity.GetComponent(Transform);
+            this.#transform = this.entity.GetComponent(Transform);
 
 
         let image = this.#image;

@@ -1,5 +1,5 @@
 import { Component } from "./component.js";
-import { Vector2 } from "../maths/vec2.js";
+import { Vector2 } from "../math/vec2.js";
 
 /**
  * A Transform Component is responsible for the position, rotation and scale of an entity.

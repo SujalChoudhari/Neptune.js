@@ -1,7 +1,7 @@
-import { Renderable } from "../components/renderable/renderable.js";
+import { Renderable } from "../rendering/renderable.js";
 import { Transform } from "./uitransform.js";
-import { Maths } from "../maths/math.js"
-import { Color } from "../basic/color.js"
+import { Maths } from "../math/math.js"
+import { Color } from "../rendering/color.js"
 
 /**
  * A flat color rectangle that can be used to display UI elements.
