@@ -46,4 +46,7 @@ import "./larissa.test.js"
 // Galatea Cutscene tests
 import "./galatea.test.js"
 
+// Editor tests
+import "./editor.test.js"
+
 printResults();

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neptune Editor</title>
+    <link rel="stylesheet" href="styles/editor.css">
+</head>
+
+<body>
+    <!-- Top Toolbar -->
+    <header id="toolbar">
+        <div class="toolbar-left">
+            <span class="logo">Neptune</span>
+        </div>
+        <nav class="mode-tabs">
+            <button class="mode-tab active" data-mode="scene">Scene</button>
+            <button class="mode-tab" data-mode="world">World</button>
+            <button class="mode-tab" data-mode="characters">Characters</button>
+            <button class="mode-tab" data-mode="enemies">Enemies</button>
+            <button class="mode-tab" data-mode="cutscenes">Cutscenes</button>
+            <button class="mode-tab" data-mode="settings">⚙</button>
+        </nav>
+        <div class="toolbar-right">
+            <button id="btn-test">🧪 Tests</button>
+            <button id="btn-save">Save</button>
+            <button id="btn-load">Load</button>
+            <button id="btn-export">Export</button>
+        </div>
+    </header>
+
+    <!-- Main Layout -->
+    <main id="editor-main">
+        <!-- Left Panel -->
+        <aside id="panel-left">
+            <div class="panel" id="panel-hierarchy">
+                <div class="panel-header">Hierarchy</div>
+                <div class="panel-content" id="hierarchy-content">
+                    <!-- Dynamic content -->
+                </div>
+            </div>
+            <div class="panel" id="panel-layers">
+                <div class="panel-header">
+                    Layers
+                    <button id="btn-add-layer" class="btn-small">+</button>
+                </div>
+                <div class="panel-content" id="layers-content">
+                    <!-- Dynamic content -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Viewport -->
+        <section id="viewport-container">
+            <div id="viewport-toolbar">
+                <button id="btn-play">▶ Play</button>
+                <button id="btn-pause" disabled>⏸ Pause</button>
+                <button id="btn-stop" disabled>⏹ Stop</button>
+                <span class="separator"></span>
+                <button id="btn-grid" class="active">Grid</button>
+                <button id="btn-snap">Snap</button>
+            </div>
+            <canvas id="viewport"></canvas>
+        </section>
+
+        <!-- Right Panel -->
+        <aside id="panel-right">
+            <div class="panel" id="panel-inspector">
+                <div class="panel-header">Inspector</div>
+                <div class="panel-content" id="inspector-content">
+                    <p class="placeholder">Select an object</p>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Bottom Panel -->
+    <footer id="panel-bottom">
+        <div class="panel" id="panel-assets">
+            <div class="panel-header">
+                Assets
+                <button id="btn-import" class="btn-small">Import</button>
+            </div>
+            <div class="panel-content" id="assets-content">
+                <!-- Asset grid -->
+            </div>
+        </div>
+    </footer>
+
+    <!-- Mode Containers (hidden by default, shown when mode active) -->
+    <div id="mode-scene" class="mode-container active"></div>
+    <div id="mode-world" class="mode-container"></div>
+    <div id="mode-characters" class="mode-container"></div>
+    <div id="mode-enemies" class="mode-container"></div>
+    <div id="mode-cutscenes" class="mode-container"></div>
+    <div id="mode-settings" class="mode-container"></div>
+
+    <script type="module" src="js/editor.js"></script>
+</body>
+
+</html>
