@@ -28,4 +28,22 @@ import "./events.test.js"
 // Integration tests
 import "./integration/gameloop.test.js"
 
+// Titan Animation tests
+import "./titan.test.js"
+
+// Thalassa World/Camera tests
+import "./thalassa.test.js"
+
+// Nereid Physics tests
+import "./nereid.test.js"
+
+// Proteus Audio tests
+import "./proteus.test.js"
+
+// Larissa RPG tests
+import "./larissa.test.js"
+
+// Galatea Cutscene tests
+import "./galatea.test.js"
+
 printResults();
