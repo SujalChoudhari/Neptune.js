@@ -10,8 +10,10 @@ import { PanelSystem } from './ui/panelSystem.js';
 import { Viewport } from './viewport/viewport.js';
 import { ConsoleManager } from './ui/consoleManager.js';
 import { SceneEditor } from './editors/sceneEditor.js';
+import { TilemapEditor } from './editors/tilemapEditor.js';
 import { HierarchyPanel } from './ui/hierarchyPanel.js';
 import { LayerPanel } from './ui/layerPanel.js';
+import { TilesetPanel } from './ui/tilesetPanel.js';
 
 /**
  * Main editor application class
@@ -25,8 +27,10 @@ class TritonEditor {
         this.viewport = new Viewport(this);
         this.console = new ConsoleManager(this);
         this.sceneEditor = new SceneEditor(this);
+        this.tilemapEditor = new TilemapEditor(this);
         this.hierarchyPanel = new HierarchyPanel(this);
         this.layerPanel = new LayerPanel(this);
+        this.tilesetPanel = new TilesetPanel(this);
 
         this.initialized = false;
     }
@@ -43,8 +47,10 @@ class TritonEditor {
 
             // Initialize scene editor and panels
             this.sceneEditor.init();
+            this.tilemapEditor.init();
             this.hierarchyPanel.init();
             this.layerPanel.init();
+            this.tilesetPanel.init();
 
             // Setup IPC listeners
             this.setupIPC();

@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'">
     <title>Triton Editor</title>
     <link rel="stylesheet" href="styles/main.css">
     <link rel="stylesheet" href="styles/panels.css">
 </head>
+
 <body>
     <div id="app" class="triton-app">
         <!-- Top Menu Bar -->
@@ -83,6 +86,7 @@
         <footer id="panel-bottom" class="panel panel-bottom">
             <div class="panel-tabs">
                 <button class="tab-btn active" data-tab="assets">Assets</button>
+                <button class="tab-btn" data-tab="tileset">Tileset</button>
                 <button class="tab-btn" data-tab="console">Console</button>
                 <button class="tab-btn" data-tab="animation">Animation</button>
             </div>
@@ -93,6 +97,14 @@
                             <div class="empty-state">No project open</div>
                         </div>
                         <div class="asset-grid" id="asset-grid">
+                        </div>
+                    </div>
+                </div>
+                <div id="tileset-panel" class="tab-panel">
+                    <div id="tileset-content">
+                        <div class="tileset-empty">
+                            <button id="btn-load-tileset" class="primary-btn">Load Tileset</button>
+                            <div class="empty-state">No tileset loaded</div>
                         </div>
                     </div>
                 </div>
@@ -131,4 +143,5 @@
 
     <script type="module" src="app.js"></script>
 </body>
+
 </html>

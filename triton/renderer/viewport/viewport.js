@@ -3,6 +3,9 @@
  * Canvas viewport for scene editing
  */
 
+import { ToolManager } from './tools.js';
+import { TileBrushTool, TileEraserTool, TileFillTool } from './tilemapTools.js';
+
 /**
  * Viewport class for scene rendering and interaction
  */
@@ -21,6 +24,8 @@ export class Viewport {
 
         this.width = 0;
         this.height = 0;
+
+        this.toolManager = null;
     }
 
     /**
@@ -36,6 +41,13 @@ export class Viewport {
 
         this.gameCtx = this.gameCanvas.getContext('2d');
         this.gizmoCtx = this.gizmoCanvas.getContext('2d');
+
+        // Initialize tool manager
+        this.toolManager = new ToolManager(this);
+        this.toolManager.register('brush', new TileBrushTool(this));
+        this.toolManager.register('eraser', new TileEraserTool(this));
+        this.toolManager.register('fill', new TileFillTool(this));
+        this.toolManager.setTool('select');
 
         // Setup resize observer
         this.setupResize();
@@ -93,16 +105,22 @@ export class Viewport {
     setupInput() {
         const container = document.getElementById('viewport');
 
-        // Pan with middle mouse or space+drag
+        // Pan with middle mouse or shift+drag
         container.addEventListener('mousedown', (e) => {
             if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
                 this.isPanning = true;
                 this.lastMousePos = { x: e.clientX, y: e.clientY };
                 e.preventDefault();
+            } else if (e.button === 0) {
+                // Pass to tool manager
+                this.toolManager?.onMouseDown(e);
             }
         });
 
         container.addEventListener('mousemove', (e) => {
+            // Update tracked mouse position
+            this.lastMousePos = { x: e.offsetX, y: e.offsetY };
+
             if (this.isPanning) {
                 const dx = e.clientX - this.lastMousePos.x;
                 const dy = e.clientY - this.lastMousePos.y;
@@ -111,12 +129,18 @@ export class Viewport {
                 this.lastMousePos = { x: e.clientX, y: e.clientY };
                 this.editor.state.set('pan', { ...this.pan });
                 this.render();
+            } else {
+                // Pass to tool manager
+                this.toolManager?.onMouseMove(e);
             }
         });
 
         container.addEventListener('mouseup', (e) => {
             if (e.button === 1 || this.isPanning) {
                 this.isPanning = false;
+            } else if (e.button === 0) {
+                // Pass to tool manager
+                this.toolManager?.onMouseUp(e);
             }
         });
 
@@ -285,6 +309,9 @@ export class Viewport {
                 this.drawSelectionBox(ctx, entity);
             }
         }
+
+        // Draw current tool gizmos
+        this.toolManager?.render(ctx);
 
         ctx.restore();
     }
