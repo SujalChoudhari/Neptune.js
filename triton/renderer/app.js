@@ -22,6 +22,9 @@ import { AnimationPanel } from './ui/animationPanel.js';
 import { Timeline } from './ui/timeline.js';
 import { DialogueGraph } from './ui/dialogueGraph.js';
 import { DialoguePanel } from './ui/dialoguePanel.js';
+import { GamePreview } from './preview/gamePreview.js';
+import { PreviewToolbar } from './ui/previewToolbar.js';
+import { BuildSystem } from './build/buildSystem.js';
 
 /**
  * Main editor application class
@@ -39,6 +42,7 @@ class TritonEditor {
         this.rigEditor = new RigEditor(this);
         this.animationEditor = new AnimationEditor(this);
         this.dialogueEditor = new DialogueEditor(this);
+        this.gamePreview = new GamePreview(this);
         this.hierarchyPanel = new HierarchyPanel(this);
         this.layerPanel = new LayerPanel(this);
         this.tilesetPanel = new TilesetPanel(this);
@@ -47,6 +51,8 @@ class TritonEditor {
         this.timeline = new Timeline(this);
         this.dialogueGraph = new DialogueGraph(this);
         this.dialoguePanel = new DialoguePanel(this);
+        this.previewToolbar = new PreviewToolbar(this);
+        this.buildSystem = new BuildSystem(this);
 
         this.initialized = false;
     }
@@ -67,6 +73,7 @@ class TritonEditor {
             this.rigEditor.init();
             this.animationEditor.init();
             this.dialogueEditor.init();
+            this.gamePreview.init();
             this.hierarchyPanel.init();
             this.layerPanel.init();
             this.tilesetPanel.init();
@@ -75,6 +82,8 @@ class TritonEditor {
             this.timeline.init();
             this.dialogueGraph.init();
             this.dialoguePanel.init();
+            this.previewToolbar.init();
+            this.buildSystem.init();
 
             // Setup IPC listeners
             this.setupIPC();
