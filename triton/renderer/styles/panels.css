@@ -46,6 +46,19 @@
     border-left: 1px solid var(--border-color);
 }
 
+/* Panel Sections (for split panels) */
+.panel-section {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.panel-section:last-child {
+    border-bottom: none;
+}
+
 /* Bottom Panel */
 .panel-bottom {
     height: var(--bottom-panel-height);
@@ -300,4 +313,153 @@
 .console-time {
     color: var(--text-muted);
     margin-right: 8px;
+}
+
+/* Layer Panel */
+.layer-panel-toolbar {
+    padding: 8px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    gap: 4px;
+}
+
+.layer-list {
+    padding: 4px;
+}
+
+.layer-item {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    gap: 6px;
+    margin-bottom: 2px;
+}
+
+.layer-item:hover {
+    background: var(--bg-hover);
+}
+
+.layer-item.active {
+    background: var(--accent-primary);
+}
+
+.layer-visibility,
+.layer-lock {
+    font-size: 12px;
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.layer-visibility:hover,
+.layer-lock:hover {
+    opacity: 1;
+}
+
+.layer-icon {
+    font-size: 14px;
+}
+
+.layer-name {
+    flex: 1;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Context Menu */
+.context-menu {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 4px 0;
+    min-width: 140px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+}
+
+.context-menu .menu-item {
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.context-menu .menu-item:hover {
+    background: var(--bg-hover);
+}
+
+.context-menu .menu-separator {
+    height: 1px;
+    background: var(--border-color);
+    margin: 4px 0;
+}
+
+/* Layer Add Menu */
+.layer-add-menu {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 4px 0;
+    min-width: 160px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+}
+
+.layer-add-menu .menu-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.layer-add-menu .menu-item:hover {
+    background: var(--bg-hover);
+}
+
+/* Icon Button */
+.icon-btn {
+    width: 24px;
+    height: 24px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-btn:hover {
+    background: var(--bg-hover);
+}
+
+/* Entity Tree */
+.entity-tree {
+    padding: 4px;
+}
+
+.entity-icon {
+    font-size: 12px;
+    margin-right: 6px;
+}
+
+.entity-name {
+    font-size: 12px;
+}
+
+/* Hierarchy Header */
+.hierarchy-header {
+    padding: 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.scene-name {
+    font-size: 12px;
+    font-weight: 500;
 }

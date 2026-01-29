@@ -32,13 +32,23 @@
 
         <!-- Main Content Area -->
         <div id="main-content" class="main-content">
-            <!-- Left Panel: Hierarchy -->
+            <!-- Left Panel: Hierarchy & Layers -->
             <aside id="panel-left" class="panel panel-left">
-                <div class="panel-header">
-                    <span class="panel-title">Hierarchy</span>
+                <div class="panel-section">
+                    <div class="panel-header">
+                        <span class="panel-title">Hierarchy</span>
+                    </div>
+                    <div id="hierarchy-content" class="panel-content">
+                        <div class="empty-state">Open a project to see entities</div>
+                    </div>
                 </div>
-                <div id="hierarchy-content" class="panel-content">
-                    <div class="empty-state">Open a project to see entities</div>
+                <div class="panel-section">
+                    <div class="panel-header">
+                        <span class="panel-title">Layers</span>
+                    </div>
+                    <div id="layers-content" class="panel-content">
+                        <div class="empty-state">No scene loaded</div>
+                    </div>
                 </div>
             </aside>
 
