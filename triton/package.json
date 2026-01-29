@@ -1,0 +1,27 @@
+{
+    "name": "triton-editor",
+    "version": "0.1.0",
+    "description": "Visual Game Editor for Neptune.js",
+    "main": "main/main.js",
+    "type": "module",
+    "scripts": {
+        "start": "electron .",
+        "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+        "test:watch": "npm test -- --watch"
+    },
+    "keywords": [
+        "neptune",
+        "game-editor",
+        "metroidvania",
+        "electron"
+    ],
+    "author": "Sujal Choudhari",
+    "license": "MIT",
+    "devDependencies": {
+        "electron": "^40.1.0",
+        "jest": "^29.7.0"
+    },
+    "dependencies": {
+        "chokidar": "^5.0.0"
+    }
+}

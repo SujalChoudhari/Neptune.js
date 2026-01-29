@@ -1,0 +1,104 @@
+{
+  "name": "Demo Hub",
+  "type": "scene",
+  "layers": [
+    {
+      "type": "background-image",
+      "src": "assets/backgrounds/demo_sky.png"
+    },
+    {
+      "type": "parallax",
+      "depth": "back",
+      "blur": 2,
+      "scrollSpeed": 0.3,
+      "image": "assets/backgrounds/mountains.png"
+    },
+    {
+      "type": "tilemap",
+      "collision": false,
+      "tileset": "assets/tilesets/demo_bg.json",
+      "width": 40,
+      "height": 22,
+      "data": []
+    },
+    {
+      "type": "main",
+      "mode": "hybrid",
+      "entities": [
+        {
+          "id": "player",
+          "name": "Player",
+          "prefab": "entities/prefabs/player.prefab",
+          "transform": {
+            "position": { "x": 200, "y": 500 },
+            "scale": { "x": 1, "y": 1 },
+            "rotation": 0
+          }
+        },
+        {
+          "id": "guide_npc",
+          "name": "Guide NPC",
+          "prefab": "entities/prefabs/npc_guide.prefab",
+          "transform": {
+            "position": { "x": 400, "y": 500 },
+            "scale": { "x": 1, "y": 1 },
+            "rotation": 0
+          },
+          "dialogue": "dialogues/npc_guide.dialogue"
+        },
+        {
+          "id": "platform_1",
+          "name": "Platform",
+          "type": "platform",
+          "transform": {
+            "position": { "x": 100, "y": 600 },
+            "scale": { "x": 1, "y": 1 },
+            "rotation": 0
+          },
+          "size": { "width": 400, "height": 32 },
+          "collision": true
+        }
+      ]
+    },
+    {
+      "type": "tilemap",
+      "collision": false,
+      "tileset": "assets/tilesets/demo_fg.json",
+      "width": 40,
+      "height": 22,
+      "data": []
+    },
+    {
+      "type": "parallax",
+      "depth": "front",
+      "blur": 1,
+      "scrollSpeed": 1.2,
+      "image": "assets/backgrounds/foliage.png"
+    }
+  ],
+  "transitions": [
+    {
+      "id": "to_platforming",
+      "type": "walk",
+      "target": "scenes/demo_platforming.scene",
+      "position": { "x": 1900, "y": 400 },
+      "size": { "width": 20, "height": 200 }
+    },
+    {
+      "id": "to_combat",
+      "type": "teleport",
+      "target": "scenes/demo_combat.scene",
+      "trigger": "door_combat"
+    },
+    {
+      "id": "to_boss",
+      "type": "teleport",
+      "target": "scenes/demo_boss.scene",
+      "trigger": "door_boss"
+    }
+  ],
+  "camera": {
+    "bounds": { "x": 0, "y": 0, "width": 1920, "height": 1080 },
+    "followTarget": "player"
+  }
+}

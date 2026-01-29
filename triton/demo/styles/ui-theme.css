@@ -1,0 +1,223 @@
+/* Triton Demo - UI Theme */
+:root {
+    --primary-color: #4a90d9;
+    --secondary-color: #2a5a8a;
+    --background-color: #1a1a1a;
+    --panel-bg: rgba(26, 26, 26, 0.9);
+    --text-color: #ffffff;
+    --text-muted: #888888;
+    --border-color: #333333;
+    --health-color: #e74c3c;
+    --stamina-color: #f1c40f;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Splash Screen */
+.splash-screen {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', sans-serif;
+    color: var(--text-color);
+}
+
+.splash-title {
+    font-size: 72px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 8px;
+    margin-bottom: 20px;
+    text-shadow: 0 0 20px var(--primary-color);
+}
+
+.splash-subtitle {
+    font-size: 18px;
+    color: var(--text-muted);
+    margin-bottom: 40px;
+}
+
+.splash-loading {
+    width: 200px;
+    height: 4px;
+    background: var(--border-color);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.splash-loading-bar {
+    height: 100%;
+    background: var(--primary-color);
+    animation: loading 2s ease-in-out infinite;
+}
+
+@keyframes loading {
+    0% {
+        width: 0;
+    }
+
+    50% {
+        width: 100%;
+    }
+
+    100% {
+        width: 0;
+    }
+}
+
+/* Main Menu */
+.main-menu {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Segoe UI', sans-serif;
+    color: var(--text-color);
+}
+
+.menu-title {
+    font-size: 48px;
+    font-weight: 700;
+    margin-bottom: 60px;
+}
+
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 250px;
+}
+
+.menu-btn {
+    padding: 16px 32px;
+    background: transparent;
+    border: 2px solid var(--primary-color);
+    color: var(--text-color);
+    font-size: 18px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.menu-btn:hover {
+    background: var(--primary-color);
+    transform: translateX(10px);
+}
+
+/* HUD */
+.game-hud {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+}
+
+.hud-left {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.stat-bar {
+    width: 200px;
+    height: 20px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.stat-bar-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.health-bar .stat-bar-fill {
+    background: linear-gradient(90deg, #c0392b, #e74c3c);
+}
+
+.stamina-bar .stat-bar-fill {
+    background: linear-gradient(90deg, #d4ac0d, #f1c40f);
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--text-color);
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+/* Pause Menu */
+.pause-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pause-panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    padding: 40px;
+    min-width: 300px;
+    text-align: center;
+}
+
+.pause-title {
+    font-size: 32px;
+    margin-bottom: 30px;
+}
+
+/* Dialogue Box */
+.dialogue-box {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 800px;
+    background: var(--panel-bg);
+    border: 2px solid var(--border-color);
+    padding: 20px;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.dialogue-speaker {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 10px;
+}
+
+.dialogue-text {
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--text-color);
+}
+
+.dialogue-continue {
+    position: absolute;
+    bottom: 10px;
+    right: 20px;
+    font-size: 12px;
+    color: var(--text-muted);
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    50% {
+        opacity: 0;
+    }
+}
