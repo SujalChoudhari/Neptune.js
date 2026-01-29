@@ -99,6 +99,7 @@
                 <button class="tab-btn" data-tab="tileset">Tileset</button>
                 <button class="tab-btn" data-tab="console">Console</button>
                 <button class="tab-btn" data-tab="animation">Animation</button>
+                <button class="tab-btn" data-tab="dialogue">Dialogue</button>
             </div>
             <div id="tab-content" class="tab-content">
                 <div id="assets-panel" class="tab-panel active">
@@ -133,6 +134,16 @@
                 <div id="animation-panel" class="tab-panel">
                     <div class="timeline-placeholder">
                         <div class="empty-state">Select a rigged entity to animate</div>
+                    </div>
+                </div>
+                <div id="dialogue-panel" class="tab-panel">
+                    <div class="dialogue-editor-layout">
+                        <div id="dialogue-graph" class="dialogue-graph">
+                            <!-- Canvas-based node graph -->
+                        </div>
+                        <div id="dialogue-inspector" class="dialogue-inspector">
+                            <div class="empty-state">Select a node to edit</div>
+                        </div>
                     </div>
                 </div>
             </div>

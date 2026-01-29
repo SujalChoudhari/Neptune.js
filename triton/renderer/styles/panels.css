@@ -779,3 +779,185 @@
     position: relative;
     height: 100%;
 }
+
+/* Dialogue Editor */
+.dialogue-editor-layout {
+    display: flex;
+    height: 100%;
+    gap: 0;
+}
+
+.dialogue-graph {
+    flex: 1;
+    background: #1a1a1a;
+    overflow: hidden;
+    position: relative;
+}
+
+.dialogue-canvas {
+    display: block;
+    cursor: default;
+}
+
+.dialogue-inspector {
+    width: 280px;
+    background: var(--bg-secondary);
+    border-left: 1px solid var(--border-color);
+    overflow-y: auto;
+}
+
+.node-inspector {
+    display: flex;
+    flex-direction: column;
+}
+
+.inspector-header {
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+}
+
+.inspector-field {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.inspector-label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.inspector-input {
+    width: 100%;
+    padding: 6px 8px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 12px;
+}
+
+.inspector-input:focus {
+    border-color: var(--accent-primary);
+    outline: none;
+}
+
+.inspector-textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 6px 8px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 12px;
+    resize: vertical;
+}
+
+.inspector-select {
+    width: 100%;
+    padding: 6px 8px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 12px;
+}
+
+.inspector-actions {
+    padding: 12px;
+}
+
+.choice-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.choice-item {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.choice-item .inspector-input {
+    flex: 1;
+}
+
+.icon-btn {
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 4px;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-btn.danger {
+    color: #e74c3c;
+}
+
+.icon-btn:hover {
+    background: var(--bg-hover);
+}
+
+.danger-btn {
+    width: 100%;
+    padding: 8px 12px;
+    background: #e74c3c;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.danger-btn:hover {
+    background: #c0392b;
+}
+
+.secondary-btn {
+    width: 100%;
+    padding: 6px 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.secondary-btn:hover {
+    background: var(--bg-hover);
+}
+
+/* Context Menu */
+.dialogue-context-menu {
+    position: fixed;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 4px 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+    min-width: 160px;
+}
+
+.context-menu-item {
+    padding: 8px 16px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.context-menu-item:hover {
+    background: var(--accent-primary);
+    color: white;
+}
