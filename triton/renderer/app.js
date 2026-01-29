@@ -12,10 +12,13 @@ import { ConsoleManager } from './ui/consoleManager.js';
 import { SceneEditor } from './editors/sceneEditor.js';
 import { TilemapEditor } from './editors/tilemapEditor.js';
 import { RigEditor } from './editors/rigEditor.js';
+import { AnimationEditor } from './editors/animationEditor.js';
 import { HierarchyPanel } from './ui/hierarchyPanel.js';
 import { LayerPanel } from './ui/layerPanel.js';
 import { TilesetPanel } from './ui/tilesetPanel.js';
 import { RigPanel } from './ui/rigPanel.js';
+import { AnimationPanel } from './ui/animationPanel.js';
+import { Timeline } from './ui/timeline.js';
 
 /**
  * Main editor application class
@@ -31,10 +34,13 @@ class TritonEditor {
         this.sceneEditor = new SceneEditor(this);
         this.tilemapEditor = new TilemapEditor(this);
         this.rigEditor = new RigEditor(this);
+        this.animationEditor = new AnimationEditor(this);
         this.hierarchyPanel = new HierarchyPanel(this);
         this.layerPanel = new LayerPanel(this);
         this.tilesetPanel = new TilesetPanel(this);
         this.rigPanel = new RigPanel(this);
+        this.animationPanel = new AnimationPanel(this);
+        this.timeline = new Timeline(this);
 
         this.initialized = false;
     }
@@ -53,10 +59,13 @@ class TritonEditor {
             this.sceneEditor.init();
             this.tilemapEditor.init();
             this.rigEditor.init();
+            this.animationEditor.init();
             this.hierarchyPanel.init();
             this.layerPanel.init();
             this.tilesetPanel.init();
             this.rigPanel.init();
+            this.animationPanel.init();
+            this.timeline.init();
 
             // Setup IPC listeners
             this.setupIPC();

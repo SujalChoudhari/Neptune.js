@@ -652,3 +652,130 @@
 .remove-slot-btn:hover {
     opacity: 0.9;
 }
+
+/* Animation Panel */
+.animation-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    gap: 12px;
+    height: 100%;
+}
+
+.animation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.animation-name {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.animation-duration {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.animation-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    padding: 8px;
+}
+
+.control-btn {
+    width: 36px;
+    height: 36px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.control-btn:hover {
+    background: var(--bg-hover);
+}
+
+.control-btn.play-btn {
+    width: 44px;
+    height: 44px;
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+.control-btn.play-btn:hover {
+    background: var(--accent-hover);
+}
+
+.time-display {
+    text-align: center;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-family: monospace;
+}
+
+.time-separator {
+    color: var(--text-muted);
+    margin: 0 4px;
+}
+
+/* Timeline */
+.timeline-container {
+    flex: 1;
+    min-height: 150px;
+    background: var(--bg-tertiary);
+    overflow: hidden;
+}
+
+.timeline-canvas {
+    display: block;
+}
+
+/* Keyframe styles */
+.keyframe-diamond {
+    width: 12px;
+    height: 12px;
+    background: #e8a336;
+    transform: rotate(45deg);
+    cursor: pointer;
+}
+
+.keyframe-diamond.selected {
+    background: #4a90d9;
+    box-shadow: 0 0 0 2px #6ab0ff;
+}
+
+/* Animation track */
+.animation-track {
+    height: 32px;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.track-label {
+    width: 100px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.track-content {
+    flex: 1;
+    position: relative;
+    height: 100%;
+}
