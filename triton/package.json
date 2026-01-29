@@ -7,7 +7,8 @@
     "scripts": {
         "start": "electron .",
         "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-        "test:watch": "npm test -- --watch"
+        "test:watch": "npm test -- --watch",
+        "build:demo": "node scripts/buildDemo.js"
     },
     "keywords": [
         "neptune",
@@ -22,6 +23,10 @@
         "jest": "^29.7.0"
     },
     "dependencies": {
-        "chokidar": "^5.0.0"
+        "chokidar": "^5.0.0",
+        "lodash-es": "^4.17.21",
+        "uuid": "^11.0.5",
+        "esprima": "^4.0.1",
+        "escodegen": "^2.1.0"
     }
 }

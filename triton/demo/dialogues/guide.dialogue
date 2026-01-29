@@ -1,0 +1,141 @@
+{
+    "id": "main-dialogue",
+    "name": "Guide NPC Dialogue",
+    "startNode": "node-intro",
+    "variables": {
+        "hasMetPlayer": false,
+        "coinsCollected": 0
+    },
+    "nodes": [
+        {
+            "id": "node-intro",
+            "type": "condition",
+            "x": 100,
+            "y": 200,
+            "variable": "hasMetPlayer",
+            "operator": "==",
+            "value": "false",
+            "trueNode": "node-first-meeting",
+            "falseNode": "node-return-greeting"
+        },
+        {
+            "id": "node-first-meeting",
+            "type": "dialogue",
+            "x": 350,
+            "y": 100,
+            "speaker": "Guide",
+            "text": "Welcome, adventurer! I am your guide through this mysterious land.",
+            "portrait": "guide_portrait.png",
+            "targetNode": "node-explanation"
+        },
+        {
+            "id": "node-explanation",
+            "type": "dialogue",
+            "x": 600,
+            "y": 100,
+            "speaker": "Guide",
+            "text": "Collect golden coins and avoid the slime enemies. Are you ready?",
+            "portrait": "guide_portrait.png",
+            "targetNode": "node-ready-choice"
+        },
+        {
+            "id": "node-ready-choice",
+            "type": "choice",
+            "x": 850,
+            "y": 100,
+            "choices": [
+                { "text": "I'm ready! Let's go!", "targetNode": "node-encouragement" },
+                { "text": "Tell me more about the dangers.", "targetNode": "node-danger-info" },
+                { "text": "Goodbye for now.", "targetNode": "node-goodbye" }
+            ]
+        },
+        {
+            "id": "node-encouragement",
+            "type": "dialogue",
+            "x": 1100,
+            "y": 50,
+            "speaker": "Guide",
+            "text": "That's the spirit! Good luck on your adventure!",
+            "targetNode": "node-set-met-flag"
+        },
+        {
+            "id": "node-set-met-flag",
+            "type": "action",
+            "x": 1350,
+            "y": 50,
+            "actionType": "set_variable",
+            "variable": "hasMetPlayer",
+            "value": "true",
+            "targetNode": "node-end"
+        },
+        {
+            "id": "node-danger-info",
+            "type": "dialogue",
+            "x": 1100,
+            "y": 150,
+            "speaker": "Guide",
+            "text": "The slimes are not too smart, but they'll hurt you if you touch them. Jump on their heads to defeat them!",
+            "targetNode": "node-ready-choice"
+        },
+        {
+            "id": "node-goodbye",
+            "type": "dialogue",
+            "x": 1100,
+            "y": 250,
+            "speaker": "Guide",
+            "text": "Come back when you're ready. I'll be here waiting.",
+            "targetNode": "node-end-temp"
+        },
+        {
+            "id": "node-end-temp",
+            "type": "end",
+            "x": 1350,
+            "y": 250,
+            "endType": "normal"
+        },
+        {
+            "id": "node-return-greeting",
+            "type": "dialogue",
+            "x": 350,
+            "y": 300,
+            "speaker": "Guide",
+            "text": "Welcome back! How goes your adventure?",
+            "targetNode": "node-return-choice"
+        },
+        {
+            "id": "node-return-choice",
+            "type": "choice",
+            "x": 600,
+            "y": 300,
+            "choices": [
+                { "text": "Going great! Just exploring.", "targetNode": "node-great" },
+                { "text": "I need some tips.", "targetNode": "node-tips" }
+            ]
+        },
+        {
+            "id": "node-great",
+            "type": "dialogue",
+            "x": 850,
+            "y": 280,
+            "speaker": "Guide",
+            "text": "Wonderful! Keep up the good work!",
+            "targetNode": "node-end"
+        },
+        {
+            "id": "node-tips",
+            "type": "dialogue",
+            "x": 850,
+            "y": 380,
+            "speaker": "Guide",
+            "text": "Remember: Jump to defeat enemies, collect all the coins, and watch out for spikes!",
+            "targetNode": "node-end"
+        },
+        {
+            "id": "node-end",
+            "type": "end",
+            "x": 1100,
+            "y": 330,
+            "endType": "normal"
+        }
+    ]
+}

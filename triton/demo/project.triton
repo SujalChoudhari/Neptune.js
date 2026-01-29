@@ -1,11 +1,20 @@
 {
-  "name": "Demo Game",
-  "version": "1.0.0",
-  "neptuneVersion": "3.3.1",
-  "resolution": {
-    "width": 1920,
-    "height": 1080
-  },
-  "uiTheme": "styles/ui-theme.css",
-  "entryScene": "scenes/demo_hub.scene"
+    "name": "Platform Adventure Demo",
+    "version": "1.0.0",
+    "engine": "neptune.js",
+    "description": "A platformer demo showcasing Triton Editor features",
+    "resolution": {
+        "width": 1280,
+        "height": 720
+    },
+    "startScene": "main",
+    "scenes": [
+        "scenes/main.scene",
+        "scenes/level1.scene"
+    ],
+    "preferences": {
+        "backgroundColor": "#1a1a2e",
+        "pixelArt": true,
+        "targetFPS": 60
+    }
 }

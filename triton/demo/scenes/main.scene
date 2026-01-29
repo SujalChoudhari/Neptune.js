@@ -1,0 +1,247 @@
+{
+    "id": "main-scene",
+    "name": "Main Scene",
+    "backgroundColor": "#1a1a2e",
+    "layers": [
+        {
+            "id": "layer-background",
+            "name": "Background",
+            "visible": true,
+            "locked": false,
+            "entities": [
+                {
+                    "id": "sky-bg",
+                    "name": "Sky Background",
+                    "type": "sprite",
+                    "transform": {
+                        "x": 640,
+                        "y": 360,
+                        "scale": { "x": 8, "y": 8 },
+                        "rotation": 0
+                    },
+                    "components": [
+                        {
+                            "type": "Sprite",
+                            "image": "assets/kenney_assets/Sprites/Backgrounds/Default/background_blue.png",
+                            "tint": "#ffffff"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "layer-tilemap",
+            "name": "Tilemap",
+            "visible": true,
+            "locked": false,
+            "entities": [
+                {
+                    "id": "ground-tilemap",
+                    "name": "Ground",
+                    "type": "tilemap",
+                    "transform": { "x": 0, "y": 0, "scale": { "x": 1, "y": 1 }, "rotation": 0 },
+                    "components": [
+                        {
+                            "type": "Tilemap",
+                            "tileset": "assets/kenney_assets/Spritesheets/spritesheet-tiles-default.png",
+                            "tileWidth": 18,
+                            "tileHeight": 18,
+                            "width": 40,
+                            "height": 12,
+                            "data": []
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "layer-entities",
+            "name": "Entities",
+            "visible": true,
+            "locked": false,
+            "entities": [
+                {
+                    "id": "player",
+                    "name": "Player",
+                    "type": "player",
+                    "transform": {
+                        "x": 200,
+                        "y": 400,
+                        "scale": { "x": 2, "y": 2 },
+                        "rotation": 0
+                    },
+                    "components": [
+                        {
+                            "type": "Sprite",
+                            "image": "assets/kenney_assets/Sprites/Characters/Default/character_green_idle.png"
+                        },
+                        {
+                            "type": "RigidBody",
+                            "mass": 1,
+                            "gravityScale": 1,
+                            "friction": 0.5
+                        },
+                        {
+                            "type": "BoxCollider",
+                            "width": 18,
+                            "height": 22,
+                            "offset": { "x": 0, "y": 0 }
+                        },
+                        {
+                            "type": "PlayerController",
+                            "moveSpeed": 200,
+                            "jumpForce": 400,
+                            "groundCheck": true
+                        },
+                        {
+                            "type": "Animator",
+                            "animations": {
+                                "idle": {
+                                    "frames": ["character_green_idle.png"],
+                                    "frameRate": 1,
+                                    "loop": true
+                                },
+                                "walk": {
+                                    "frames": ["character_green_walk_a.png", "character_green_walk_b.png"],
+                                    "frameRate": 8,
+                                    "loop": true
+                                },
+                                "jump": {
+                                    "frames": ["character_green_jump.png"],
+                                    "frameRate": 1,
+                                    "loop": false
+                                }
+                            },
+                            "defaultAnimation": "idle"
+                        }
+                    ]
+                },
+                {
+                    "id": "coin-1",
+                    "name": "Coin 1",
+                    "type": "collectible",
+                    "transform": {
+                        "x": 400,
+                        "y": 350,
+                        "scale": { "x": 2, "y": 2 },
+                        "rotation": 0
+                    },
+                    "components": [
+                        {
+                            "type": "Sprite",
+                            "image": "assets/kenney_assets/Sprites/Tiles/Default/coin_gold.png"
+                        },
+                        {
+                            "type": "CircleCollider",
+                            "radius": 9,
+                            "isTrigger": true
+                        },
+                        {
+                            "type": "Collectible",
+                            "value": 10,
+                            "sound": "assets/kenney_assets/Sounds/sfx_coin.ogg"
+                        }
+                    ]
+                },
+                {
+                    "id": "coin-2",
+                    "name": "Coin 2",
+                    "type": "collectible",
+                    "transform": {
+                        "x": 500,
+                        "y": 300,
+                        "scale": { "x": 2, "y": 2 },
+                        "rotation": 0
+                    },
+                    "components": [
+                        {
+                            "type": "Sprite",
+                            "image": "assets/kenney_assets/Sprites/Tiles/Default/coin_gold.png"
+                        },
+                        {
+                            "type": "CircleCollider",
+                            "radius": 9,
+                            "isTrigger": true
+                        },
+                        {
+                            "type": "Collectible",
+                            "value": 10,
+                            "sound": "assets/kenney_assets/Sounds/sfx_coin.ogg"
+                        }
+                    ]
+                },
+                {
+                    "id": "enemy-slime",
+                    "name": "Slime Enemy",
+                    "type": "enemy",
+                    "transform": {
+                        "x": 700,
+                        "y": 420,
+                        "scale": { "x": 2, "y": 2 },
+                        "rotation": 0
+                    },
+                    "components": [
+                        {
+                            "type": "Sprite",
+                            "image": "assets/kenney_assets/Sprites/Enemies/Default/enemy_slime_a.png"
+                        },
+                        {
+                            "type": "BoxCollider",
+                            "width": 22,
+                            "height": 18
+                        },
+                        {
+                            "type": "PatrolAI",
+                            "patrolDistance": 100,
+                            "speed": 50,
+                            "direction": 1
+                        },
+                        {
+                            "type": "Animator",
+                            "animations": {
+                                "idle": {
+                                    "frames": ["enemy_slime_a.png", "enemy_slime_b.png"],
+                                    "frameRate": 4,
+                                    "loop": true
+                                }
+                            },
+                            "defaultAnimation": "idle"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "layer-ui",
+            "name": "UI",
+            "visible": true,
+            "locked": false,
+            "entities": [
+                {
+                    "id": "score-text",
+                    "name": "Score Display",
+                    "type": "ui-text",
+                    "transform": {
+                        "x": 100,
+                        "y": 50,
+                        "scale": { "x": 1, "y": 1 },
+                        "rotation": 0
+                    },
+                    "components": [
+                        {
+                            "type": "Text",
+                            "text": "Score: 0",
+                            "font": "24px Arial",
+                            "color": "#ffffff",
+                            "align": "left"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "worldSettings": {
+        "gravity": { "x": 0, "y": 980 },
+        "bounds": { "x": 0, "y": 0, "width": 1280, "height": 720 }
+    }
+}
