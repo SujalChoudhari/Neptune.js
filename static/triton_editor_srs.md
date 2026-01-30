@@ -44,7 +44,7 @@ We spent ~48 hours spinning wheels. Here is *exactly* why:
 
 
 ### 1.1 Purpose
-Triton is a **desktop application** (Electron-based) visual editor for the Neptune.js game engine, designed to streamline the creation of **metroidvania-style 2D side-scrolling platformers** like Hollow Knight, Super Mario, and similar A-RPG games.
+Triton is a **desktop application** (Tauri-based) visual editor for the Neptune.js game engine, designed to streamline the creation of **metroidvania-style 2D side-scrolling platformers** like Hollow Knight, Super Mario, and similar A-RPG games.
 
 ### 1.2 Scope
 Triton Editor enables developers to:
@@ -61,7 +61,7 @@ Triton Editor enables developers to:
 ### 1.3 Key Design Decisions
 
 > [!IMPORTANT]
-> **Desktop App**: Triton runs as Electron desktop app for native file system access. Dropping files into the project folder auto-registers them in the Asset Manager.
+> **Desktop App**: Triton runs as a Tauri desktop app for native file system access and high performance. Dropping files into the project folder auto-registers them in the Asset Manager.
 
 > [!IMPORTANT]
 > **Rigging, Not Spritesheets**: Characters are rigged from body part images (head, torso, arms, legs). No spritesheet slicing—all animations are skeletal via the Titan system.
@@ -367,7 +367,7 @@ flowchart LR
 2. Select target: Web (HTML5) or Desktop (Electron)
 3. Configure: Entry scene, assets, UI theme CSS
 4. Build → Auto-launch for testing
-5. Package for distribution
+5. Package for distribution (MSI, DMG, Deb via Tauri)
 
 **UI System Export:**
 - HTML/CSS UI templates bundled with game
@@ -506,7 +506,7 @@ flowchart LR
 | ID | Requirement | Priority |
 |----|-------------|----------|
 | BE-01 | Web (HTML5) export | Must |
-| BE-02 | Desktop (Electron) export | Should |
+| BE-02 | Desktop (Tauri) export | Should |
 | BE-03 | Build configuration UI | Must |
 | BE-04 | Auto-bundle assets | Must |
 | BE-05 | Bundle HTML/CSS UI templates | Must |
@@ -560,10 +560,10 @@ flowchart LR
 - Asset browser should index 10,000+ files without lag
 
 ### 5.2 Platform
-- **Desktop App**: Electron-based for native file system access
+- **Desktop App**: Tauri-based (Rust + Webview) for native file system access and performance
 - Neptune.js v3.3.1+ compatibility
 - Cross-platform: Windows, macOS, Linux
-- Export targets: Web (HTML5), Desktop (Electron)
+- Export targets: Web (HTML5), Desktop (Tauri)
 
 ### 5.3 Usability
 - First-time users can create a simple level within 15 minutes
@@ -616,12 +616,12 @@ graph TB
 ```
 
 ### 6.2 Technology Stack
-- **Editor App**: Electron (Node.js + Chromium)
+- **Editor App**: Tauri (Rust Core + Webview)
 - **UI**: HTML/CSS panels + Canvas viewport
 - **Viewport**: Neptune.js canvas with editor overlays
-- **File Watching**: chokidar for live asset discovery
+- **File Watching**: notify (Rust) for live asset discovery
 - **Data Format**: JSON for all project data
-- **Build Tool**: Vite for export bundling
+- **Build Tool**: Vite for frontend bundling
 
 ---
 
@@ -690,7 +690,7 @@ graph TB
 
 ## 9. MVP Scope (Phase 1)
 
-1. **Desktop App**: Electron shell with file watching
+1. **Desktop App**: Tauri shell with file watching (Rust)
 2. **Project Management**: New/open project, settings
 3. **Asset Browser**: Auto-discovery, folder navigation
 4. **Scene Editor**: Multi-layer viewport, entity hierarchy

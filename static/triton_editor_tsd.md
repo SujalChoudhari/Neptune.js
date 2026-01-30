@@ -21,30 +21,30 @@ This Technical Specification Document (TSD) provides the detailed implementation
 
 ```mermaid
 graph TB
-    subgraph Electron["Electron App"]
-        Main[Main Process]
-        Renderer[Renderer Process]
+    subgraph TauriApp["Tauri App"]
+        Core[Rust Core Process]
+        WebView[WebView Process]
     end
     
-    subgraph MainProcess["Main Process (Node.js)"]
-        FileWatcher[File Watcher]
-        ProjectIO[Project I/O]
-        BuildSystem[Build System]
-        IPC[IPC Handler]
+    subgraph RustCore["Tauri Core (Rust)"]
+        FileWatcher[File Watcher (notify)]
+        ProjectIO[Project I/O (std::fs)]
+        BuildSystem[Build System (cargo/vite)]
+        CommandHandlers[Tauri Commands]
     end
     
-    subgraph RendererProcess["Renderer Process (Chromium)"]
+    subgraph RendererProcess["Frontend (Webview)"]
         subgraph UI["UI Layer (HTML/CSS)"]
             MenuBar[Menu Bar]
             Panels[Panel System]
             Dialogs[Dialog System]
         end
         
-        subgraph Core["Editor Core"]
+        subgraph CoreJS["Editor Core (JS)"]
             StateManager[State Manager]
-            CommandSystem[Command System]
             SelectionManager[Selection Manager]
             HistoryManager[Undo/Redo]
+            TauriInvoke[Tauri Invoke]
         end
         
         subgraph Viewport["Viewport"]
@@ -54,26 +54,27 @@ graph TB
         end
     end
     
-    Main --> IPC
-    IPC <--> Renderer
-    FileWatcher --> IPC
-    ProjectIO --> IPC
-    BuildSystem --> IPC
+    Core --> CommandHandlers
+    CommandHandlers <--> WebView
+    FileWatcher --> CommandHandlers
+    ProjectIO --> CommandHandlers
+    BuildSystem --> CommandHandlers
+    TauriInvoke <--> CommandHandlers
 ```
 
 ### 2.2 Technology Stack
 
 | Layer | Technology | Purpose |
 |-------|------------|---------|
-| Desktop Shell | Electron 28+ | Cross-platform desktop app |
-| Main Process | Node.js 20+ | File system, builds |
-| Renderer | Chromium | UI rendering |
-| UI Framework | **React 18+** | Component-based UI (Moved from Vanilla) |
-| Styling | **Tailwind CSS 4.0** | Utility-first styling (Must verify config) |
+| Desktop Shell | **Tauri 2.0** | High-performance, secure desktop app |
+| Core Process | **Rust** | File system, heavy lifting, window management |
+| Renderer | Webview | UI rendering (OS native webview) |
+| UI Framework | **React 18+** | Component-based UI |
+| Styling | **Tailwind CSS 4.0** | Utility-first styling |
 | Components | **Radix UI / Shadcn** | Accessible, unstyled primitives |
 | Canvas Engine | Neptune.js | Game viewport |
-| File Watching | chokidar | Asset auto-discovery |
-| Bundler | Vite | Game export builds |
+| File Watching | **notify (Rust)** | Asset auto-discovery |
+| Bundler | Vite | Frontend & Game export builds |
 | Data Format | JSON | All project data |
 
 ---
@@ -143,124 +144,64 @@ graph LR
 
 ## 4. Detailed Component Specifications
 
-### 4.1 Main Process (`main/`)
+### 4.1 Core Process (`src-tauri/src/`)
+#### 4.1.1 Entry Point (`main.rs`)
+```rust
+// Tauri main entry
+#![cfg_attr(
+  all(not(debug_assertions), target_os = "windows"),
+  windows_subsystem = "windows"
+)]
 
-#### 4.1.1 Entry Point (`main.js`)
-
-```javascript
-// Electron main process entry
-const { app, BrowserWindow, ipcMain } = require('electron');
-const { FileWatcher } = require('./fileWatcher');
-const { ProjectIO } = require('./projectIO');
-const { BuildSystem } = require('./buildSystem');
-
-class TritonMain {
-    constructor() {
-        this.mainWindow = null;
-        this.fileWatcher = null;
-        this.project = null;
-    }
-    
-    async createWindow() { /* ... */ }
-    setupIPC() { /* ... */ }
-    async openProject(path) { /* ... */ }
+fn main() {
+  tauri::Builder::default()
+    .invoke_handler(tauri::generate_handler![
+        greet,
+        load_project,
+        save_file,
+        run_tests
+    ])
+    .run(tauri::generate_context!())
+    .expect("error while running tauri application");
 }
 ```
 
-#### 4.1.2 File Watcher (`fileWatcher.js`)
-
-```javascript
-const chokidar = require('chokidar');
-
-class FileWatcher {
-    constructor(projectPath) {
-        this.watcher = null;
-        this.projectPath = projectPath;
-    }
-    
-    start() {
-        this.watcher = chokidar.watch(this.projectPath, {
-            ignored: /(^|[\/\\])\../, // Ignore dotfiles
-            persistent: true,
-            ignoreInitial: false
-        });
-        
-        this.watcher
-            .on('add', path => this.onFileAdded(path))
-            .on('change', path => this.onFileChanged(path))
-            .on('unlink', path => this.onFileRemoved(path));
-    }
-    
-    onFileAdded(path) { /* Emit to renderer via IPC */ }
-    onFileChanged(path) { /* Hot-reload asset */ }
-    onFileRemoved(path) { /* Remove from cache */ }
-}
+#### 4.1.2 File Watcher (`watcher.rs`)
+```rust
+use notify::{Watcher, RecursiveMode, Result};
+// Implementation of generic file watcher sending events to frontend
 ```
 
-#### 4.1.3 Build System (`buildSystem.js`)
-
-```javascript
-const { build } = require('vite');
-
-class BuildSystem {
-    constructor(project) {
-        this.project = project;
-    }
-    
-    async buildWeb(outputDir) {
-        // Bundle Neptune.js + project assets
-        await build({
-            root: this.project.path,
-            build: {
-                outDir: outputDir,
-                rollupOptions: {
-                    input: this.project.entryScene
-                }
-            }
-        });
-    }
-    
-    async buildDesktop(outputDir) {
-        // Wrap in Electron shell
-    }
-}
-```
 
 ---
 
 ### 4.2 Renderer Process (`renderer/`)
 
-#### 4.2.1 Application Bootstrap (`app.js`)
+#### 4.2.1 Application Bootstrap (`App.tsx`)
 
-```javascript
-import { EventBus } from './core/eventBus.js';
-import { StateManager } from './core/stateManager.js';
-import { PanelSystem } from './ui/panelSystem.js';
-import { Viewport } from './viewport/viewport.js';
+```typescript
+import { useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/tauri';
+import { listen } from '@tauri-apps/api/event';
 
-class TritonEditor {
-    constructor() {
-        this.events = new EventBus();
-        this.state = new StateManager();
-        this.panels = new PanelSystem();
-        this.viewport = new Viewport();
-    }
+function App() {
+  useEffect(() => {
+    // Setup listeners
+    const unlisten = listen('file-change', (event) => {
+       console.log('File changed:', event.payload);
+    });
     
-    async init() {
-        await this.panels.init();
-        await this.viewport.init();
-        this.setupIPC();
-    }
-    
-    setupIPC() {
-        window.electronAPI.onFileAdded((path) => {
-            this.events.emit('asset:added', { path });
-        });
-    }
+    return () => {
+       unlisten.then(f => f());
+    };
+  }, []);
+
+  return (
+    <div className="app-container">
+       {/* Layout and Panels */}
+    </div>
+  );
 }
-
-const editor = new TritonEditor();
-editor.init();
 ```
 
 #### 4.2.2 State Manager (`core/stateManager.js`)
@@ -604,9 +545,9 @@ export class ConsolePanel extends Panel {
         this.update();
     }
     
-    runTests() {
+    async runTests() {
         this.log('info', 'Running tests...', 'TestRunner');
-        window.electronAPI.runTests();
+        await invoke('run_tests');
     }
     
     render() {
@@ -691,69 +632,30 @@ triton-demo/
 ```
 triton/
 ├── package.json
-├── electron-builder.json
-├── main/                          # Electron main process
-│   ├── main.js                    # Entry point
-│   ├── fileWatcher.js
-│   ├── projectIO.js
-│   ├── buildSystem.js
-│   └── ipcHandlers.js
-├── renderer/                      # Electron renderer process
+├── tauri.conf.json                # Tauri configuration
+├── src-tauri/                     # Rust backend
+│   ├── Cargo.toml
+│   ├── src/
+│   │   ├── main.rs                # Entry point & Commands
+│   │   ├── watcher.rs             # File system watcher
+│   │   └── build.rs               # Build scripts
+├── src/                           # React Frontend
 │   ├── index.html
+│   ├── main.tsx
+│   ├── App.tsx
 │   ├── styles/
-│   │   ├── main.css
-│   │   ├── panels.css
-│   │   ├── dark-theme.css
-│   │   └── components/
-│   ├── app.js                     # Editor bootstrap
-│   ├── core/
-│   │   ├── eventBus.js
-│   │   ├── stateManager.js
-│   │   ├── commandSystem.js
-│   │   └── historyManager.js
-│   ├── ui/
-│   │   ├── panelSystem.js
-│   │   ├── menuBar.js
-│   │   ├── dialogs/
-│   │   └── panels/
-│   │       ├── hierarchy.js
-│   │       ├── inspector.js
-│   │       ├── assetBrowser.js
-│   │       ├── console.js
-│   │       ├── tileset.js
-│   │       └── animation.js
-│   ├── viewport/
-│   │   ├── viewport.js
-│   │   ├── gizmoRenderer.js
-│   │   └── tools/
-│   │       ├── selectTool.js
-│   │       ├── moveTool.js
-│   │       ├── tileBrush.js
-│   │       └── rigTool.js
-│   ├── editors/
-│   │   ├── sceneEditor.js
-│   │   ├── rigEditor.js
-│   │   ├── tilemapEditor.js
-│   │   └── dialogueEditor.js
-│   └── data/
-│       ├── project.js
-│       ├── scene.js
-│       ├── entity.js
-│       └── rig.js
-├── demo/                          # Built-in demo project
-│   └── ... (see 4.8.1)
-├── templates/                     # Project templates
-│   ├── empty/
-│   ├── platformer/
-│   └── metroidvania/
-└── ui-templates/                  # HTML/CSS game UI templates
-    ├── splash.html
-    ├── main-menu.html
-    ├── pause.html
-    ├── settings.html
-    ├── hud.html
-    └── styles/
-        └── ui-theme.css
+│   │   ├── globals.css
+│   ├── components/
+│   │   ├── layout/
+│   │   ├── panels/
+│   │   └── ui/
+│   ├── lib/
+│   │   ├── store.ts
+│   │   ├── commands.ts            # Tauri invoke wrappers
+│   │   └── types.ts
+│   ├── assets/
+│   └── templates/
+└── ui-templates/
 ```
 
 ---
@@ -766,18 +668,18 @@ triton/
 **Goal**: A boring, blank window that *actually works*.
 
 1.  **Project Initialization**:
-    - `npm create vite@latest` (React + TypeScript)
-    - **VERIFICATION**: `npm run dev` opens a blank page.
+    - `npm create vite@latest` (React + TypeScript) - *Done*
+    - **Initialize Tauri**: `npm install @tauri-apps/cli @tauri-apps/api && npx tauri init`
+    - **VERIFICATION**: `npx tauri dev` opens the app window.
 2.  **CSS Pipeline Setup**:
-    - Install Tailwind CSS 4.0 + PostCSS.
-    - Create `tailwind.config.js`.
-    - **VERIFICATION**: Create a `<div className="w-10 h-10 bg-red-500">` and confirm it is red.
-3.  **Electron Bridge**:
-    - Setup `main.js` and `preload.js` with TypeScript.
-    - **VERIFICATION**: `window.electronAPI.ping()` returns "pong" from Main process.
+    - Tailwind CSS 4.0 - *Done*
+3.  **Rust Backend Bridge**:
+    - Create `greet` command in Rust.
+    - Call `invoke('greet')` from React.
+    - **VERIFICATION**: App displays "Hello from Rust!".
 4.  **File System Core**:
-    - Implement `fs.readDir` in Main.
-    - **VERIFICATION**: Render a simple `<ul>` list of *actual* files in `C:\` (or project root).
+    - Implement `get_files_in_dir` command in Rust.
+    - **VERIFICATION**: Render a simple list of *actual* files in `C:\` (or project root).
 
 ### Phase 1: The First Real Feature (Assets Panel) (Day 2)
 **Goal**: A Finder/Explorer clone. No game engine yet.

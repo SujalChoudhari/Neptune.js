@@ -1,28 +1,12 @@
 import { DockviewReact, type DockviewReadyEvent, type IDockviewPanelProps, type DockviewApi } from "dockview";
 import "dockview/dist/styles/dockview.css";
 import { themeDark } from "dockview";
-import { Folder } from "lucide-react";
+import { useRef } from "react";
 import { AtlasPanel } from "@/components/panels/AtlasPanel";
 import { ProjectPanel } from "@/components/panels/ProjectPanel";
-import { useRef } from "react";
-
-// --- PLACEHOLDER COMPONENTS (We will extract these later) ---
-
-const HierarchyPanel = (_props: IDockviewPanelProps) => (
-    <div className="h-full w-full bg-card flex flex-col text-sm">
-        <div className="p-2 border-b bg-muted/50 font-bold flex items-center gap-2">
-            <Folder className="w-4 h-4 text-foreground/70" /> Hierarchy
-        </div>
-        <div className="p-2 space-y-1 overflow-auto flex-1">
-            {/* Mock Tree */}
-            <div className="pl-0 text-foreground">Main Scene</div>
-            <div className="pl-4 text-muted-foreground">Main Camera</div>
-            <div className="pl-4 text-muted-foreground">Directional Light</div>
-            <div className="pl-4 text-foreground font-medium">Player_Character</div>
-            <div className="pl-4 text-muted-foreground">Level_Geometry</div>
-        </div>
-    </div>
-);
+import { InspectorPanel } from "@/components/panels/InspectorPanel";
+import { ConsolePanel } from "@/components/panels/ConsolePanel";
+import { HierarchyPanel } from "@/components/panels/HierarchyPanel";
 
 const ViewportPanel = (_props: IDockviewPanelProps) => (
     <div className="h-full w-full bg-[#1a1a1a] relative overflow-hidden flex items-center justify-center">
@@ -37,8 +21,6 @@ const ViewportPanel = (_props: IDockviewPanelProps) => (
     </div>
 );
 
-import { InspectorPanel } from "@/components/panels/InspectorPanel";
-import { ConsolePanel } from "@/components/panels/ConsolePanel";
 
 // --- MAIN LAYOUT ---
 
