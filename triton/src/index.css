@@ -140,7 +140,8 @@
   font-size: 11px !important;
   font-weight: 500 !important;
   border-right: 1px solid var(--border) !important;
-  transition: all 0.2s ease;
+  /* transition: all 0.2s ease; */
+  /* DISABLED: Interferes with Drag & Drop */
   position: relative;
 }
 
@@ -173,19 +174,12 @@
 }
 
 .dockview-theme-dark .dv-tab-close-button {
-  opacity: 0.3;
-  transition: opacity 0.2s;
+  /* opacity: 0.3; */
+  /* transition: opacity 0.2s; */
 }
 
 .dockview-theme-dark .dv-tab:hover .dv-tab-close-button {
   opacity: 1;
 }
 
-/* ELECTRON WINDOW DRAG HELPERS */
-.titlebar-drag {
-  -webkit-app-region: drag;
-}
-
-.no-drag {
-  -webkit-app-region: no-drag;
-}
+/* ELECTRON WINDOW DRAG HELPERS REMOVED */

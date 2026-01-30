@@ -120,24 +120,25 @@ export const DockLayout = ({ onApiReady }: DockLayoutProps) => {
         applyLayout('default');
     };
 
-    const components = {
-        hierarchy: HierarchyPanel,
-        viewport: ViewportPanel,
-        inspector: InspectorPanel,
-        console: ConsolePanel,
-        project: ProjectPanel,
-        atlas: AtlasPanel,
-    };
-
     return (
-        <div className="h-[calc(100vh-60px)] w-full border-t border-border">
+        <div className="h-full w-full border-t border-border">
             <DockviewReact
-                components={components}
+                components={componentMap}
                 onReady={onReady}
                 theme={themeDark}
+                className="dockview-theme-dark h-full w-full"
             />
         </div>
     );
+};
+
+const componentMap = {
+    hierarchy: HierarchyPanel,
+    viewport: ViewportPanel,
+    inspector: InspectorPanel,
+    console: ConsolePanel,
+    project: ProjectPanel,
+    atlas: AtlasPanel,
 };
 
 // Re-export extended API type
