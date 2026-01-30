@@ -1,21 +1,37 @@
 import { DockLayout } from "@/components/layout/DockLayout"
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { ThemedMenuButton, ThemedIconButton } from "@/components/library"
-import { Play, Pause, Square, Cuboid } from "lucide-react"
+    ThemedContextMenu,
+    ThemedContextMenuTrigger,
+    ThemedContextMenuContent,
+    ThemedContextMenuItem,
+    ThemedContextMenuSeparator
+} from "@/components/library"
 import { useEffect, useRef } from "react"
-import type { DockviewApi } from "dockview"
+import type { NeptuneDockApi } from "@/components/layout/DockLayout"
+import { TitleBar } from "@/components/layout/TitleBar"
 
 export function Main() {
-    const dockApiRef = useRef<DockviewApi | null>(null)
+    const dockApiRef = useRef<NeptuneDockApi | null>(null)
 
     useEffect(() => {
         const root = window.document.documentElement
         root.classList.add("dark")
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Shift + Space: Maximize/Restore panel
+            if (e.shiftKey && e.code === "Space") {
+                const api = dockApiRef.current
+                if (!api) return
+
+                const activeGroup = api.activeGroup
+                if (activeGroup) {
+                    api.maximizeGroup(activeGroup as any)
+                }
+            }
+        }
+
+        window.addEventListener("keydown", handleKeyDown)
+        return () => window.removeEventListener("keydown", handleKeyDown)
     }, [])
 
     // Add a panel via Dockview API
@@ -43,57 +59,32 @@ export function Main() {
     }
 
     return (
-        <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden select-none">
-            {/* TOP BAR */}
-            <header className="h-10 border-b border-border flex items-center px-2 justify-between bg-card z-50 relative">
-                {/* LEFT: Logo + Menu */}
-                <div className="flex items-center gap-1">
-                    <div className="font-bold text-foreground flex items-center gap-1.5 px-2">
-                        <Cuboid className="w-4 h-4" />
-                        <span className="text-sm">Triton</span>
-                    </div>
-                    <div className="w-px h-5 bg-border mx-1" />
-                    <nav className="flex items-center gap-0.5">
-                        <ThemedMenuButton>File</ThemedMenuButton>
-                        <ThemedMenuButton>Edit</ThemedMenuButton>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <ThemedMenuButton hasDropdown>Window</ThemedMenuButton>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start" className="min-w-[160px]">
-                                <DropdownMenuItem onClick={() => openPanel("hierarchy", "Hierarchy", "hierarchy")}>Hierarchy</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => openPanel("inspector", "Inspector", "inspector")}>Inspector</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => openPanel("viewport", "Scene View", "viewport")}>Scene View</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => openPanel("console", "Console", "console")}>Console</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => openPanel("project", "Project", "console")}>Project</DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => openPanel("atlas", "Atlas (Components)", "atlas")}>Atlas (Components)</DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                        <ThemedMenuButton>Help</ThemedMenuButton>
-                    </nav>
+        <ThemedContextMenu>
+            <ThemedContextMenuTrigger className="h-screen flex flex-col bg-background text-foreground overflow-hidden select-none">
+                {/* TOP BAR */}
+                <TitleBar
+                    onOpenPanel={openPanel}
+                    dockApi={dockApiRef.current}
+                />
+
+
+                {/* DOCKING AREA */}
+                <div className="flex-1 w-full bg-background relative overflow-hidden">
+                    <DockLayout onApiReady={(api) => { dockApiRef.current = api as NeptuneDockApi }} />
                 </div>
 
-                {/* CENTER: Play/Pause/Stop */}
-                <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5">
-                    <ThemedIconButton title="Play"><Play className="w-3 h-3 fill-current" /></ThemedIconButton>
-                    <ThemedIconButton title="Pause"><Pause className="w-3 h-3 fill-current" /></ThemedIconButton>
-                    <ThemedIconButton title="Stop"><Square className="w-3 h-3 fill-current" /></ThemedIconButton>
-                </div>
+                {/* FOOTER */}
+                <footer className="h-5 border-t border-border bg-card flex items-center px-2 text-[10px] justify-between text-muted-foreground z-50">
+                    <span>Ready</span>
+                    <span>Triton v0.0.1</span>
+                </footer>
+            </ThemedContextMenuTrigger>
 
-                {/* RIGHT: (empty for now) */}
-                <div />
-            </header>
-
-            {/* DOCKING AREA */}
-            <div className="flex-1 w-full bg-background relative overflow-hidden">
-                <DockLayout onApiReady={(api) => { dockApiRef.current = api }} />
-            </div>
-
-            {/* FOOTER */}
-            <footer className="h-5 border-t border-border bg-card flex items-center px-2 text-[10px] justify-between text-muted-foreground z-50">
-                <span>Ready</span>
-                <span>Triton v0.0.1</span>
-            </footer>
-        </div>
+            <ThemedContextMenuContent>
+                <ThemedContextMenuItem onClick={() => window.location.reload()}>Reload Window</ThemedContextMenuItem>
+                <ThemedContextMenuSeparator />
+                <ThemedContextMenuItem disabled>About Triton...</ThemedContextMenuItem>
+            </ThemedContextMenuContent>
+        </ThemedContextMenu>
     )
 }

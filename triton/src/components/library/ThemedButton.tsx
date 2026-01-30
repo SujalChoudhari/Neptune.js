@@ -20,35 +20,64 @@ const themedButtonBase = `
     disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-[hsl(0,0%,28%)] disabled:hover:to-[hsl(0,0%,22%)]
 `
 
+const themedButtonMinimal = `
+    transition-all duration-150
+    hover:bg-white/5 
+    active:bg-white/10
+    border border-transparent
+    hover:border-white/5
+    disabled:opacity-50 disabled:cursor-not-allowed
+`
+
+const themedButtonTopbar = `
+    transition-all duration-150
+    bg-gradient-to-b from-[hsl(0,0%,24%)] to-[hsl(0,0%,18%)]
+    border border-[hsl(0,0%,10%)] border-t-[hsl(0,0%,28%)]
+    hover:from-[hsl(0,0%,28%)] hover:to-[hsl(0,0%,22%)]
+    active:from-[hsl(0,0%,16%)] active:to-[hsl(0,0%,14%)]
+    disabled:opacity-50
+`
+
 export interface ThemedMenuButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     /** Show dropdown chevron indicator */
     hasDropdown?: boolean
+    /** Visual variant */
+    variant?: "default" | "minimal" | "topbar"
 }
 
 /**
  * ThemedMenuButton
  * 
- * A 3D-style menu button for the top menu bar (File, Edit, Window, Help, etc.)
+ * A themed menu button for the top menu bar or panel toolbars.
  */
 export const ThemedMenuButton = ({
     children,
     hasDropdown = false,
+    variant = "default",
     className,
     ...props
-}: ThemedMenuButtonProps) => (
-    <button
-        className={cn(
-            "px-3 py-1 text-xs font-medium rounded-md flex items-center gap-1",
-            "text-foreground/80 hover:text-foreground",
-            themedButtonBase,
-            className
-        )}
-        {...props}
-    >
-        {children}
-        {hasDropdown && <ChevronDown className="w-3 h-3 opacity-60" />}
-    </button>
-)
+}: ThemedMenuButtonProps) => {
+    const variantClasses = {
+        default: themedButtonBase,
+        minimal: themedButtonMinimal,
+        topbar: themedButtonTopbar
+    }
+
+    return (
+        <button
+            className={cn(
+                "px-2.5 py-1 text-[11px] font-medium rounded flex items-center gap-1.5",
+                "text-foreground/70 hover:text-foreground transition-colors",
+                variantClasses[variant],
+                className
+            )}
+            {...props}
+        >
+            {children}
+            {hasDropdown && <ChevronDown className="w-3 h-3 opacity-40 group-hover:opacity-80 transition-opacity" />}
+        </button>
+    )
+}
 
 export interface ThemedIconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     /** Size variant */

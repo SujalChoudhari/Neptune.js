@@ -16,6 +16,7 @@ export {
     ThemedLabeledInput,
     ThemedVectorInput,
     ThemedTextArea,
+    ThemedReferenceInput,
     themedInputBase
 } from "./ThemedInput"
 export type {
@@ -23,7 +24,8 @@ export type {
     ThemedNumberInputProps,
     ThemedLabeledInputProps,
     ThemedVectorInputProps,
-    ThemedTextAreaProps
+    ThemedTextAreaProps,
+    ThemedReferenceInputProps
 } from "./ThemedInput"
 
 // Control components
@@ -46,3 +48,21 @@ export type {
     ThemedScrollAreaProps,
     ThemedColorPickerProps
 } from "./ThemedControls"
+
+// Context Menu
+export {
+    ThemedContextMenu,
+    ThemedContextMenuTrigger,
+    ThemedContextMenuContent,
+    ThemedContextMenuItem,
+    ThemedContextMenuSeparator,
+    ThemedContextMenuLabel,
+    ThemedContextMenuShortcut
+} from "./ThemedContextMenu"
+export type { ThemedContextMenuProps } from "./ThemedContextMenu"
+
+// Modal system
+export { ModalProvider, useModal } from "./ModalProvider"
+
+// Window Controls
+export { WindowControls } from "./WindowControls"

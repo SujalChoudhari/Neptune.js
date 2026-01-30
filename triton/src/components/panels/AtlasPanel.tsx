@@ -13,10 +13,22 @@ import {
     ThemedSelect,
     ThemedCollapsible,
     ThemedScrollArea,
-    ThemedColorPicker
+    ThemedColorPicker,
+    ThemedContextMenu,
+    ThemedContextMenuTrigger,
+    ThemedContextMenuContent,
+    ThemedContextMenuItem,
+    ThemedContextMenuSeparator,
+    ThemedContextMenuLabel,
+    ThemedContextMenuShortcut,
+    ThemedReferenceInput,
+    useModal
 } from "@/components/library"
-import { Play, Pause, Square, Settings, Save, Trash2, Plus, Minus, Search, Home } from "lucide-react"
+import { Play, Pause, Square, Plus, Minus, Search, Home, Save, Settings, Trash2 } from "lucide-react"
 import { useState } from "react"
+
+import { renderInspectorComponent } from "./inspector/InspectorRegistry"
+import type { ComponentId, MockEntity } from "./inspector/shared/types"
 
 /**
  * ATLAS PANEL
@@ -24,26 +36,51 @@ import { useState } from "react"
  * Useful for testing and implementing components in other tools.
  */
 export const AtlasPanel = (_props: IDockviewPanelProps) => {
+    const { showModal } = useModal()
+
     // Demo state for interactive components
     const [sliderValue, setSliderValue] = useState(50)
     const [checkboxValue, setCheckboxValue] = useState(true)
     const [toggleValue, setToggleValue] = useState(false)
     const [selectValue, setSelectValue] = useState("option1")
     const [numberValue, setNumberValue] = useState(10)
-    const [vectorValue, setVectorValue] = useState({ x: 0, y: 1.5, z: -2 })
+    const [vectorValue, setVectorValue] = useState({ x: 0, y: 1.5, z: 0 })
     const [colorValue, setColorValue] = useState("#6b8cff")
     const [textAreaValue, setTextAreaValue] = useState("Multi-line text\neditor example")
+
+    // PREVIEW ENTITY for Inspector Components
+    const previewEntity: MockEntity = {
+        name: "Preview_Entity",
+        active: true,
+        transform: {
+            position: { x: 128, y: 256 },
+            rotation: 0,
+            scale: { x: 1, y: 1 }
+        },
+        sprite: { path: "player.png", width: 64, height: 64, blendMode: "Normal" },
+        collider: { width: 48, height: 56, offsetX: 8, offsetY: 4, isTrigger: false },
+        body: { velocityX: 0, velocityY: 0, gravity: 980, maxFallSpeed: 800, friction: 90, drag: 98, grounded: true },
+        sound: { name: "Jump", src: "jump.wav", volume: 80, loop: false, playing: false },
+        stats: { health: 85, maxHealth: 100, stamina: 60, maxStamina: 100, attack: 15, defense: 8, speed: 120 },
+        animator: { currentAnimation: "idle", speed: 100, playing: true, animations: ["idle", "walk", "run"] },
+        scripts: [
+            { path: "/scripts/player_controller.js", enabled: true },
+            { path: "/scripts/camera_follow.js", enabled: true }
+        ]
+    }
+
+    const componentList: (ComponentId)[] = ["transform", "sprite", "collider", "body", "sound", "stats", "animator", "scripts"]
 
     return (
         <ThemedScrollArea maxHeight="100%" className="h-full w-full bg-card p-4">
             <div className="space-y-6">
                 <div className="border-b border-border pb-4">
-                    <h1 className="text-xl font-bold text-foreground">Component Atlas</h1>
-                    <p className="text-sm text-muted-foreground">Triton's themed component library</p>
+                    <h1 className="text-xl font-bold text-foreground uppercase tracking-tight">Component Atlas</h1>
+                    <p className="text-sm text-muted-foreground">Triton's localized themed component library</p>
                 </div>
 
                 {/* THEMED BUTTONS */}
-                <ThemedCollapsible title="Buttons" defaultOpen>
+                <ThemedCollapsible title="Global Buttons" defaultOpen>
                     <div className="space-y-3">
                         <div>
                             <p className="text-xs text-muted-foreground mb-2">Menu Buttons</p>
@@ -112,21 +149,9 @@ export const AtlasPanel = (_props: IDockviewPanelProps) => {
                         </div>
 
                         <div className="space-y-2">
-                            <p className="text-xs text-muted-foreground">Vector Inputs (drag labels to adjust, click 🔗 to link)</p>
+                            <p className="text-xs text-muted-foreground mb-4">Vector Inputs (High-Contrast Labels)</p>
 
                             <div className="space-y-2">
-                                <p className="text-[10px] text-muted-foreground/70">1D Vector (X only)</p>
-                                <ThemedVectorInput
-                                    dimensions={1}
-                                    label="Scale"
-                                    value={vectorValue}
-                                    onChange={setVectorValue}
-                                    step={0.1}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <p className="text-[10px] text-muted-foreground/70">2D Vector (X, Y)</p>
                                 <ThemedVectorInput
                                     dimensions={2}
                                     label="Position"
@@ -137,10 +162,10 @@ export const AtlasPanel = (_props: IDockviewPanelProps) => {
                             </div>
 
                             <div className="space-y-2">
-                                <p className="text-[10px] text-muted-foreground/70">3D Vector (X, Y, Z)</p>
                                 <ThemedVectorInput
-                                    dimensions={3}
-                                    label="Rotation"
+                                    dimensions={2}
+                                    label="Collider Size"
+                                    labels={['W', 'H']}
                                     value={vectorValue}
                                     onChange={setVectorValue}
                                     step={0.1}
@@ -215,17 +240,83 @@ export const AtlasPanel = (_props: IDockviewPanelProps) => {
                     </div>
                 </ThemedCollapsible>
 
-                {/* SCROLL AREA DEMO */}
-                <ThemedCollapsible title="Scroll Area" defaultOpen={false}>
-                    <ThemedScrollArea maxHeight="120px" className="border border-border rounded-md p-2">
-                        <div className="space-y-1">
-                            {Array.from({ length: 15 }, (_, i) => (
-                                <div key={i} className="text-xs text-muted-foreground py-1 border-b border-border/50">
-                                    Scrollable item {i + 1}
-                                </div>
-                            ))}
+                {/* CONTEXT MENU */}
+                <ThemedCollapsible title="Context Menu" defaultOpen={false}>
+                    <ThemedContextMenu>
+                        <ThemedContextMenuTrigger className="w-full h-32 rounded-md border border-dashed border-border flex items-center justify-center bg-accent/5 hover:bg-accent/10 transition-colors cursor-context-menu">
+                            <span className="text-sm text-muted-foreground">Right-click here to test context menu</span>
+                        </ThemedContextMenuTrigger>
+                        <ThemedContextMenuContent>
+                            <ThemedContextMenuItem>Back</ThemedContextMenuItem>
+                            <ThemedContextMenuItem disabled>Forward</ThemedContextMenuItem>
+                            <ThemedContextMenuItem>Reload</ThemedContextMenuItem>
+                            <ThemedContextMenuSeparator />
+                            <ThemedContextMenuLabel inset>Options</ThemedContextMenuLabel>
+                            <ThemedContextMenuItem inset>
+                                Save As... <ThemedContextMenuShortcut>Ctrl+S</ThemedContextMenuShortcut>
+                            </ThemedContextMenuItem>
+                            <ThemedContextMenuItem inset>Print</ThemedContextMenuItem>
+                        </ThemedContextMenuContent>
+                    </ThemedContextMenu>
+                </ThemedCollapsible>
+
+                {/* MODALS */}
+                <ThemedCollapsible title="Modals & Dialogs" defaultOpen>
+                    <div className="space-y-4">
+                        <p className="text-xs text-muted-foreground">Global Modal System via useModal()</p>
+                        <div className="flex flex-wrap gap-2">
+                            <ThemedMenuButton onClick={() => showModal({
+                                title: "Confirmation Modal",
+                                content: "Are you sure you want to perform this action? This can be used for destructive operations like deleting an entity.",
+                                confirmText: "Delete",
+                                onConfirm: () => console.log("Confirmed delete")
+                            })}>
+                                Show Confirmation
+                            </ThemedMenuButton>
+
+                            <ThemedMenuButton onClick={() => showModal({
+                                title: "Input Modal",
+                                content: (
+                                    <div className="space-y-4">
+                                        <p className="text-[11px] text-muted-foreground uppercase tracking-widest font-bold">New Entity Name</p>
+                                        <ThemedInput placeholder="Enter gameobject name..." className="w-full" autoFocus />
+                                        <p className="text-[10px] text-muted-foreground italic">Try entering a unique name for your gameobject.</p>
+                                    </div>
+                                ),
+                                confirmText: "Create Entity",
+                                onConfirm: () => console.log("Created entity")
+                            })}>
+                                Show Input Modal
+                            </ThemedMenuButton>
                         </div>
-                    </ThemedScrollArea>
+                    </div>
+                </ThemedCollapsible>
+
+                {/* REAL INSPECTOR COMPONENTS */}
+                <ThemedCollapsible title="Live Inspector Modules" defaultOpen>
+                    <div className="flex flex-col border border-border rounded overflow-hidden">
+                        {componentList.map((compId, index) => renderInspectorComponent({
+                            compId,
+                            index,
+                            entity: previewEntity,
+                            isActive: true,
+                            onToggleActive: () => { },
+                            updateHelpers: {
+                                updateTransform: () => { },
+                                updateSprite: () => { },
+                                updateCollider: () => { },
+                                updateBody: () => { },
+                                updateSound: () => { },
+                                updateStats: () => { },
+                                updateAnimator: () => { },
+                                updateScript: () => { }
+                            },
+                            moveHelpers: {
+                                onMoveUp: () => { },
+                                onMoveDown: () => { }
+                            }
+                        }))}
+                    </div>
                 </ThemedCollapsible>
 
                 {/* COLOR PALETTE */}
@@ -249,3 +340,4 @@ export const AtlasPanel = (_props: IDockviewPanelProps) => {
         </ThemedScrollArea>
     )
 }
+

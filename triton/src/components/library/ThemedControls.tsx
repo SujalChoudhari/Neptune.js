@@ -42,7 +42,7 @@ export const ThemedSlider = ({
     const percentage = ((value - min) / (max - min)) * 100
 
     return (
-        <div className={cn("flex items-center gap-2", className)}>
+        <div className={cn("flex items-center gap-2 w-full", className)}>
             <div className="relative flex-1 h-4 flex items-center">
                 {/* Track background */}
                 <div className="absolute inset-x-0 h-1.5 rounded-full bg-gradient-to-b from-[hsl(0,0%,12%)] to-[hsl(0,0%,16%)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)]" />
@@ -254,7 +254,7 @@ export const ThemedSelect = ({
     }, [isOpen])
 
     return (
-        <div className={cn("relative", className)}>
+        <div className={cn("relative w-full", className)}>
             <button
                 ref={triggerRef}
                 type="button"

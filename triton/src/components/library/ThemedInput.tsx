@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils"
-import { Minus, Plus } from "lucide-react"
+import { Minus, Plus, Search, FileCode, FileImage, FileAudio, File } from "lucide-react"
 import { forwardRef, useState, useCallback, useRef } from "react"
 
 /**
@@ -24,7 +24,11 @@ const themedInputBase = `
 // THEMED INPUT
 // ============================================================================
 
-export interface ThemedInputProps extends React.InputHTMLAttributes<HTMLInputElement> { }
+export interface ThemedInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+    startIcon?: React.ReactNode
+    endIcon?: React.ReactNode
+    containerClassName?: string
+}
 
 /**
  * ThemedInput
@@ -32,18 +36,32 @@ export interface ThemedInputProps extends React.InputHTMLAttributes<HTMLInputEle
  * A 3D-style text input with an inset appearance.
  */
 export const ThemedInput = forwardRef<HTMLInputElement, ThemedInputProps>(
-    ({ className, type = "text", ...props }, ref) => (
-        <input
-            type={type}
-            ref={ref}
-            className={cn(
-                "h-7 px-2 text-xs rounded-md w-full",
-                "text-foreground/90",
-                themedInputBase,
-                className
+    ({ className, containerClassName, type = "text", startIcon, endIcon, ...props }, ref) => (
+        <div className={cn("relative w-full", containerClassName)}>
+            {startIcon && (
+                <div className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none [&>svg]:w-3.5 [&>svg]:h-3.5">
+                    {startIcon}
+                </div>
             )}
-            {...props}
-        />
+            <input
+                type={type}
+                ref={ref}
+                className={cn(
+                    "h-7 px-2 text-xs rounded-md w-full",
+                    "text-foreground/90",
+                    themedInputBase,
+                    startIcon && "pl-8",
+                    endIcon && "pr-8",
+                    className
+                )}
+                {...props}
+            />
+            {endIcon && (
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none [&>svg]:w-3.5 [&>svg]:h-3.5">
+                    {endIcon}
+                </div>
+            )}
+        </div>
     )
 )
 ThemedInput.displayName = "ThemedInput"
@@ -99,7 +117,7 @@ export const ThemedNumberInput = forwardRef<HTMLInputElement, ThemedNumberInputP
         `
 
         return (
-            <div className={cn("flex h-7 rounded-md overflow-hidden", className)}>
+            <div className={cn("flex h-7 rounded-md overflow-hidden w-full", className)}>
                 <input
                     type="number"
                     ref={ref}
@@ -181,6 +199,8 @@ export interface ThemedVectorInputProps {
     dragSensitivity?: number
     /** Optional label to display before the inputs */
     label?: string
+    /** Custom labels for each axis (e.g., ['W', 'H'] for width/height) */
+    labels?: string[]
     className?: string
 }
 
@@ -189,6 +209,7 @@ export interface ThemedVectorInputProps {
  * 
  * A grouped X/Y/Z input for transform values with:
  * - Support for 1D, 2D, or 3D vectors
+ * - Custom labels (e.g., W/H for width/height)
  * - Draggable labels (click and drag left/right to change values)
  * - Link toggle to sync all values together
  */
@@ -200,6 +221,7 @@ export const ThemedVectorInput = ({
     step = 0.1,
     dragSensitivity = 5,
     label,
+    labels,
     className
 }: ThemedVectorInputProps) => {
     const [isLinked, setIsLinked] = useState(false)
@@ -245,10 +267,14 @@ export const ThemedVectorInput = ({
     }, [disabled, value, step, dragSensitivity, handleChange])
 
     const axisColors = {
-        x: "text-red-400",
-        y: "text-green-400",
-        z: "text-blue-400"
+        x: "text-foreground",
+        y: "text-foreground",
+        z: "text-foreground"
     }
+
+    // Default labels or custom labels
+    const defaultLabels = ['X', 'Y', 'Z']
+    const axisLabels = labels || defaultLabels
 
     return (
         <div className={cn("w-full flex items-center gap-2", className)}>
@@ -302,9 +328,9 @@ export const ThemedVectorInput = ({
                                 isDragging === axis && "bg-accent/30",
                                 disabled && "cursor-not-allowed opacity-50"
                             )}
-                            title={`Drag left/right to adjust ${axis.toUpperCase()}`}
+                            title={`Drag left/right to adjust ${axisLabels[axes.indexOf(axis)]}`}
                         >
-                            {axis}
+                            {axisLabels[axes.indexOf(axis)]}
                         </span>
 
                         {/* Number Input (simplified - no spinners for cleaner look) */}
@@ -331,6 +357,114 @@ export const ThemedVectorInput = ({
     )
 }
 
+
+// ============================================================================
+// THEMED REFERENCE INPUT
+// ============================================================================
+
+export interface ThemedReferenceInputProps {
+    value?: string
+    onChange?: (value: string) => void
+    onFind?: () => void
+    placeholder?: string
+    disabled?: boolean
+    className?: string
+    type?: 'image' | 'audio' | 'script' | 'any'
+}
+
+/**
+ * ThemedReferenceInput
+ * 
+ * A Unity-style reference field for assets with:
+ * - Drag-and-drop target styling
+ * - Find button to locate asset
+ * - Dynamic icon based on asset type
+ */
+export const ThemedReferenceInput = ({
+    value,
+    onChange,
+    onFind,
+    placeholder = "None (Asset)",
+    disabled,
+    className,
+    type = 'any'
+}: ThemedReferenceInputProps) => {
+    const [isDragOver, setIsDragOver] = useState(false)
+
+    const handleDragOver = (e: React.DragEvent) => {
+        if (disabled) return
+        e.preventDefault()
+        setIsDragOver(true)
+    }
+
+    const handleDragLeave = () => {
+        setIsDragOver(false)
+    }
+
+    const handleDrop = (e: React.DragEvent) => {
+        if (disabled) return
+        e.preventDefault()
+        setIsDragOver(false)
+        const droppedPath = e.dataTransfer.getData("text/plain")
+        if (droppedPath) {
+            onChange?.(droppedPath)
+        }
+    }
+
+    const getIcon = () => {
+        const ext = value?.split('.').pop()?.toLowerCase() || ''
+        if (type === 'image' || ['png', 'jpg', 'jpeg', 'webp', 'svg'].includes(ext)) return <FileImage className="w-3.5 h-3.5" />
+        if (type === 'audio' || ['mp3', 'wav', 'ogg'].includes(ext)) return <FileAudio className="w-3.5 h-3.5" />
+        if (type === 'script' || ['js', 'ts'].includes(ext)) return <FileCode className="w-3.5 h-3.5" />
+        return <File className="w-3.5 h-3.5" />
+    }
+
+    const fileName = value ? value.split('/').pop() : placeholder
+
+    return (
+        <div
+            className={cn(
+                "w-full flex items-center gap-1",
+                className
+            )}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+        >
+            <div
+                className={cn(
+                    "flex-1 flex items-center gap-2 h-6 px-1.5 rounded text-[11px] truncate select-none border border-transparent",
+                    "text-foreground/90",
+                    isDragOver ? "bg-accent/20 border-accent border-dashed ring-1 ring-accent" : themedInputBase,
+                    !value && "text-muted-foreground/50",
+                    disabled && "opacity-50 cursor-not-allowed"
+                )}
+            >
+                <span className="text-muted-foreground/60 shrink-0">
+                    {getIcon()}
+                </span>
+                <span className="truncate flex-1">{fileName}</span>
+            </div>
+
+            <button
+                type="button"
+                onClick={onFind}
+                disabled={disabled || !value}
+                className={cn(
+                    "w-6 h-6 flex items-center justify-center rounded transition-all duration-150",
+                    "bg-gradient-to-b from-[hsl(0,0%,24%)] to-[hsl(0,0%,20%)]",
+                    "border border-[hsl(0,0%,12%)] border-t-[hsl(0,0%,28%)]",
+                    "shadow-[0_1px_2px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.03)]",
+                    "text-muted-foreground/80 hover:text-foreground hover:from-[hsl(0,0%,28%)]",
+                    "disabled:opacity-30 disabled:cursor-not-allowed"
+                )}
+                title="Find asset in project panel"
+            >
+                <Search className="w-3.5 h-3.5" />
+            </button>
+        </div>
+    )
+}
 
 // ============================================================================
 // THEMED TEXT AREA
@@ -361,3 +495,4 @@ ThemedTextArea.displayName = "ThemedTextArea"
 
 // Re-export base styles for extensions
 export { themedInputBase }
+

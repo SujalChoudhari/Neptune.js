@@ -1,8 +1,11 @@
 import { Main } from "./pages/Main"
+import { ModalProvider } from "./components/library"
 
 function App() {
   return (
-    <Main />
+    <ModalProvider>
+      <Main />
+    </ModalProvider>
   )
 }
 
