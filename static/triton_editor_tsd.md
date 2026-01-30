@@ -68,7 +68,9 @@ graph TB
 | Desktop Shell | Electron 28+ | Cross-platform desktop app |
 | Main Process | Node.js 20+ | File system, builds |
 | Renderer | Chromium | UI rendering |
-| UI Framework | Vanilla JS + HTML/CSS | Editor panels and controls |
+| UI Framework | **React 18+** | Component-based UI (Moved from Vanilla) |
+| Styling | **Tailwind CSS 4.0** | Utility-first styling (Must verify config) |
+| Components | **Radix UI / Shadcn** | Accessible, unstyled primitives |
 | Canvas Engine | Neptune.js | Game viewport |
 | File Watching | chokidar | Asset auto-discovery |
 | Bundler | Vite | Game export builds |
@@ -758,45 +760,80 @@ triton/
 
 ## 6. Development Phases
 
-### Phase 1: Foundation (Weeks 1-3)
+## 6. Restart Protocol: The "Foundation First" Plan
 
-| Week | Deliverables |
-|------|--------------|
-| 1 | Electron shell, project structure, IPC setup |
-| 2 | File watcher, asset discovery, state manager |
-| 3 | Panel system, basic viewport with Neptune.js |
+### Phase 0: The Ironclad Foundation (Day 1)
+**Goal**: A boring, blank window that *actually works*.
 
-### Phase 2: Core Editors (Weeks 4-7)
+1.  **Project Initialization**:
+    - `npm create vite@latest` (React + TypeScript)
+    - **VERIFICATION**: `npm run dev` opens a blank page.
+2.  **CSS Pipeline Setup**:
+    - Install Tailwind CSS 4.0 + PostCSS.
+    - Create `tailwind.config.js`.
+    - **VERIFICATION**: Create a `<div className="w-10 h-10 bg-red-500">` and confirm it is red.
+3.  **Electron Bridge**:
+    - Setup `main.js` and `preload.js` with TypeScript.
+    - **VERIFICATION**: `window.electronAPI.ping()` returns "pong" from Main process.
+4.  **File System Core**:
+    - Implement `fs.readDir` in Main.
+    - **VERIFICATION**: Render a simple `<ul>` list of *actual* files in `C:\` (or project root).
 
-| Week | Deliverables |
-|------|--------------|
-| 4 | Scene editor: layers, entity hierarchy |
-| 5 | Tilemap editor: painting tools, tileset panel |
-| 6 | Rig editor: slot assignment, pivot configuration |
-| 7 | Animation editor: pose creation, timeline |
+### Phase 1: The First Real Feature (Assets Panel) (Day 2)
+**Goal**: A Finder/Explorer clone. No game engine yet.
 
-### Phase 3: Advanced Features (Weeks 8-10)
+1.  **Asset Watcher**: chokidar watching `./assets`.
+2.  **UI Component**: `AssetGrid` using Shadcn/UI cards.
+3.  **Integration**:
+    - User creates file `test.png` in folder.
+    - UI updates automatically via IPC event.
+    - **VERIFICATION**: Video proof of file creation → UI update.
 
-| Week | Deliverables |
-|------|--------------|
-| 8 | Inspector panel, component property editors |
-| 9 | Dialogue editor: node graph |
-| 10 | Console panel, test runner integration |
+### Phase 2: The Viewport (Day 3)
+**Goal**: Rendering the Engine (Neptune.js).
 
-### Phase 4: Build & Demo (Weeks 11-12)
+1.  **Canvas Embedding**: React `<canvas>` element.
+2.  **Game Loop**: Initialize Neptune.js `Game` instance on that canvas.
+3.  **Input Bridge**: Forward Mouse/Keyboard events from React to Game.
+4.  **VERIFICATION**: A spinning rectangle rendered by the Engine, controlled by Editor gizmos.
 
-| Week | Deliverables |
-|------|--------------|
-| 11 | Build system, web export |
-| 12 | Demo project, polish, documentation |
+### Phase 3: The Data Layer (Day 4)
+**Goal**: Saving/Loading.
+
+1.  **Project Schema**: Define strict JSON schema for `.triton` files.
+2.  **Serialization**: `Project.save()` writes rigid JSON.
+3.  **VERIFICATION**: Modify scene object, Save, Restart App, Load. Changes persist.
 
 ---
 
-## 7. Testing Strategy
+## 7. Development Rules (The Anti-Garbage Code)
 
-### 7.1 Existing Neptune.js Tests
+1.  **No "TODO" Implementations**: If a function is called `saveProject()`, it must save a file. Empty functions are forbidden.
+2.  **Screenshot Driven**: Every task ends with a screenshot of *functionality*, not just UI.
+3.  **Console Zero**: No errors in DevTools console allowed.
+4.  **Strict Typing**: `noImplicitAny: true`. No `as any` casting without comments explaining why.
 
-Location: `f:\Workspace\Neptune.js\tests\`
+---
+
+## 7. Verification Strategy
+
+### 7.1 "The Red Box" Test (UI Pipeline)
+Before building ANY complex panel, we must prove the CSS engine works:
+1.  Create a test component with Tailwind classes (`bg-red-500 hover:bg-blue-500`).
+2.  Verify it renders red and turns blue on hover.
+3.  Only then can we import `shadcn/ui` components.
+
+### 7.2 "The Ping" Test (IPC Pipeline)
+Before fetching complex data:
+1.  Renderer calls `electronAPI.ping()`.
+2.  Main process logs "Ping received" and returns "Pong".
+3.  Renderer alerts "Pong".
+
+### 7.3 "The File" Test (Data Pipeline)
+Before building the Asset Browser:
+1.  Manually create a file in the OS explorer.
+2.  Ensure the raw log in the Editor Console shows "File Added: [path]".
+3.  If chokidar isn't firing, we don't build the UI grid.
 
 ```
 tests/

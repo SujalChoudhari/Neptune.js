@@ -4,7 +4,44 @@
 
 ---
 
+> **Neptune.js Visual Game Editor for Metroidvania-Style 2D Platformers**
+
+---
+
+## 0. DEEP RETROSPECTIVE & FAILURE ANALYSIS (Jan 2026)
+
+### 0.1 The "Two Days of Garbage" Analysis
+We spent ~48 hours spinning wheels. Here is *exactly* why:
+
+#### 1. The "Aesthetic Trap" (Priority Failure)
+- **Mistake**: We obsessed over "Vercel-style" & "High-End UI" (gradients, blurs) before ensuring the **rendering engine (Tailwind)** was even working.
+- **Result**: We delivered beautiful React components that rendered as broken HTML because `tailwind.config.js` was missing.
+- **Correction**: **Structure > Style**. Never write a single CSS class until the build system proves it can process it.
+
+#### 2. The "Mock Data" Deception (integrity Failure)
+- **Mistake**: The `AssetsPanel` used hardcoded an array of fake files (`player.png`, `jump.wav`) to "show progress".
+- **Result**: The editor looked functional but was effectively a screenshot. The user (Rightfully) called this out as "garbage".
+- **Correction**: **Zero Tolerance for Mocks**. If the Requirement is "File Browser", we implement `fs.readdir`. If we can't do it yet, we don't build the UI yet.
+
+#### 3. The "Happy Path" Bias (Testing Failure)
+- **Mistake**: I assumed `npm run build` would just work. I assumed `electron .` would load the demo.
+- **Result**: The user had to report basic crashes and "white screens" because I didn't run the verification commands myself.
+- **Correction**: **Trust No Code**. Every step (even config changes) acts as a checkpoint. I must run the build before notifying the user.
+
+#### 4. The "Feature Vomit" (Scope Failure)
+- **Mistake**: Tried to build "Welcome Screen" + "Inspector" + "Assets" + "Console" all at once.
+- **Result**: A wide ocean of shallow, broken components.
+- **Correction**: **Atomic Implementation**. Build *one* panel. Make it read real data. Make it look perfect. Then move to the next.
+
+---
+
 ## 1. Introduction
+
+
+---
+
+## 1. Introduction
+
 
 ### 1.1 Purpose
 Triton is a **desktop application** (Electron-based) visual editor for the Neptune.js game engine, designed to streamline the creation of **metroidvania-style 2D side-scrolling platformers** like Hollow Knight, Super Mario, and similar A-RPG games.
