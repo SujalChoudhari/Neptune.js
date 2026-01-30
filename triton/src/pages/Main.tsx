@@ -5,41 +5,10 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Play, Pause, Square, Cuboid, ChevronDown } from "lucide-react"
+import { ThemedMenuButton, ThemedIconButton } from "@/components/library"
+import { Play, Pause, Square, Cuboid } from "lucide-react"
 import { useEffect, useRef } from "react"
 import type { DockviewApi } from "dockview"
-
-// Mac OS 3D-style menu button
-const MenuButton = ({ children, hasDropdown = false, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { hasDropdown?: boolean }) => (
-    <button
-        className="px-3 py-1 text-xs font-medium text-foreground/80 hover:text-foreground rounded-md transition-all duration-150 flex items-center gap-1
-               bg-gradient-to-b from-[hsl(0,0%,28%)] to-[hsl(0,0%,22%)]
-               border border-[hsl(0,0%,14%)] border-t-[hsl(0,0%,32%)]
-               shadow-[0_1px_2px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.05)]
-               hover:from-[hsl(0,0%,32%)] hover:to-[hsl(0,0%,26%)]
-               active:from-[hsl(0,0%,20%)] active:to-[hsl(0,0%,18%)] active:shadow-inner"
-        {...props}
-    >
-        {children}
-        {hasDropdown && <ChevronDown className="w-3 h-3 opacity-60" />}
-    </button>
-)
-
-// Mac OS 3D-style icon button (same style as MenuButton, for toolbar icons)
-const ToolbarIconButton = ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-    <button
-        className="w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150
-               bg-gradient-to-b from-[hsl(0,0%,28%)] to-[hsl(0,0%,22%)]
-               border border-[hsl(0,0%,14%)] border-t-[hsl(0,0%,32%)]
-               shadow-[0_1px_2px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.05)]
-               hover:from-[hsl(0,0%,32%)] hover:to-[hsl(0,0%,26%)]
-               active:from-[hsl(0,0%,20%)] active:to-[hsl(0,0%,18%)] active:shadow-inner
-               text-foreground/70 hover:text-foreground"
-        {...props}
-    >
-        {children}
-    </button>
-)
 
 export function Main() {
     const dockApiRef = useRef<DockviewApi | null>(null)
@@ -85,11 +54,11 @@ export function Main() {
                     </div>
                     <div className="w-px h-5 bg-border mx-1" />
                     <nav className="flex items-center gap-0.5">
-                        <MenuButton>File</MenuButton>
-                        <MenuButton>Edit</MenuButton>
+                        <ThemedMenuButton>File</ThemedMenuButton>
+                        <ThemedMenuButton>Edit</ThemedMenuButton>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <MenuButton hasDropdown>Window</MenuButton>
+                                <ThemedMenuButton hasDropdown>Window</ThemedMenuButton>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="start" className="min-w-[160px]">
                                 <DropdownMenuItem onClick={() => openPanel("hierarchy", "Hierarchy", "hierarchy")}>Hierarchy</DropdownMenuItem>
@@ -100,15 +69,15 @@ export function Main() {
                                 <DropdownMenuItem onClick={() => openPanel("atlas", "Atlas (Components)", "atlas")}>Atlas (Components)</DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
-                        <MenuButton>Help</MenuButton>
+                        <ThemedMenuButton>Help</ThemedMenuButton>
                     </nav>
                 </div>
 
                 {/* CENTER: Play/Pause/Stop */}
                 <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5">
-                    <ToolbarIconButton title="Play"><Play className="w-3 h-3 fill-current" /></ToolbarIconButton>
-                    <ToolbarIconButton title="Pause"><Pause className="w-3 h-3 fill-current" /></ToolbarIconButton>
-                    <ToolbarIconButton title="Stop"><Square className="w-3 h-3 fill-current" /></ToolbarIconButton>
+                    <ThemedIconButton title="Play"><Play className="w-3 h-3 fill-current" /></ThemedIconButton>
+                    <ThemedIconButton title="Pause"><Pause className="w-3 h-3 fill-current" /></ThemedIconButton>
+                    <ThemedIconButton title="Stop"><Square className="w-3 h-3 fill-current" /></ThemedIconButton>
                 </div>
 
                 {/* RIGHT: (empty for now) */}
