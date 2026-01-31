@@ -5,7 +5,7 @@
   "main": "src/neptune.js",
   "scripts": {
     "docs": "jsdoc -c ./jsdoc.json -d ./docs ./src/neptune.js",
-    "start": "cd triton && npm run dev"
+    "dev": "cd triton && yarn tauri dev"
   },
   "type": "module",
   "repository": {

@@ -2,6 +2,8 @@ import React, { useState, useEffect, createContext, useContext } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from "@/lib/utils";
 
+const CLOSE_MENUS_EVENT = 'neptune-close-menus';
+
 // Context to manage menu state
 interface ContextMenuContextType {
     isOpen: boolean;
@@ -34,17 +36,20 @@ export const ThemedContextMenu = ({ children }: ThemedContextMenuProps) => {
             const handleScroll = () => setIsOpen(false);
             const handleResize = () => setIsOpen(false);
             const handleContextMenu = () => setIsOpen(false);
+            const handleGlobalClose = () => setIsOpen(false);
 
             document.addEventListener('click', handleClick);
             document.addEventListener('contextmenu', handleContextMenu);
             document.addEventListener('scroll', handleScroll, true);
             window.addEventListener('resize', handleResize);
+            window.addEventListener(CLOSE_MENUS_EVENT, handleGlobalClose);
 
             return () => {
                 document.removeEventListener('click', handleClick);
                 document.removeEventListener('contextmenu', handleContextMenu);
                 document.removeEventListener('scroll', handleScroll, true);
                 window.removeEventListener('resize', handleResize);
+                window.removeEventListener(CLOSE_MENUS_EVENT, handleGlobalClose);
             };
         }
     }, [isOpen]);
@@ -66,10 +71,24 @@ export const ThemedContextMenuTrigger = ({
     const context = useContext(ContextMenuContext);
 
     const handleContextMenu = (e: React.MouseEvent) => {
+        // Essential: Prevent browser context menu
         e.preventDefault();
         e.stopPropagation();
 
+        // Robustness: Handle native event explicitly to ensure browser menu is suppressed
+        if (e.nativeEvent) {
+            e.nativeEvent.preventDefault();
+            e.nativeEvent.stopImmediatePropagation();
+        }
+
         if (context) {
+            // Close other open menus first by dispatching global event
+            try {
+                window.dispatchEvent(new CustomEvent(CLOSE_MENUS_EVENT));
+            } catch (err) {
+                // Ignore dispatch errors
+            }
+
             context.setPosition({ x: e.clientX, y: e.clientY });
             context.setIsOpen(true);
         }
