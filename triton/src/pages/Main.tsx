@@ -17,6 +17,10 @@ export function Main() {
     const handleProjectLoaded = async (path: string) => {
         setIsProjectLoaded(true);
         try {
+            console.log("Syncing Neptune Lib...");
+            await invoke("sync_neptune_lib", { projectPath: path });
+            console.log("Lib Synced.");
+
             await loadProject(path); // Load file system
 
             const projectPath = path.replaceAll('\\', '/');

@@ -101,8 +101,20 @@ fn scan_directory(
             for entry in entries {
                 if let Ok(entry) = entry {
                     let path = entry.path();
+                    let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                    
                     // Ignore dotfiles/folders
-                     if path.file_name().and_then(|n| n.to_str()).map_or(false, |s| s.starts_with('.')) {
+                    if file_name.starts_with('.') {
+                        continue;
+                    }
+
+                    // Ignore .npt files
+                    if path.extension().and_then(|e| e.to_str()) == Some("npt") {
+                        continue;
+                    }
+
+                    // Ignore lib folder
+                    if file_name == "lib" && path.is_dir() {
                         continue;
                     }
                     
@@ -124,6 +136,75 @@ fn scan_directory(
 
     nodes.insert(current_id.clone(), node);
     Ok(current_id)
+}
+
+fn copy_dir_recursive(src: &PathBuf, dst: &PathBuf) -> std::io::Result<()> {
+    if !dst.exists() {
+        fs::create_dir_all(dst)?;
+    }
+
+    for entry in fs::read_dir(src)? {
+        let entry = entry?;
+        let ty = entry.file_type()?;
+        let path = entry.path();
+        let name = path.file_name().unwrap();
+        let dst_path = dst.join(name);
+
+        if ty.is_dir() {
+            copy_dir_recursive(&path, &dst_path)?;
+        } else {
+            fs::copy(&path, &dst_path)?;
+        }
+    }
+    Ok(())
+}
+
+#[tauri::command]
+async fn sync_neptune_lib(project_path: String) -> Result<String, String> {
+    let project_dir = PathBuf::from(&project_path);
+    if !project_dir.exists() {
+        return Err("Project path does not exist".to_string());
+    }
+
+    // Engine source path: ../../src (Relative to src-tauri)
+    // We need to resolve this robustly.
+    // Try to find the root "Neptune.js" directory or just the "src" folder that contains "core".
+    
+    let mut current_dir = std::env::current_dir().map_err(|e| e.to_string())?;
+    let mut engine_src = None;
+
+    for _ in 0..5 { // Search up to 5 levels
+        let check_path = current_dir.join("src");
+        if check_path.exists() && check_path.join("core").exists() {
+            engine_src = Some(check_path);
+            break;
+        }
+        
+        // Also check if we are in the root and src is here
+        if current_dir.join("core").exists() {
+             engine_src = Some(current_dir.clone());
+             break;
+        }
+
+        if let Some(parent) = current_dir.parent() {
+            current_dir = parent.to_path_buf();
+        } else {
+            break;
+        }
+    }
+
+    let engine_src = engine_src.ok_or("Could not locate Neptune.js engine source (looked for src/core)")?;
+
+    if !engine_src.exists() {
+        return Err(format!("Engine source not found at {:?}", engine_src));
+    }
+
+    let lib_dir = project_dir.join("lib");
+    
+    // Copy recursively
+    copy_dir_recursive(&engine_src, &lib_dir).map_err(|e| format!("Failed to copy lib: {}", e))?;
+
+    Ok("Synced".to_string())
 }
 
 #[tauri::command]
@@ -300,7 +381,8 @@ pub fn run() {
         create_asset,
         delete_fs_node,
         rename_fs_node,
-        duplicate_fs_node
+        duplicate_fs_node,
+        sync_neptune_lib
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {
