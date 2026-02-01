@@ -1,5 +1,5 @@
 import { FileCode, FileImage, Folder, Box, Cuboid, FileAudio, File } from "lucide-react"
-import type { AssetType } from "@/lib/mockFileSystem"
+import type { AssetType } from "@/context/FileSystemContext"
 import { cn } from "@/lib/utils"
 
 interface AssetIconProps {

@@ -4,94 +4,47 @@ import type { NeptuneDockApi } from "@/components/layout/DockLayout"
 import { EditorToolbar } from "@/components/layout/EditorToolbar"
 
 import { listen } from '@tauri-apps/api/event';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from "@tauri-apps/api/core";
-import { open } from '@tauri-apps/plugin-dialog';
-
-function WelcomeScreen({ onProjectLoaded }: { onProjectLoaded: () => void }) {
-    const handleNewProject = async () => {
-        try {
-            const selected = await open({
-                directory: true,
-                multiple: false,
-                title: "Select Folder for New Project"
-            });
-
-            if (selected) {
-                await invoke("initialize_project", { path: selected });
-                onProjectLoaded();
-            }
-        } catch (e) {
-            console.error("Failed to create project", e);
-        }
-    };
-
-    const handleOpenProject = async () => {
-        try {
-            const selected = await open({
-                directory: true,
-                multiple: false,
-                title: "Open Existing Project Folder"
-            });
-
-            if (selected) {
-                // Here we might want to validate if it's a valid project
-                // For now, just load it
-                onProjectLoaded();
-            }
-        } catch (e) {
-            console.error("Failed to open project", e);
-        }
-    }
-
-    return (
-        <div className="h-screen w-full flex flex-col items-center justify-center bg-background text-foreground space-y-8 select-none">
-            <div className="flex flex-col items-center space-y-2">
-                <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center mb-4 shadow-lg shadow-primary/20">
-                    <span className="text-4xl font-black text-primary-foreground">N</span>
-                </div>
-                <h1 className="text-3xl font-bold tracking-tight">Triton Editor</h1>
-                <p className="text-muted-foreground">Version 0.0.1 (Alpha)</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 w-full max-w-md">
-                <button
-                    onClick={handleNewProject}
-                    className="flex flex-col items-center justify-center p-6 bg-card border border-border rounded-xl hover:bg-accent/50 hover:border-primary/50 transition-all group cursor-pointer"
-                >
-                    <span className="text-xl font-semibold mb-2 group-hover:text-primary">New Project</span>
-                    <span className="text-xs text-muted-foreground text-center">Create a new empty project in a folder</span>
-                </button>
-
-                <button
-                    onClick={handleOpenProject}
-                    className="flex flex-col items-center justify-center p-6 bg-card border border-border rounded-xl hover:bg-accent/50 hover:border-primary/50 transition-all group cursor-pointer"
-                >
-                    <span className="text-xl font-semibold mb-2 group-hover:text-primary">Open Project</span>
-                    <span className="text-xs text-muted-foreground text-center">Open an existing Triton project</span>
-                </button>
-            </div>
-
-            <div className="w-full max-w-md mt-8">
-                <h2 className="text-sm font-medium text-muted-foreground mb-4 uppercase tracking-wider text-xs">Recent Projects</h2>
-                <div className="space-y-1">
-                    {/* Mock Recents */}
-                    <div className="p-3 bg-card/50 hover:bg-accent rounded border border-transparent hover:border-border cursor-pointer flex justify-between items-center text-sm">
-                        <span>My RPG Game</span>
-                        <span className="text-xs text-muted-foreground">D:/Games/MyRPG</span>
-                    </div>
-                    <div className="p-3 bg-card/50 hover:bg-accent rounded border border-transparent hover:border-border cursor-pointer flex justify-between items-center text-sm">
-                        <span>Space Shooter</span>
-                        <span className="text-xs text-muted-foreground">D:/Dev/SpaceShooter</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
-}
+import { WelcomeScreen } from "@/pages/WelcomeScreen";
+import { useFileSystem } from "@/context/FileSystemContext";
 
 export function Main() {
     const dockApiRef = useRef<NeptuneDockApi | null>(null)
-    const [isProjectLoaded, setIsProjectLoaded] = useState(true);
+    const [isProjectLoaded, setIsProjectLoaded] = useState(false);
+    const { loadProject } = useFileSystem();
+
+    const handleProjectLoaded = async (path: string) => {
+        setIsProjectLoaded(true);
+        try {
+            await loadProject(path); // Load file system
+
+            const projectPath = path.replaceAll('\\', '/');
+            // Extract folder name or use a default
+            const projectName = projectPath.split('/').pop() || "Project";
+            const newTitle = `Neptune - ${projectName} - ${path}`;
+            await getCurrentWindow().setTitle(newTitle);
+        } catch (e) {
+            console.error("Failed to set window title", e);
+            // Fallback just in case
+            document.title = `Neptune - ${path}`;
+        }
+    };
+
+    useEffect(() => {
+        // Check for startup config (debug mode autoload)
+        invoke<string | null>("get_startup_config").then((path: string | null) => {
+            if (path) {
+                console.log("Autoloading Debug Project:", path);
+                // Initialize just in case
+                invoke("initialize_project", { path }).then(() => {
+                    handleProjectLoaded(path);
+                });
+            }
+        }).catch((err: unknown) => {
+            console.error("Failed to check startup config", err);
+        });
+    }, []);
 
     useEffect(() => {
         const root = window.document.documentElement
@@ -202,7 +155,7 @@ export function Main() {
     }
 
     if (!isProjectLoaded) {
-        return <WelcomeScreen onProjectLoaded={() => setIsProjectLoaded(true)} />;
+        return <WelcomeScreen onProjectLoaded={handleProjectLoaded} />;
     }
 
     return (

@@ -1,5 +1,5 @@
 import type { IDockviewPanelProps } from "dockview"
-import { useMockFileSystem } from "@/lib/mockFileSystem"
+import { useFileSystem } from "@/context/FileSystemContext"
 import { ProjectSidebar } from "../project/ProjectSidebar"
 import { ProjectGrid } from "../project/ProjectGrid"
 import { useState, useEffect } from "react"
@@ -30,7 +30,7 @@ export const ProjectPanel = (_props: IDockviewPanelProps) => {
         deleteNode,
         renameNode,
         duplicateNode
-    } = useMockFileSystem()
+    } = useFileSystem()
     const [scale, setScale] = useState(90)
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedIds, setSelectedIds] = useState<string[]>([])

@@ -1,4 +1,4 @@
-import type { FileSystemNode } from "@/lib/mockFileSystem"
+import type { FileSystemNode } from "@/context/FileSystemContext"
 import { AssetIcon } from "./AssetIcon"
 import { cn } from "@/lib/utils"
 import {

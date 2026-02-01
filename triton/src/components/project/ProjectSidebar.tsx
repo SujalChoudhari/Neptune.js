@@ -1,6 +1,6 @@
 import { ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { FileSystemNode } from "@/lib/mockFileSystem"
+import type { FileSystemNode } from "@/context/FileSystemContext"
 import { useState } from "react"
 import { ThemedScrollArea } from "@/components/library"
 import { AssetIcon } from "./AssetIcon"

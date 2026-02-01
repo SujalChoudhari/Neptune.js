@@ -21,7 +21,6 @@ import {
     ThemedContextMenuSeparator,
     ThemedContextMenuLabel,
     ThemedContextMenuShortcut,
-    ThemedReferenceInput,
     useModal
 } from "@/components/library"
 import { Play, Pause, Square, Plus, Minus, Search, Home, Save, Settings, Trash2 } from "lucide-react"
