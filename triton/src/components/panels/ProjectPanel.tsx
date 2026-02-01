@@ -161,16 +161,16 @@ export const ProjectPanel = (_props: IDockviewPanelProps) => {
         return () => window.removeEventListener('project-move-node', handleMove)
     }, [moveNode, moveNodes])
 
-    const handleCreateFolder = () => {
-        const id = createFolder(currentFolderId, "New Folder")
+    const handleCreateFolder = async () => {
+        const id = await createFolder(currentFolderId, "New Folder")
         if (id) {
             setSelectedIds([id])
             setRenamingId(id)
         }
     }
 
-    const handleCreateAsset = (name: string, type: 'script' | 'material' | 'scene') => {
-        const id = createAsset(currentFolderId, name, type)
+    const handleCreateAsset = async (name: string, type: 'script' | 'material' | 'scene') => {
+        const id = await createAsset(currentFolderId, name, type)
         if (id) {
             setSelectedIds([id])
             setRenamingId(id)
