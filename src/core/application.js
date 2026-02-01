@@ -68,7 +68,7 @@ export class Application {
             this.#width = window.innerWidth;
             this.#height = window.innerHeight;
             this.#initialCanvasSize = { width: window.outerWidth, height: window.outerHeight };
-            Maths.generateMeterToPixelConversionFactor(this.#initialCanvasSize.width, this.#initialCanvasSize.height, this.#width, this.#height);
+            // Maths.generateMeterToPixelConversionFactor(this.#initialCanvasSize.width, this.#initialCanvasSize.height, this.#width, this.#height);
 
             this.#init();
             this.#gameloop(0);
@@ -122,7 +122,7 @@ export class Application {
             this.#canvas.width = this.#width;
             this.#canvas.height = this.#height;
 
-            Maths.generateMeterToPixelConversionFactor(this.#initialCanvasSize.width, this.#initialCanvasSize.height, this.#width, this.#height);
+            // Maths.generateMeterToPixelConversionFactor(this.#initialCanvasSize.width, this.#initialCanvasSize.height, this.#width, this.#height);
 
         }
         this.#canvas.focus();

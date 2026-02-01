@@ -7,7 +7,7 @@ import { Vector2 } from "./vec2.js";
  * @class Maths
  */
 export class Maths {
-    static #INITIAL_METER_TO_PIXEL_CONVERSION_FACTOR = 20;
+    static #INITIAL_METER_TO_PIXEL_CONVERSION_FACTOR = 64;
     static #METER_TO_PIXEL_CONVERSION_FACTOR = Maths.#INITIAL_METER_TO_PIXEL_CONVERSION_FACTOR;
 
     /**
