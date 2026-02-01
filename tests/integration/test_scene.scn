@@ -1,0 +1,31 @@
+{
+  "name": "Integration Test Scene",
+  "type": "scene",
+  "version": "1.0",
+  "camera": {
+    "bounds": { "x": 0, "y": 0, "width": 1000, "height": 1000 },
+    "zoom": 1.5
+  },
+  "layers": [
+    {
+      "name": "Object Layer",
+      "type": "object_layer",
+      "entities": [
+        {
+          "name": "TestEntity",
+          "transform": { 
+            "pos": { "x": 100, "y": 200 },
+            "rot": 1.57,
+            "scale": { "x": 2, "y": 2 }
+          },
+          "components": [
+            { 
+              "type": "Sprite", 
+              "props": { "path": "assets/test.png", "width": 32, "height": 32 } 
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

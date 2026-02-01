@@ -46,12 +46,21 @@ import * as Galatea from "./galatea/index.js";
 
 
 
+import { ComponentRegistry } from "./core/componentRegistry.js";
+import { SceneLoader } from "./core/sceneLoader.js";
+
 const application = new Application();
+
+// Register Core Components
+ComponentRegistry.register("Transform", Transform);
+ComponentRegistry.register("Sprite", Sprite);
+ComponentRegistry.register("Shape", Shape);
+// Register other components as needed...
 
 export {
     application,
-    Storage, Color, Filter, Entity, Scene, DestroyQueue, SceneManager,
-    Component, Transform,
+    Storage, Color, Filter, Entity, Scene, DestroyQueue, SceneManager, SceneLoader,
+    Component, Transform, ComponentRegistry,
     Renderable, Shape, Sprite,
     Sound,
     UI,

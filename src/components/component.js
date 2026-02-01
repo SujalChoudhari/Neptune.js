@@ -33,5 +33,26 @@ export class Component {
 
     }
 
+    /**
+     * Populates the component properties from a data object.
+     * Override this method for custom property handling.
+     * @param {object} props - The properties object (usually from JSON).
+     */
+    deserialize(props) {
+        if (!props) return;
 
+        // Default implementation: copy props to _properties
+        // This handles simple key-value pairs. 
+        // Complex types (Vector2, etc.) might need custom handling in subclasses 
+        // or a smarter default deserializer here.
+        for (const key in props) {
+            if (Object.prototype.hasOwnProperty.call(props, key)) {
+                // If the property exists in _properties, we might want to be careful about types,
+                // but for now, we just overwrite.
+
+                // TODO: Add support for checking if existing prop is a Vector2/Color and using .set() // turbo
+                this._properties[key] = props[key];
+            }
+        }
+    }
 }
