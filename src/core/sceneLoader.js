@@ -62,24 +62,21 @@ export class SceneLoader {
      * Parses a layer definition.
      */
     static #parseLayer(layerData, scene) {
-        // Create a root entity for the layer to keep hierarchy clean
-        const layerEntity = new Entity(layerData.name || "Layer");
-        scene.AddChild(layerEntity);
+        // Flattening: Attach directly to scene for now to ensure Scene.draw() finds them.
+        // In the future, Layer Entities should have a 'LayerRenderable' or similar to propagate draw calls.
+        const parent = scene;
 
         if (layerData.type === "object_layer" || layerData.type === "main") { // "main" from SRS
             if (Array.isArray(layerData.entities)) {
                 layerData.entities.forEach(entityData => {
                     const entity = SceneLoader.#parseEntity(entityData);
-                    layerEntity.AddChild(entity);
+                    parent.AddChild(entity);
                 });
             }
         } else if (layerData.type === "tilemap") {
-            // TODO: Instantiate Tilemap Entity/Component
-            // const tilemap = new Entity("Tilemap");
-            // tilemap.AddComponent(ComponentRegistry.create("TilemapRenderer", layerData));
-            // layerEntity.AddChild(tilemap);
+            // Placeholder for tilemap
         } else if (layerData.type === "parallax") {
-            // TODO: Instantiate Parallax Entity/Component
+            // Placeholder for parallax
         }
     }
 

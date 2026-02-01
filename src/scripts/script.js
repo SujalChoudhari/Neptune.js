@@ -36,10 +36,10 @@ export class Behaviour extends Script {
      * @param {Function} Init - Function called when the Behaviour is created
      * @param {Function} Update - Function called every frame
      */
-    constructor(name = "New Behaviour", Init = () => { }, Update = () => { }) {
+    constructor(name = "New Behaviour", Init = null, Update = null) {
         super(name);
-        this.Init = Init;
-        this.Update = Update;
+        if (Init) this.Init = Init;
+        if (Update) this.Update = Update;
     }
 }
 

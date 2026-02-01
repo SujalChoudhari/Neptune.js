@@ -88,7 +88,7 @@ export class MouseInput {
     /**@private */
     static #rightClick(event) {
         event.preventDefault(); // Prevent the default context menu from showing up
-        MouseInput.#click(event, MouseInput.buttons.RIGHT);
+        MouseInput.#click(event, MouseInput.BUTTON.RIGHT);
     }
 
     /**@private */

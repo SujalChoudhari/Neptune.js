@@ -45,6 +45,23 @@ export class Shape extends Renderable {
         param = Object.assign(this._properties.param, param);
     }
 
+    deserialize(props) {
+        if (!props) return;
+        if (props.geometry !== undefined) this.geometry = props.geometry;
+
+        // Handle param merging and color conversion
+        if (props.param) {
+            const newParam = Object.assign(this._properties.param, props.param);
+            if (newParam.color && !(newParam.color instanceof Color)) {
+                newParam.color = new Color(newParam.color.r, newParam.color.g, newParam.color.b, newParam.color.a);
+            }
+            if (newParam.outline && !(newParam.outline instanceof Color)) {
+                newParam.outline = new Color(newParam.outline.r, newParam.outline.g, newParam.outline.b, newParam.outline.a);
+            }
+            this._properties.param = newParam;
+        }
+    }
+
     /**
      * Geometry of the shape. Can be one of the following:
      * ```
