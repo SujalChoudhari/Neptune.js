@@ -25,9 +25,9 @@ export class Transform extends Component {
     constructor(pos = Vector2.Zero(), rot = 0, scale = Vector2.One()) {
         super();
         this._properties = {
-            position: pos,
+            position: pos.Copy(),
             rotation: rot,
-            scale: scale
+            scale: scale.Copy()
         }
     }
 
@@ -37,7 +37,7 @@ export class Transform extends Component {
      * 
      */
     get position() {
-        return this._properties.position.Copy();
+        return this._properties.position;
     }
 
     set position(position) {
@@ -65,7 +65,7 @@ export class Transform extends Component {
      * 
      */
     get scale() {
-        return this._properties.scale.Copy();
+        return this._properties.scale;
     }
 
     set scale(scale) {

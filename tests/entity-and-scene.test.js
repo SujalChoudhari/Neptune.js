@@ -114,4 +114,21 @@ describe("Scene", () => {
         expect(SceneManager.getIdForNewScene()).toEqual(scene.id + 1);
     })
 
+    it("can retrieve the active scene", () => {
+        SceneManager.removeAllScenes();
+        const scene1 = new Scene("Scene1");
+        SceneManager.LoadScene(scene1.id);
+        expect(SceneManager.GetActiveScene()).toBe(scene1);
+    });
+
+    it("switches active scene correctly", () => {
+        SceneManager.removeAllScenes();
+        const scene1 = new Scene("Scene1");
+        const scene2 = new Scene("Scene2");
+        SceneManager.LoadScene(scene1.id);
+        expect(SceneManager.GetActiveScene()).toBe(scene1);
+
+        SceneManager.LoadScene(scene2.id);
+        expect(SceneManager.GetActiveScene()).toBe(scene2);
+    });
 })

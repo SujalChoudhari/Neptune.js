@@ -32,6 +32,14 @@ export class SceneManager {
     }
 
     /**
+     * Get the currently active scene.
+     * @returns {Scene} The active scene.
+     */
+    static GetActiveScene() {
+        return SceneManager.GetScene(SceneManager.#currentSceneIndex);
+    }
+
+    /**
      * Load a scene by id. This will unload the current scene and load the new scene.
      * @param {number} id - Id of the scene to be loaded.
      * @method

@@ -9,6 +9,7 @@ import { SceneManager } from "./core/sceneManager.js";
 
 import { Component } from './components/component.js';
 import { Transform } from "./components/transform.js";
+import { BoxCollider } from "./components/boxCollider.js";
 import { Renderable } from "./rendering/renderable.js";
 import { Shape } from "./rendering/shape.js";
 import { Sprite } from "./rendering/sprite.js";
@@ -60,7 +61,7 @@ ComponentRegistry.register("Shape", Shape);
 export {
     application,
     Storage, Color, Filter, Entity, Scene, DestroyQueue, SceneManager, SceneLoader,
-    Component, Transform, ComponentRegistry,
+    Component, Transform, BoxCollider, ComponentRegistry,
     Renderable, Shape, Sprite,
     Sound,
     UI,

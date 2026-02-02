@@ -149,16 +149,18 @@ export class Application {
 
     #gameloop(timeStamp) {
         // Calculate the time passed since the last frame
-        this._deltaTime = (timeStamp - this.#currentTimeStamp) * this.#fps / 1000;  //in seconds
-        this._deltaTime = Maths.Clamp(this._deltaTime, 0, 1);
+        this._deltaTime = (timeStamp - this.#currentTimeStamp) / 1000;  //in seconds
+        // console.log("DT:", this._deltaTime);
+        this._deltaTime = Maths.Clamp(this._deltaTime, 0, 0.1); // Clamp to avoid huge jumps
         this.#currentTimeStamp = timeStamp;
 
         // Clear the canvas
-        this.#ctx.clearRect(0, 0, this.#width, this.#ctx.height);
+        this.#ctx.clearRect(0, 0, this.#width, this.#height);
         this.#ctx.fillStyle = this.#clearColor.toString() || Color.darkgray;
         this.#ctx.fillRect(0, 0, this.#width, this.#height);
 
         // Update and draw the entities
+        // console.log("Application Loop: Update");
         this.#update(this._deltaTime);
         this.#draw(this.#ctx);
 

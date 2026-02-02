@@ -21,6 +21,7 @@ export class KeyboardInput {
      * @example
      */
     static IsKeyDown(keyCode) {
+        if (!KeyboardInput.#keyPressed) return false;
         if (KeyboardInput.#keyPressed[keyCode] === undefined) return false;
         return KeyboardInput.#keyPressed[keyCode];
     }
@@ -39,8 +40,9 @@ export class KeyboardInput {
         KeyboardInput.#keyPressed = [];
         KeyboardInput.#specialKeyPressed = null;
 
-        KeyboardInput.#canvas.addEventListener("keydown", KeyboardInput.#keyDown);
-        KeyboardInput.#canvas.addEventListener("keyup", KeyboardInput.#keyUp);
+        // Use window instead of canvas to ensure we catch keys even if canvas loses focus
+        window.addEventListener("keydown", KeyboardInput.#keyDown);
+        window.addEventListener("keyup", KeyboardInput.#keyUp);
     }
     /**@private */
     static #checkSpecialKey(event) {
@@ -52,6 +54,7 @@ export class KeyboardInput {
     }
     /**@private */
     static #keyDown(event) {
+        // console.log("KeyboardInput: Key Down", event.keyCode);
         if (!KeyboardInput.#keyPressed[event.keyCode]) {
             KeyboardInput.#checkSpecialKey(event);
             KeyboardInput.#keyPressed[event.keyCode] = true;

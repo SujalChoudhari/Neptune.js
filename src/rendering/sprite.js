@@ -94,7 +94,13 @@ export class Sprite extends Renderable {
         if (image.src != path) {
             image.src = path;
         }
-        ctx.drawImage(image, -width / 2, -height / 2, width, height);
+
+        if (this._properties.sourceRect) {
+            const src = this._properties.sourceRect;
+            ctx.drawImage(image, src.x, src.y, src.width, src.height, -width / 2, -height / 2, width, height);
+        } else {
+            ctx.drawImage(image, -width / 2, -height / 2, width, height);
+        }
 
 
         let children = this.entity.GetComponentsInChildren(Renderable);

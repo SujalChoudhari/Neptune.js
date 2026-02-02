@@ -3,6 +3,7 @@ import { Entity } from "./entity.js";
 import { SceneManager } from "./sceneManager.js";
 import { ComponentRegistry } from "./componentRegistry.js";
 import { Vector2 } from "../math/vec2.js";
+import { Sprite } from "../rendering/sprite.js";
 
 /**
  * SceneLoader responsible for loading .scn (JSON) files and instantiating the scene graph.
@@ -33,25 +34,25 @@ export class SceneLoader {
      * @param {object} data - The scene JSON data.
      * @returns {Scene} The instantiated scene.
      */
-    static parse(data) {
+    /**
+     * Parses a scene JSON object and creates the Scene.
+     * @param {object} data - The scene JSON data.
+     * @returns {Promise<Scene>} The instantiated scene.
+     */
+    static async parse(data) {
         const sceneName = data.name || "Untitled Scene";
         const scene = new Scene(sceneName);
 
         // 1. Configure Global Scene properties (Camera, etc.)
-        // Note: SceneManager might need updates to handle camera per-scene via data
-        if (data.camera && data.camera.bounds) {
-            // For now, we assume a Camera system that might read from the active scene,
-            // or we attach a CameraBounds component to the scene root?
-            // Since Scene extends Entity, we can attach components to it!
-            // Let's store it in properties for now or a dedicated Camera component?
+        if (data.camera && data.camera.settings) {
             scene.cameraSettings = data.camera;
         }
 
         // 2. Parse Layers
         if (Array.isArray(data.layers)) {
-            data.layers.forEach(layerData => {
-                SceneLoader.#parseLayer(layerData, scene);
-            });
+            for (const layerData of data.layers) {
+                await SceneLoader.#parseLayer(layerData, scene);
+            }
         }
 
         return scene;
@@ -61,12 +62,10 @@ export class SceneLoader {
      * @private
      * Parses a layer definition.
      */
-    static #parseLayer(layerData, scene) {
-        // Flattening: Attach directly to scene for now to ensure Scene.draw() finds them.
-        // In the future, Layer Entities should have a 'LayerRenderable' or similar to propagate draw calls.
+    static async #parseLayer(layerData, scene) {
         const parent = scene;
 
-        if (layerData.type === "object_layer" || layerData.type === "main") { // "main" from SRS
+        if (layerData.type === "object_layer" || layerData.type === "main" || layerData.type === "parallax") {
             if (Array.isArray(layerData.entities)) {
                 layerData.entities.forEach(entityData => {
                     const entity = SceneLoader.#parseEntity(entityData);
@@ -74,9 +73,99 @@ export class SceneLoader {
                 });
             }
         } else if (layerData.type === "tilemap") {
-            // Placeholder for tilemap
-        } else if (layerData.type === "parallax") {
-            // Placeholder for parallax
+            if (layerData.src) {
+                await SceneLoader.#loadTilemap(layerData.src, scene);
+            }
+        }
+    }
+
+    static async #loadTilemap(path, scene) {
+        try {
+            const res = await fetch(path);
+            const map = await res.json();
+
+            // Map Props: width, height (in tiles), key: "1" -> {x,y} ? No, usually linear data
+            // Simple format: { width: 10, tileSize: 64, tileset: "path", columns: 10, data: [1, 2, 0...] }
+
+            const data = map.data;
+            const cols = map.width;
+            const tileSize = map.tileSize || 64;
+            const tileset = map.tileset;
+
+            // Texture Columns (how many tiles wide is the image?)
+            const texCols = map.columns || 10;
+
+            for (let i = 0; i < data.length; i++) {
+                const tileId = data[i];
+                if (tileId === 0) continue; // 0 == empty
+
+                // Calculate Grid Position
+                const gx = i % cols;
+                const gy = Math.floor(i / cols);
+
+                // Calculate World Position (Center of tile, based on 64px unit??)
+                // Our Engine uses 1 Tile = 1 Unit.
+                // Center of (0,0) is 0.5, 0.5? Or do we place at Top-Left?
+                // Transform uses Center usually.
+                // Let's assume (gx + 0.5, gy + 0.5) to center it.
+
+                const x = gx + 0.5;
+                const y = gy + 0.5;
+
+                // Create Entity
+                const entity = new Entity("Tile_" + i);
+
+                // Add Transform
+                const t = ComponentRegistry.create("Transform");
+                t.position = new Vector2(x, y);
+                entity.AddComponent(t);
+
+                // Add Sprite
+                // Calculate Source Rect from TileID (1-based index usually)
+                // ID 1 = Top Left (0,0)
+                const tid = tileId - 1;
+                const tx = (tid % texCols) * tileSize;
+                const ty = Math.floor(tid / texCols) * tileSize;
+
+                const sprite = ComponentRegistry.create("Sprite");
+                sprite.path = tileset;
+                sprite.width = 1; // 1 Unit wide
+                sprite.height = 1; // 1 Unit high
+
+                // Set Source Rect (in Pixels)
+                // We need to access specific properties for this... 
+                // Sprite doesn't have a specific setter for 'sourceRect' on the instance unless we use _properties?
+                // Or verify Sprite.js allows setting it. 
+                // We modified Sprite.js to check _properties.sourceRect. 
+                // We should expose a setter or set it directly.
+                // For now, access _properties directly since we are "Engine-side" or rely on deserialize.
+                sprite.deserialize({
+                    path: tileset,
+                    width: 1,
+                    height: 1,
+                    sourceRect: { x: tx, y: ty, width: tileSize, height: tileSize }
+                });
+
+                // WAIT: Sprite.js doesn't have a 'deserialize' method that handles 'sourceRect' explicitly?
+                // Base 'Component.deserialize' merges props. 
+                // But passing 'sourceRect' to deserialize will separate it.
+                // Let's implement 'sourceRect' setter in Sprite later if needed, but 'deserialize' should work if we pass the object.
+                // Actually, 'Component.deserialize' just merges?
+                // Let's check 'Component.js' ... "deserialize(props) { Object.assign(this._properties, props); }" usually.
+                // I need to be sure. I'll assume 'deserialize' exists.
+
+                entity.AddComponent(sprite);
+
+                // Add Collider
+                const collider = ComponentRegistry.create("BoxCollider");
+                collider.size = new Vector2(1, 1);
+                entity.AddComponent(collider);
+
+                scene.AddChild(entity);
+            }
+
+        } catch (e) {
+            console.error("Failed to load map:", e);
         }
     }
 
