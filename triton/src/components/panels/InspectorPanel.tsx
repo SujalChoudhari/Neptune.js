@@ -1,111 +1,21 @@
 import type { IDockviewPanelProps } from "dockview"
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { cn } from "@/lib/utils"
 import { Box, Eye, EyeOff, Plus } from "lucide-react"
 import { ThemedInput } from "@/components/library"
-
-// Modular Imports
-import type {
-    MockEntity,
-    MockTransform,
-    MockVector2,
-    MockSprite,
-    MockCollider,
-    MockBody,
-    MockSound,
-    MockStats,
-    MockAnimator,
-    MockScript
-} from "./inspector/shared/types"
-import { MOCK_ENTITY } from "./inspector/shared/mockData"
+import { useGameContext } from "@/context/GameContext"
 import { renderInspectorComponent } from "./inspector/InspectorRegistry"
+import type { MockEntity } from "./inspector/shared/types"  // Still needed for shared types in registry?
 
 /**
  * InspectorPanel
  * 
- * Refactored to a thin container that manages state and uses
- * InspectorRegistry for dynamic, modular component rendering.
+ * Refactored to use GameContext for real data.
  */
 export const InspectorPanel = (_props: IDockviewPanelProps) => {
-    const [entity, setEntity] = useState<MockEntity>(MOCK_ENTITY)
+    const { selectedEntityData, updateComponent, notifyGame } = useGameContext()
 
-    // ============================================================================
-    // STATE UPDATE HELPERS
-    // ============================================================================
-
-    const updateTransform = (key: keyof MockTransform, value: MockVector2 | number) => {
-        setEntity(prev => ({ ...prev, transform: { ...prev.transform, [key]: value } }))
-    }
-
-    const updateSprite = (key: keyof MockSprite, value: string | number) => {
-        if (!entity.sprite) return
-        setEntity(prev => ({
-            ...prev,
-            sprite: prev.sprite ? { ...prev.sprite, [key]: value } : undefined
-        }))
-    }
-
-    const updateCollider = (key: keyof MockCollider, value: number | boolean) => {
-        if (!entity.collider) return
-        setEntity(prev => ({
-            ...prev,
-            collider: prev.collider ? { ...prev.collider, [key]: value } : undefined
-        }))
-    }
-
-    const updateBody = (key: keyof MockBody, value: number | boolean) => {
-        if (!entity.body) return
-        setEntity(prev => ({
-            ...prev,
-            body: prev.body ? { ...prev.body, [key]: value } : undefined
-        }))
-    }
-
-    const updateSound = (key: keyof MockSound, value: string | number | boolean) => {
-        if (!entity.sound) return
-        setEntity(prev => ({
-            ...prev,
-            sound: prev.sound ? { ...prev.sound, [key]: value } : undefined
-        }))
-    }
-
-    const updateStats = (key: keyof MockStats, value: number) => {
-        if (!entity.stats) return
-        setEntity(prev => ({
-            ...prev,
-            stats: prev.stats ? { ...prev.stats, [key]: value } : undefined
-        }))
-    }
-
-    const updateAnimator = (key: keyof MockAnimator, value: string | number | boolean) => {
-        if (!entity.animator) return
-        setEntity(prev => ({
-            ...prev,
-            animator: prev.animator ? { ...prev.animator, [key]: value } : undefined
-        }))
-    }
-
-    const updateScript = (index: number, key: keyof MockScript, value: string | boolean) => {
-        if (!entity.scripts) return
-        setEntity(prev => ({
-            ...prev,
-            scripts: prev.scripts?.map((s, i) => i === index ? { ...s, [key]: value } : s)
-        }))
-    }
-
-    const updateHelpers = {
-        updateTransform, updateSprite, updateCollider, updateBody,
-        updateSound, updateStats, updateAnimator, updateScript
-    }
-
-    // ============================================================================
-    // LIFECYCLE & REORDERING
-    // ============================================================================
-
-    const [componentOrder, setComponentOrder] = useState<(keyof Omit<MockEntity, 'name' | 'active' | 'transform'>)[]>(
-        ['sprite', 'collider', 'body', 'sound', 'stats', 'animator', 'scripts']
-    )
-
+    // Local state for UI ordering/visibility (could be persisted later)
     const [activeStates, setActiveStates] = useState<Record<string, boolean>>({
         transform: true,
         sprite: true,
@@ -121,31 +31,52 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
         setActiveStates(prev => ({ ...prev, [key]: !prev[key] }))
     }
 
-    const moveComponentUp = (index: number) => {
-        if (index <= 0) return
-        setComponentOrder(prev => {
-            const next = [...prev]
-            const temp = next[index]
-            next[index] = next[index - 1]
-            next[index - 1] = temp
-            return next
-        })
+    // We derive component list from the actual data + standard order
+    const componentOrder = useMemo(() => {
+        if (!selectedEntityData) return [];
+        const order = ['sprite', 'collider', 'body', 'sound', 'stats', 'animator', 'scripts'];
+        return order.filter(key => selectedEntityData[key]);
+    }, [selectedEntityData]);
+
+    if (!selectedEntityData) {
+        return (
+            <div className="h-full flex flex-col items-center justify-center text-muted-foreground p-4 text-center bg-background select-none">
+                <p className="text-sm font-medium">No Selection</p>
+                <p className="text-xs opacity-50 mt-1">Select an entity in the Hierarchy to view properties.</p>
+            </div>
+        )
     }
 
-    const moveComponentDown = (index: number) => {
-        if (index >= componentOrder.length - 1) return
-        setComponentOrder(prev => {
-            const next = [...prev]
-            const temp = next[index]
-            next[index] = next[index + 1]
-            next[index + 1] = temp
-            return next
-        })
+    // Cast to MockEntity because our Inspector components are typed with it
+    // EntityData and MockEntity should be compatible enough for now
+    const entity = selectedEntityData as unknown as MockEntity;
+
+    // HELPERS
+    // We map specifics to generic updateComponent(id, comp, field, value)
+
+    // Transform is special, it's a sub-object usually, but updateComponent handles it via 'transform' component key
+    // The previous updateTransform took (key, value).
+    const updateTransform = (key: string, value: any) => {
+        updateComponent((entity as any).id, 'transform', key, value); // id is in entity
     }
 
-    // ============================================================================
-    // RENDER
-    // ============================================================================
+    // Generic updater generator
+    const makeUpdater = (compName: string) => (key: string, value: any) => {
+        updateComponent((entity as any).id, compName, key, value);
+    }
+
+    const updateHelpers = {
+        updateTransform,
+        updateSprite: makeUpdater('sprite'),
+        updateCollider: makeUpdater('collider'),
+        updateBody: makeUpdater('body'),
+        updateSound: makeUpdater('sound'),
+        updateStats: makeUpdater('stats'),
+        updateAnimator: makeUpdater('animator'),
+        updateScript: (index: number, key: string, value: any) => {
+            console.log("Update script:", index, key, value);
+        }
+    }
 
     return (
         <div className="h-full flex flex-col bg-background overflow-hidden overflow-x-hidden select-none">
@@ -166,13 +97,13 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
                     <div className="flex-1 min-w-0">
                         <ThemedInput
                             value={entity.name}
-                            onChange={(e: any) => setEntity(prev => ({ ...prev, name: e.target.value }))}
+                            onChange={(e: any) => notifyGame('editor:rename', { id: (entity as any).id, name: e.target.value })}
                             className="font-bold text-[13px] h-8"
                         />
                     </div>
                     <button
                         type="button"
-                        onClick={() => setEntity(prev => ({ ...prev, active: !prev.active }))}
+                        onClick={() => notifyGame('editor:update-component', { id: (entity as any).id, component: 'active', data: !entity.active })}
                         className={cn(
                             "w-8 h-8 flex items-center justify-center rounded transition-colors",
                             entity.active ? "text-blue-400 hover:text-blue-300" : "text-muted-foreground/70 hover:text-foreground"
@@ -199,15 +130,15 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
 
                 {/* DYNAMIC COMPONENTS */}
                 {componentOrder.map((compId, index) => renderInspectorComponent({
-                    compId,
+                    compId: compId as any,
                     index,
                     entity,
                     isActive: activeStates[compId],
                     onToggleActive: () => toggleActive(compId),
                     updateHelpers,
                     moveHelpers: {
-                        onMoveUp: () => moveComponentUp(index),
-                        onMoveDown: () => moveComponentDown(index)
+                        onMoveUp: () => { }, // Reordering not implemented in backend yet
+                        onMoveDown: () => { }
                     }
                 }))}
 

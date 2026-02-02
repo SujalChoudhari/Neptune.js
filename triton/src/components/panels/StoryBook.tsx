@@ -34,7 +34,7 @@ import type { ComponentId, MockEntity } from "./inspector/shared/types"
  * A Component Library panel that displays Triton's themed UI components.
  * Useful for testing and implementing components in other tools.
  */
-export const AtlasPanel = (_props: IDockviewPanelProps) => {
+export const StoryBook = (_props: IDockviewPanelProps) => {
     const { showModal } = useModal()
 
     // Demo state for interactive components
@@ -74,7 +74,7 @@ export const AtlasPanel = (_props: IDockviewPanelProps) => {
         <ThemedScrollArea maxHeight="100%" className="h-full w-full bg-card p-4">
             <div className="space-y-6">
                 <div className="border-b border-border pb-4">
-                    <h1 className="text-xl font-bold text-foreground uppercase tracking-tight">Component Atlas</h1>
+                    <h1 className="text-xl font-bold text-foreground uppercase tracking-tight">Storybook</h1>
                     <p className="text-sm text-muted-foreground">Triton's localized themed component library</p>
                 </div>
 

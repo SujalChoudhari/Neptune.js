@@ -67,6 +67,7 @@ export interface MockScript {
 }
 
 export interface MockEntity {
+    id: string
     name: string
     active: boolean
     transform: MockTransform

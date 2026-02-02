@@ -2,7 +2,7 @@ import { DockviewReact, type DockviewReadyEvent, type IDockviewPanelProps, type 
 import "dockview/dist/styles/dockview.css";
 import { themeDark } from "dockview";
 import { useRef, useEffect } from "react";
-import { AtlasPanel } from "@/components/panels/AtlasPanel";
+import { StoryBook } from "@/components/panels/StoryBook";
 import { ProjectPanel } from "@/components/panels/ProjectPanel";
 import { InspectorPanel } from "@/components/panels/InspectorPanel";
 import { ConsolePanel } from "@/components/panels/ConsolePanel";
@@ -148,7 +148,7 @@ export const DockLayout = ({ onApiReady }: DockLayoutProps) => {
                 component: 'console',
                 title: 'Console',
                 position: { referencePanel: mainPanel, direction: 'below' },
-                initialHeight: 200
+                initialHeight: 300
             });
 
             api.addPanel({
@@ -225,7 +225,7 @@ const componentMap = {
     inspector: InspectorPanel,
     console: ConsolePanel,
     project: ProjectPanel,
-    atlas: AtlasPanel,
+    atlas: StoryBook,
     game: GameViewPanel,
 };
 

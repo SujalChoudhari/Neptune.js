@@ -32,16 +32,13 @@ export class PlayerController extends Behaviour {
         let inputX = 0;
         // Use global window input check if possible, or standard KeyboardInput
         if (KeyboardInput.IsKeyDown(KeyboardInput.KEY_CODE.A) || KeyboardInput.IsKeyDown(KeyboardInput.KEY_CODE.LEFTARROW)) {
-            console.log("PlayerController: Left Pressed");
             inputX -= 1;
         }
         if (KeyboardInput.IsKeyDown(KeyboardInput.KEY_CODE.D) || KeyboardInput.IsKeyDown(KeyboardInput.KEY_CODE.RIGHTARROW)) {
-            console.log("PlayerController: Right Pressed");
             inputX += 1;
         }
 
         if (KeyboardInput.IsKeyDown(KeyboardInput.KEY_CODE.SPACE) && this.grounded) {
-            console.log("PlayerController: Jump Pressed");
             this.velocity.y = -this.jumpForce;
             this.grounded = false;
         }
@@ -63,7 +60,6 @@ export class PlayerController extends Behaviour {
 
         // Debug Physics State (Log if moving or inputs active)
         if (Math.abs(inputX) > 0 || Math.abs(this.velocity.y) > 0.1 || !this.grounded) {
-            console.log(`PlayerController Phys: DT=${deltaTime.toFixed(4)} | Input=${inputX} | VelY=${this.velocity.y.toFixed(2)} | Pos=(${t.position.x.toFixed(2)}, ${t.position.y.toFixed(2)})`);
         }
     }
 

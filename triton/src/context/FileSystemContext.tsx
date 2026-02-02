@@ -31,6 +31,8 @@ interface FileSystemContextType {
     deleteNode: (nodeId: string) => Promise<void>;
     renameNode: (nodeId: string, newName: string) => Promise<void>;
     duplicateNode: (nodeId: string) => Promise<void>;
+    readFile: (path: string) => Promise<string | null>;
+    writeFile: (path: string, content: string) => Promise<boolean>;
 }
 
 const FileSystemContext = createContext<FileSystemContextType | null>(null);
@@ -42,6 +44,39 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(false);
 
     const currentFolderId = currentPath[currentPath.length - 1] || "root";
+
+    const writeFile = useCallback(async (path: string, content: string) => {
+        try {
+            await invoke("write_file", { path, content });
+            return true;
+        } catch (e) {
+            console.error("Failed to write file:", path, e);
+            return false;
+        }
+    }, []);
+
+    const readFile = useCallback(async (path: string) => {
+        try {
+            // Try Tauri custom command
+            return await invoke<string>("read_file", { path });
+        } catch (e) {
+            // Fallback to Vite dev server static serving
+            try {
+                // Vite serves absolute paths via /@fs/
+                // Replace backslashes
+                const normalized = path.replace(/\\/g, '/');
+                // On Windows, F:/ needs /@fs/F:/
+                // Ensure no double slashes if normalized already starts with /
+                const url = `/@fs/${normalized.startsWith('/') ? normalized.slice(1) : normalized}`;
+                const res = await fetch(url);
+                if (!res.ok) throw new Error("Fetch failed: " + res.statusText);
+                return await res.text();
+            } catch (fetchErr) {
+                console.error("Failed to read file:", path, e, fetchErr);
+                return null;
+            }
+        }
+    }, []);
 
     const loadProject = useCallback(async (path: string) => {
         setIsLoading(true);
@@ -234,7 +269,9 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
             createAsset,
             deleteNode,
             renameNode,
-            duplicateNode
+            duplicateNode,
+            readFile,
+            writeFile
         }}>
             {children}
         </FileSystemContext.Provider>

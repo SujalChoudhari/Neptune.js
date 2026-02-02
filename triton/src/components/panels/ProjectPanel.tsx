@@ -1,5 +1,6 @@
 import type { IDockviewPanelProps } from "dockview"
 import { useFileSystem } from "@/context/FileSystemContext"
+import { useGameContext } from "@/context/GameContext"
 import { ProjectSidebar } from "../project/ProjectSidebar"
 import { ProjectGrid } from "../project/ProjectGrid"
 import { useState, useEffect } from "react"
@@ -31,6 +32,9 @@ export const ProjectPanel = (_props: IDockviewPanelProps) => {
         renameNode,
         duplicateNode
     } = useFileSystem()
+
+    const { notifyGame, loadScene } = useGameContext()
+
     const [scale, setScale] = useState(90)
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedIds, setSelectedIds] = useState<string[]>([])
@@ -46,6 +50,31 @@ export const ProjectPanel = (_props: IDockviewPanelProps) => {
         setRenamingId(null)
         setLastSelectedId(null)
     }, [currentFolderId])
+
+    // Smart Navigation (Double Click)
+    const handleSmartNavigate = (id: string) => {
+        const node = nodes[id]
+        if (!node) return
+
+        if (node.type === 'folder') {
+            navigateTo(id)
+        } else {
+            // It's a file
+            if (node.name.endsWith('.scene') || node.name.endsWith('.npt') || node.name.endsWith('.scn')) {
+                // Get full path logic if needed, but if creating asset puts name, we hopefully have path or construct it.
+                // context nodes might not have full path. useFileSystem might need helper or we construct from ancestry.
+                // Assuming simple file opening for now using name/id.
+                // NOTE: 'scan_project' usually returns paths as IDs or has path property. 
+                // Let's assume ID is path or we have path property. 
+                // Checking previous view_file of FileSystemContext: `loadProject` calls `scan_project`.
+                // `FileNode` usually has path.
+                // Let's use `node.path` if it exists, or `id` (often path in Tauri apps).
+                const path = (node as any).path || id;
+                console.log("Opening scene:", path);
+                loadScene(path);
+            }
+        }
+    }
 
     // Selection Logic
     const handleItemClick = (id: string, e: React.MouseEvent) => {
@@ -125,6 +154,13 @@ export const ProjectPanel = (_props: IDockviewPanelProps) => {
             e.preventDefault()
             const allIds = getChildren(currentFolderId).map(n => n.id)
             setSelectedIds(allIds)
+        }
+
+        // Enter to Open
+        if (e.key === 'Enter') {
+            if (selectedIds.length === 1) {
+                handleSmartNavigate(selectedIds[0])
+            }
         }
     }
 
@@ -260,7 +296,7 @@ export const ProjectPanel = (_props: IDockviewPanelProps) => {
                         <div className="flex-1 bg-background" onClick={handleBackgroundClick}>
                             <ProjectGrid
                                 items={currentFolderItems}
-                                onNavigate={navigateTo}
+                                onNavigate={handleSmartNavigate}
                                 scale={scale}
                                 selectedIds={selectedIds}
                                 renamingId={renamingId}

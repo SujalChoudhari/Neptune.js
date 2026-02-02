@@ -94,7 +94,7 @@ export function Main() {
                     openPanel('project', 'Project', 'project');
                     break;
                 case 'panel_atlas':
-                    openPanel('atlas', 'Atlas (Components)', 'atlas');
+                    openPanel('atlas', 'StoryBook', 'atlas');
                     break;
 
                 // Layouts

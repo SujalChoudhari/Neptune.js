@@ -176,7 +176,7 @@ const ProjectGridItem = ({
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={(e) => item.type === 'folder' && handleDrop(e)}
-                    onDoubleClick={() => item.type === 'folder' && onNavigate(item.id)}
+                    onDoubleClick={() => onNavigate(item.id)}
                 >
                     {/* Icon Area - No framing, just the content */}
                     <div className="aspect-square w-full flex items-center justify-center relative overflow-hidden">
@@ -215,7 +215,7 @@ const ProjectGridItem = ({
             </ThemedContextMenuTrigger>
 
             <ThemedContextMenuContent>
-                <ThemedContextMenuItem onClick={() => item.type === 'folder' ? onNavigate(item.id) : null} disabled={item.type !== 'folder'}>
+                <ThemedContextMenuItem onClick={() => onNavigate(item.id)}>
                     Open
                 </ThemedContextMenuItem>
                 <ThemedContextMenuSeparator />
