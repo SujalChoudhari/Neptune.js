@@ -8,6 +8,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from "@tauri-apps/api/core";
 import { WelcomeScreen } from "@/pages/WelcomeScreen";
 import { useFileSystem } from "@/context/FileSystemContext";
+import { StatusBar } from "@/components/layout/StatusBar";
 
 export function Main() {
     const dockApiRef = useRef<NeptuneDockApi | null>(null)
@@ -174,10 +175,7 @@ export function Main() {
             </div>
 
             {/* FOOTER */}
-            <footer className="h-5 border-t border-border bg-card flex items-center px-2 text-[10px] justify-between text-muted-foreground z-50">
-                <span>Ready</span>
-                <span>Triton v0.0.1</span>
-            </footer>
+            <StatusBar />
         </div>
     )
 }

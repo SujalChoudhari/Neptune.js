@@ -1,13 +1,14 @@
 import { DockviewReact, type DockviewReadyEvent, type IDockviewPanelProps, type DockviewApi } from "dockview";
 import "dockview/dist/styles/dockview.css";
 import { themeDark } from "dockview";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { AtlasPanel } from "@/components/panels/AtlasPanel";
 import { ProjectPanel } from "@/components/panels/ProjectPanel";
 import { InspectorPanel } from "@/components/panels/InspectorPanel";
 import { ConsolePanel } from "@/components/panels/ConsolePanel";
 import { HierarchyPanel } from "@/components/panels/HierarchyPanel";
 import { GameViewPanel } from "@/components/panels/GameViewPanel";
+import { useSettings } from "@/components/context/SettingsContext";
 
 const ViewportPanel = (_props: IDockviewPanelProps) => (
     <div className="h-full w-full bg-[#1a1a1a] relative overflow-hidden flex items-center justify-center">
@@ -31,6 +32,80 @@ interface DockLayoutProps {
 
 export const DockLayout = ({ onApiReady }: DockLayoutProps) => {
     const dockApiRef = useRef<DockviewApi | null>(null);
+    const { focusGameOnPlay, focusConsoleOnPlay, maximizeGameOnPlay } = useSettings();
+
+    // Store layout state before maximizing to restore it later
+    const layoutStateRef = useRef<any>(null);
+
+    useEffect(() => {
+        const onPlay = () => {
+            const api = dockApiRef.current;
+            if (!api) return;
+
+            // 1. Focus Game Panel
+            if (focusGameOnPlay) {
+                const gamePanel = api.getPanel('game');
+                if (gamePanel) {
+                    gamePanel.api.setActive();
+                }
+            }
+
+            // 2. Focus Console Panel
+            if (focusConsoleOnPlay) {
+                const consolePanel = api.getPanel('console');
+                if (consolePanel) {
+                    consolePanel.api.setActive();
+                }
+            }
+
+            // 3. Maximize Game View
+            if (maximizeGameOnPlay) {
+                const gamePanel = api.getPanel('game');
+                if (gamePanel) {
+                    // There isn't a direct "maximize" API that hides others easily without extensive layout manipulation.
+                    // However, we can use `api.maximizeGroup(gamePanel.group)` if it exists, or simulated via CSS/Layout.
+                    // Dockview has `panel.api.maximize()` (if supported by the version) or we can just try to expand it.
+
+                    // Note: As of typical dockview versions, maximize is often a user interaction.
+                    // We can try: `gamePanel.group.api.maximize()`
+
+                    // Let's safe check
+                    const group = gamePanel.group;
+                    // @ts-ignore - API capability check
+                    if (group && group.api.maximize) {
+                        // @ts-ignore
+                        group.api.maximize();
+                    }
+                }
+            }
+        };
+
+        const onStop = () => {
+            const api = dockApiRef.current;
+            if (!api) return;
+
+            // Restore if maximized (Dockview usually handles toggle)
+            if (maximizeGameOnPlay) {
+                const gamePanel = api.getPanel('game');
+                if (gamePanel) {
+                    const group = gamePanel.group;
+                    // @ts-ignore
+                    if (group && group.api.isMaximized && group.api.exitMaximized) {
+                        // @ts-ignore
+                        group.api.exitMaximized();
+                    }
+                }
+            }
+        };
+
+        window.addEventListener('editor:play', onPlay);
+        window.addEventListener('editor:stop', onStop);
+
+        return () => {
+            window.removeEventListener('editor:play', onPlay);
+            window.removeEventListener('editor:stop', onStop);
+        };
+    }, [focusGameOnPlay, focusConsoleOnPlay, maximizeGameOnPlay]);
 
     const applyLayout = (type: 'default' | 'animation' | 'debug') => {
         const api = dockApiRef.current;
@@ -45,11 +120,6 @@ export const DockLayout = ({ onApiReady }: DockLayoutProps) => {
                 title: 'Scene View'
             });
 
-            // Add Game View docked with viewport (tabbed) or separate?
-            // User requested "new panel". Let's tab it with Scene View for best UX, 
-            // or just add it to the layout. 
-            // "Play the game inside the editor".
-            // Let's add it as a separate panel in the center group for now so it's visible.
             api.addPanel({
                 id: 'game',
                 component: 'game',
@@ -92,6 +162,7 @@ export const DockLayout = ({ onApiReady }: DockLayoutProps) => {
             mainPanel.api.setActive();
 
         } else if (type === 'animation') {
+            // ... (Keep existing layouts)
             const viewport = api.addPanel({
                 id: 'viewport',
                 component: 'viewport',
@@ -100,7 +171,7 @@ export const DockLayout = ({ onApiReady }: DockLayoutProps) => {
 
             api.addPanel({
                 id: 'animator',
-                component: 'inspector', // Shared component for demo
+                component: 'inspector',
                 title: 'Timeline',
                 position: { referencePanel: viewport, direction: 'below' },
                 initialHeight: 300
@@ -113,6 +184,7 @@ export const DockLayout = ({ onApiReady }: DockLayoutProps) => {
                 position: { referencePanel: viewport, direction: 'right' },
                 initialWidth: 300
             });
+
         } else if (type === 'debug') {
             api.addPanel({
                 id: 'atlas',
@@ -157,6 +229,5 @@ const componentMap = {
     game: GameViewPanel,
 };
 
-// Re-export extended API type
 export type NeptuneDockApi = DockviewApi & { applyLayout: (type: 'default' | 'animation' | 'debug') => void };
 export type { DockviewApi };
