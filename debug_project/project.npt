@@ -1,1 +1,5 @@
-{ "name": "debug_project", "version": "0.0.1" }
+{
+  "name": "debug_project",
+  "version": "0.0.1",
+  "mainScene": "F:/Workspace/Neptune.js/debug_project/scenes/demo.scn"
+}

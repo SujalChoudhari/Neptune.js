@@ -255,6 +255,21 @@ async fn initialize_project(path: String) -> Result<bool, String> {
 }
 
 #[tauri::command]
+async fn read_file(path: String) -> Result<String, String> {
+    let path_buf = PathBuf::from(&path);
+    if !path_buf.exists() {
+        return Err("File not found".to_string());
+    }
+    fs::read_to_string(path_buf).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn write_file(path: String, content: String) -> Result<bool, String> {
+     fs::write(path, content).map_err(|e| e.to_string())?;
+     Ok(true)
+}
+
+#[tauri::command]
 async fn move_fs_node(source: String, target: String) -> Result<bool, String> {
     let source_path = PathBuf::from(&source);
     let target_path = PathBuf::from(&target);
@@ -382,7 +397,9 @@ pub fn run() {
         delete_fs_node,
         rename_fs_node,
         duplicate_fs_node,
-        sync_neptune_lib
+        sync_neptune_lib,
+        read_file,
+        write_file
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {
