@@ -1,5 +1,5 @@
 import type { IDockviewPanelProps } from "dockview"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
     ThemedInput,
     ThemedIconButton,
@@ -25,12 +25,7 @@ interface LogEntry {
 // Mock Data
 const INITIAL_LOGS: LogEntry[] = [
     { id: '1', type: 'info', message: 'Triton Engine initialized successfully.', timestamp: '10:45:22', count: 1 },
-    { id: '2', type: 'info', message: 'Loaded scene "Level_01"', timestamp: '10:45:23', count: 1 },
-    { id: '3', type: 'warn', message: 'Texture "Rock_04" is missing mipmaps. Performance may be degraded.', timestamp: '10:45:24', count: 1 },
-    { id: '4', type: 'info', message: 'Baking NavMesh...', timestamp: '10:45:25', count: 1 },
-    { id: '5', type: 'error', message: 'NullReferenceException: Object reference not set to an instance of an object\n  at PlayerController.Update () [0x00023] in PlayerController.cs:45', timestamp: '10:45:26', count: 5 },
-    { id: '6', type: 'info', message: 'Baking NavMesh completed in 245ms.', timestamp: '10:45:27', count: 1 },
-]
+];
 
 export const ConsolePanel = (_props: IDockviewPanelProps) => {
     const [logs, setLogs] = useState<LogEntry[]>(INITIAL_LOGS)
@@ -40,6 +35,53 @@ export const ConsolePanel = (_props: IDockviewPanelProps) => {
     const [showError, setShowError] = useState(true)
     const [clearOnPlay, setClearOnPlay] = useState(false)
     const [collapse, setCollapse] = useState(false)
+
+    // Event Listener for Game Logs
+    useEffect(() => {
+        const addLog = (type: 'info' | 'warn' | 'error', message: string) => {
+            setLogs(prev => {
+                const now = new Date();
+                const timestamp = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+
+                const newEntry: LogEntry = {
+                    id: Math.random().toString(36).substr(2, 9),
+                    type,
+                    message,
+                    timestamp,
+                    count: 1
+                };
+                return [...prev, newEntry];
+            });
+        }
+
+        const handleLog = (event: CustomEvent) => {
+            const { type, message } = event.detail;
+            addLog(type, message);
+        };
+
+        const handleMessage = (event: MessageEvent) => {
+            if (event.data && event.data.type === 'editor:log') {
+                const { type, message } = event.data.detail;
+                addLog(type, message);
+            }
+        };
+
+        const handleClear = () => {
+            if (clearOnPlay) {
+                setLogs([]);
+            }
+        };
+
+        window.addEventListener('editor:log', handleLog as EventListener);
+        window.addEventListener('message', handleMessage);
+        window.addEventListener('editor:play', handleClear as EventListener);
+
+        return () => {
+            window.removeEventListener('editor:log', handleLog as EventListener);
+            window.removeEventListener('message', handleMessage);
+            window.removeEventListener('editor:play', handleClear as EventListener);
+        };
+    }, [clearOnPlay]);
 
     const filteredLogs = logs.filter(log => {
         if (!log.message.toLowerCase().includes(searchQuery.toLowerCase())) return false

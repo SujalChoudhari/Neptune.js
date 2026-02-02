@@ -7,6 +7,7 @@ import { ProjectPanel } from "@/components/panels/ProjectPanel";
 import { InspectorPanel } from "@/components/panels/InspectorPanel";
 import { ConsolePanel } from "@/components/panels/ConsolePanel";
 import { HierarchyPanel } from "@/components/panels/HierarchyPanel";
+import { GameViewPanel } from "@/components/panels/GameViewPanel";
 
 const ViewportPanel = (_props: IDockviewPanelProps) => (
     <div className="h-full w-full bg-[#1a1a1a] relative overflow-hidden flex items-center justify-center">
@@ -44,6 +45,18 @@ export const DockLayout = ({ onApiReady }: DockLayoutProps) => {
                 title: 'Scene View'
             });
 
+            // Add Game View docked with viewport (tabbed) or separate?
+            // User requested "new panel". Let's tab it with Scene View for best UX, 
+            // or just add it to the layout. 
+            // "Play the game inside the editor".
+            // Let's add it as a separate panel in the center group for now so it's visible.
+            api.addPanel({
+                id: 'game',
+                component: 'game',
+                title: 'Game View',
+                position: { referencePanel: mainPanel, direction: 'within' }
+            });
+
             api.addPanel({
                 id: 'hierarchy',
                 component: 'hierarchy',
@@ -74,6 +87,10 @@ export const DockLayout = ({ onApiReady }: DockLayoutProps) => {
                 title: 'Project',
                 position: { referencePanel: 'console', direction: 'within' }
             });
+
+            // Activate Scene View by default
+            mainPanel.api.setActive();
+
         } else if (type === 'animation') {
             const viewport = api.addPanel({
                 id: 'viewport',
@@ -102,8 +119,6 @@ export const DockLayout = ({ onApiReady }: DockLayoutProps) => {
                 component: 'atlas',
                 title: 'Atlas'
             });
-
-
         }
     };
 
@@ -139,6 +154,7 @@ const componentMap = {
     console: ConsolePanel,
     project: ProjectPanel,
     atlas: AtlasPanel,
+    game: GameViewPanel,
 };
 
 // Re-export extended API type

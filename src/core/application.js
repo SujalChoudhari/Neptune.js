@@ -177,19 +177,26 @@ export class Application {
     }
 
     #pageSetup() {
-        const playBtn = document.createElement("button");
-        playBtn.setAttribute("type", "button");
-        playBtn.setAttribute("id", "neptune-play");
-        playBtn.textContent = "Play Game";
-        document.body.appendChild(playBtn);
+        let playBtn = document.getElementById("neptune-play");
+        if (!playBtn) {
+            playBtn = document.createElement("button");
+            playBtn.setAttribute("type", "button");
+            playBtn.setAttribute("id", "neptune-play");
+            playBtn.textContent = "Play Game";
+            document.body.appendChild(playBtn);
+        }
 
-        const canvas = document.createElement("canvas");
-        canvas.setAttribute("id", "neptune-canvas");
-        document.body.appendChild(canvas);
+        let canvas = document.getElementById("neptune-canvas");
+        if (!canvas) {
+            canvas = document.createElement("canvas");
+            canvas.setAttribute("id", "neptune-canvas");
+            document.body.appendChild(canvas);
+        }
 
-
-        let style = document.createElement("style");
-        style.innerHTML = `
+        if (!document.getElementById("neptune-style")) {
+            let style = document.createElement("style");
+            style.id = "neptune-style";
+            style.innerHTML = `
 body {
     margin: 0;
     padding: 0;
@@ -216,7 +223,8 @@ body {
     z-index: 1;
 }
     `;
-        document.head.appendChild(style);
+            document.head.appendChild(style);
+        }
     }
 
 }
