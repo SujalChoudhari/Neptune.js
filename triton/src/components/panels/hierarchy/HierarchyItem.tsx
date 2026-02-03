@@ -20,6 +20,7 @@ interface HierarchyItemProps {
     entity: SceneEntity
     depth: number
     isSelected: boolean
+    isVirtual?: boolean
     isAncestorSelected?: boolean
     isRenaming?: boolean
     selectedIds: string[]
@@ -33,13 +34,15 @@ interface HierarchyItemProps {
     onMove: (ids: string[], targetParentId: string, targetIndex?: number | 'before' | 'after', relativeToId?: string) => void
 }
 
-const EntityIcon = ({ type, className }: { type: EntityType, className?: string }) => {
+const EntityIcon = ({ type, className }: { type: EntityType | string, className?: string }) => {
     switch (type) {
         case 'camera': return <Camera className={cn("w-3.5 h-3.5", className)} />
         case 'light': return <Lightbulb className={cn("w-3.5 h-3.5", className)} />
         case 'cube': return <Box className={cn("w-3.5 h-3.5", className)} />
         case 'sphere': return <Circle className={cn("w-3.5 h-3.5", className)} />
         case 'group': return <Folder className={cn("w-3.5 h-3.5", className)} />
+        case 'tilemap': return <Layers className={cn("w-3.5 h-3.5", className)} />
+        case 'parallax': return <Layers className={cn("w-3.5 h-3.5", className)} />
         default: return <Layers className={cn("w-3.5 h-3.5", className)} />
     }
 }
@@ -48,6 +51,7 @@ export const HierarchyItem = ({
     entity,
     depth,
     isSelected,
+    isVirtual = false,
     isAncestorSelected,
     isRenaming = false,
     onSelect,
@@ -192,6 +196,7 @@ export const HierarchyItem = ({
                     : isAncestorSelected
                         ? "bg-primary/5 text-foreground/80"
                         : "text-foreground/70 hover:bg-white/5 hover:text-foreground",
+                isVirtual && !isSelected && "text-muted-foreground/60 italic", // Apply muted style for virtual/special entities
                 dropType === 'inside' && "bg-blue-500/20 ring-1 ring-inset ring-blue-500/50 rounded-sm",
                 !entity.active && "opacity-50"
             )}

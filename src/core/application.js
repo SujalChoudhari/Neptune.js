@@ -170,55 +170,28 @@ export class Application {
      * Load a scene via the application (editor helper).
      * @param {string} path 
      */
-    async loadScene(path) {
-        // Find ID from simple mapping or just load by index if we had a proper asset manager
-        // For now, in this simple engine, SceneManager loads by ID from its internal list.
-        // We need to support loading from path dynamically.
-        // But the Demo engine hardcodes scenes usually.
-        // Let's check if the scene exists in SceneManager list by name?
+    async loadScene(pathOrData) {
+        console.log("Application: Loading Scene", typeof pathOrData === 'string' ? pathOrData : "from Data");
 
-        // Actually, SceneManager.LoadScene takes an ID. 
-        // We need a way to load from JSON path.
-
-        // Mock implementation for demo project dynamics:
-        // In the real engine, we'd fetch the JSON and hydrate the scene.
-        // Or if the scene is already added (via imports in main.js), we find it.
-
-        // If we assumed the generic bridge loads it from JSON:
-        /*
-        const response = await fetch(path);
-        const data = await response.json();
-        const scene = new Scene(data.name);
-        scene.deserialize(data);
-        SceneManager.addScene(scene);
-        SceneManager.LoadScene(scene.id);
-        */
-
-        // For now, let's just log and see if existing flow handles it elsewhere
-        // The generic bridge in GameView does: game.loadScene(path)
-        // So we MUST implement this.
-
-        console.log("Application: Loading Scene from path", path);
-
-        // Assuming simplistic JSON loader for Neptune:
         try {
-            const { Scene } = await import("./scene.js"); // deferred import if needed or use from closure
-            const response = await fetch(path);
-            const data = await response.json();
+            const { Scene } = await import("./scene.js");
 
-            // Simplified deserialization or just creating a new Scene
+            let data;
+            if (typeof pathOrData === 'string') {
+                const response = await fetch(pathOrData);
+                data = await response.json();
+            } else {
+                data = pathOrData;
+            }
+
             const newScene = new Scene(data.name || "Loaded Scene");
-            // TODO: Implement full deserialization here or in Scene class
-            // For now, let's just add it and activate it so we have *something*
 
             SceneManager.addScene(newScene);
             SceneManager.LoadScene(newScene.id);
 
-            // Need to re-trigger entity parsing if it was empty? 
             // If the JSON had entities, we should parse them.
             if (data.entities) {
-                // ... (Entity parsing logic would go here)
-                // For the purpose of the SceneView, we just need a valid scene context.
+                // For now, implicit handling or specific Scene deserialization should happen here.
             }
 
         } catch (e) {

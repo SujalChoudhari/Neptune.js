@@ -126,7 +126,37 @@ const PropertyField: React.FC<{
         );
     }
 
-    // 4. Text Area / Long String
+    // 4. Asset / Reference Input (Drag & Drop)
+    if (valueType === 'string') {
+        const lowerLabel = label.toLowerCase();
+        const isPath = lowerLabel.includes('src') || lowerLabel.includes('path') || lowerLabel.includes('source') || lowerLabel.includes('map') || lowerLabel.includes('texture');
+        const isFileValue = typeof value === 'string' && (value.match(/\.[0-9a-z]+$/i) !== null); // Simple extension check
+
+        if (isPath || isFileValue) {
+            return (
+                <div style={indentStyle}>
+                    <PropertyRow label={label}>
+                        <ThemedInput
+                            value={value}
+                            onChange={(e: any) => onChange(e.target.value)}
+                            // Allow dragging file paths from Project Panel
+                            onDragOver={(e: any) => e.preventDefault()}
+                            onDrop={(e: any) => {
+                                e.preventDefault();
+                                const path = e.dataTransfer.getData('text/plain');
+                                if (path) onChange(path);
+                            }}
+                            className="font-mono text-[10px] text-blue-400"
+                            placeholder="Drag file here..."
+                            title="Drag asset from Project Panel"
+                        />
+                    </PropertyRow>
+                </div>
+            );
+        }
+    }
+
+    // 5. Text Area / Long String
     if (valueType === 'string') {
         const lowerLabel = label.toLowerCase();
         if (lowerLabel.includes('text') || lowerLabel.includes('content') || (value as string).length > 50) {
@@ -143,7 +173,7 @@ const PropertyField: React.FC<{
             );
         }
 
-        // 5. Color String Detection
+        // 6. Color String Detection
         if (lowerLabel.includes('color')) {
             return (
                 <div style={indentStyle}>

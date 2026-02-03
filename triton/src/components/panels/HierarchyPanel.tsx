@@ -196,6 +196,8 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         const children = getChildren(id)
         const isRoot = id === 'root';
 
+        const isVirtual = entity.type === 'camera' || entity.type === 'tilemap' || entity.type === 'parallax';
+
         return (
             <div key={id}>
                 {!isRoot && (
@@ -204,6 +206,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
                             <HierarchyItem
                                 entity={entity}
                                 depth={depth - 1}
+                                isVirtual={isVirtual}
                                 isSelected={selectedIds.includes(id)}
                                 isAncestorSelected={selectedAncestorIds.has(id)}
                                 isRenaming={renamingId === id}

@@ -83,149 +83,202 @@ export function GameProvider({ children }: { children: ReactNode }) {
         setCurrentSceneName(path.split('/').pop() || "Scene");
         setCurrentScenePath(path);
 
-        // 1. Notify Game (Visuals)
+        // 1. Notify Game (Visuals) - Initial notification, might be redundant if data is sent later
         notifyGame('editor:load-scene', { path });
 
         // 2. Read File directly (Data)
         try {
             const content = await readFile(path);
-            if (content) {
-                const data = JSON.parse(content);
-                const newEntities: Record<string, SceneEntity> = {};
-                const newDataCache: Record<string, EntityData> = {};
+            if (!content) throw new Error("Failed to read file");
 
-                // Helper to generate IDs
-                const generateId = () => Math.random().toString(36).substr(2, 9);
+            const data = JSON.parse(content as string);
 
-                // Root
-                newEntities['root'] = {
-                    id: 'root',
-                    parentId: null,
-                    name: data.name || 'Main Scene',
-                    type: 'group',
+            // Notify Game Engine
+            // Send full data payload to avoid file:// access issues in iframe
+            notifyGame('editor:load-scene', { path, data });
+
+            // Clear previous entities
+            setEntities({});
+            setEntityDataCache({});
+            setSelectedIds([]);
+
+            const newEntities: Record<string, SceneEntity> = {};
+            const newDataCache: Record<string, EntityData> = {};
+
+            // Helper to generate IDs
+            const generateId = () => Math.random().toString(36).substr(2, 9);
+
+            // Root
+            newEntities['root'] = {
+                id: 'root',
+                parentId: null,
+                name: data.name || 'Main Scene',
+                type: 'group',
+                children: [],
+                active: true,
+                locked: false,
+                expanded: true
+            };
+
+            const parseEntityList = (list: any[], parentId: string) => {
+                list.forEach((entData: any) => {
+                    const id = entData.id || generateId();
+                    const entity: SceneEntity = {
+                        id: id,
+                        parentId: parentId,
+                        name: entData.name || 'Entity',
+                        type: entData.type || 'entity',
+                        children: [],
+                        active: true,
+                        locked: false,
+                        expanded: false
+                    };
+
+                    newEntities[id] = entity;
+                    if (newEntities[parentId]) {
+                        newEntities[parentId].children.push(id);
+                    }
+
+                    // Parse Components & Transform for Data Cache
+                    const transform = entData.transform || { pos: { x: 0, y: 0 }, rot: 0, scale: { x: 1, y: 1 } };
+                    const componentsList = entData.components || [];
+
+                    const fullData: EntityData = {
+                        id: id,
+                        name: entity.name,
+                        active: entity.active,
+                        transform: {
+                            position: transform.pos || { x: 0, y: 0 },
+                            rotation: transform.rot || 0,
+                            scale: transform.scale || { x: 1, y: 1 },
+                            z: transform.z || 0
+                        },
+                        components: {}
+                    };
+
+                    componentsList.forEach((comp: any) => {
+                        // 1. Add to generic map (Key = Component Type Name)
+                        // We use the raw props as the data
+                        fullData.components[comp.type] = comp.props || {};
+
+                        // 2. Populate legacy typed fields for specific known types (for now)
+                        if (comp.type === 'Sprite') {
+                            fullData.sprite = {
+                                path: comp.props.path || '',
+                                width: comp.props.width || 1,
+                                height: comp.props.height || 1,
+                                blendMode: comp.props.blendMode || 'normal',
+                                color: comp.props.color || '#ffffff'
+                            };
+                        } else if (comp.type === 'BoxCollider') {
+                            fullData.collider = {
+                                width: comp.props.width || 1,
+                                height: comp.props.height || 1,
+                                offsetX: comp.props.offsetX || 0,
+                                offsetY: comp.props.offsetY || 0,
+                                isTrigger: comp.props.isTrigger || false
+                            };
+                        } else if (comp.type === 'PlayerController' || comp.type === 'PlatformerBody') {
+                            fullData.body = {
+                                velocityX: 0,
+                                velocityY: 0,
+                                gravity: comp.props.gravity || 9.8,
+                                maxFallSpeed: comp.props.maxFallSpeed || 10,
+                                grounded: false,
+                                friction: comp.props.friction || 0,
+                                drag: comp.props.drag || 0
+                            };
+                        }
+                    });
+
+                    newDataCache[id] = fullData;
+
+                    // Recurse children
+                    if (entData.children && Array.isArray(entData.children)) {
+                        parseEntityList(entData.children, id);
+                    }
+                });
+            };
+
+            // 1. Synthesize Main Camera
+            if (data.camera) {
+                const camId = 'camera-main';
+                newEntities[camId] = {
+                    id: camId,
+                    parentId: 'root',
+                    name: 'Main Camera',
+                    type: 'camera', // identifying type for hierarchy styling
                     children: [],
                     active: true,
                     locked: false,
-                    expanded: true
+                    expanded: false
                 };
+                newEntities['root'].children.push(camId);
 
-                const parseEntityList = (list: any[], parentId: string) => {
-                    list.forEach((entData: any) => {
-                        const id = entData.id || generateId();
-                        const entity: SceneEntity = {
-                            id: id,
-                            parentId: parentId,
-                            name: entData.name || 'Entity',
-                            type: entData.type || 'entity',
-                            children: [],
-                            active: true,
-                            locked: false,
-                            expanded: false
-                        };
-
-                        newEntities[id] = entity;
-                        if (newEntities[parentId]) {
-                            newEntities[parentId].children.push(id);
-                        }
-
-                        // Parse Components & Transform for Data Cache
-                        const transform = entData.transform || { pos: { x: 0, y: 0 }, rot: 0, scale: { x: 1, y: 1 } };
-                        const componentsList = entData.components || [];
-
-                        const fullData: EntityData = {
-                            id: id,
-                            name: entity.name,
-                            active: entity.active,
-                            transform: {
-                                position: transform.pos || { x: 0, y: 0 },
-                                rotation: transform.rot || 0,
-                                scale: transform.scale || { x: 1, y: 1 },
-                                z: transform.z || 0
-                            },
-                            components: {}
-                        };
-
-                        componentsList.forEach((comp: any) => {
-                            // 1. Add to generic map (Key = Component Type Name)
-                            // We use the raw props as the data
-                            fullData.components[comp.type] = comp.props || {};
-
-                            // 2. Populate legacy typed fields for specific known types (for now)
-                            if (comp.type === 'Sprite') {
-                                fullData.sprite = {
-                                    path: comp.props.path || '',
-                                    width: comp.props.width || 1,
-                                    height: comp.props.height || 1,
-                                    blendMode: comp.props.blendMode || 'normal',
-                                    color: comp.props.color || '#ffffff'
-                                };
-                            } else if (comp.type === 'BoxCollider') {
-                                fullData.collider = {
-                                    width: comp.props.width || 1,
-                                    height: comp.props.height || 1,
-                                    offsetX: comp.props.offsetX || 0,
-                                    offsetY: comp.props.offsetY || 0,
-                                    isTrigger: comp.props.isTrigger || false
-                                };
-                            } else if (comp.type === 'PlayerController' || comp.type === 'PlatformerBody') {
-                                fullData.body = {
-                                    velocityX: 0,
-                                    velocityY: 0,
-                                    gravity: comp.props.gravity || 9.8,
-                                    maxFallSpeed: comp.props.maxFallSpeed || 10,
-                                    grounded: false,
-                                    friction: comp.props.friction || 0,
-                                    drag: comp.props.drag || 0
-                                };
-                            }
-                        });
-
-                        newDataCache[id] = fullData;
-
-                        // Recurse children
-                        if (entData.children && Array.isArray(entData.children)) {
-                            parseEntityList(entData.children, id);
-                        }
-                    });
+                newDataCache[camId] = {
+                    id: camId,
+                    name: 'Main Camera',
+                    active: true,
+                    transform: { position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 }, z: 0 },
+                    components: {
+                        Camera: data.camera // { bounds, zoom }
+                    }
                 };
-
-                // Handle Layers (demo.scn style)
-                if (data.layers && Array.isArray(data.layers)) {
-                    data.layers.forEach((layer: any) => {
-                        const layerId = generateId();
-                        const layerEnt: SceneEntity = {
-                            id: layerId,
-                            parentId: 'root',
-                            name: layer.name || 'Layer',
-                            type: 'folder',
-                            children: [],
-                            active: true,
-                            locked: false,
-                            expanded: true
-                        };
-                        newEntities[layerId] = layerEnt;
-                        newEntities['root'].children.push(layerId);
-
-                        if (layer.entities) {
-                            parseEntityList(layer.entities, layerId);
-                        }
-                    });
-                } else if (data.entities && Array.isArray(data.entities)) {
-                    // Flat or simple root entities
-                    parseEntityList(data.entities, 'root');
-                } else if (data.entities && typeof data.entities === 'object') {
-                    // Already in map format
-                    Object.assign(newEntities, data.entities);
-                }
-
-                console.log("Parsed Entities:", newEntities);
-                console.log("Parsed Data Cache:", newDataCache);
-                setEntities(newEntities);
-                setEntityDataCache(newDataCache);
             }
+
+            // Handle Layers (demo.scn style)
+            if (data.layers && Array.isArray(data.layers)) {
+                data.layers.forEach((layer: any) => {
+                    const layerId = generateId();
+                    const layerType = layer.type || 'folder';
+
+                    const layerEnt: SceneEntity = {
+                        id: layerId,
+                        parentId: 'root',
+                        name: layer.name || 'Layer',
+                        type: layerType,
+                        children: [],
+                        active: true,
+                        locked: false,
+                        expanded: true
+                    };
+                    newEntities[layerId] = layerEnt;
+                    newEntities['root'].children.push(layerId);
+
+                    // Synthesize Components for specific layer types to make them inspectable
+                    const components: any = {};
+                    if (layerType === 'tilemap') {
+                        components['Tilemap'] = { src: layer.src || '' };
+                    }
+
+                    // Add to Data Cache (Generic container or specific synthesized entity)
+                    newDataCache[layerId] = {
+                        id: layerId,
+                        name: layer.name || 'Layer',
+                        active: true,
+                        transform: { position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 }, z: 0 },
+                        components: components
+                    };
+
+                    if (layer.entities) {
+                        parseEntityList(layer.entities, layerId);
+                    }
+                });
+            } else if (data.entities && Array.isArray(data.entities)) {
+                // Flat or simple root entities
+                parseEntityList(data.entities, 'root');
+            } else if (data.entities && typeof data.entities === 'object') {
+                // Already in map format
+                Object.assign(newEntities, data.entities);
+            }
+
+            console.log("Parsed Entities:", newEntities);
+            console.log("Parsed Data Cache:", newDataCache);
+            setEntities(newEntities);
+            setEntityDataCache(newDataCache);
         } catch (e) {
             console.error("Failed to read/parse scene file", e);
-        }
+        } // HMR Trigger
     }, [readFile, notifyGame]);
 
     useEffect(() => {
