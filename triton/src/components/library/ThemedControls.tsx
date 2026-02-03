@@ -426,19 +426,13 @@ export const ThemedColorPicker = ({
 }: ThemedColorPickerProps) => {
     const [localValue, setLocalValue] = useState(value)
 
-    const handleSwatchClick = () => {
-        const input = document.createElement('input')
-        input.type = 'color'
-        input.value = localValue
-        input.onchange = (e) => {
-            const newValue = (e.target as HTMLInputElement).value
-            setLocalValue(newValue)
-            onChange?.(newValue)
-        }
-        input.click()
+    const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newValue = e.target.value
+        setLocalValue(newValue)
+        onChange?.(newValue)
     }
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleTextInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.value
         setLocalValue(newValue)
         if (/^#[0-9a-fA-F]{6}$/.test(newValue)) {
@@ -448,22 +442,31 @@ export const ThemedColorPicker = ({
 
     return (
         <div className={cn("flex items-center gap-2", className)}>
-            <button
-                type="button"
-                disabled={disabled}
-                onClick={handleSwatchClick}
-                className={cn(
-                    "w-7 h-7 rounded-md",
-                    "border border-[hsl(0,0%,14%)]",
-                    "shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]",
-                    "cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
-                )}
-                style={{ backgroundColor: localValue }}
-            />
+            {/* Swatch with hidden native color input */}
+            <div className={cn(
+                "relative w-7 h-7 rounded-md overflow-hidden",
+                "border border-[hsl(0,0%,14%)]",
+                "shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]",
+                disabled && "opacity-50 cursor-not-allowed"
+            )}>
+                <div
+                    className="absolute inset-0 w-full h-full pointer-events-none"
+                    style={{ backgroundColor: localValue }}
+                />
+                <input
+                    type="color"
+                    value={localValue}
+                    onChange={handleColorChange}
+                    disabled={disabled}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+            </div>
+
+            {/* Hex Input */}
             <input
                 type="text"
                 value={localValue}
-                onChange={handleInputChange}
+                onChange={handleTextInputChange}
                 disabled={disabled}
                 className={cn(
                     "h-7 w-20 px-2 text-xs rounded-md font-mono",

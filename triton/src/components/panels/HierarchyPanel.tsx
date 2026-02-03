@@ -24,6 +24,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     } = useGameContext()
 
     const [searchQuery, setSearchQuery] = useState("")
+    const [renamingId, setRenamingId] = useState<string | null>(null)
     const [lastSelectedId, setLastSelectedId] = useState<string | null>(null)
 
     // Helper to get children
@@ -40,12 +41,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     const toggleActive = (id: string) => {
         const ent = entities[id];
         if (ent) {
-            notifyGame('editor:update-component', { id, component: 'active', data: !ent.active }); // Special case, active is on entity root
-            // OR notifyGame('editor:set-active', { id, active: !ent.active })
-            // Let's use a generic update if possible or specific command
-            // For now, I'll use a specific message if 'update-component' implies component
-            // But my bridge logic handled 'active' in 'editor:update-component' somewhat? No it checked component name.
-            // Let's assume I send a custom event for active
+            notifyGame('editor:update-component', { id, component: 'active', data: !ent.active });
             notifyGame('editor:set-active', { id, active: !ent.active });
         }
     }
@@ -56,20 +52,12 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     }
 
     const toggleExpanded = (id: string) => {
-        // This is purely editor state usually.
-        // But if we want to persist it, we might need a way.
-        // For now, let's just trigger a local update or send to game if game tracks it mechanism.
-        // My GameContext bridge updates 'entities' from game payload.
-        // So if I want to expand, I must tell the game (if game is source of truth) OR manage a local 'expandedIds' set.
-        // Given the time, I'll manage a local 'expandedIds' overlay or just send it to game if I assume game holds "EditorProjectState".
-        // Let's implement a local 'expanded' overlay for now to avoid round trip lag for visual toggles.
-        // BUT the recursive render uses 'entity.expanded'.
-        // So I must force the entity state to change.
         notifyGame('editor:set-expanded', { id, expanded: !entities[id]?.expanded });
     }
 
     const renameEntity = (id: string, newName: string) => {
         notifyGame('editor:rename', { id, name: newName });
+        setRenamingId(null)
     }
 
     const removeEntity = (id: string) => {
@@ -78,6 +66,8 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
 
     const addEntity = (parentId: string, name: string, type: string) => {
         notifyGame('editor:create-entity', { parentId, name, type });
+        // We can optionally auto-rename the new entity if we get its ID back.
+        // For now, simpler is fine.
     }
 
     // Simple search filtering
@@ -90,7 +80,6 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         Object.values(entities).forEach(entity => {
             if (entity.name.toLowerCase().includes(query)) {
                 results[entity.id] = entity
-                // Also add parents to ensure they are visible in tree
                 let curr = entity.parentId
                 while (curr && !results[curr]) {
                     if (entities[curr]) {
@@ -111,7 +100,6 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         const traverse = (id: string) => {
             if (id !== 'root') list.push(id)
             const entity = entities[id]
-            // Allow root to be traversed
             if ((id === 'root' || (entities[id] && entities[id].expanded)) || searchQuery.trim()) {
                 const children = getChildren(id)
                 children.forEach(child => traverse(child.id))
@@ -128,16 +116,6 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
             const end = list.indexOf(id)
             if (start !== -1 && end !== -1) {
                 const range = list.slice(Math.min(start, end), Math.max(start, end) + 1)
-                // Select multiple
-                // We need to implement multi-select in context
-                // For now, I'll just select one or manually construct list
-                // My GameContext has selectEntity(id, multi).
-                // It doesn't support "SET SELECTION TO LIST".
-                // I should add that or loop. Loop is bad for perf but okay for now.
-                // Or better: selectEntity currently does "PUSH" or "SET".
-                // Context implementation: selectEntity(id, multi) -> if multi, append.
-                // I need "replace selection with list".
-                // I will update context later if needed, but for now let's just do single select or simple multi.
                 range.forEach((rid, idx) => selectEntity(rid, idx === 0 ? false : true));
             }
         } else {
@@ -151,11 +129,9 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (document.activeElement?.tagName === 'INPUT') return
 
-            if (e.ctrlKey || e.metaKey) {
-                if (e.key === 'a') {
-                    // e.preventDefault()
-                    // Select All visible?
-                }
+            if (e.key === 'F2' && selectedIds.length === 1) {
+                setRenamingId(selectedIds[0])
+                e.preventDefault()
             }
 
             if (e.key === 'Delete') {
@@ -165,11 +141,12 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
 
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [selectedIds]) // Removed removeEntity dep as it's stable
+    }, [selectedIds])
 
     const handleBackgroundClick = () => {
         selectEntity("", false) // clear
         setLastSelectedId(null)
+        setRenamingId(null)
     }
 
     // Calculate all ancestors of currently selected entities
@@ -189,13 +166,8 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         return ancestors
     }, [selectedIds, entities])
 
-    const handleExpandAll = () => {
-        // notifyGame('editor:expand-all')
-    }
-
-    const handleCollapseAll = () => {
-        // notifyGame('editor:collapse-all')
-    }
+    const handleExpandAll = () => { }
+    const handleCollapseAll = () => { }
 
     const handleMove = (draggedIdsArg: string | string[], targetParentId: string, targetIndex?: number | 'before' | 'after', relativeToId?: string) => {
         const draggedIds = Array.isArray(draggedIdsArg) ? draggedIdsArg : [draggedIdsArg]
@@ -205,7 +177,6 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
             return
         }
 
-        // Reordering logic
         const parent = entities[targetParentId]
         if (!parent || !relativeToId) return
 
@@ -220,12 +191,9 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         const entity = entities[id]
         if (!entity) return null
 
-        // If searching, only show if it matches search criteria
         if (searchQuery.trim() && !filteredEntities[id]) return null
 
         const children = getChildren(id)
-
-        // Root is special, usually hidden
         const isRoot = id === 'root';
 
         return (
@@ -238,12 +206,14 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
                                 depth={depth - 1}
                                 isSelected={selectedIds.includes(id)}
                                 isAncestorSelected={selectedAncestorIds.has(id)}
+                                isRenaming={renamingId === id}
                                 selectedIds={selectedIds}
                                 onSelect={handleSelect}
                                 onToggleActive={toggleActive}
                                 onToggleLock={toggleLock}
                                 onToggleExpanded={toggleExpanded}
                                 onRename={renameEntity}
+                                onRenameCancel={() => setRenamingId(null)}
                                 onRemove={removeEntity}
                                 onMove={handleMove}
                             />
@@ -251,6 +221,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
                         <ThemedContextMenuContent>
                             <ThemedContextMenuLabel>{entity.name}</ThemedContextMenuLabel>
                             <ThemedContextMenuSeparator />
+                            <ThemedContextMenuItem onClick={() => setRenamingId(id)}>Rename</ThemedContextMenuItem>
                             <ThemedContextMenuItem onClick={() => { notifyGame('editor:duplicate', { id }) }}>Duplicate</ThemedContextMenuItem>
                             <ThemedContextMenuItem onClick={() => removeEntity(id)} className="text-red-400">Delete</ThemedContextMenuItem>
                             <ThemedContextMenuSeparator />

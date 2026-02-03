@@ -8,6 +8,7 @@ import { InspectorPanel } from "@/components/panels/InspectorPanel";
 import { ConsolePanel } from "@/components/panels/ConsolePanel";
 import { HierarchyPanel } from "@/components/panels/HierarchyPanel";
 import { GameViewPanel } from "@/components/panels/GameViewPanel";
+import { SceneViewPanel } from "@/components/panels/SceneViewPanel";
 import { useSettings } from "@/components/context/SettingsContext";
 
 const ViewportPanel = (_props: IDockviewPanelProps) => (
@@ -115,8 +116,8 @@ export const DockLayout = ({ onApiReady }: DockLayoutProps) => {
 
         if (type === 'default') {
             const mainPanel = api.addPanel({
-                id: 'viewport',
-                component: 'viewport',
+                id: 'scene',
+                component: 'scene',
                 title: 'Scene View'
             });
 
@@ -227,6 +228,7 @@ const componentMap = {
     project: ProjectPanel,
     atlas: StoryBook,
     game: GameViewPanel,
+    scene: SceneViewPanel,
 };
 
 export type NeptuneDockApi = DockviewApi & { applyLayout: (type: 'default' | 'animation' | 'debug') => void };

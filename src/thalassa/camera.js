@@ -24,8 +24,16 @@ export class Camera {
         this.shakeAmount = 0;
         this.shakeDuration = 0;
         this.shakeOffset = new Vector2(0, 0);
+
+        // Zoom
+        this.zoom = 1;
     }
 
+    /**
+     * Set the target to follow.
+     * @param {Entity} target - Entity with Transform component.
+     * @param {Vector2} offset - Offset from target center.
+     */
     /**
      * Set the target to follow.
      * @param {Entity} target - Entity with Transform component.
@@ -62,6 +70,14 @@ export class Camera {
     shake(amount, duration) {
         this.shakeAmount = amount;
         this.shakeDuration = duration;
+    }
+
+    /**
+     * Set the zoom level of the camera.
+     * @param {number} value - Zoom level. 1 is default.
+     */
+    setZoom(value) {
+        this.zoom = value;
     }
 
     /**
@@ -136,7 +152,10 @@ export class Camera {
      * @returns {Vector2}
      */
     screenToWorld(screenX, screenY) {
-        return new Vector2(screenX + this.x, screenY + this.y);
+        return new Vector2(
+            (screenX / (this.zoom || 1)) + this.x,
+            (screenY / (this.zoom || 1)) + this.y
+        );
     }
 
     /**
@@ -146,6 +165,19 @@ export class Camera {
      * @returns {Vector2}
      */
     worldToScreen(worldX, worldY) {
-        return new Vector2(worldX - this.x, worldY - this.y);
+        return new Vector2(
+            (worldX - this.x) * (this.zoom || 1),
+            (worldY - this.y) * (this.zoom || 1)
+        );
+    }
+
+    /**
+     * Apply the camera transform to the context.
+     * @param {CanvasRenderingContext2D} ctx 
+     */
+    apply(ctx) {
+        const zoom = this.zoom || 1;
+        ctx.scale(zoom, zoom);
+        ctx.translate(-this.x, -this.y);
     }
 }

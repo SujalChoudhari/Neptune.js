@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef } from 'react';
 // We use the ?url suffix to get the URL of the module script
 // This requires Vite to solve the path.
 // Path: src/components/panels/GameViewPanel.tsx -> ../../../.. -> root
@@ -153,28 +153,28 @@ export function GameViewPanel() {
 
             const sendSelection = () => {
                  // Check game.selection array/set
-                 const ids = game.selection ? Array.from(game.selection).map(e => e.id) : [];
-                 let data = null;
+                 const selection = game.selection ? Array.from(game.selection) : [];
+                 const ids = selection.map(e => e.id);
+                 const data = {};
                  
-                 // If single selection, send full data for Inspector
-                 if (ids.length === 1) {
-                     const ent = game.scene.getEntity(ids[0]);
+                 // Collect data directly from selection objects
+                 selection.forEach(ent => {
                      if (ent) {
-                         data = {
+                         const entData = {
                              id: ent.id,
                              name: ent.name,
                              active: ent.active,
                              transform: ent.transform || { position: {x:0,y:0}, rotation:0, scale: {x:1,y:1} },
-                             // ... other components
                          };
                          // Try to serialize other components dynamically if possible
                          ['sprite', 'collider', 'body', 'stats', 'animator', 'sound'].forEach(compName => {
                              if (ent[compName]) {
-                                 data[compName] = ent[compName];
+                                 entData[compName] = ent[compName];
                              }
                          });
+                         data[ent.id] = entData;
                      }
-                 }
+                 });
                  
                  window.parent.postMessage({ type: 'game:selection-changed', payload: { ids, data } }, '*');
             };

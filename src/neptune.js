@@ -51,6 +51,7 @@ import { ComponentRegistry } from "./core/componentRegistry.js";
 import { SceneLoader } from "./core/sceneLoader.js";
 
 const application = new Application();
+window.game = application;
 
 // Register Core Components
 ComponentRegistry.register("Transform", Transform);

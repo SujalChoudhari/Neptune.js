@@ -84,11 +84,17 @@ export interface ScriptComponent {
 }
 
 // Full Entity Data (Inspector)
+// Full Entity Data (Inspector)
 export interface EntityData {
     id: string
     name: string
     active: boolean
     transform: TransformComponent
+    // Hybrid approach: Specific typed fields for easy access, 
+    // PLUS a comprehensive map for the Inspector loop
+    components: Record<string, any> // Keyed by Type Name e.g. "Sprite", "BoxCollider"
+
+    // Legacy / Convenience accessors (optional)
     sprite?: SpriteComponent
     collider?: ColliderComponent
     body?: BodyComponent

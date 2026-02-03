@@ -13,7 +13,7 @@ import type { MockEntity } from "./inspector/shared/types"  // Still needed for 
  * Refactored to use GameContext for real data.
  */
 export const InspectorPanel = (_props: IDockviewPanelProps) => {
-    const { selectedEntityData, updateComponent, notifyGame } = useGameContext()
+    const { selectedEntityData, selectedIds, updateComponent, notifyGame } = useGameContext()
 
     // Local state for UI ordering/visibility (could be persisted later)
     const [activeStates, setActiveStates] = useState<Record<string, boolean>>({
@@ -34,8 +34,12 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
     // We derive component list from the actual data + standard order
     const componentOrder = useMemo(() => {
         if (!selectedEntityData) return [];
-        const order = ['sprite', 'collider', 'body', 'sound', 'stats', 'animator', 'scripts'];
-        return order.filter(key => selectedEntityData[key]);
+
+        // New Source of Truth: components map
+        const keys = Object.keys(selectedEntityData.components || {});
+
+        // Filter out 'transform' as it is rendered separately
+        return keys.filter(k => k !== 'transform');
     }, [selectedEntityData]);
 
     if (!selectedEntityData) {
@@ -57,12 +61,12 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
     // Transform is special, it's a sub-object usually, but updateComponent handles it via 'transform' component key
     // The previous updateTransform took (key, value).
     const updateTransform = (key: string, value: any) => {
-        updateComponent((entity as any).id, 'transform', key, value); // id is in entity
+        selectedIds.forEach(id => updateComponent(id, 'transform', key, value));
     }
 
     // Generic updater generator
     const makeUpdater = (compName: string) => (key: string, value: any) => {
-        updateComponent((entity as any).id, compName, key, value);
+        selectedIds.forEach(id => updateComponent(id, compName, key, value));
     }
 
     const updateHelpers = {
@@ -70,20 +74,37 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
         updateSprite: makeUpdater('sprite'),
         updateCollider: makeUpdater('collider'),
         updateBody: makeUpdater('body'),
-        updateSound: makeUpdater('sound'),
         updateStats: makeUpdater('stats'),
         updateAnimator: makeUpdater('animator'),
         updateScript: (index: number, key: string, value: any) => {
             console.log("Update script:", index, key, value);
+        },
+        updateGeneric: (compName: string, key: string, value: any) => {
+            selectedIds.forEach(id => updateComponent(id, compName, key, value));
         }
     }
+
+    // Header Actions
+    const handleRename = (name: string) => {
+        // Renaming multiple entities to the same name? 
+        // Usually we only rename the primary one or append numbers. 
+        // For simplicity, renaming only affects the PRIMARY selection for now 
+        // UNLESS we explicitly want multi-rename.
+        // Let's stick to Primary Rename to avoid accidents.
+        notifyGame('editor:rename', { id: entity.id, name });
+    };
+
+    const handleToggleActive = () => {
+        const nextState = !entity.active;
+        selectedIds.forEach(id => notifyGame('editor:update-component', { id, component: 'active', data: nextState }));
+    };
 
     return (
         <div className="h-full flex flex-col bg-background overflow-hidden overflow-x-hidden select-none">
             {/* Entity Header */}
             <div className={cn(
-                "shrink-0 p-3 border-b border-border",
-                "bg-gradient-to-b from-[hsl(0,0%,20%)] to-[hsl(0,0%,16%)]"
+                "shrink-0 p-2 border-b border-border",
+                "bg-card/30"
             )}>
                 <div className="flex items-center gap-3">
                     <div className={cn(
@@ -97,13 +118,15 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
                     <div className="flex-1 min-w-0">
                         <ThemedInput
                             value={entity.name}
-                            onChange={(e: any) => notifyGame('editor:rename', { id: (entity as any).id, name: e.target.value })}
+                            onChange={(e: any) => handleRename(e.target.value)}
                             className="font-bold text-[13px] h-8"
+                            disabled={selectedIds.length > 1} // Disable rename on multi-select for clarity
+                            placeholder={selectedIds.length > 1 ? `${selectedIds.length} Entities Selected` : undefined}
                         />
                     </div>
                     <button
                         type="button"
-                        onClick={() => notifyGame('editor:update-component', { id: (entity as any).id, component: 'active', data: !entity.active })}
+                        onClick={handleToggleActive}
                         className={cn(
                             "w-8 h-8 flex items-center justify-center rounded transition-colors",
                             entity.active ? "text-blue-400 hover:text-blue-300" : "text-muted-foreground/70 hover:text-foreground"

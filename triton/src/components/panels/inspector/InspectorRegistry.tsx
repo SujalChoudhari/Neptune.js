@@ -8,6 +8,7 @@ import { SoundSection } from "./components/SoundSection"
 import { StatsSection } from "./components/StatsSection"
 import { AnimatorSection } from "./components/AnimatorSection"
 import { ScriptsGroup } from "./components/ScriptsSection"
+import { GenericComponentSection } from "./components/GenericComponentSection"
 
 /**
  * InspectorRegistry
@@ -45,7 +46,6 @@ export const renderInspectorComponent = ({
     moveHelpers
 }: RenderComponentProps) => {
     const Component = InspectorRegistry[compId]
-    if (!Component) return null
 
     // Determine specific props based on component type
     const commonProps = {
@@ -54,10 +54,30 @@ export const renderInspectorComponent = ({
         onToggleActive
     }
 
+    if (!Component) {
+        // Fallback to Generic Renderer for unknown components
+        // We need to fetch the raw data from the new 'components' dictionary
+        // If the 'data' is not directly reachable via entity[compId], we try entity.components[compId]
+        // But for now, we rely on the caller to pass usage of `renderInspectorComponent` correctly.
+        // Actually, `entity` here is the MockEntity/EntityData.
+
+        // We need a generic onUpdate helper.
+        // We assume updateHelpers has a 'updateGeneric' provided by InspectorPanel.
+
+        return <GenericComponentSection
+            key={compId}
+            type={compId}
+            data={entity.components?.[compId] || (entity as any)[compId]} // Try new dict first, then legacy prop
+            {...commonProps}
+            onUpdate={(key, value) => updateHelpers.updateGeneric(compId, key, value)}
+        />
+    }
+
     switch (compId) {
         case "transform":
             return <TransformSection key={compId} {...commonProps} onUpdate={updateHelpers.updateTransform} />
         case "sprite":
+
             return <SpriteSection key={compId} {...commonProps} onUpdate={updateHelpers.updateSprite} {...moveHelpers} />
         case "collider":
             return <ColliderSection key={compId} {...commonProps} onUpdate={updateHelpers.updateCollider} {...moveHelpers} />

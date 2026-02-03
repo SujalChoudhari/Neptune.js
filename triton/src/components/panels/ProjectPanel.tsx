@@ -1,4 +1,5 @@
 import type { IDockviewPanelProps } from "dockview"
+import { invoke } from "@tauri-apps/api/core";
 import { useFileSystem } from "@/context/FileSystemContext"
 import { useGameContext } from "@/context/GameContext"
 import { ProjectSidebar } from "../project/ProjectSidebar"
@@ -225,7 +226,7 @@ export const ProjectPanel = (_props: IDockviewPanelProps) => {
             onKeyDown={handleKeyDown}
         >
             {/* TOOLBAR */}
-            <div className="h-9 border-b border-border flex items-center px-2 gap-2 bg-card shrink-0">
+            <div className="h-8 border-b border-border flex items-center px-2 gap-2 bg-card shrink-0">
                 {/* Navigation Controls */}
                 <div className="flex items-center gap-1 text-muted-foreground mr-2">
                     <ThemedIconButton
@@ -325,8 +326,18 @@ export const ProjectPanel = (_props: IDockviewPanelProps) => {
                             Scene
                         </ThemedContextMenuItem>
                         <ThemedContextMenuSeparator />
-                        <ThemedContextMenuItem inset disabled>
-                            Import New Asset...
+                        <ThemedContextMenuSeparator />
+                        <ThemedContextMenuItem inset onClick={() => {
+                            const targetPath = currentFolderId === 'root' ? nodes['root']?.id || '' : currentFolderId;
+                            invoke('show_in_explorer', { path: targetPath });
+                        }}>
+                            Show in Explorer
+                        </ThemedContextMenuItem>
+                        <ThemedContextMenuItem inset onClick={() => {
+                            const targetPath = currentFolderId === 'root' ? nodes['root']?.id || '' : currentFolderId;
+                            invoke('import_asset', { path: targetPath });
+                        }}>
+                            Import Asset...
                         </ThemedContextMenuItem>
                     </ThemedContextMenuContent>
                 </div>

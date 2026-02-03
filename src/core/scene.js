@@ -31,7 +31,9 @@ export class Scene extends Entity {
     /** @private */
     draw(ctx) {
         ctx.save();
-        if (this.cameraSettings && this.cameraSettings.bounds) {
+        if (this.activeCamera) {
+            this.activeCamera.apply(ctx);
+        } else if (this.cameraSettings && this.cameraSettings.bounds) {
             const x = this.cameraSettings.bounds.x || 0;
             const y = this.cameraSettings.bounds.y || 0;
             const px = Maths.MeterToPixel(x);

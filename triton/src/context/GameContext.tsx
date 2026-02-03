@@ -1,5 +1,5 @@
 
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import type { ReactNode } from "react";
 import type { SceneEntity, EntityData } from "../types/engine";
 
@@ -9,7 +9,8 @@ interface GameContextType {
     currentSceneName: string;
     entities: Record<string, SceneEntity>;
     selectedIds: string[];
-    selectedEntityData: EntityData | null;
+    selectedEntitiesData: Record<string, EntityData>;
+    selectedEntityData: EntityData | null; // Computed helper for backward compat
 
     // Actions
     play: () => void;
@@ -45,21 +46,36 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     // Hierarchy State
     const [entities, setEntities] = useState<Record<string, SceneEntity>>({});
+    const [entityDataCache, setEntityDataCache] = useState<Record<string, EntityData>>({});
 
     // Selection State
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
-    const [selectedEntityData, setSelectedEntityData] = useState<EntityData | null>(null);
+    const [selectedEntitiesData, setSelectedEntitiesData] = useState<Record<string, EntityData>>({});
+
+    // Computed for backward compatibility (primary selection)
+    const selectedEntityData = useMemo(() => {
+        // If we have ids, try to find the "last selected" (active) one if tracked, or just first in list
+        if (selectedIds.length > 0) {
+            // Ideally we want the one that was clicked last.
+            // But map order is not guaranteed. 
+            // For now, let's grab the one matching selectedIds[selectedIds.length-1] (Last selected usually)
+            const lastId = selectedIds[selectedIds.length - 1];
+            return selectedEntitiesData[lastId] || Object.values(selectedEntitiesData)[0] || null;
+        }
+        return null;
+    }, [selectedEntitiesData, selectedIds]);
 
     // --- Bridge Communication ---
 
     const notifyGame = useCallback((type: string, payload?: any) => {
-        // Find the iframe
-        const iframe = document.querySelector('iframe[title="Game View"]') as HTMLIFrameElement;
-        if (iframe && iframe.contentWindow) {
-            iframe.contentWindow.postMessage({ type, payload }, '*');
-        } else {
-            console.warn("Game Iframe not found or not ready");
-        }
+        // Find all game iframes (Game View and Scene View)
+        const iframes = document.querySelectorAll('iframe[title="Game View"], iframe[title="Scene View"]');
+        iframes.forEach((iframe) => {
+            const frame = iframe as HTMLIFrameElement;
+            if (frame.contentWindow) {
+                frame.contentWindow.postMessage({ type, payload }, '*');
+            }
+        });
     }, []);
 
     const loadScene = useCallback(async (path: string) => {
@@ -76,6 +92,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             if (content) {
                 const data = JSON.parse(content);
                 const newEntities: Record<string, SceneEntity> = {};
+                const newDataCache: Record<string, EntityData> = {};
 
                 // Helper to generate IDs
                 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -110,6 +127,60 @@ export function GameProvider({ children }: { children: ReactNode }) {
                         if (newEntities[parentId]) {
                             newEntities[parentId].children.push(id);
                         }
+
+                        // Parse Components & Transform for Data Cache
+                        const transform = entData.transform || { pos: { x: 0, y: 0 }, rot: 0, scale: { x: 1, y: 1 } };
+                        const componentsList = entData.components || [];
+
+                        const fullData: EntityData = {
+                            id: id,
+                            name: entity.name,
+                            active: entity.active,
+                            transform: {
+                                position: transform.pos || { x: 0, y: 0 },
+                                rotation: transform.rot || 0,
+                                scale: transform.scale || { x: 1, y: 1 },
+                                z: transform.z || 0
+                            },
+                            components: {}
+                        };
+
+                        componentsList.forEach((comp: any) => {
+                            // 1. Add to generic map (Key = Component Type Name)
+                            // We use the raw props as the data
+                            fullData.components[comp.type] = comp.props || {};
+
+                            // 2. Populate legacy typed fields for specific known types (for now)
+                            if (comp.type === 'Sprite') {
+                                fullData.sprite = {
+                                    path: comp.props.path || '',
+                                    width: comp.props.width || 1,
+                                    height: comp.props.height || 1,
+                                    blendMode: comp.props.blendMode || 'normal',
+                                    color: comp.props.color || '#ffffff'
+                                };
+                            } else if (comp.type === 'BoxCollider') {
+                                fullData.collider = {
+                                    width: comp.props.width || 1,
+                                    height: comp.props.height || 1,
+                                    offsetX: comp.props.offsetX || 0,
+                                    offsetY: comp.props.offsetY || 0,
+                                    isTrigger: comp.props.isTrigger || false
+                                };
+                            } else if (comp.type === 'PlayerController' || comp.type === 'PlatformerBody') {
+                                fullData.body = {
+                                    velocityX: 0,
+                                    velocityY: 0,
+                                    gravity: comp.props.gravity || 9.8,
+                                    maxFallSpeed: comp.props.maxFallSpeed || 10,
+                                    grounded: false,
+                                    friction: comp.props.friction || 0,
+                                    drag: comp.props.drag || 0
+                                };
+                            }
+                        });
+
+                        newDataCache[id] = fullData;
 
                         // Recurse children
                         if (entData.children && Array.isArray(entData.children)) {
@@ -148,7 +219,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
                 }
 
                 console.log("Parsed Entities:", newEntities);
+                console.log("Parsed Data Cache:", newDataCache);
                 setEntities(newEntities);
+                setEntityDataCache(newDataCache);
             }
         } catch (e) {
             console.error("Failed to read/parse scene file", e);
@@ -183,22 +256,43 @@ export function GameProvider({ children }: { children: ReactNode }) {
                     break;
                 case 'game:selection-changed':
                     setSelectedIds(payload.ids);
+
+                    console.log("Selection changed debug:", payload.ids, payload.data);
+
+                    const newBinding: Record<string, EntityData> = {};
                     if (payload.data) {
-                        setSelectedEntityData(payload.data);
-                    } else {
-                        setSelectedEntityData(null);
+                        if (Array.isArray(payload.data)) {
+                            payload.data.forEach((d: EntityData) => newBinding[d.id] = d);
+                        } else if (payload.data.id) {
+                            newBinding[payload.data.id] = payload.data;
+                        } else {
+                            // Map
+                            Object.assign(newBinding, payload.data);
+                        }
                     }
+
+                    // Merge with cache if game sent incomplete data (or nothing)
+                    payload.ids.forEach((id: string) => {
+                        if (!newBinding[id] && entityDataCache[id]) {
+                            newBinding[id] = entityDataCache[id];
+                        }
+                    });
+
+                    setSelectedEntitiesData(newBinding);
                     break;
                 case 'game:component-updated':
-                    // If we are inspecting this entity, update our local copy to stay in sync
-                    if (selectedEntityData && selectedEntityData.id === payload.id) {
-                        setSelectedEntityData(prev => prev ? ({
+                    // Update local cache for ANY entity we have selected
+                    if (selectedEntitiesData[payload.id]) {
+                        setSelectedEntitiesData(prev => ({
                             ...prev,
-                            [payload.component]: {
-                                ...(prev[payload.component as keyof EntityData] as object || {}),
-                                ...payload.data
-                            }
-                        } as EntityData) : null);
+                            [payload.id]: {
+                                ...prev[payload.id],
+                                [payload.component]: {
+                                    ...(prev[payload.id][payload.component as keyof EntityData] as object || {}),
+                                    ...payload.data
+                                }
+                            } as EntityData
+                        }));
                     }
                     break;
             }
@@ -206,7 +300,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
-    }, [notifyGame, selectedEntityData]);
+    }, [notifyGame, selectedEntityData, currentScenePath, entityDataCache]); // Added entityDataCache dependency
 
 
     // --- Actions ---
@@ -235,6 +329,20 @@ export function GameProvider({ children }: { children: ReactNode }) {
         const newSelection = multi ? [...selectedIds, id] : [id];
         setSelectedIds(newSelection);
         notifyGame('editor:select', { ids: newSelection });
+
+        // Optimistic / Local Data Selection
+        // If we have data in cache, select it immediately
+        const newBinding: Record<string, EntityData> = {};
+        newSelection.forEach(sid => {
+            if (entityDataCache[sid]) {
+                newBinding[sid] = entityDataCache[sid];
+            }
+        });
+
+        // If we have previously selected data that's still selected, keep it? 
+        // No, simplest is to reset to cache or current known state.
+        // Merging with existing *might* be better but cache is safer source of truth if static.
+        setSelectedEntitiesData(newBinding);
     };
 
     const moveEntities = (ids: string[], targetParentId: string, index?: number) => {
@@ -244,11 +352,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     const updateComponent = (id: string, component: string, data: any) => {
         // Optimistic update
-        if (selectedEntityData && selectedEntityData.id === id) {
-            setSelectedEntityData(prev => prev ? ({
+        if (selectedEntitiesData[id]) {
+            setSelectedEntitiesData(prev => ({
                 ...prev,
-                [component]: { ...(prev[component as keyof EntityData] as object || {}), ...data }
-            } as EntityData) : null);
+                [id]: {
+                    ...prev[id],
+                    // We need to merge component data
+                    [component]: { ...(prev[id][component as keyof EntityData] as object || {}), ...data }
+                } as EntityData
+            }));
         }
         notifyGame('editor:update-component', { id, component, data });
     };
@@ -312,6 +424,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             currentSceneName,
             entities,
             selectedIds,
+            selectedEntitiesData,
             selectedEntityData,
             play,
             pause,

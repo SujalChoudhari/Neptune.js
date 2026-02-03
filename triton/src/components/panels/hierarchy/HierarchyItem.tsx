@@ -14,19 +14,21 @@ import {
     Trash2
 } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
-import type { SceneEntity, EntityType } from "@/lib/mockHierarchy"
+import type { SceneEntity, EntityType } from "@/types/engine"
 
 interface HierarchyItemProps {
     entity: SceneEntity
     depth: number
     isSelected: boolean
     isAncestorSelected?: boolean
+    isRenaming?: boolean
     selectedIds: string[]
     onSelect: (id: string, multi: boolean, shift: boolean) => void
     onToggleActive: (id: string) => void
     onToggleLock: (id: string) => void
     onToggleExpanded: (id: string) => void
     onRename: (id: string, newName: string) => void
+    onRenameCancel?: () => void
     onRemove: (id: string) => void
     onMove: (ids: string[], targetParentId: string, targetIndex?: number | 'before' | 'after', relativeToId?: string) => void
 }
@@ -47,16 +49,17 @@ export const HierarchyItem = ({
     depth,
     isSelected,
     isAncestorSelected,
+    isRenaming = false,
     onSelect,
     onToggleActive,
     onToggleLock,
     onToggleExpanded,
     onRename,
+    onRenameCancel,
     onRemove,
     onMove,
     selectedIds
 }: HierarchyItemProps) => {
-    const [isRenaming, setIsRenaming] = useState(false)
     const [editName, setEditName] = useState(entity.name)
     const [dropType, setDropType] = useState<'before' | 'after' | 'inside' | null>(null)
     const inputRef = useRef<HTMLInputElement>(null)
@@ -72,16 +75,15 @@ export const HierarchyItem = ({
         if (editName.trim() && editName !== entity.name) {
             onRename(entity.id, editName)
         } else {
-            setEditName(entity.name)
+            onRenameCancel?.()
         }
-        setIsRenaming(false)
     }
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') handleRenameSubmit()
         if (e.key === 'Escape') {
             setEditName(entity.name)
-            setIsRenaming(false)
+            onRenameCancel?.()
         }
     }
 
@@ -183,13 +185,13 @@ export const HierarchyItem = ({
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             className={cn(
-                "group relative flex items-center h-[26px] px-2 gap-1 cursor-default select-none transition-all duration-75",
-                "border border-transparent mx-1 rounded-sm",
+                "group relative flex items-center h-[22px] px-2 gap-1 cursor-default select-none transition-all duration-75",
+                "border border-transparent mx-0 rounded-sm",
                 isSelected
-                    ? "bg-blue-600/15 border-blue-500/40 text-foreground"
+                    ? "bg-primary/20 text-foreground"
                     : isAncestorSelected
-                        ? "bg-blue-500/[0.04] text-foreground/80"
-                        : "text-foreground/60 hover:bg-white/5 hover:text-foreground/90",
+                        ? "bg-primary/5 text-foreground/80"
+                        : "text-foreground/70 hover:bg-white/5 hover:text-foreground",
                 dropType === 'inside' && "bg-blue-500/20 ring-1 ring-inset ring-blue-500/50 rounded-sm",
                 !entity.active && "opacity-50"
             )}
@@ -199,7 +201,15 @@ export const HierarchyItem = ({
             }}
             onDoubleClick={(e) => {
                 e.stopPropagation()
-                setIsRenaming(true)
+                // Renaming double click handled by parent state now? 
+                // We need to trigger it. 
+                // But onRename expects (id, name). We need a "onStartRename".
+                // Since interface didn't have it, we'll assume the parent logic handles selection + F2, 
+                // OR we can't double click to rename anymore unless we add that callback.
+                // Godot style: Double click usually centers view or renames? 
+                // In Godot: click -> wait -> click triggers rename. Double click focuses.
+                // Let's rely on ContextMenu or F2 for rename to be sharp.
+                // Double click can imply "Focus".
             }}
         >
             {/* Drop Indicators */}

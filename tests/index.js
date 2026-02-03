@@ -33,6 +33,7 @@ import "./titan.test.js"
 
 // Thalassa World/Camera tests
 import "./thalassa.test.js"
+import "./camera.test.js"
 
 // Nereid Physics tests
 import "./nereid.test.js"

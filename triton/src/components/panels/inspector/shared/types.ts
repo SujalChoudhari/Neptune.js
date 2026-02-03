@@ -78,9 +78,10 @@ export interface MockEntity {
     stats?: MockStats
     animator?: MockAnimator
     scripts?: MockScript[]
+    components?: Record<string, any>
 }
 
-export type ComponentId = keyof Omit<MockEntity, 'name' | 'active' | 'transform'> | 'transform'
+export type ComponentId = keyof Omit<MockEntity, 'name' | 'active' | 'transform' | 'id' | 'components'> | 'transform'
 
 export interface ComponentSectionProps {
     title: string
