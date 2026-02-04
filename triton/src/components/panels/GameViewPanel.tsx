@@ -181,12 +181,24 @@ export function GameViewPanel() {
             
             // --- INCOMING (Editor -> Game) ---
             
+            const findEntity = (root, id) => {
+                if (!root) return null;
+                if (root.id === id) return root;
+                if (root.children) {
+                    for (const child of root.children) {
+                        const found = findEntity(child, id);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            };
+
             window.addEventListener('message', (event) => {
                 const { type, payload } = event.data;
                 if (!type) return;
                 
                 // Debug log for incoming messages
-                if(type !== 'editor:request-state') console.log("[Bridge] Received:", type, payload);
+                if(type !== 'editor:request-state') console.log("[Bridge] RAW MSG:", type, payload);
 
                 switch (type) {
                     case 'editor:request-state':
@@ -199,27 +211,49 @@ export function GameViewPanel() {
                         if (game.selection) {
                             game.selection.clear();
                             payload.ids.forEach(id => {
-                                const ent = game.scene.getEntity(id);
+                                const ent = findEntity(game.scene, id);
                                 if (ent) game.selection.add(ent);
                             });
                         }
                         break;
                         
                     case 'editor:update-component':
+                        console.log("[Bridge] Update Request for ID:", payload.id);
                         // payload: { id, component, data }
-                        const ent = game.scene.getEntity(payload.id);
+                        const ent = findEntity(game.scene, payload.id);
+                        console.log("[Bridge] Entity Found:", ent ? ent.name : "NULL (Check ID Sync!)");
+                        
                         if (ent) {
-                            if (payload.component === 'transform' && ent.transform) {
-                                Object.assign(ent.transform, payload.data); // Careful with nested props
-                            } else if (payload.component === 'transform' && payload.key) {
-                                // Direct key update for transform might be passed as data={key, val} or specific structure
-                                // Inspector currently sends: updateComponent(id, 'transform', key, value)
-                                // Which arrives as { id, component:'transform', data: ??? }
-                                // Wait, GameContext sends: notifyGame('editor:update-component', { id, component, [key?]: value, data })
-                                // Let's check GameContext dispatch logic.
-                                // It seems flexible. Let's assume payload matches.
-                            } else if (ent[payload.component]) {
-                                Object.assign(ent[payload.component], payload.data);
+                            // Find component by name (e.g., "Transform", "Shape", "Sprite")
+                            // We check constructor.name or fallback to direct property for "transform" alias
+                            const compName = payload.component;
+                            console.log("[Bridge] Looking for component:", compName);
+                            
+                            let comp = ent.components.find(c => c.constructor.name.toLowerCase() === compName.toLowerCase());
+
+                            // Special case: Transform might be aliased or core
+                            if (!comp && compName.toLowerCase() === 'transform' && ent.transform) {
+                                comp = ent.transform;
+                            }
+
+                            if (comp) {
+                                console.log("[Bridge] Component Found:", comp.constructor.name, "Applying:", payload.data);
+                                console.log("[Bridge] Updating component:", compName, payload.data);
+                                if (comp.deserialize) {
+                                    comp.deserialize(payload.data);
+                                } else {
+                                    // Fallback for components without deserialize
+                                    Object.assign(comp, payload.data); // dangerous if setters not used
+                                    // Try to use setters manually?
+                                    for (const key in payload.data) {
+                                        if (key in comp) {
+                                            comp[key] = payload.data[key];
+                                        }
+                                    }
+                                }
+                            } else {
+                                console.warn("[Bridge] Component NOT found. Available:", ent.components.map(c => c.constructor.name));
+                                console.warn("[Bridge] Component not found for update:", compName);
                             }
                         }
                         break;
@@ -247,10 +281,12 @@ export function GameViewPanel() {
                         if (game.scene && game.scene.reload) game.scene.reload();
                         break;
                         
-                     case 'editor:load-scene':
+                    case 'editor:load-scene':
                         console.log("[Bridge] Loading scene:", payload.path);
                         if (game.loadScene) {
-                            game.loadScene(payload.path).catch(e => console.error(e));
+                             // Use data if provided (avoids file:// access), otherwise fall back to path (which might fail)
+                            const content = payload.data || payload.path;
+                            game.loadScene(content).catch(e => console.error(e));
                         }
                         break;
                 }

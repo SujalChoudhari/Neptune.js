@@ -70,6 +70,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const notifyGame = useCallback((type: string, payload?: any) => {
         // Find all game iframes (Game View and Scene View)
         const iframes = document.querySelectorAll('iframe[title="Game View"], iframe[title="Scene View"]');
+
+        console.log(`[GameContext] Sending '${type}' to ${iframes.length} targets. Payload:`, payload);
+
         iframes.forEach((iframe) => {
             const frame = iframe as HTMLIFrameElement;
             if (frame.contentWindow) {
@@ -83,8 +86,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
         setCurrentSceneName(path.split('/').pop() || "Scene");
         setCurrentScenePath(path);
 
-        // 1. Notify Game (Visuals) - Initial notification, might be redundant if data is sent later
-        notifyGame('editor:load-scene', { path });
+        // 1. Notify Game (Visuals) - Initial notification REMOVED to avoid double-load error with file:// path
+        // notifyGame('editor:load-scene', { path });
 
         // 2. Read File directly (Data)
         try {
@@ -296,7 +299,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
                     notifyGame('editor:request-state');
                     // Sync current scene
                     if (currentScenePath) {
-                        notifyGame('editor:load-scene', { path: currentScenePath });
+                        // Reload scene (reads file and sends data)
+                        loadScene(currentScenePath);
                     }
                     break;
                 case 'game:state-update':
@@ -361,6 +365,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const play = () => {
         setIsPlaying(true);
         notifyGame('editor:play');
+        window.dispatchEvent(new Event('editor:play'));
     };
 
     const pause = () => {
@@ -376,6 +381,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         notifyGame('editor:stop');
         // Reset selection on stop? 
         notifyGame('editor:request-state');
+        window.dispatchEvent(new Event('editor:stop'));
     };
 
     const selectEntity = (id: string, multi: boolean) => {

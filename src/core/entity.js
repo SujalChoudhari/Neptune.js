@@ -14,6 +14,7 @@
 export class Entity {
     constructor(name = "Entity") {
         this._name = name;
+        this.id = "ent_" + Math.random().toString(36).substr(2, 9);
         this._children = [];
         this._parent = null;
         this._components = [];

@@ -91,9 +91,8 @@ export class Sprite extends Renderable {
         ctx.globalCompositeOperation = this.blendMode;
         ctx.filter = this.filter;
 
-        if (image.src != path) {
-            image.src = path;
-        }
+        // Image src is handled by the setter or constructor. 
+        // Do not reset it here as it causes infinite reloading if path formats differ (relative vs absolute).
 
         if (this._properties.sourceRect) {
             const src = this._properties.sourceRect;

@@ -311,6 +311,34 @@ export function SceneViewPanel() {
                         const content = payload.data || payload.path;
                         game.loadScene(content).catch(e => console.error(e));
                     }
+                } else if (type === 'editor:update-component') {
+                     const findEntity = (root, id) => {
+                        if (!root) return null;
+                        if (root.id === id) return root;
+                        if (root.children) {
+                            for (const child of root.children) {
+                                const found = findEntity(child, id);
+                                if (found) return found;
+                            }
+                        }
+                        return null;
+                    };
+
+                     const ent = findEntity(game.scene, payload.id);
+                     if (ent) {
+                         const compName = payload.component;
+                         let comp = ent.components.find(c => c.constructor.name.toLowerCase() === compName.toLowerCase());
+                         if (!comp && compName.toLowerCase() === 'transform' && ent.transform) comp = ent.transform;
+
+                         if (comp) {
+                             if (comp.deserialize) comp.deserialize(payload.data);
+                             else {
+                                 for (const key in payload.data) {
+                                     if (key in comp) comp[key] = payload.data[key];
+                                 }
+                             }
+                         }
+                     }
                 }
              });
         });

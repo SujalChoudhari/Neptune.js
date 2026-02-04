@@ -174,7 +174,7 @@ export class Application {
         console.log("Application: Loading Scene", typeof pathOrData === 'string' ? pathOrData : "from Data");
 
         try {
-            const { Scene } = await import("./scene.js");
+            const { SceneLoader } = await import("./sceneLoader.js");
 
             let data;
             if (typeof pathOrData === 'string') {
@@ -184,15 +184,10 @@ export class Application {
                 data = pathOrData;
             }
 
-            const newScene = new Scene(data.name || "Loaded Scene");
+            const newScene = await SceneLoader.parse(data);
 
             SceneManager.addScene(newScene);
             SceneManager.LoadScene(newScene.id);
-
-            // If the JSON had entities, we should parse them.
-            if (data.entities) {
-                // For now, implicit handling or specific Scene deserialization should happen here.
-            }
 
         } catch (e) {
             console.error("Application: Failed to load scene", e);

@@ -47,11 +47,12 @@ export class Component {
         // or a smarter default deserializer here.
         for (const key in props) {
             if (Object.prototype.hasOwnProperty.call(props, key)) {
-                // If the property exists in _properties, we might want to be careful about types,
-                // but for now, we just overwrite.
-
-                // TODO: Add support for checking if existing prop is a Vector2/Color and using .set() // turbo
-                this._properties[key] = props[key];
+                // Check if the property has a setter on the instance
+                if (key in this) {
+                    this[key] = props[key];
+                } else {
+                    this._properties[key] = props[key];
+                }
             }
         }
     }

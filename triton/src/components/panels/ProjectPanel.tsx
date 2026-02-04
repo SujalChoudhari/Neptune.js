@@ -166,9 +166,21 @@ export const ProjectPanel = (_props: IDockviewPanelProps) => {
     }
 
     const handleRename = (id: string, newName: string) => {
-        if (newName.trim()) {
-            renameNode(id, newName)
+        let finalName = newName.trim();
+        if (!finalName) return;
+
+        const node = nodes[id];
+        if (node && node.type !== 'folder') {
+            const lastDotIndex = node.name.lastIndexOf('.');
+            if (lastDotIndex !== -1) {
+                const extension = node.name.substring(lastDotIndex);
+                if (!finalName.toLowerCase().endsWith(extension.toLowerCase())) {
+                    finalName += extension;
+                }
+            }
         }
+
+        renameNode(id, finalName)
         setRenamingId(null)
     }
 

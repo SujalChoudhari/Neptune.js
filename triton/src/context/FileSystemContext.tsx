@@ -18,7 +18,7 @@ interface FileSystemContextType {
     currentFolderId: string;
     currentPath: string[];
     isLoading: boolean;
-    loadProject: (path: string) => Promise<void>;
+    loadProject: (path: string, preserveNavigation?: boolean) => Promise<void>;
     refresh: () => Promise<void>;
     navigateTo: (folderId: string) => void;
     navigateUp: () => void;
@@ -78,7 +78,7 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
-    const loadProject = useCallback(async (path: string) => {
+    const loadProject = useCallback(async (path: string, preserveNavigation?: boolean) => {
         setIsLoading(true);
         try {
             console.log("Loading project fs from:", path);
@@ -88,7 +88,9 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
             // Normalize data if needed, or just set it
             setNodes(data);
             setRootPath(path);
-            setCurrentPath(["root"]);
+            if (!preserveNavigation) {
+                setCurrentPath(["root"]);
+            }
         } catch (e) {
             console.error("Failed to load project file system:", e);
         } finally {
@@ -98,7 +100,7 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
 
     const refresh = useCallback(async () => {
         if (rootPath) {
-            await loadProject(rootPath);
+            await loadProject(rootPath, true);
         }
     }, [rootPath, loadProject]);
 

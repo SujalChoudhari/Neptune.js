@@ -182,6 +182,8 @@ const ProjectGridItem = ({
                     <div className="aspect-square w-full flex items-center justify-center relative overflow-hidden">
                         <AssetIcon
                             type={item.type}
+                            name={item.name}
+                            path={item.id}
                             className={cn(
                                 "transition-transform duration-200 group-hover:scale-105 drop-shadow-md",
                                 scale < 60 ? "w-8 h-8" : "w-14 h-14", // Slightly larger icons
@@ -189,11 +191,7 @@ const ProjectGridItem = ({
                             )}
                             hasChildren={item.children.length > 0}
                         />
-                        {scale > 80 && (
-                            <div className="absolute bottom-1 right-1 text-[8px] bg-background/80 px-1 rounded uppercase text-muted-foreground">
-                                {item.type}
-                            </div>
-                        )}
+
                     </div>
 
                     {isRenaming ? (

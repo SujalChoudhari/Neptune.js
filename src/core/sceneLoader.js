@@ -175,6 +175,7 @@ export class SceneLoader {
      */
     static #parseEntity(entityData) {
         const entity = new Entity(entityData.name || "Entity");
+        if (entityData.id) entity.id = entityData.id;
 
         // Transform is special because it's a core requirement usually
         if (entityData.transform) {
