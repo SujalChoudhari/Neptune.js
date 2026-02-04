@@ -6,15 +6,9 @@ import gameMainUrl from "../../../../debug_project/main.js?url";
 
 export function GameViewPanel() {
     const containerRef = useRef<HTMLDivElement>(null);
-    // Remove local isPlaying state usage for unmounting. 
-    // We want iframe always there.
 
-    // Compute the base URL for the Iframe
-    // gameMainUrl is something like /@fs/path/to/debug_project/main.js
-    // We want /@fs/path/to/debug_project/
     const baseUrl = gameMainUrl.substring(0, gameMainUrl.lastIndexOf('/') + 1);
 
-    // Construct the Iframe Content
     const iframeContent = `
 <!DOCTYPE html>
 <html lang="en">
@@ -23,297 +17,70 @@ export function GameViewPanel() {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <base href="${baseUrl}" />
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; width: 100vw; height: 100vh; }
+        body { margin: 0; overflow: hidden; background-color: #000; }
         canvas { display: block; width: 100%; height: 100%; }
     </style>
 </head>
 <body>
     <canvas id="neptune-canvas"></canvas>
     <script type="module">
-        // --- BRIDGE START ---
-        
-        // Console Bridge
-        const emitLog = (type, args) => {
-            const safeStringify = (obj) => {
-                const cache = new Set();
-                return JSON.stringify(obj, (key, value) => {
-                    if (typeof value === 'object' && value !== null) {
-                        if (cache.has(value)) {
-                            return '[Circular]';
-                        }
-                        cache.add(value);
-                    }
-                    return value;
-                });
-            };
-
-            const message = args.map(arg => 
-                typeof arg === 'object' ? safeStringify(arg) : String(arg)
-            ).join(' ');
-            
-            // Send to parent window
-            window.parent.postMessage({
-                type: 'editor:log',
-                detail: { type, message }
-            }, '*');
-        };
-
-        const originalLog = console.log;
-        const originalWarn = console.warn;
-        const originalError = console.error;
-
-        console.log = (...args) => {
-            originalLog(...args);
-            emitLog('info', args);
-        };
-        console.warn = (...args) => {
-            originalWarn(...args);
-            emitLog('warn', args);
-        };
-        console.error = (...args) => {
-            originalError(...args);
-            emitLog('error', args);
-        };
-
-        window.addEventListener('error', (event) => {
-            emitLog('error', [event.message]);
-        });
-
-        // --- EDITOR COMMUNICATION BRIDGE ---
-        
-        // Wait for Engine
-        const waitForEngine = () => {
-            return new Promise((resolve) => {
-                const check = () => {
-                    if (window.game) {
-                        resolve(window.game);
-                    } else {
-                        requestAnimationFrame(check);
-                    }
-                };
-                check();
-            });
-        };
-
-        waitForEngine().then((game) => {
-            console.log("[Bridge] Engine Connected");
-            
-            // Notify Editor
-            window.parent.postMessage({ type: 'game:ready' }, '*');
-            
-            // 1. Hook into Scene Changes / Creation
-            // We assume the game has a way to get the current scene entities
-            // For now, let's Poll or Hook
-            
-            // Override or Hook game.loadScene or similar if available
-            
-            // --- OUTGOING (Game -> Editor) ---
-            
-            const sendHierarchy = () => {
-                if (!game.scene || !game.scene.entities) return;
-                
-                // Convert Game Entities to SceneEntity format
-                // This assumes game.scene.entities is a Map or Array
-                const entities = {};
-                
-                // Add Root
-                entities['root'] = {
-                    id: 'root',
-                    parentId: null,
-                    name: 'Main Scene',
-                    type: 'group',
-                    children: [],
-                    active: true,
-                    locked: false,
-                    expanded: true
-                };
-
-                // Traverse
-                game.scene.entities.forEach(entity => {
-                    entities[entity.id] = {
-                        id: entity.id,
-                        parentId: entity.parent ? entity.parent.id : 'root',
-                        name: entity.name || 'GameObject',
-                        type: entity.type || 'cube', // Need mapping
-                        children: entity.children ? entity.children.map(c => c.id) : [],
-                        active: entity.active !== false,
-                        locked: entity.locked || false,
-                        expanded: false
-                    };
-                    
-                    // Add to parent's children list
-                    const pid = entity.parent ? entity.parent.id : 'root';
-                    if (entities[pid]) {
-                        entities[pid].children.push(entity.id);
-                    }
-                });
-                
-                window.parent.postMessage({ type: 'game:hierarchy-update', payload: entities }, '*');
-            };
-
-            const sendSelection = () => {
-                 // Check game.selection array/set
-                 const selection = game.selection ? Array.from(game.selection) : [];
-                 const ids = selection.map(e => e.id);
-                 const data = {};
-                 
-                 // Collect data directly from selection objects
-                 selection.forEach(ent => {
-                     if (ent) {
-                         const entData = {
-                             id: ent.id,
-                             name: ent.name,
-                             active: ent.active,
-                             transform: ent.transform || { position: {x:0,y:0}, rotation:0, scale: {x:1,y:1} },
-                         };
-                         // Try to serialize other components dynamically if possible
-                         ['sprite', 'collider', 'body', 'stats', 'animator', 'sound'].forEach(compName => {
-                             if (ent[compName]) {
-                                 entData[compName] = ent[compName];
-                             }
-                         });
-                         data[ent.id] = entData;
-                     }
-                 });
-                 
-                 window.parent.postMessage({ type: 'game:selection-changed', payload: { ids, data } }, '*');
-            };
-            
-            // --- INCOMING (Editor -> Game) ---
-            
-            const findEntity = (root, id) => {
-                if (!root) return null;
-                if (root.id === id) return root;
-                if (root.children) {
-                    for (const child of root.children) {
-                        const found = findEntity(child, id);
-                        if (found) return found;
-                    }
-                }
-                return null;
-            };
-
-            window.addEventListener('message', (event) => {
-                const { type, payload } = event.data;
-                if (!type) return;
-                
-                // Debug log for incoming messages
-                if(type !== 'editor:request-state') console.log("[Bridge] RAW MSG:", type, payload);
-
-                switch (type) {
-                    case 'editor:request-state':
-                        sendHierarchy();
-                        sendSelection();
-                        break;
-                        
-                    case 'editor:select':
-                        // payload.ids
-                        if (game.selection) {
-                            game.selection.clear();
-                            payload.ids.forEach(id => {
-                                const ent = findEntity(game.scene, id);
-                                if (ent) game.selection.add(ent);
-                            });
-                        }
-                        break;
-                        
-                    case 'editor:update-component':
-                        console.log("[Bridge] Update Request for ID:", payload.id);
-                        // payload: { id, component, data }
-                        const ent = findEntity(game.scene, payload.id);
-                        console.log("[Bridge] Entity Found:", ent ? ent.name : "NULL (Check ID Sync!)");
-                        
-                        if (ent) {
-                            // Find component by name (e.g., "Transform", "Shape", "Sprite")
-                            // We check constructor.name or fallback to direct property for "transform" alias
-                            const compName = payload.component;
-                            console.log("[Bridge] Looking for component:", compName);
-                            
-                            let comp = ent.components.find(c => c.constructor.name.toLowerCase() === compName.toLowerCase());
-
-                            // Special case: Transform might be aliased or core
-                            if (!comp && compName.toLowerCase() === 'transform' && ent.transform) {
-                                comp = ent.transform;
-                            }
-
-                            if (comp) {
-                                console.log("[Bridge] Component Found:", comp.constructor.name, "Applying:", payload.data);
-                                console.log("[Bridge] Updating component:", compName, payload.data);
-                                if (comp.deserialize) {
-                                    comp.deserialize(payload.data);
-                                } else {
-                                    // Fallback for components without deserialize
-                                    Object.assign(comp, payload.data); // dangerous if setters not used
-                                    // Try to use setters manually?
-                                    for (const key in payload.data) {
-                                        if (key in comp) {
-                                            comp[key] = payload.data[key];
-                                        }
-                                    }
-                                }
-                            } else {
-                                console.warn("[Bridge] Component NOT found. Available:", ent.components.map(c => c.constructor.name));
-                                console.warn("[Bridge] Component not found for update:", compName);
-                            }
-                        }
-                        break;
-                        
-                     case 'editor:move-entities':
-                        // payload: { ids, targetParentId, index }
-                        // Implement parenting logic in game
-                        break;
-                        
-                     case 'editor:pause':
-                        if (payload.paused) {
-                            if (game.pause) game.pause();
-                        } else {
-                            if (game.resume) game.resume();
-                        }
-                        break;
-                        
-                     case 'editor:play':
-                        if (game.start) game.start();
-                        break;
-                        
-                     case 'editor:stop':
-                        if (game.stop) game.stop();
-                        // Reload scene to reset state?
-                        if (game.scene && game.scene.reload) game.scene.reload();
-                        break;
-                        
-                    case 'editor:load-scene':
-                        console.log("[Bridge] Loading scene:", payload.path);
-                        if (game.loadScene) {
-                             // Use data if provided (avoids file:// access), otherwise fall back to path (which might fail)
-                            const content = payload.data || payload.path;
-                            game.loadScene(content).catch(e => console.error(e));
-                        }
-                        break;
-                }
-            });
-
-            // --- CLICK PICKING ---
-            
-            const canvas = document.getElementById('neptune-canvas');
-            if (canvas) {
-                canvas.addEventListener('mousedown', (e) => {
-                    // Simple picking if Engine supports it
-                    // const picked = game.pick(e.offsetX, e.offsetY);
-                    // if (picked) ... notify editor
-                });
-            }
-            
-            // Periodic Sync (Temporary until events are fully hooked)
-            setInterval(() => {
-                sendHierarchy();
-                sendSelection();
-            }, 500); // 2fps sync for responsiveness
-            
-        });
-
-
-        // Import the Game Logic
+        // Basic Game Loader
         import "${gameMainUrl}";
+        
+        // Helper to find deep entities
+        const findEntity = (root, id) => {
+            if (!root) return null;
+            if (root.id === id) return root;
+            if (root.children) {
+                for (const child of root.children) {
+                    const found = findEntity(child, id);
+                    if (found) return found;
+                }
+            }
+            return null;
+        };
+        
+        const wait = () => {
+            if (window.game) {
+                console.log("[GameView] Game Loaded");
+                // Notify parent we are ready to receive scene load commands
+                window.parent.postMessage({ type: 'game:ready' }, '*');
+                
+                // Basic Listener for Scene Loading (Minimal Bridge)
+                window.addEventListener('message', (e) => {
+                    const { type, payload } = e.data;
+                    const game = window.game;
+
+                    if (type === 'editor:load-scene' && game.loadScene) {
+                         game.loadScene(payload.data || payload.path).catch(console.error);
+                    }
+                    else if (type === 'editor:update-component') {
+                         // Inspector Update Logic
+                         const ent = findEntity(game.scene, payload.id);
+                         if (ent) {
+                             const compName = payload.component;
+                             let comp = ent.components.find(c => c.constructor.name.toLowerCase() === compName.toLowerCase());
+                             
+                             // Handle Transform special case
+                             if (!comp && compName.toLowerCase() === 'transform' && ent.transform) {
+                                 comp = ent.transform;
+                             }
+                             
+                             if (comp) {
+                                 if (comp.deserialize) {
+                                     comp.deserialize(payload.data);
+                                 } else {
+                                     Object.assign(comp, payload.data);
+                                 }
+                             }
+                         }
+                    }
+                });
+            } else {
+                requestAnimationFrame(wait);
+            }
+        };
+        wait();
     </script>
 </body>
 </html>

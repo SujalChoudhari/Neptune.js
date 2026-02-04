@@ -702,18 +702,41 @@ graph TB
 
 ---
 
-## 10. Approval Checklist
+## 10. Current Implementation Status (Feb 2026)
 
-- [ ] Rigging system replaces spritesheets ✓
-- [ ] Multi-layer scene architecture defined ✓
-- [ ] Scene/Transition/Teleport system clear ✓
-- [ ] In-editor testing with console ✓
-- [ ] HTML/CSS UI system (remove canvas UI) ✓
-- [ ] Desktop app with file watching ✓
-- [ ] Workflows cover complete game creation lifecycle
-- [ ] Requirements are complete and prioritized
-- [ ] MVP scope is achievable
+### 10.1 Functional Modules
+| Module | Status | Notes |
+| :--- | :--- | :--- |
+| **Project System** | **DONE** | Loads `project.npt`, recursively reads folder structure. Real FS context. |
+| **Asset Browser** | **DONE** | Displays file tree. Drag-and-drop hierarchy (WIP). Icons refined. |
+| **Scene View** | **DONE** | Standalone runner with Editor Camera (Zoom/Pan), Grid, and Picking. |
+| **Game View** | **DONE** | Runs actual game code. Isolated via `srcDoc`. |
+| **Inspector** | **DONE** | Read/Write access. Live updates sent to Runtime via Bridge. |
+| **Hierarchy** | **PARTIAL** | Reads initial scene file. Syncs selection. *Missing live synchronization with Runtime spawning.* |
+
+### 10.2 The Bridge Protocol
+The Editor uses a **Virtual DOM** pattern.
+1.  **Source of Truth**: `GameContext` (React State) loaded from Disk.
+2.  **Visuals**: `SceneView` and `GameView` iframes.
+3.  **Sync**: 
+    -   **Editor -> Game**: `editor:update-component` pushes changes to iframes.
+    -   **Game -> Editor**: `game:selection-changed` syncs selection.
+
+### 10.3 Immediate Roadmap
+- [ ] **Two-Way Binding**: Physics/Game movement should update Inspector (throttled).
+- [ ] **Live Hierarchy**: Objects spawned by scripts should appear in Editor Tree.
+- [ ] **Asset Drag-and-Drop**: Drag sprite from Asset Browser to Scene to create entity.
 
 ---
 
-> **Next Steps**: Upon SRS approval, proceed to Technical Specification Document (TSD) detailing implementation architecture, component designs, and development phases.
+## 11. Approval Checklist
+
+- [x] Rigging system replaces spritesheets ✓
+- [x] Multi-layer scene architecture defined ✓
+- [x] Scene/Transition/Teleport system clear ✓
+- [x] In-editor testing with console ✓
+- [x] HTML/CSS UI system (remove canvas UI) ✓
+- [x] Desktop app with file watching ✓
+- [ ] Workflows cover complete game creation lifecycle
+- [ ] Requirements are complete and prioritized
+- [ ] MVP scope is achievable

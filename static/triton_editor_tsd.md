@@ -83,46 +83,64 @@ graph TB
 
 ### 3.1 Module Dependency Graph
 
+### 3.1 Realistic Architecture (Feb 2026)
+
+The Editor operates on a **Virtual DOM** principle. The `GameContext` holds the authoritative state of the world (loaded from disk), which is *pushed* to the Runtime Iframes.
+
 ```mermaid
-graph LR
-    subgraph Foundation
-        Core[Core]
-        Events[Event Bus]
-        State[State Manager]
+graph TD
+    subgraph Editor ["Editor Context (Virtual DOM)"]
+        GC[GameContext]
+        FS[FileSystem]
+        Tree[Entity Tree]
+        Data[Entity Data Cache]
     end
-    
-    subgraph Services
-        Project[Project Manager]
-        Assets[Asset Manager]
-        History[History Manager]
-    end
-    
-    subgraph Editors
-        Scene[Scene Editor]
-        Rig[Rig Editor]
-        Tilemap[Tilemap Editor]
-        Dialogue[Dialogue Editor]
-    end
-    
+
     subgraph UI
-        Panels[Panel System]
-        Inspector[Inspector]
-        Hierarchy[Hierarchy]
-        Console[Console]
+        Insp[Inspector Panel]
+        Hier[Hierarchy Panel]
     end
+
+    subgraph Runtime ["Runtime (Iframes)"]
+        SceneView[Scene View Iframe]
+        GameView[Game View Iframe]
+        Engine[Neptune Engine]
+    end
+
+    %% Data Flow
+    FS --> GC
+    GC --"Load Scene (JSON)"--> Tree
+    GC --"Hydrate"--> Data
+
+    Tree --> Hier
+    Data --> Insp
+
+    %% Update Loop
+    Insp --"Update (Optimistic)"--> Data
+    Insp --"editor:update"--> GC
     
-    Core --> Events
-    Events --> State
-    State --> Project
-    State --> Assets
-    State --> History
-    Project --> Scene
-    Assets --> Rig
-    Assets --> Tilemap
-    Scene --> Panels
-    Inspector --> Scene
-    Hierarchy --> Scene
+    %% Bridge
+    GC --"postMessage"--> SceneView
+    GC --"postMessage"--> GameView
+
+    %% Feedback
+    SceneView --"game:selection"--> GC
+    GameView --"game:selection"--> GC
 ```
+
+### 3.1.1 The Bridge Protocol
+The Editor communicates with the Runtime using a standardized message protocol over `window.postMessage`.
+
+| Direction | Type | Payload | Use Case |
+| :--- | :--- | :--- | :--- |
+| **E -> G** | `editor:load-scene` | `{ path, data? }` | Force load a scene. |
+| **E -> G** | `editor:update-component` | `{ id, component, data }` | Update a property (live). |
+| **E -> G** | `editor:camera-update` | `{ x, y, zoom }` | Sync Editor Camera. |
+| **E -> G** | `editor:select` | `{ ids }` | Sync selection from Tree. |
+| **G -> E** | `game:ready` | `{}` | Runtime is initialized. |
+| **G -> E** | `game:selection-changed` | `{ ids }` | User clicked an object. |
+| **G -> E** | `game:hierarchy-update` | `{ entities }` | Runtime spawned/destroyed objects. |
+
 
 ### 3.2 Module Specifications
 
