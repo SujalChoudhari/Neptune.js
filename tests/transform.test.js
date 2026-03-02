@@ -44,11 +44,11 @@ describe('Transform', () => {
         expect(t.scale.y).toBe(3);
     });
 
-    // Position getter returns copy
-    it('position getter returns a copy (immutable)', () => {
+    // Position getter returns live reference
+    it('position getter returns a live vector reference', () => {
         const pos = transform.position;
         pos.x = 999;
-        expect(transform.position.x).toBe(0); // Original unchanged
+        expect(transform.position.x).toBe(999);
     });
 
     // Position setter
@@ -64,11 +64,11 @@ describe('Transform', () => {
         expect(transform.rotation).toBe(1.5);
     });
 
-    // Scale getter returns copy
-    it('scale getter returns a copy (immutable)', () => {
+    // Scale getter returns live reference
+    it('scale getter returns a live vector reference', () => {
         const scale = transform.scale;
         scale.x = 999;
-        expect(transform.scale.x).toBe(1); // Original unchanged
+        expect(transform.scale.x).toBe(999);
     });
 
     // Scale setter
