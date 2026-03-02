@@ -1,49 +1,59 @@
 import * as npt from "../src/neptune.js";
-import { describe } from "./tester.js";
+import { describe, it, expect } from "./tester.js";
 
-
-class TestBehaviour extends npt.Behaviour {
-    constructor() {
-        super();
-        this.Init = () => {
-            console.log("Init");
-        }
-
-        this.Update = () => {
-            console.log("Update");
-        }
-    }
+function createMockContext() {
+    const calls = [];
+    return {
+        calls,
+        save: () => calls.push("save"),
+        restore: () => calls.push("restore"),
+        translate: (...args) => calls.push(["translate", ...args]),
+        rotate: (...args) => calls.push(["rotate", ...args]),
+        drawImage: (...args) => calls.push(["drawImage", ...args]),
+        fillRect: (...args) => calls.push(["fillRect", ...args]),
+        set globalCompositeOperation(value) { calls.push(["globalCompositeOperation", value]); },
+        set filter(value) { calls.push(["filter", value]); },
+        set fillStyle(value) { calls.push(["fillStyle", String(value)]); }
+    };
 }
 
-const entity = new npt.Entity("TestEntity");
-const behaviour = new   TestBehaviour();
-entity.AddComponent(behaviour);
+describe("UI", () => {
+    it("fills parent and applies margins to child layout", () => {
+        const panel = new npt.Entity("Panel");
+        panel.AddComponent(new npt.UI.UITransform(0, 0, 2, 2, 0));
+        panel.AddComponent(new npt.UI.Panel());
+        panel.AddComponent(new npt.UI.MarginContainer(0.1, 0.1, 0.2, 0.2));
 
-const scene = new npt.Scene("TestScene");
-scene.AddChild(entity);
+        const child = new npt.Entity("Child");
+        child.AddComponent(new npt.UI.UITransform(0, 0, 0.5, 0.5, 0));
+        child.AddComponent(new npt.UI.UISprite("child.png"));
+        panel.AddChild(child);
 
-const canvas = new npt.Entity("Button");
-scene.AddChild(canvas);
-canvas.AddComponent(new npt.UI.UITransform(10, 10, 200, 200, 0)); // Set width and height
-canvas.AddComponent(new npt.UI.Panel());
-canvas.AddComponent(new npt.UI.MarginContainer(4, 5, 2, 3)); // Adjust the spacing as needed
+        panel.GetComponent(npt.UI.UITransform).Fill("both", 0.1, 0.1);
+        panel.GetComponent(npt.UI.MarginContainer).Update();
 
-const sprite = new npt.Entity("Sprite");
-sprite.AddComponent(new npt.UI.UITransform(0, 0, 1, 1, 0));
-sprite.AddComponent(new npt.UI.UISprite("https://st.depositphotos.com/1008768/3573/i/450/depositphotos_35732355-stock-photo-example-button.jpg"));
-sprite.AddComponent(new npt.Behaviour("Sprite", () => {
-    sprite.GetComponent(npt.UI.UISprite).filter.Add(npt.Filter.TYPE.BLUR, "3px");
-    sprite.GetComponent(npt.UI.UISprite).blendMode = npt.Renderable.BLEND_MODE.MULTIPLY;
-}));
+        const childTransform = child.GetComponent(npt.UI.UITransform);
+        expect(childTransform.y).toBeGreaterThan(0);
+        expect(childTransform.height).toBeGreaterThan(0);
+    });
 
+    it("renders panel and sprite", () => {
+        const panelEntity = new npt.Entity("PanelRender");
+        panelEntity.AddComponent(new npt.UI.UITransform(1, 2, 3, 4, 0));
 
-canvas.AddChildren(sprite); // Add sprites as children before Update
+        const panel = new npt.UI.Panel(npt.Color.white);
+        const sprite = new npt.UI.UISprite("image.png");
+        panelEntity.AddComponent(panel);
+        panelEntity.AddComponent(sprite);
 
-canvas.AddComponent(new npt.Behaviour("Canvas", () => {
-    canvas.GetComponent(npt.UI.UITransform).Fill("both", 10, 10);
-    canvas.GetComponent(npt.UI.MarginContainer).Update();
-}));
+        const ctx = createMockContext();
+        panel.draw(ctx);
+        sprite.draw(ctx);
 
-npt.SceneManager.LoadScene(scene.id);
+        const fillRectCalls = ctx.calls.filter((c) => Array.isArray(c) && c[0] === "fillRect");
+        const drawImageCalls = ctx.calls.filter((c) => Array.isArray(c) && c[0] === "drawImage");
 
-describe("UI", () => { });
+        expect(fillRectCalls.length).toBe(1);
+        expect(drawImageCalls.length).toBe(1);
+    });
+});
