@@ -1,3 +1,4 @@
+import "./setup_mocks.js"
 import { printResults } from "./tester.js"
 
 // Core tests
@@ -50,4 +51,8 @@ import "./galatea.test.js"
 // Editor tests
 import "./editor.test.js"
 
-printResults();
+const { failed } = await printResults();
+
+if (failed > 0) {
+    process.exitCode = 1;
+}

@@ -4,6 +4,7 @@
   "description": "A JavaScript Based Game Development Framework",
   "main": "src/neptune.js",
   "scripts": {
+    "test": "node tests/index.js",
     "docs": "jsdoc -c ./jsdoc.json -d ./docs ./src/neptune.js",
     "dev": "cd triton && yarn tauri dev"
   },
