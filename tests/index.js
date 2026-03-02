@@ -50,6 +50,7 @@ import "./galatea.test.js"
 
 // Editor tests
 import "./editor.test.js"
+import "./triton-editor.test.js"
 
 const { failed } = await printResults();
 
