@@ -94,9 +94,11 @@ export class Text extends Renderable {
             this.#transform = this.entity.GetComponent(Transform);
 
         ctx.save();
-        ctx.translate(this.#transform.x * Maths.METER_TO_PIXEL, this.#transform.y * Maths.METER_TO_PIXEL);
-        
-        ctx.rotate(this.#transform.rotate);
+        ctx.translate(
+            this.#transform.x * Maths.METER_TO_PIXEL,
+            this.#transform.y * Maths.METER_TO_PIXEL
+        );
+        ctx.rotate(this.#transform.rotation * Maths.DEG_TO_RAD);
         ctx.scale(Maths.METER_TO_PIXEL, Maths.METER_TO_PIXEL);
 
         ctx.font = this.font.toString();

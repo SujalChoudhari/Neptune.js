@@ -55,7 +55,7 @@ export class Sprite extends Renderable {
         ctx.save();
         ctx.translate(x, y);
         ctx.translate(width / 2, height / 2);
-        ctx.rotate(this.#transform.rotation * Math.PI / 180);
+        ctx.rotate(this.#transform.rotation * Maths.DEG_TO_RAD);
         ctx.globalCompositeOperation = this.blendMode;
         ctx.filter = this.filter;
         ctx.translate(-width / 2, -height / 2);

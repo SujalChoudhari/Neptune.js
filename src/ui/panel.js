@@ -46,11 +46,14 @@ export class Panel extends Renderable {
         let height = transform.height * Maths.METER_TO_PIXEL;
 
         ctx.save();
-        ctx.rotate(transform.rotation);
+        ctx.translate(x, y);
+        ctx.translate(width / 2, height / 2);
+        ctx.rotate(transform.rotation * Maths.DEG_TO_RAD);
         ctx.globalCompositeOperation = this.blendMode;
         ctx.filter = this.filter;
         ctx.fillStyle = this._properties.color;
-        ctx.fillRect(x, y, width, height);
+        ctx.translate(-width / 2, -height / 2);
+        ctx.fillRect(0, 0, width, height);
 
         let children = this.entity.GetComponentsInChildren(Renderable);
         for (let i = 0; i < children.length; i++) {
