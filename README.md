@@ -40,6 +40,10 @@ Neptune is highly portable and runs on browsers.
 Neptune is free. Released under the MIT licence, you can create open source, 
 freeware, shareware, and commercial games with it. See the licence for full details. 
 
+## Product direction
+
+The intended 2D action-RPG completion target, runtime/editor boundary, and testable vertical-slice checklist are documented in the [Neptune.js product contract](docs/PRODUCT-CONTRACT.md). These are target capabilities, not a claim that every feature is already shipped.
+
 ## Easy to use
 It's Simple and easy to use. 
 Even kids can make simple game in Neptune.
