@@ -36,7 +36,6 @@ export const DockLayout = ({ onApiReady }: DockLayoutProps) => {
     const { focusGameOnPlay, focusConsoleOnPlay, maximizeGameOnPlay } = useSettings();
 
     // Store layout state before maximizing to restore it later
-    const layoutStateRef = useRef<any>(null);
 
     useEffect(() => {
         const onPlay = () => {
@@ -200,7 +199,7 @@ export const DockLayout = ({ onApiReady }: DockLayoutProps) => {
 
         // Expose API to parent with Layout Switcher
         if (onApiReady) {
-            const extendedApi = event.api as any;
+            const extendedApi = event.api as NeptuneDockApi;
             extendedApi.applyLayout = applyLayout;
             onApiReady(extendedApi);
         }

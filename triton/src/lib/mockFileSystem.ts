@@ -190,7 +190,7 @@ export const useMockFileSystem = () => {
             const newId = `${node.type}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`
 
             // Generate unique name: "Name (1)"
-            let newName = `${node.name} (1)`
+            const newName = `${node.name} (1)`
             // Simple check (in real app, check all siblings loop)
             // For now just appending (1) is sufficient for mock
 

@@ -53,7 +53,7 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
 
     // Cast to MockEntity because our Inspector components are typed with it
     // EntityData and MockEntity should be compatible enough for now
-    const entity = selectedEntityData as unknown as MockEntity;
+    const entity = selectedEntityData as any as MockEntity;
 
     // HELPERS
     // We map specifics to generic updateComponent(id, comp, field, value)
@@ -61,12 +61,12 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
     // Transform is special, it's a sub-object usually, but updateComponent handles it via 'transform' component key
     // The previous updateTransform took (key, value).
     const updateTransform = (key: string, value: any) => {
-        selectedIds.forEach(id => updateComponent(id, 'transform', { [key]: value }));
+        selectedIds.forEach(id => updateComponent(id, 'transform', key, value));
     }
 
     // Generic updater generator
     const makeUpdater = (compName: string) => (key: string, value: any) => {
-        selectedIds.forEach(id => updateComponent(id, compName, { [key]: value }));
+        selectedIds.forEach(id => updateComponent(id, compName, key, value));
     }
 
     const updateHelpers = {
@@ -80,7 +80,7 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
             console.log("Update script:", index, key, value);
         },
         updateGeneric: (compName: string, key: string, value: any) => {
-            selectedIds.forEach(id => updateComponent(id, compName, { [key]: value }));
+            selectedIds.forEach(id => updateComponent(id, compName, key, value));
         }
     }
 

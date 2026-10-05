@@ -34,7 +34,7 @@ export function WelcomeScreen({ onProjectLoaded }: WelcomeScreenProps) {
     }, []);
 
     const addToRecents = (path: string) => {
-        let name = path.split(/[\\/]/).pop() || "Untitled Project";
+        const name = path.split(/[\\/]/).pop() || "Untitled Project";
         const newRecents = [
             { name, path, lastOpened: Date.now() },
             ...recents.filter(p => p.path !== path)

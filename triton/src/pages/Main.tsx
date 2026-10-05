@@ -46,7 +46,7 @@ export function Main() {
                     handleProjectLoaded(path);
                 });
             }
-        }).catch((err: unknown) => {
+        }).catch((err: any) => {
             console.error("Failed to check startup config", err);
         });
     }, []);

@@ -250,7 +250,7 @@ export const useMockHierarchy = () => {
 
     const moveEntities = useCallback((ids: string[], targetParentId: string, targetIndex?: number) => {
         setEntities(prev => {
-            let newState = { ...prev }
+            const newState = { ...prev }
             const targetParent = newState[targetParentId]
             if (!targetParent) return prev
 

@@ -15,13 +15,8 @@ export function StatusBar() {
             setType(type);
         };
 
-        const handleReady = () => {
-            setMessage("Ready");
-            setType('ready');
-        }
-
         // Reset to ready after 5 seconds of an info log
-        let timeout: NodeJS.Timeout;
+        let timeout: ReturnType<typeof setTimeout> | undefined;
         if (type === 'info') {
             timeout = setTimeout(() => {
                 setMessage("Ready");
@@ -35,7 +30,7 @@ export function StatusBar() {
 
         return () => {
             window.removeEventListener('editor:log', handleLog as EventListener);
-            clearTimeout(timeout);
+            if (timeout) clearTimeout(timeout);
         };
     }, [type]); // Re-run to handle timeout reset
 

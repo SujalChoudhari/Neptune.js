@@ -44,7 +44,9 @@ const SidebarItem = ({
         try {
             const json = e.dataTransfer.getData('application/json')
             if (json) ids = JSON.parse(json)
-        } catch (err) { }
+        } catch {
+            // Ignore malformed drag payloads and fall back to the current selection.
+        }
 
         if (ids.length === 0) {
             const draggedId = e.dataTransfer.getData('text/plain')

@@ -1,6 +1,7 @@
 import type { MockEntity } from "./types"
 
 export const MOCK_ENTITY: MockEntity = {
+    id: 'mock-entity',
     name: "Player_Character",
     active: true,
     transform: {

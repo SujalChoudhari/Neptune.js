@@ -324,10 +324,10 @@ export const GenericComponentSection: React.FC<GenericComponentSectionProps> = (
     const { processed: processedParam, virtualMap: paramVirtuals } = hasParam ? groupProperties(param) : { processed: {}, virtualMap: {} }
 
     // Custom Update Handler for Virtual Groups
-    const handleUpdate = (baseObj: any, key: string, value: any, virtuals: Record<string, string[]>, isParam: boolean) => {
+    const handleUpdate = (_baseObj: Record<string, any>, key: string, value: any, virtuals: Record<string, string[]>, isParam: boolean) => {
         if (virtuals[key]) {
             // It's a virtual group (e.g. 'size' -> value is {width: 10, height: 20})
-            Object.entries(value).forEach(([subKey, subVal]) => {
+            Object.entries(value as Record<string, any>).forEach(([subKey, subVal]) => {
                 if (isParam) {
                     // Update param indirectly via top-level update if possible, 
                     // but we need to coordinate multiple updates.
@@ -341,7 +341,7 @@ export const GenericComponentSection: React.FC<GenericComponentSectionProps> = (
 
             if (isParam) {
                 // For param, we merge and update once
-                const newParam = { ...param, ...value }
+                const newParam = { ...param, ...(value as Record<string, any>) }
                 onUpdate('param', newParam)
             }
 

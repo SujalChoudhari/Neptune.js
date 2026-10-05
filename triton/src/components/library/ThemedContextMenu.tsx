@@ -85,7 +85,7 @@ export const ThemedContextMenuTrigger = ({
             // Close other open menus first by dispatching global event
             try {
                 window.dispatchEvent(new CustomEvent(CLOSE_MENUS_EVENT));
-            } catch (err) {
+            } catch {
                 // Ignore dispatch errors
             }
 

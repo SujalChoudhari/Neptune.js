@@ -39,12 +39,14 @@ interface RenderComponentProps {
 
 export const renderInspectorComponent = ({
     compId,
+    index,
     entity,
     isActive,
     onToggleActive,
     updateHelpers,
     moveHelpers
 }: RenderComponentProps) => {
+    void index
     const Component = InspectorRegistry[compId]
 
     // Determine specific props based on component type
@@ -55,7 +57,7 @@ export const renderInspectorComponent = ({
     }
 
     if (!Component) {
-        // Fallback to Generic Renderer for unknown components
+        // Fallback to Generic Renderer for any components
         // We need to fetch the raw data from the new 'components' dictionary
         // If the 'data' is not directly reachable via entity[compId], we try entity.components[compId]
         // But for now, we rely on the caller to pass usage of `renderInspectorComponent` correctly.

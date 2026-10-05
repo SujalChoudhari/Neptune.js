@@ -99,7 +99,6 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         const list: string[] = []
         const traverse = (id: string) => {
             if (id !== 'root') list.push(id)
-            const entity = entities[id]
             if ((id === 'root' || (entities[id] && entities[id].expanded)) || searchQuery.trim()) {
                 const children = getChildren(id)
                 children.forEach(child => traverse(child.id))
@@ -196,7 +195,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         const children = getChildren(id)
         const isRoot = id === 'root';
 
-        const isVirtual = entity.type === 'camera' || entity.type === 'tilemap' || entity.type === 'parallax';
+        const isVirtual = entity.type === 'camera';
 
         return (
             <div key={id}>

@@ -34,7 +34,7 @@ export const ProjectPanel = (_props: IDockviewPanelProps) => {
         duplicateNode
     } = useFileSystem()
 
-    const { notifyGame, loadScene } = useGameContext()
+    const { loadScene } = useGameContext()
 
     const [scale, setScale] = useState(90)
     const [searchQuery, setSearchQuery] = useState("")

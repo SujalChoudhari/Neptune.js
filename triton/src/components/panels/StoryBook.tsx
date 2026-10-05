@@ -49,6 +49,7 @@ export const StoryBook = (_props: IDockviewPanelProps) => {
 
     // PREVIEW ENTITY for Inspector Components
     const previewEntity: MockEntity = {
+        id: 'storybook-entity',
         name: "Preview_Entity",
         active: true,
         transform: {
@@ -339,4 +340,3 @@ export const StoryBook = (_props: IDockviewPanelProps) => {
         </ThemedScrollArea>
     )
 }
-

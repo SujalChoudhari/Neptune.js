@@ -12,7 +12,6 @@ import {
     Package,
     ScrollText,
     Clapperboard,
-    Cpu
 } from "lucide-react"
 import type { AssetType } from "@/context/FileSystemContext"
 import { cn } from "@/lib/utils"

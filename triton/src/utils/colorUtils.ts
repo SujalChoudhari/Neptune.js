@@ -14,7 +14,8 @@ export interface RGBA {
  * Handles both 0-1 and 0-255 ranges gracefully (assumes 0-255 if any value > 1).
  */
 export const rgbaToHex = (color: RGBA): string => {
-    let { r, g, b, a } = color;
+    let { r, g, b } = color;
+    const { a } = color;
 
     // Detect if range is 0-1 or 0-255
     // If any component is > 1, assume 0-255.

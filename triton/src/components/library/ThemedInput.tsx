@@ -495,4 +495,3 @@ ThemedTextArea.displayName = "ThemedTextArea"
 
 // Re-export base styles for extensions
 export { themedInputBase }
-
