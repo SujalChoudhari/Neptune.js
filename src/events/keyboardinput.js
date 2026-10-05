@@ -3,7 +3,7 @@
  * @classdesc KeyboardInput class to handle keyboard input
  * @static
  * @hideconstructor
- * @example
+ * @example <caption>Check if the key with keycode 65 (A) is pressed</caption>
  * // Check if the key with the keycode 65 (A) is pressed
  * KeyboardInput.IsKeyDown(KeyBoardInput.KEY_CODE.A);
  * 
@@ -18,7 +18,7 @@ export class KeyboardInput {
      * @param {KeyboardInput.KEY_CODE} keyCode The keycode of the key to check.
      * @returns {boolean} True if the key with the given keycode is pressed.
      * @method
-     * @example
+     * @example KeyboardInput.IsKeyDown(KeyboardInput.KEY_CODE.A);
      */
     static IsKeyDown(keyCode) {
         if (KeyboardInput.#keyPressed[keyCode] === undefined) return false;

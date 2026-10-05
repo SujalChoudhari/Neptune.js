@@ -100,9 +100,9 @@ export class SceneManager {
     }
 
     /**
-     * @private
      * Unload a scene by its id.
      * @param {number} id - Id of the scene to be unloaded.
+     * @private
      */
     static #unloadScene(id) {
         const scene = SceneManager.GetScene(id);
