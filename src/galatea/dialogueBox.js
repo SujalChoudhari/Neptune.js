@@ -23,7 +23,7 @@ export class DialogueBox {
 
     /**
      * Start a dialogue sequence.
-     * @param {Array<{speaker: string, text: string, portrait?: string}>} lines 
+     * @param {Array<{speaker: string, text: string, portrait: (string|undefined)}>} lines
      */
     start(lines) {
         this.lines = lines;

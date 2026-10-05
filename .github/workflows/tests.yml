@@ -20,7 +20,22 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        run: npm install
+        run: npm install --ignore-scripts --no-audit --no-fund
 
       - name: Run test suite
         run: npm test
+
+      - name: Validate documentation
+        run: npm run docs
+
+      - name: Install Triton dependencies
+        working-directory: triton
+        run: yarn install --frozen-lockfile --non-interactive
+
+      - name: Build Triton editor
+        working-directory: triton
+        run: yarn build
+
+      - name: Lint Triton editor
+        working-directory: triton
+        run: yarn lint

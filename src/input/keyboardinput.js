@@ -18,7 +18,7 @@ export class KeyboardInput {
      * @param {KeyboardInput.KEY_CODE} keyCode The keycode of the key to check.
      * @returns {boolean} True if the key with the given keycode is pressed.
      * @method
-     * @example
+     * @example KeyboardInput.IsKeyDown(KeyboardInput.KEY_CODE.A)
      */
     static IsKeyDown(keyCode) {
         if (!KeyboardInput.#keyPressed) return false;
