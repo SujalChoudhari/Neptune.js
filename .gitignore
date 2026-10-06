@@ -4,4 +4,3 @@ node_modules
 build
 
 pnpm-lock.yaml
-package-lock.json
