@@ -91,10 +91,21 @@ export function WelcomeScreen({ onProjectLoaded }: WelcomeScreenProps) {
         p.path.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    const launchRecentProject = async (path: string) => {
+        try {
+            // Recent projects must establish the native selected-project
+            // capability before Main invokes any scoped filesystem command.
+            await invoke("initialize_project", { path });
+            addToRecents(path);
+            onProjectLoaded(path);
+        } catch (e) {
+            console.error("Failed to launch recent project", e);
+        }
+    };
+
     const handleLaunch = () => {
         if (selectedPath) {
-            addToRecents(selectedPath);
-            onProjectLoaded(selectedPath);
+            void launchRecentProject(selectedPath);
         }
     };
 
@@ -138,8 +149,7 @@ export function WelcomeScreen({ onProjectLoaded }: WelcomeScreenProps) {
                                     key={project.path}
                                     onClick={() => setSelectedPath(project.path)}
                                     onDoubleClick={() => {
-                                        addToRecents(project.path);
-                                        onProjectLoaded(project.path);
+                                        void launchRecentProject(project.path);
                                     }}
                                     className={cn(
                                         "group flex items-center p-2 cursor-pointer border border-transparent rounded-sm select-none transition-all duration-100",

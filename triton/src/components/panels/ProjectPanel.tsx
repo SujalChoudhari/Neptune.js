@@ -1,5 +1,4 @@
 import type { IDockviewPanelProps } from "dockview"
-import { invoke } from "@tauri-apps/api/core";
 import { useFileSystem } from "@/context/FileSystemContext"
 import { useGameContext } from "@/context/GameContext"
 import { ProjectSidebar } from "../project/ProjectSidebar"
@@ -336,20 +335,6 @@ export const ProjectPanel = (_props: IDockviewPanelProps) => {
                         </ThemedContextMenuItem>
                         <ThemedContextMenuItem inset onClick={() => handleCreateAsset("New Scene.scene", "scene")}>
                             Scene
-                        </ThemedContextMenuItem>
-                        <ThemedContextMenuSeparator />
-                        <ThemedContextMenuSeparator />
-                        <ThemedContextMenuItem inset onClick={() => {
-                            const targetPath = currentFolderId === 'root' ? nodes['root']?.id || '' : currentFolderId;
-                            invoke('show_in_explorer', { path: targetPath });
-                        }}>
-                            Show in Explorer
-                        </ThemedContextMenuItem>
-                        <ThemedContextMenuItem inset onClick={() => {
-                            const targetPath = currentFolderId === 'root' ? nodes['root']?.id || '' : currentFolderId;
-                            invoke('import_asset', { path: targetPath });
-                        }}>
-                            Import Asset...
                         </ThemedContextMenuItem>
                     </ThemedContextMenuContent>
                 </div>

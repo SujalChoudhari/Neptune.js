@@ -57,24 +57,14 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
 
     const readFile = useCallback(async (path: string) => {
         try {
-            // Try Tauri custom command
             return await invoke<string>("read_file", { path });
         } catch (e) {
-            // Fallback to Vite dev server static serving
-            try {
-                // Vite serves absolute paths via /@fs/
-                // Replace backslashes
-                const normalized = path.replace(/\\/g, '/');
-                // On Windows, F:/ needs /@fs/F:/
-                // Ensure no double slashes if normalized already starts with /
-                const url = `/@fs/${normalized.startsWith('/') ? normalized.slice(1) : normalized}`;
-                const res = await fetch(url);
-                if (!res.ok) throw new Error("Fetch failed: " + res.statusText);
-                return await res.text();
-            } catch (fetchErr) {
-                console.error("Failed to read file:", path, e, fetchErr);
-                return null;
-            }
+            // Never fall back to Vite's dev-server filesystem handler here. That
+            // endpoint accepts
+            // absolute host paths and would bypass the native selected-project
+            // capability when the renderer supplies an invalid path.
+            console.error("Failed to read file:", path, e);
+            return null;
         }
     }, []);
 
@@ -82,7 +72,10 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
         setIsLoading(true);
         try {
             console.log("Loading project fs from:", path);
-            const data = await invoke<Record<string, FileSystemNode>>("scan_project", { path });
+            // The native side owns the selected absolute root. Filesystem
+            // commands use project-relative paths so renderer input cannot
+            // escape that capability.
+            const data = await invoke<Record<string, FileSystemNode>>("scan_project", { path: "." });
             console.log("Scanned nodes:", Object.keys(data).length);
 
             // Normalize data if needed, or just set it
@@ -156,10 +149,7 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
     const createFolder = useCallback(async (parentId: string, name: string) => {
         try {
             // parentId is a path in our system (except "root")
-            if (parentId === "root") {
-                if (!rootPath) return null;
-                parentId = rootPath;
-            }
+            if (parentId === "root") parentId = ".";
             const path = `${parentId}/${name}`;
             const newPath = await invoke<string>("create_directory", { path });
             await refresh();
@@ -172,10 +162,7 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
 
     const createAsset = useCallback(async (parentId: string, name: string, type: AssetType) => {
         try {
-            if (parentId === "root") {
-                if (!rootPath) return null;
-                parentId = rootPath;
-            }
+            if (parentId === "root") parentId = ".";
             const path = `${parentId}/${name}`;
 
             // Default content based on type
@@ -222,17 +209,16 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
     const moveNodes = useCallback(async (nodeIds: string[], targetFolderId: string) => {
         // Optimistic functionality or just refresh after?
         // Let's loop and move.
-        // targetFolderId is the Path of the destination folder (e.g. "C:/Project/Assets/Scripts")
+        // targetFolderId is a project-relative folder id ("." for the root).
 
         setIsLoading(true); // Maybe not full reload spinner?
 
         try {
             for (const sourceId of nodeIds) {
-                // sourceId is full path (e.g. "C:/Project/Assets/Old/script.ts")
                 const fileName = sourceId.split('/').pop();
                 if (!fileName) continue;
 
-                const targetPath = `${targetFolderId}/${fileName}`;
+                const targetPath = targetFolderId === "." ? fileName : `${targetFolderId}/${fileName}`;
 
                 if (sourceId === targetPath) continue; // Same location
 

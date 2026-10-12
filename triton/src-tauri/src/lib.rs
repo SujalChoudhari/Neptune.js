@@ -2,7 +2,97 @@
 use tauri::menu::{Menu, MenuItem, Submenu};
 use tauri::{Emitter, Manager};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Component, Path, PathBuf};
+use std::sync::Mutex;
+
+#[derive(Default)]
+struct SelectedProjectRoot(Mutex<Option<PathBuf>>);
+
+fn scoped_error() -> String {
+    "Path must be a relative path inside the selected project".to_string()
+}
+
+fn validate_relative_path(path: &Path) -> Result<(), String> {
+    if path.as_os_str().is_empty() || path.is_absolute() {
+        return Err(scoped_error());
+    }
+
+    for component in path.components() {
+        match component {
+            Component::ParentDir | Component::RootDir | Component::Prefix(_) => {
+                return Err(scoped_error());
+            }
+            Component::CurDir | Component::Normal(_) => {}
+        }
+    }
+    Ok(())
+}
+
+fn selected_root(state: &SelectedProjectRoot) -> Result<PathBuf, String> {
+    state
+        .0
+        .lock()
+        .map_err(|_| "Selected project state is unavailable".to_string())?
+        .clone()
+        .ok_or_else(|| "No project is selected".to_string())
+}
+
+fn set_selected_root(state: &SelectedProjectRoot, root: PathBuf) -> Result<(), String> {
+    *state
+        .0
+        .lock()
+        .map_err(|_| "Selected project state is unavailable".to_string())? = Some(root);
+    Ok(())
+}
+
+/// Resolve a client path using the selected root. Existing path components are
+/// canonicalized, so symlinks cannot move the operation outside the project.
+/// For a new target, the nearest existing ancestor is canonicalized and the
+/// remaining normal components are appended to that safe ancestor.
+fn resolve_scoped_path(
+    state: &SelectedProjectRoot,
+    raw_path: &str,
+    allow_root: bool,
+) -> Result<PathBuf, String> {
+    let relative = Path::new(raw_path);
+    validate_relative_path(relative)?;
+    let root = selected_root(state)?;
+
+    let mut existing = root.join(relative);
+    let mut suffix = Vec::new();
+    while !existing.exists() {
+        let name = existing
+            .file_name()
+            .ok_or_else(scoped_error)?
+            .to_os_string();
+        suffix.push(name);
+        existing = existing.parent().ok_or_else(scoped_error)?.to_path_buf();
+    }
+
+    let canonical_existing = fs::canonicalize(&existing).map_err(|_| scoped_error())?;
+    if !canonical_existing.starts_with(&root)
+        || (!allow_root && canonical_existing == root && suffix.is_empty())
+    {
+        return Err(scoped_error());
+    }
+
+    let mut resolved = canonical_existing;
+    for component in suffix.iter().rev() {
+        resolved.push(component);
+    }
+    if !resolved.starts_with(&root) || (!allow_root && resolved == root) {
+        return Err(scoped_error());
+    }
+    Ok(resolved)
+}
+
+fn resolve_existing_path(state: &SelectedProjectRoot, raw_path: &str) -> Result<PathBuf, String> {
+    let path = resolve_scoped_path(state, raw_path, false)?;
+    if !path.exists() {
+        return Err("Path does not exist".to_string());
+    }
+    Ok(fs::canonicalize(path).map_err(|_| scoped_error())?)
+}
 
 #[tauri::command]
 fn get_startup_config() -> Option<String> {
@@ -83,7 +173,12 @@ fn scan_directory(
     let current_id = if current_path == base_path {
         "root".to_string()
     } else {
-        current_path.to_string_lossy().to_string().replace("\\", "/")
+        current_path
+            .strip_prefix(base_path)
+            .map_err(|_| "Scanned path escaped the selected project".to_string())?
+            .to_string_lossy()
+            .to_string()
+            .replace("\\", "/")
     };
 
     let name = current_path
@@ -101,6 +196,11 @@ fn scan_directory(
             for entry in entries {
                 if let Ok(entry) = entry {
                     let path = entry.path();
+                    let canonical_path = fs::canonicalize(&path)
+                        .map_err(|_| "Could not canonicalize scanned path".to_string())?;
+                    if !canonical_path.starts_with(base_path) {
+                        return Err(scoped_error());
+                    }
                     let file_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
                     
                     // Ignore dotfiles/folders
@@ -114,13 +214,17 @@ fn scan_directory(
                     }
 
                     // Ignore lib folder
-                    if file_name == "lib" && path.is_dir() {
+                    if file_name == "lib" && canonical_path.is_dir() {
                         continue;
                     }
                     
-                    if let Ok(child_id) = scan_directory(base_path, &path, nodes, Some(current_id.clone())) {
-                        children_ids.push(child_id);
-                    }
+                    let child_id = scan_directory(
+                        base_path,
+                        &canonical_path,
+                        nodes,
+                        Some(current_id.clone()),
+                    )?;
+                    children_ids.push(child_id);
                 }
             }
         }
@@ -159,12 +263,140 @@ fn copy_dir_recursive(src: &PathBuf, dst: &PathBuf) -> std::io::Result<()> {
     Ok(())
 }
 
-#[tauri::command]
-async fn sync_neptune_lib(project_path: String) -> Result<String, String> {
-    let project_dir = PathBuf::from(&project_path);
-    if !project_dir.exists() {
-        return Err("Project path does not exist".to_string());
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn test_root() -> (SelectedProjectRoot, PathBuf, PathBuf) {
+        let id = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("triton-containment-{id}"));
+        let outside = std::env::temp_dir().join(format!("triton-containment-outside-{id}"));
+        fs::create_dir_all(&root).unwrap();
+        fs::create_dir_all(&outside).unwrap();
+        let canonical_root = fs::canonicalize(&root).unwrap();
+        let state = SelectedProjectRoot(Mutex::new(Some(canonical_root)));
+        (state, root, outside)
     }
+
+    fn cleanup(root: &Path, outside: &Path) {
+        let _ = fs::remove_dir_all(root);
+        let _ = fs::remove_dir_all(outside);
+    }
+
+    #[test]
+    fn rejects_absolute_and_traversal_paths() {
+        let (state, root, outside) = test_root();
+        assert!(resolve_scoped_path(&state, "/tmp", false).is_err());
+        assert!(resolve_scoped_path(&state, "../outside.txt", false).is_err());
+        assert!(resolve_scoped_path(&state, "child/../../outside.txt", false).is_err());
+        if let Some(home) = std::env::var_os("HOME") {
+            assert!(resolve_scoped_path(&state, &home.to_string_lossy(), false).is_err());
+        }
+        cleanup(&root, &outside);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn rejects_symlink_escape() {
+        use std::os::unix::fs::symlink;
+
+        let (state, root, outside) = test_root();
+        fs::write(outside.join("secret.txt"), "secret").unwrap();
+        symlink(&outside, root.join("escape")).unwrap();
+
+        assert!(resolve_scoped_path(&state, "escape/secret.txt", false).is_err());
+        cleanup(&root, &outside);
+    }
+
+    #[test]
+    fn valid_project_relative_flow_stays_contained() {
+        let (state, root, outside) = test_root();
+        let source = resolve_scoped_path(&state, "assets/source.txt", false).unwrap();
+        fs::create_dir_all(source.parent().unwrap()).unwrap();
+        fs::write(&source, "valid").unwrap();
+
+        let read_target = resolve_existing_path(&state, "assets/source.txt").unwrap();
+        assert_eq!(fs::read_to_string(read_target).unwrap(), "valid");
+
+        let destination = resolve_scoped_path(&state, "assets/moved.txt", false).unwrap();
+        fs::rename(source, &destination).unwrap();
+        assert!(resolve_existing_path(&state, "assets/moved.txt").is_ok());
+
+        fs::remove_file(resolve_existing_path(&state, "assets/moved.txt").unwrap()).unwrap();
+        assert!(resolve_existing_path(&state, "assets/moved.txt").is_err());
+        assert!(destination.starts_with(fs::canonicalize(&root).unwrap()));
+        assert!(!destination.starts_with(&outside));
+        cleanup(&root, &outside);
+    }
+
+    #[test]
+    fn rename_and_duplicate_use_sibling_destinations() {
+        let (state, root, outside) = test_root();
+        fs::create_dir_all(root.join("assets")).unwrap();
+        fs::write(root.join("root.txt"), "root").unwrap();
+        fs::write(root.join("assets/nested.txt"), "nested").unwrap();
+
+        assert_eq!(
+            rename_fs_node_impl("root.txt", "renamed.txt", &state).unwrap(),
+            "renamed.txt"
+        );
+        assert!(!root.join("root.txt").exists());
+        assert_eq!(
+            fs::read_to_string(root.join("renamed.txt")).unwrap(),
+            "root"
+        );
+
+        assert_eq!(
+            rename_fs_node_impl("assets/nested.txt", "renamed.txt", &state).unwrap(),
+            "assets/renamed.txt"
+        );
+        assert!(!root.join("assets/nested.txt").exists());
+        assert_eq!(
+            fs::read_to_string(root.join("assets/renamed.txt")).unwrap(),
+            "nested"
+        );
+
+        fs::write(root.join("duplicate.txt"), "root duplicate").unwrap();
+        fs::write(root.join("assets/duplicate.txt"), "nested duplicate").unwrap();
+        assert_eq!(
+            duplicate_fs_node_impl("duplicate.txt", &state).unwrap(),
+            "duplicate (1).txt"
+        );
+        assert_eq!(
+            duplicate_fs_node_impl("assets/duplicate.txt", &state).unwrap(),
+            "assets/duplicate (1).txt"
+        );
+        assert_eq!(
+            fs::read_to_string(root.join("duplicate (1).txt")).unwrap(),
+            "root duplicate"
+        );
+        assert_eq!(
+            fs::read_to_string(root.join("assets/duplicate (1).txt")).unwrap(),
+            "nested duplicate"
+        );
+
+        cleanup(&root, &outside);
+    }
+
+    #[test]
+    fn rename_and_duplicate_reject_out_of_scope_sources() {
+        let (state, root, outside) = test_root();
+        fs::write(outside.join("secret.txt"), "secret").unwrap();
+
+        assert!(rename_fs_node_impl("../secret.txt", "renamed.txt", &state).is_err());
+        assert!(duplicate_fs_node_impl("/tmp/secret.txt", &state).is_err());
+
+        cleanup(&root, &outside);
+    }
+}
+
+#[tauri::command]
+async fn sync_neptune_lib(state: tauri::State<'_, SelectedProjectRoot>) -> Result<String, String> {
+    let project_dir = resolve_scoped_path(&state, ".", true)?;
 
     // Engine source path: ../../src (Relative to src-tauri)
     // We need to resolve this robustly.
@@ -208,11 +440,11 @@ async fn sync_neptune_lib(project_path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-async fn scan_project(path: String) -> Result<std::collections::HashMap<String, FileNode>, String> {
-    let project_path = PathBuf::from(&path);
-    if !project_path.exists() {
-        return Err("Project path does not exist".to_string());
-    }
+async fn scan_project(
+    path: String,
+    state: tauri::State<'_, SelectedProjectRoot>,
+) -> Result<std::collections::HashMap<String, FileNode>, String> {
+    let project_path = resolve_scoped_path(&state, &path, true)?;
 
     let mut nodes = std::collections::HashMap::new();
     scan_directory(&project_path, &project_path, &mut nodes, None)?;
@@ -221,7 +453,10 @@ async fn scan_project(path: String) -> Result<std::collections::HashMap<String, 
 }
 
 #[tauri::command]
-async fn initialize_project(path: String) -> Result<bool, String> {
+async fn initialize_project(
+    path: String,
+    state: tauri::State<'_, SelectedProjectRoot>,
+) -> Result<bool, String> {
     let mut project_path = PathBuf::from(&path);
     
     // If input is a file (e.g., .npt), get its parent
@@ -237,6 +472,7 @@ async fn initialize_project(path: String) -> Result<bool, String> {
     }
     
     // Get project name from folder name
+    let project_path = fs::canonicalize(&project_path).map_err(|e| e.to_string())?;
     let project_name = project_path
         .file_name()
         .and_then(|n| n.to_str())
@@ -250,33 +486,40 @@ async fn initialize_project(path: String) -> Result<bool, String> {
         let initial_config = format!(r#"{{ "name": "{}", "version": "0.0.1" }}"#, project_name);
         fs::write(marker_file, initial_config).map_err(|e| e.to_string())?;
     }
+
+    set_selected_root(&state, project_path)?;
     
     Ok(true)
 }
 
 #[tauri::command]
-async fn read_file(path: String) -> Result<String, String> {
-    let path_buf = PathBuf::from(&path);
-    if !path_buf.exists() {
-        return Err("File not found".to_string());
-    }
+async fn read_file(
+    path: String,
+    state: tauri::State<'_, SelectedProjectRoot>,
+) -> Result<String, String> {
+    let path_buf = resolve_existing_path(&state, &path)?;
     fs::read_to_string(path_buf).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-async fn write_file(path: String, content: String) -> Result<bool, String> {
-     fs::write(path, content).map_err(|e| e.to_string())?;
+async fn write_file(
+    path: String,
+    content: String,
+    state: tauri::State<'_, SelectedProjectRoot>,
+) -> Result<bool, String> {
+     let path_buf = resolve_scoped_path(&state, &path, false)?;
+     fs::write(path_buf, content).map_err(|e| e.to_string())?;
      Ok(true)
 }
 
 #[tauri::command]
-async fn move_fs_node(source: String, target: String) -> Result<bool, String> {
-    let source_path = PathBuf::from(&source);
-    let target_path = PathBuf::from(&target);
-
-    if !source_path.exists() {
-        return Err("Source path does not exist".to_string());
-    }
+async fn move_fs_node(
+    source: String,
+    target: String,
+    state: tauri::State<'_, SelectedProjectRoot>,
+) -> Result<bool, String> {
+    let source_path = resolve_existing_path(&state, &source)?;
+    let target_path = resolve_scoped_path(&state, &target, false)?;
 
     // Check if target directory exists if we are moving into it? 
     // Actually target argument here is the Full Destination Path including filename.
@@ -284,7 +527,7 @@ async fn move_fs_node(source: String, target: String) -> Result<bool, String> {
     
     // Ensure parent of target exists
     if let Some(parent) = target_path.parent() {
-        if !parent.exists() {
+        if !parent.is_dir() {
             return Err("Target directory does not exist".to_string());
         }
     }
@@ -294,8 +537,11 @@ async fn move_fs_node(source: String, target: String) -> Result<bool, String> {
 }
 
 #[tauri::command]
-async fn create_directory(path: String) -> Result<String, String> {
-    let path_buf = PathBuf::from(&path);
+async fn create_directory(
+    path: String,
+    state: tauri::State<'_, SelectedProjectRoot>,
+) -> Result<String, String> {
+    let path_buf = resolve_scoped_path(&state, &path, false)?;
     if path_buf.exists() {
         return Err("Directory already exists".to_string());
     }
@@ -304,8 +550,12 @@ async fn create_directory(path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-async fn create_asset(path: String, content: Option<String>) -> Result<String, String> {
-    let path_buf = PathBuf::from(&path);
+async fn create_asset(
+    path: String,
+    content: Option<String>,
+    state: tauri::State<'_, SelectedProjectRoot>,
+) -> Result<String, String> {
+    let path_buf = resolve_scoped_path(&state, &path, false)?;
     if path_buf.exists() {
         return Err("File already exists".to_string());
     }
@@ -314,11 +564,11 @@ async fn create_asset(path: String, content: Option<String>) -> Result<String, S
 }
 
 #[tauri::command]
-async fn delete_fs_node(path: String) -> Result<bool, String> {
-    let path_buf = PathBuf::from(&path);
-    if !path_buf.exists() {
-        return Err("Path does not exist".to_string());
-    }
+async fn delete_fs_node(
+    path: String,
+    state: tauri::State<'_, SelectedProjectRoot>,
+) -> Result<bool, String> {
+    let path_buf = resolve_existing_path(&state, &path)?;
     if path_buf.is_dir() {
         fs::remove_dir_all(path_buf).map_err(|e| e.to_string())?;
     } else {
@@ -327,66 +577,113 @@ async fn delete_fs_node(path: String) -> Result<bool, String> {
     Ok(true)
 }
 
-#[tauri::command]
-async fn rename_fs_node(path: String, new_name: String) -> Result<String, String> {
-    let old_path = PathBuf::from(&path);
-    if !old_path.exists() {
-        return Err("Path does not exist".to_string());
+fn sibling_relative_path(path: &str, new_name: &str) -> Result<PathBuf, String> {
+    let source_path = Path::new(path);
+    validate_relative_path(source_path)?;
+
+    let name_path = Path::new(new_name);
+    validate_relative_path(name_path)?;
+    if !matches!(name_path.components().next(), Some(Component::Normal(_)))
+        || name_path.components().count() != 1
+    {
+        return Err("Name must be a single path component".to_string());
     }
-    
-    let parent = old_path.parent().ok_or("No parent directory")?;
-    let new_path = parent.join(&new_name);
+
+    let parent = source_path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    Ok(parent.join(name_path))
+}
+
+fn rename_fs_node_impl(
+    path: &str,
+    new_name: &str,
+    state: &SelectedProjectRoot,
+) -> Result<String, String> {
+    let old_path = resolve_existing_path(state, path)?;
+    let new_relative_path = sibling_relative_path(path, new_name)?;
+    let new_path = resolve_scoped_path(
+        state,
+        &new_relative_path.to_string_lossy(),
+        false,
+    )?;
 
     if new_path.exists() {
         return Err("Destination already exists".to_string());
     }
 
     fs::rename(&old_path, &new_path).map_err(|e| e.to_string())?;
-    Ok(new_path.to_string_lossy().to_string().replace("\\", "/"))
+    Ok(new_relative_path.to_string_lossy().replace('\\', "/"))
 }
 
 #[tauri::command]
-async fn duplicate_fs_node(path: String) -> Result<String, String> {
-    let old_path = PathBuf::from(&path);
-    if !old_path.exists() {
-        return Err("Path does not exist".to_string());
-    }
-    
-    let parent = old_path.parent().ok_or("No parent directory")?;
-    let file_stem = old_path.file_stem().and_then(|s| s.to_str()).unwrap_or("file");
+async fn rename_fs_node(
+    path: String,
+    new_name: String,
+    state: tauri::State<'_, SelectedProjectRoot>,
+) -> Result<String, String> {
+    rename_fs_node_impl(&path, &new_name, state.inner())
+}
+
+fn duplicate_fs_node_impl(
+    path: &str,
+    state: &SelectedProjectRoot,
+) -> Result<String, String> {
+    let old_path = resolve_existing_path(state, path)?;
+
+    let file_stem = old_path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("file");
     let extension = old_path.extension().and_then(|s| s.to_str());
-    
-    // Find unique name
+    let parent = Path::new(path)
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+
+    // Find a unique sibling name, then resolve it through the selected root.
     let mut counter = 1;
-    let mut new_path;
-    loop {
+    let (new_path, new_relative_path) = loop {
         let new_name = match extension {
             Some(ext) => format!("{} ({}).{}", file_stem, counter, ext),
             None => format!("{} ({})", file_stem, counter),
         };
-        new_path = parent.join(new_name);
-        if !new_path.exists() {
-            break;
+        let relative_path = parent.join(new_name);
+        let resolved_path = resolve_scoped_path(
+            state,
+            &relative_path.to_string_lossy(),
+            false,
+        )?;
+        if !resolved_path.exists() {
+            break (resolved_path, relative_path);
         }
         counter += 1;
-    }
+    };
 
     if old_path.is_dir() {
-        // Recursive copy for directories is complex in std::fs
-        return Err("Duplicating directories is not supported yet (requires crate `fs_extra` or manual recursion)".to_string());
-        // For simple MVP we can fail or implement basic recursion if needed. 
-        // User asked for "no single placeholder", so I should verify if directory duplication is critical.
-        // I will focus on file duplication first.
-    } else {
-        fs::copy(&old_path, &new_path).map_err(|e| e.to_string())?;
+        return Err(
+            "Duplicating directories is not supported yet (requires crate `fs_extra` or manual recursion)"
+                .to_string(),
+        );
     }
 
-    Ok(new_path.to_string_lossy().to_string().replace("\\", "/"))
+    fs::copy(&old_path, &new_path).map_err(|e| e.to_string())?;
+    Ok(new_relative_path.to_string_lossy().replace('\\', "/"))
+}
+
+#[tauri::command]
+async fn duplicate_fs_node(
+    path: String,
+    state: tauri::State<'_, SelectedProjectRoot>,
+) -> Result<String, String> {
+    duplicate_fs_node_impl(&path, state.inner())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
+    .manage(SelectedProjectRoot::default())
     .invoke_handler(tauri::generate_handler![
         initialize_project, 
         get_startup_config, 

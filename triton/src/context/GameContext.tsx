@@ -38,6 +38,17 @@ import { useFileSystem } from "./FileSystemContext";
 export function GameProvider({ children }: { children: ReactNode }) {
     const { readFile, writeFile, rootPath } = useFileSystem();
 
+    const toProjectRelativePath = useCallback((path: string) => {
+        if (!rootPath) return path;
+        const normalizedPath = path.replace(/\\/g, '/');
+        const normalizedRoot = rootPath.replace(/\\/g, '/').replace(/\/$/, '');
+        if (normalizedPath === normalizedRoot) return ".";
+        if (normalizedPath.startsWith(`${normalizedRoot}/`)) {
+            return normalizedPath.slice(normalizedRoot.length + 1);
+        }
+        return path;
+    }, [rootPath]);
+
     const [isPlaying, setIsPlaying] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [currentSceneName, setCurrentSceneName] = useState("Untitled");
@@ -430,7 +441,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        const projectFile = `${rootPath}/project.npt`.replace(/\\/g, '/');
+        const projectFile = "project.npt";
         console.log("Marking current scene as main:", currentSceneName, "->", projectFile);
 
         try {
@@ -450,7 +461,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     const loadMainScene = useCallback(async () => {
         if (!rootPath) return;
-        const projectFile = `${rootPath}/project.npt`.replace(/\\/g, '/');
+        const projectFile = "project.npt";
         try {
             console.log("Checking for main scene in:", projectFile);
             const content = await readFile(projectFile);
@@ -458,8 +469,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
                 const projectData = JSON.parse(content);
                 if (projectData.mainScene) {
                     console.log("Auto-loading main scene:", projectData.mainScene);
-                    setMainScenePath(projectData.mainScene);
-                    await loadScene(projectData.mainScene);
+                    const scenePath = toProjectRelativePath(projectData.mainScene);
+                    setMainScenePath(scenePath);
+                    await loadScene(scenePath);
                 } else {
                     console.log("No main scene defined in project.npt");
                 }
@@ -467,7 +479,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         } catch (e) {
             console.error("Failed to load main scene config", e);
         }
-    }, [rootPath, readFile, loadScene]);
+    }, [rootPath, readFile, loadScene, toProjectRelativePath]);
 
     // Auto-load main scene
     useEffect(() => {
