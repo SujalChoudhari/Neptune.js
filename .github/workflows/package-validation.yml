@@ -1,0 +1,41 @@
+name: Package Validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/package-validation.yml'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.npmignore'
+      - 'src/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/package-validation.yml'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.npmignore'
+      - 'src/**'
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Validate package contents
+        run: npm pack --dry-run
