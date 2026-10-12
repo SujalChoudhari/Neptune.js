@@ -4,7 +4,7 @@
   "description": "A JavaScript Based Game Development Framework",
   "main": "src/neptune.js",
   "scripts": {
-    "docs": "jsdoc -c ./jsdoc.json -d ./docs ./src/neptune.js"
+    "docs": "node scripts/generate-docs.js"
   },
   "type": "module",
   "repository": {
