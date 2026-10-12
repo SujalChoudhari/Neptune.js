@@ -59,8 +59,8 @@ export class SceneLoader {
     }
 
     /**
-     * @private
      * Parses a layer definition.
+     * @private
      */
     static async #parseLayer(layerData, scene) {
         const parent = scene;
@@ -170,8 +170,8 @@ export class SceneLoader {
     }
 
     /**
-     * @private
      * Parses an entity definition.
+     * @private
      */
     static #parseEntity(entityData) {
         const entity = new Entity(entityData.name || "Entity");
