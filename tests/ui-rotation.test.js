@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
-import { Entity } from "../src/basic/entity.js";
+import { Entity } from "../src/core/entity.js";
 import { Transform as UITransform } from "../src/ui/uitransform.js";
 import { Panel } from "../src/ui/panel.js";
 import { Sprite as UISprite } from "../src/ui/sprite.js";
 import { Text } from "../src/ui/text.js";
-import { Maths } from "../src/maths/math.js";
+import { Maths } from "../src/math/math.js";
 
 class MockImage {
     constructor() {
@@ -51,11 +51,17 @@ function getRotateCall(ctx) {
 
     assert.deepEqual(ctx.calls.slice(0, 4), [
         ["save"],
-        ["translate", 20, 40],
-        ["translate", 30, 40],
+        ["translate", 1 * Maths.METER_TO_PIXEL, 2 * Maths.METER_TO_PIXEL],
+        ["translate", 3 * Maths.METER_TO_PIXEL / 2, 4 * Maths.METER_TO_PIXEL / 2],
         ["rotate", 90 * Maths.DEG_TO_RAD],
     ]);
-    assert.deepEqual(ctx.calls.find(([method]) => method === "fillRect"), ["fillRect", 0, 0, 60, 80]);
+    assert.deepEqual(ctx.calls.find(([method]) => method === "fillRect"), [
+        "fillRect",
+        0,
+        0,
+        3 * Maths.METER_TO_PIXEL,
+        4 * Maths.METER_TO_PIXEL,
+    ]);
 }
 
 {

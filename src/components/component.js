@@ -33,5 +33,27 @@ export class Component {
 
     }
 
+    /**
+     * Populates the component properties from a data object.
+     * Override this method for custom property handling.
+     * @param {object} props - The properties object (usually from JSON).
+     */
+    deserialize(props) {
+        if (!props) return;
 
+        // Default implementation: copy props to _properties
+        // This handles simple key-value pairs. 
+        // Complex types (Vector2, etc.) might need custom handling in subclasses 
+        // or a smarter default deserializer here.
+        for (const key in props) {
+            if (Object.prototype.hasOwnProperty.call(props, key)) {
+                // Check if the property has a setter on the instance
+                if (key in this) {
+                    this[key] = props[key];
+                } else {
+                    this._properties[key] = props[key];
+                }
+            }
+        }
+    }
 }

@@ -50,4 +50,39 @@ describe("SceneManager", () => {
 
     });
 
+    // New expanded tests
+    it("getIdForNewScene returns incrementing IDs", () => {
+        const id1 = SceneManager.getIdForNewScene();
+        new Scene("Test1");
+        const id2 = SceneManager.getIdForNewScene();
+        expect(id2).toBeGreaterThan(id1);
+    });
+
+    it("removeAllScenes clears all scenes", () => {
+        new Scene("Test1");
+        new Scene("Test2");
+        SceneManager.removeAllScenes();
+        expect(SceneManager.GetSceneByName("Test1")).toBeUndefined();
+        expect(SceneManager.GetSceneByName("Test2")).toBeUndefined();
+    });
+
+    it("GetSceneByName returns undefined for non-existent scene", () => {
+        expect(SceneManager.GetSceneByName("NonExistent")).toBeUndefined();
+    });
+
+    it("multiple scenes can be created and retrieved", () => {
+        const scene1 = new Scene("First");
+        const scene2 = new Scene("Second");
+        const scene3 = new Scene("Third");
+
+        expect(SceneManager.GetSceneByName("First")).toBe(scene1);
+        expect(SceneManager.GetSceneByName("Second")).toBe(scene2);
+        expect(SceneManager.GetSceneByName("Third")).toBe(scene3);
+    });
+
+    it("scenes have unique IDs", () => {
+        const scene1 = new Scene("A");
+        const scene2 = new Scene("B");
+        expect(scene1.id).not.toBe(scene2.id);
+    });
 });

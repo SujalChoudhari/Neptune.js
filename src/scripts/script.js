@@ -1,0 +1,65 @@
+import { Component } from "../components/component.js";
+import { ScriptManager } from "./scriptManager.js";
+
+
+export class Script extends Component {
+    constructor(name = "New Script") {
+        super();
+        this.name = name;
+        ScriptManager.addScript(this);
+    }
+}
+
+/**
+ * A Behaviour is a Script that is attached to an Entity.
+ * A Behaviour is a Component thus, making possible to make new/custom Components.
+ * @interface Behaviour
+ * @extends Script
+ * 
+ * @example
+ * // Create a new Behaviour
+ * const MyBehaviour = new Behaviour("My Behaviour");
+ * MyBehaviour.Init = () => {
+ *  console.log("Behaviour Created");
+ * }
+ * MyBehaviour.Update = () => {
+ *  console.log("Behaviour Updated");
+ * }
+ * 
+ * 
+ */
+export class Behaviour extends Script {
+
+    /**
+     * Creates a new Behaviour
+     * @param {string} name - Name of the Behaviour
+     * @param {Function} Init - Function called when the Behaviour is created
+     * @param {Function} Update - Function called every frame
+     */
+    constructor(name = "New Behaviour", Init = null, Update = null) {
+        super(name);
+        if (Init) this.Init = Init;
+        if (Update) this.Update = Update;
+    }
+}
+
+/**
+ * A Global is a Script that is attached to the global scope. (window)
+ * A Global allows to create and access global variables.
+ * @interface Global
+ * @extends Script
+ * 
+ * @example
+ * // Create a new Global
+ * class MyGlobal extends Global{
+ *   constructor(){
+ *      super();
+ *     this.myVariable = 0;
+ * }
+ * }
+ * new MyGlobal();
+ * 
+ * // Access the global variable
+ * console.log(window.MyGlobal.myVariable);
+ */
+export class Global extends Script { }

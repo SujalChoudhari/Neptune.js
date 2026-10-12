@@ -1,0 +1,185 @@
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
+@config "../tailwind.config.js";
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to sure everything still looks
+  correct as you migrate.
+*/
+@theme {
+  --font-sans: 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif', "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
+
+@layer base {
+
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+}
+
+@layer base {
+  :root {
+    /* HIGH-CONTRAST DARK MONOCHROME THEME */
+    --background: 0 0% 10%;
+    /* #1A1A1A - Darker Base matches Console */
+    --foreground: 0 0% 85%;
+    /* #D9D9D9 - High Readability Text */
+
+    --card: 0 0% 13%;
+    /* #212121 - Distinct Headers/Toolbars */
+    --card-foreground: 0 0% 85%;
+
+    --popover: 0 0% 8%;
+    /* #141414 - Menus are darker/focused */
+    --popover-foreground: 0 0% 90%;
+
+    --primary: 0 0% 60%;
+    /* #999999 - Gray accent */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 11%;
+    /* #1C1C1C */
+    --secondary-foreground: 0 0% 80%;
+
+    --muted: 0 0% 12%;
+    /* #1F1F1F */
+    --muted-foreground: 0 0% 50%;
+
+    --accent: 0 0% 25%;
+    /* #404040 */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 60% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 6%;
+    /* #0F0F0F - Sharp Sharp Borders */
+    --input: 0 0% 11%;
+    --ring: 0 0% 50%;
+
+    --radius: 0.25rem;
+  }
+
+  /* Dark mode matches root */
+  .dark {
+    --background: 0 0% 10%;
+    --foreground: 0 0% 85%;
+    --card: 0 0% 13%;
+    --card-foreground: 0 0% 85%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 90%;
+    --primary: 0 0% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 11%;
+    --secondary-foreground: 0 0% 80%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 50%;
+    --accent: 0 0% 25%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 60% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 6%;
+    --input: 0 0% 11%;
+    --ring: 0 0% 50%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased selection:bg-primary/30;
+  }
+
+  /* CUSTOM SCROLLBARS */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(0, 0%, 30%);
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(0, 0%, 40%);
+  }
+
+  /* For Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(0, 0%, 30%) transparent;
+  }
+}
+
+/* DOCKVIEW THEME OVERRIDES */
+.dockview-theme-dark {
+  --dv-pane-background-color: var(--background);
+  --dv-group-view-background-color: var(--background);
+  --dv-tabs-and-actions-container-background-color: var(--secondary);
+  --dv-active-tab-background-color: var(--background);
+  --dv-inactive-tab-background-color: var(--secondary);
+  --dv-tab-divider-color: var(--border);
+  --dv-separator-color: var(--border);
+  --dv-active-tab-color: var(--foreground);
+  --dv-inactive-tab-color: var(--muted-foreground);
+}
+
+.dockview-theme-dark .dv-tab {
+  height: 28px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  border-right: 1px solid var(--border) !important;
+  /* transition: all 0.2s ease; */
+  /* DISABLED: Interferes with Drag & Drop */
+  position: relative;
+}
+
+.dockview-theme-dark .dv-tab:hover {
+  background-color: var(--accent) !important;
+}
+
+.dockview-theme-dark .dv-tab.dv-active-tab {
+  background: linear-gradient(to bottom, var(--muted), var(--background)) !important;
+  color: var(--foreground) !important;
+}
+
+
+/* Active Tab Indicator (Neptune Accent) */
+.dockview-theme-dark .dv-tab.dv-active-tab::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: hsl(0, 0%, 60%);
+  /* Same as --primary */
+  box-shadow: 0 -1px 4px rgba(255, 255, 255, 0.1);
+}
+
+.dockview-theme-dark .dv-tabs-and-actions-container {
+  height: 28px !important;
+  border-bottom: 1px solid hsl(0, 0%, 10%) !important;
+}
+
+.dockview-theme-dark .dv-tab-close-button {
+  /* opacity: 0.3; */
+  /* transition: opacity 0.2s; */
+}
+
+.dockview-theme-dark .dv-tab:hover .dv-tab-close-button {
+  opacity: 1;
+}
+
+/* ELECTRON WINDOW DRAG HELPERS REMOVED */

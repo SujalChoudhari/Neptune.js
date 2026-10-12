@@ -1,6 +1,6 @@
 import { Transform } from "./uitransform.js";
-import { Renderable } from "../components/renderable/renderable.js";
-import { Maths } from "../maths/math.js"
+import { Renderable } from "../rendering/renderable.js";
+import { Maths } from "../math/math.js"
 
 /**
  * UISprite is a special Sprite class wihch is used to render Images on UI elements.
@@ -43,7 +43,7 @@ export class Sprite extends Renderable {
 
     draw(ctx) {
         super.draw(ctx);
-        
+
         if (this.#transform === null)
             this.#transform = this.entity.GetComponent(Transform);
 

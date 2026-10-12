@@ -1,14 +1,59 @@
+import "./setup_mocks.js"
 import { printResults } from "./tester.js"
 
-
+// Core tests
 import "./application.test.js"
 import "./entity-and-scene.test.js"
 import "./scenemanager.test.js"
+
+// Component tests
+import "./component.test.js"
+import "./transform.test.js"
 import "./audio.test.js"
 import "./storage.test.js"
+
+// Rendering tests
 import "./sprite.test.js"
 import "./shape.test.js"
-import "./script.test.js"
 import "./ui.test.js"
-printResults();
 
+// Script tests
+import "./script.test.js"
+
+// Math tests
+import "./maths.test.js"
+
+// Event tests
+import "./events.test.js"
+
+// Integration tests
+import "./integration/gameloop.test.js"
+
+// Titan Animation tests
+import "./titan.test.js"
+
+// Thalassa World/Camera tests
+import "./thalassa.test.js"
+import "./camera.test.js"
+
+// Nereid Physics tests
+import "./nereid.test.js"
+
+// Proteus Audio tests
+import "./proteus.test.js"
+
+// Larissa RPG tests
+import "./larissa.test.js"
+
+// Galatea Cutscene tests
+import "./galatea.test.js"
+
+// Editor tests
+import "./editor.test.js"
+import "./triton-editor.test.js"
+
+const { failed } = await printResults();
+
+if (failed > 0) {
+    process.exitCode = 1;
+}

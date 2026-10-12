@@ -1,7 +1,7 @@
-import { Vector2 } from "../maths/vec2.js";
+import { Vector2 } from "../math/vec2.js";
 import { Component } from "../components/component.js";
-import { MouseInput } from "../events/mouseinput.js"
-import { Maths } from "../maths/math.js"
+import { MouseInput } from "../input/mouseinput.js"
+import { Maths } from "../math/math.js"
 
 /**
  * UI Transform Component is responsible for the position, rotation and width and height of a UI element.
@@ -189,14 +189,14 @@ export class Transform extends Component {
             var x = parentTransform.x;
             var y = parentTransform.y;
             var width = parentTransform.width;
-            var height = parentTransform.height;   
+            var height = parentTransform.height;
         } else {
             var x = 0;
             var y = 0;
             var width = window.innerWidth * Maths.PIXEL_TO_METER;
             var height = window.innerHeight * Maths.PIXEL_TO_METER;
         }
-    
+
         switch (mode) {
             case "both":
                 this._properties.x = x + padX;
@@ -214,7 +214,7 @@ export class Transform extends Component {
                 break;
         }
     }
-    
+
 
     #isPointInside(point) {
         return point.x >= this._properties.x && point.x <= this._properties.x + this._properties.width && point.y >= this._properties.y && point.y <= this._properties.y + this._properties.height;

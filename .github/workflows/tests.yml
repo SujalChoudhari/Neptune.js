@@ -1,0 +1,41 @@
+name: Test Suite
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Run test suite
+        run: npm test
+
+      - name: Validate documentation
+        run: npm run docs
+
+      - name: Install Triton dependencies
+        working-directory: triton
+        run: yarn install --frozen-lockfile --non-interactive
+
+      - name: Build Triton editor
+        working-directory: triton
+        run: yarn build
+
+      - name: Lint Triton editor
+        working-directory: triton
+        run: yarn lint
