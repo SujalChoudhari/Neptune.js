@@ -161,7 +161,7 @@ export class Text extends Renderable {
         ctx.save();
         ctx.translate(x * Maths.METER_TO_PIXEL, y * Maths.METER_TO_PIXEL);
 
-        ctx.rotate(rot);
+        ctx.rotate(rot * Maths.DEG_TO_RAD);
         ctx.scale(Maths.METER_TO_PIXEL * scaleX, Maths.METER_TO_PIXEL * scaleY);
 
         ctx.font = this.font.toString();
