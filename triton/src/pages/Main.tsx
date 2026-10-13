@@ -1,5 +1,5 @@
 import { DockLayout } from "@/components/layout/DockLayout"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import type { NeptuneDockApi } from "@/components/layout/DockLayout"
 import { EditorToolbar } from "@/components/layout/EditorToolbar"
 
@@ -15,7 +15,7 @@ export function Main() {
     const [isProjectLoaded, setIsProjectLoaded] = useState(false);
     const { loadProject } = useFileSystem();
 
-    const handleProjectLoaded = async (path: string) => {
+    const handleProjectLoaded = useCallback(async (path: string) => {
         setIsProjectLoaded(true);
         try {
             console.log("Syncing Neptune Lib...");
@@ -34,7 +34,7 @@ export function Main() {
             // Fallback just in case
             document.title = `Neptune - ${path}`;
         }
-    };
+    }, [loadProject]);
 
     useEffect(() => {
         // Check for startup config (debug mode autoload)
@@ -49,7 +49,7 @@ export function Main() {
         }).catch((err: any) => {
             console.error("Failed to check startup config", err);
         });
-    }, []);
+    }, [handleProjectLoaded]);
 
     useEffect(() => {
         const root = window.document.documentElement

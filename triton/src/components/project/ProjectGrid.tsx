@@ -299,7 +299,7 @@ export const ProjectGrid = ({
             window.removeEventListener('mousemove', handleMouseMove)
             window.removeEventListener('mouseup', handleMouseUp)
         }
-    }, [selectionBox, items]) // items needed for refs? refs are stable.
+    }, [items, onMultiSelect, selectionBox]) // items needed for refs? refs are stable.
 
     // Wait, I need a callback to set multiple items.
     // 'onSelect' interface is: (id: string, e: MouseEvent).
