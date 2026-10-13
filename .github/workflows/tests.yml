@@ -19,14 +19,17 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install dependencies
-        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Install locked root dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
-      - name: Run test suite
+      - name: Run root engine tests
         run: npm test
 
-      - name: Validate documentation
+      - name: Generate root documentation
         run: npm run docs
+
+      - name: Run documentation contract tests
+        run: npm run test:docs-contract
 
       - name: Install Triton dependencies
         working-directory: triton
@@ -34,8 +37,8 @@ jobs:
 
       - name: Build Triton editor
         working-directory: triton
-        run: yarn build
+        run: npm run build
 
       - name: Lint Triton editor
         working-directory: triton
-        run: yarn lint
+        run: npm run lint
