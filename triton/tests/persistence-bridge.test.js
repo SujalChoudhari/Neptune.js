@@ -1,8 +1,149 @@
 import fs from "fs";
 import path from "path";
+import vm from "node:vm";
+import { buildSync } from "esbuild";
 import { describe, it, expect } from "../../tests/tester.js";
 
 const root = path.resolve("triton");
+
+function createMainHarness() {
+    const source = fs.readFileSync(path.join(root, "src", "pages", "Main.tsx"), "utf8");
+    const bundle = buildSync({
+        bundle: true,
+        format: "cjs",
+        platform: "node",
+        write: false,
+        stdin: {
+            contents: source,
+            loader: "tsx",
+            sourcefile: "Main.tsx"
+        },
+        external: [
+            "react",
+            "react/jsx-runtime",
+            "@tauri-apps/api/event",
+            "@tauri-apps/api/window",
+            "@tauri-apps/api/core",
+            "@/components/layout/DockLayout",
+            "@/components/layout/EditorToolbar",
+            "@/components/layout/StatusBar",
+            "@/pages/WelcomeScreen",
+            "@/context/FileSystemContext",
+            "@/context/GameContext"
+        ]
+    });
+
+    const listeners = [];
+    const writes = [];
+    const hookSlots = [];
+    const game = {
+        openedScene: null
+    };
+    let hookIndex = 0;
+
+    const react = {
+        createElement() {
+            return null;
+        },
+        useRef(initialValue) {
+            const index = hookIndex++;
+            if (!hookSlots[index]) hookSlots[index] = { current: initialValue };
+            return hookSlots[index];
+        },
+        useState(initialValue) {
+            const index = hookIndex++;
+            if (!hookSlots[index]) hookSlots[index] = { value: initialValue };
+            return [hookSlots[index].value, (value) => {
+                hookSlots[index].value = typeof value === "function" ? value(hookSlots[index].value) : value;
+            }];
+        },
+        useEffect(effect, dependencies) {
+            const index = hookIndex++;
+            const previous = hookSlots[index];
+            const changed = !previous || !dependencies || dependencies.some((value, i) => value !== previous.dependencies?.[i]);
+            if (!changed) return;
+            previous?.cleanup?.();
+            hookSlots[index] = { dependencies, cleanup: effect() };
+        }
+    };
+
+    const listen = (_eventName, handler) => {
+        const listener = { active: true, handler };
+        listeners.push(listener);
+        return {
+            then(callback) {
+                // Main uses the returned promise only for cleanup. Calling the
+                // continuation synchronously keeps this small harness deterministic.
+                callback(() => {
+                    listener.active = false;
+                });
+                return Promise.resolve();
+            }
+        };
+    };
+
+    const invoke = (command, args) => {
+        if (command === "write_scene") {
+            writes.push(args);
+        }
+        return Promise.resolve(command === "get_startup_config" ? null : undefined);
+    };
+
+    const module = { exports: {} };
+    const runtime = vm.runInNewContext(bundle.outputFiles[0].text, {
+        console,
+        React: react,
+        Promise,
+        setTimeout,
+        clearTimeout,
+        window: {
+            document: { documentElement: { classList: { add() {} } } },
+            addEventListener() {},
+            removeEventListener() {}
+        },
+        module,
+        exports: module.exports,
+        require(specifier) {
+            const modules = {
+                react,
+                "react/jsx-runtime": { jsx() { return null; }, jsxs() { return null; }, Fragment: Symbol("Fragment") },
+                "@tauri-apps/api/event": { listen },
+                "@tauri-apps/api/window": { getCurrentWindow: () => ({ setTitle: () => Promise.resolve() }) },
+                "@tauri-apps/api/core": { invoke },
+                "@/components/layout/DockLayout": { DockLayout: () => null },
+                "@/components/layout/EditorToolbar": { EditorToolbar: () => null },
+                "@/components/layout/StatusBar": { StatusBar: () => null },
+                "@/pages/WelcomeScreen": { WelcomeScreen: () => null },
+                "@/context/FileSystemContext": { useFileSystem: () => ({ loadProject: () => Promise.resolve(), readProject: () => Promise.resolve({}) }) },
+                "@/context/GameContext": {
+                    useGameContext: () => ({
+                        saveScene: async () => {
+                            if (!game.openedScene) throw new Error("Cannot save scene: no scene is open.");
+                            await invoke("write_scene", {
+                                path: "scenes/main.scene",
+                                content: JSON.stringify(game.openedScene, null, 2)
+                            });
+                            return true;
+                        }
+                    })
+                }
+            };
+            if (!(specifier in modules)) throw new Error(`Unexpected external import: ${specifier}`);
+            return modules[specifier];
+        }
+    });
+
+    const Main = module.exports.Main;
+    const render = () => {
+        hookIndex = 0;
+        Main();
+    };
+    const dispatchMenuEvent = (payload) => {
+        listeners.filter((listener) => listener.active).forEach((listener) => listener.handler({ payload }));
+    };
+
+    return { game, writes, listeners, render, dispatchMenuEvent };
+}
 
 describe("Triton persistence bridge", () => {
     it("uses selected-project commands for versioned project and scene payloads", () => {
@@ -41,13 +182,26 @@ describe("Triton persistence bridge", () => {
         expect(rust.includes("Migrate the {kind} before loading it")).toBe(true);
     });
 
-    it("keeps File > Save bound to the current scene callback after opening a scene", () => {
-        const main = fs.readFileSync(path.join(root, "src", "pages", "Main.tsx"), "utf8");
-        const game = fs.readFileSync(path.join(root, "src", "context", "GameContext.tsx"), "utf8");
+    it("saves the opened versioned scene through File > Save", () => {
+        const harness = createMainHarness();
+        harness.render();
 
-        expect(main.includes("case 'save':\n                    void saveScene()")).toBe(true);
-        expect(main.includes("    }, [saveScene])")).toBe(true);
-        expect(game.includes("return writeScene(currentScenePath, scene);")).toBe(true);
-        expect(game.includes("if (!currentScenePath)")).toBe(true);
+        harness.game.openedScene = {
+            type: "scene",
+            version: "1.0.0",
+            schemaVersion: 1,
+            id: "scene-main",
+            name: "Main Scene",
+            entities: []
+        };
+        // A scene open changes GameContext's saveScene callback identity. The
+        // rerender exercises Main's effect cleanup/re-subscription behavior.
+        harness.render();
+        harness.dispatchMenuEvent("save");
+
+        expect(harness.listeners.filter((listener) => listener.active)).toHaveLength(1);
+        expect(harness.writes).toHaveLength(1);
+        expect(harness.writes[0].path).toBe("scenes/main.scene");
+        expect(JSON.parse(harness.writes[0].content)).toEqual(harness.game.openedScene);
     });
 });
