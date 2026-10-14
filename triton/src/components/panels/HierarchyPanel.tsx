@@ -13,6 +13,7 @@ import { useGameContext } from "@/context/GameContext"
 import { HierarchyItem } from "./hierarchy/HierarchyItem"
 import { HierarchyToolbar } from "./hierarchy/HierarchyToolbar"
 import type { SceneEntity } from "@/types/engine"
+import { EditorGameRunner } from "@/lib/editorGameRunner"
 
 export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     const {
@@ -41,6 +42,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     const toggleActive = (id: string) => {
         const ent = entities[id];
         if (ent) {
+            EditorGameRunner.updateEntity(id, 'active', { value: !ent.active })
             notifyGame('editor:update-component', { id, component: 'active', data: !ent.active });
             notifyGame('editor:set-active', { id, active: !ent.active });
         }
@@ -56,13 +58,15 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     }
 
     const renameEntity = (id: string, newName: string) => {
+        EditorGameRunner.updateEntity(id, 'name', { value: newName })
         notifyGame('editor:rename', { id, name: newName });
         setRenamingId(null)
     }
 
-    const removeEntity = (id: string) => {
+    const removeEntity = useCallback((id: string) => {
+        EditorGameRunner.deleteEntity(id)
         notifyGame('editor:delete', { id });
-    }
+    }, [notifyGame])
 
     const addEntity = (parentId: string, name: string, type: string) => {
         notifyGame('editor:create-entity', { parentId, name, type });
@@ -140,7 +144,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
 
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [selectedIds])
+    }, [selectedIds, removeEntity])
 
     const handleBackgroundClick = () => {
         selectEntity("", false) // clear

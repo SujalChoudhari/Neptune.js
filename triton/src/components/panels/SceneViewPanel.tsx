@@ -1,14 +1,33 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import gameMainUrl from "../../../../debug_project/main.js?url";
 import cameraUrl from "../../../../src/thalassa/camera.js?url";
 import { ThemedIconButton } from "@/components/library";
 import { Maximize, ZoomIn, ZoomOut } from "lucide-react";
 import { useGameContext } from '@/context/GameContext';
+import { EditorGameRunner } from '@/lib/editorGameRunner';
 
 export function SceneViewPanel() {
     const containerRef = useRef<HTMLDivElement>(null);
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const { notifyGame } = useGameContext();
+
+    useEffect(() => {
+        const handleBridgeMessage = (event: MessageEvent) => {
+            const { type, payload } = event.data || {};
+            if (type === 'editor:scene-loaded' && payload?.data) {
+                try {
+                    EditorGameRunner.openScene(payload.data, payload.path);
+                } catch {
+                    // openScene emits the actionable diagnostic for the Console panel.
+                }
+            } else if (type === 'editor:scene-diagnostic' && payload) {
+                EditorGameRunner.report(payload);
+            }
+        };
+
+        window.addEventListener('message', handleBridgeMessage);
+        return () => window.removeEventListener('message', handleBridgeMessage);
+    }, []);
 
     // Editor Camera State
     const [zoom, setZoom] = useState(1);
@@ -156,10 +175,22 @@ export function SceneViewPanel() {
                  }
                  else if (type === 'editor:load-scene' && game.loadScene) {
                      game.loadScene(payload.data || payload.path)
-                         .then(() => { 
+                         .then(() => {
+                             window.parent.postMessage({ type: 'editor:scene-loaded', payload }, '*');
                              if(game.scene) game.scene.activeCamera = editorCamera; 
                          })
-                         .catch(console.error);
+                         .catch((error) => {
+                             window.parent.postMessage({
+                                 type: 'editor:scene-diagnostic',
+                                 payload: {
+                                     code: error?.code || 'EDITOR_DATA_INVALID',
+                                     severity: 'error',
+                                     message: error?.message || String(error),
+                                     source: error?.sourceLocation,
+                                     action: 'Fix the reported data and reopen the scene.'
+                                 }
+                             }, '*');
+                         });
                  }
                  else if (type === 'editor:update-component') {
                      if (!game.scene) return;

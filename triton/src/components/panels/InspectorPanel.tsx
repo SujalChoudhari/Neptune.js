@@ -1,11 +1,13 @@
 import type { IDockviewPanelProps } from "dockview"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { cn } from "@/lib/utils"
-import { Box, Eye, EyeOff, Plus } from "lucide-react"
+import { Box, Eye, EyeOff, Plus, Save } from "lucide-react"
 import { ThemedInput } from "@/components/library"
 import { useGameContext } from "@/context/GameContext"
 import { renderInspectorComponent } from "./inspector/InspectorRegistry"
 import type { MockEntity } from "./inspector/shared/types"  // Still needed for shared types in registry?
+import { useFileSystem } from "@/context/FileSystemContext"
+import { EditorGameRunner } from "@/lib/editorGameRunner"
 
 /**
  * InspectorPanel
@@ -13,7 +15,9 @@ import type { MockEntity } from "./inspector/shared/types"  // Still needed for 
  * Refactored to use GameContext for real data.
  */
 export const InspectorPanel = (_props: IDockviewPanelProps) => {
-    const { selectedEntityData, selectedIds, updateComponent, notifyGame } = useGameContext()
+    const { selectedEntityData, selectedIds, updateComponent, notifyGame, currentScenePath } = useGameContext()
+    const { writeScene } = useFileSystem()
+    const [isSaving, setIsSaving] = useState(false)
 
     // Local state for UI ordering/visibility (could be persisted later)
     const [activeStates, setActiveStates] = useState<Record<string, boolean>>({
@@ -42,6 +46,29 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
         return keys.filter(k => k !== 'transform');
     }, [selectedEntityData]);
 
+    const handleSave = useCallback(async () => {
+        if (!currentScenePath) return
+        setIsSaving(true)
+        try {
+            await EditorGameRunner.saveScene(async (path, content) => writeScene(path, JSON.parse(content)), currentScenePath)
+        } catch (error) {
+            EditorGameRunner.report(error)
+        } finally {
+            setIsSaving(false)
+        }
+    }, [currentScenePath, writeScene])
+
+    useEffect(() => {
+        const handleShortcut = (event: KeyboardEvent) => {
+            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+                event.preventDefault()
+                void handleSave()
+            }
+        }
+        window.addEventListener('keydown', handleShortcut)
+        return () => window.removeEventListener('keydown', handleShortcut)
+    }, [handleSave])
+
     if (!selectedEntityData) {
         return (
             <div className="h-full flex flex-col items-center justify-center text-muted-foreground p-4 text-center bg-background select-none">
@@ -61,12 +88,18 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
     // Transform is special, it's a sub-object usually, but updateComponent handles it via 'transform' component key
     // The previous updateTransform took (key, value).
     const updateTransform = (key: string, value: any) => {
-        selectedIds.forEach(id => updateComponent(id, 'transform', key, value));
+        selectedIds.forEach(id => {
+            updateComponent(id, 'transform', key, value)
+            EditorGameRunner.updateEntity(id, 'transform', { [key]: value })
+        });
     }
 
     // Generic updater generator
     const makeUpdater = (compName: string) => (key: string, value: any) => {
-        selectedIds.forEach(id => updateComponent(id, compName, key, value));
+        selectedIds.forEach(id => {
+            updateComponent(id, compName, key, value)
+            EditorGameRunner.updateEntity(id, compName, { [key]: value })
+        });
     }
 
     const updateHelpers = {
@@ -80,7 +113,10 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
             console.log("Update script:", index, key, value);
         },
         updateGeneric: (compName: string, key: string, value: any) => {
-            selectedIds.forEach(id => updateComponent(id, compName, key, value));
+            selectedIds.forEach(id => {
+                updateComponent(id, compName, key, value)
+                EditorGameRunner.updateEntity(id, compName, { [key]: value })
+            });
         }
     }
 
@@ -91,12 +127,16 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
         // For simplicity, renaming only affects the PRIMARY selection for now 
         // UNLESS we explicitly want multi-rename.
         // Let's stick to Primary Rename to avoid accidents.
+        EditorGameRunner.updateEntity(entity.id, 'name', { value: name })
         notifyGame('editor:rename', { id: entity.id, name });
     };
 
     const handleToggleActive = () => {
         const nextState = !entity.active;
-        selectedIds.forEach(id => notifyGame('editor:update-component', { id, component: 'active', data: nextState }));
+        selectedIds.forEach(id => {
+            EditorGameRunner.updateEntity(id, 'active', { value: nextState })
+            notifyGame('editor:update-component', { id, component: 'active', data: nextState })
+        });
     };
 
     return (
@@ -134,6 +174,16 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
                         title={entity.active ? "Disable entity" : "Enable entity"}
                     >
                         {entity.active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => void handleSave()}
+                        disabled={!currentScenePath || isSaving}
+                        className="w-8 h-8 flex items-center justify-center rounded text-muted-foreground hover:text-foreground disabled:opacity-40"
+                        title={currentScenePath ? "Save scene (Ctrl+S)" : "Open a scene before saving"}
+                        aria-label={currentScenePath ? "Save scene" : "Save scene unavailable"}
+                    >
+                        <Save className="w-4 h-4" />
                     </button>
                 </div>
             </div>

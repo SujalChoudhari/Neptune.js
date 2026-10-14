@@ -149,6 +149,10 @@ const ProjectGridItem = ({
             <ThemedContextMenuTrigger>
                 <div
                     ref={itemRef}
+                    role="gridcell"
+                    tabIndex={0}
+                    aria-selected={isSelected}
+                    aria-label={`${item.name}${item.type === 'folder' ? ', folder' : ''}`}
                     className={cn(
                         "group flex flex-col items-center gap-1.5 p-2 rounded-lg cursor-pointer transition-all duration-200 select-none",
                         "border border-transparent",
@@ -179,6 +183,13 @@ const ProjectGridItem = ({
                     onDragLeave={handleDragLeave}
                     onDrop={(e) => item.type === 'folder' && handleDrop(e)}
                     onDoubleClick={() => onNavigate(item.id)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            if (e.key === 'Enter' && item.type === 'folder') onNavigate(item.id)
+                            else onSelect(item.id, e as unknown as React.MouseEvent)
+                        }
+                    }}
                 >
                     {/* Icon Area - No framing, just the content */}
                     <div className="aspect-square w-full flex items-center justify-center relative overflow-hidden">
@@ -299,7 +310,7 @@ export const ProjectGrid = ({
             window.removeEventListener('mousemove', handleMouseMove)
             window.removeEventListener('mouseup', handleMouseUp)
         }
-    }, [selectionBox, items]) // items needed for refs? refs are stable.
+    }, [selectionBox, items, onMultiSelect]) // items needed for refs? refs are stable.
 
     // Wait, I need a callback to set multiple items.
     // 'onSelect' interface is: (id: string, e: MouseEvent).
@@ -320,9 +331,11 @@ export const ProjectGrid = ({
     // Better: Add 'onMultiSelect: (ids: string[]) => void'
 
     return (
-        <ThemedScrollArea className="h-full" maxHeight="100%">
+        <ThemedScrollArea className="h-full" maxHeight="100%" aria-label="Project assets">
             <div
                 ref={containerRef}
+                role="grid"
+                aria-label="Project files"
                 className="p-4 content-start min-h-full relative"
                 onMouseDown={(e) => {
                     // Start selection if left click. 
@@ -356,7 +369,7 @@ export const ProjectGrid = ({
                     ))}
                 </div>
                 {items.length === 0 && (
-                    <div className="h-full flex items-center justify-center text-muted-foreground/40 text-sm py-10 pointer-events-none">
+                    <div role="status" className="h-full flex items-center justify-center text-muted-foreground/40 text-sm py-10 pointer-events-none">
                         Folder is empty
                     </div>
                 )}
