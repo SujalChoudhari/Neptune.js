@@ -50,4 +50,39 @@ describe("SceneLoader Integration", () => {
         expect(transform.position.x).toBe(10);
         expect(transform.position.y).toBe(20);
     });
+
+    it("restores entity and component identifiers from a versioned scene", () => {
+        const scene = SceneLoader.parse({
+            type: "scene",
+            schemaVersion: 1,
+            version: "1.0.0",
+            id: "scene-stable",
+            name: "Stable Scene",
+            layers: [{
+                name: "Main",
+                type: "object_layer",
+                entities: [{
+                    id: "entity-stable",
+                    name: "Player",
+                    components: [{
+                        id: "component-stable",
+                        type: "Transform",
+                        props: { position: { x: 4, y: 5 }, rotation: 0.5, scale: { x: 2, y: 3 } }
+                    }]
+                }]
+            }]
+        });
+
+        const player = scene.children[0].children[0];
+        expect(scene.id).toBe("scene-stable");
+        expect(player.id).toBe("entity-stable");
+        expect(player.components[0].id).toBe("component-stable");
+        expect(player.GetComponent(Transform).position.x).toBe(4);
+        expect(player.GetComponent(Transform).scale.y).toBe(3);
+    });
+
+    it("rejects unsupported scene schema versions with an actionable error", () => {
+        expect(() => SceneLoader.parse({ type: "scene", schemaVersion: 99 })).toThrow(/Unsupported scene schema version/);
+        expect(() => SceneLoader.parse({ type: "scene", schemaVersion: 99 })).toThrow(/Migrate the scene/);
+    });
 });

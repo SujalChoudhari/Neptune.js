@@ -4,6 +4,7 @@ import { printResults } from "./tester.js"
 // Core tests
 import "./application.test.js"
 import "./entity-and-scene.test.js"
+import "./loader.test.js"
 import "./scenemanager.test.js"
 
 // Component tests

@@ -1,14 +1,39 @@
-import { Scene } from "./scene.js";
+import { Scene, SCENE_SCHEMA_VERSION } from "./scene.js";
 import { Entity } from "./entity.js";
 import { SceneManager } from "./sceneManager.js";
 import { ComponentRegistry } from "./componentRegistry.js";
 import { Vector2 } from "../math/vec2.js";
 import { Sprite } from "../rendering/sprite.js";
 
+export { SCENE_SCHEMA_VERSION };
+
 /**
  * SceneLoader responsible for loading .scn (JSON) files and instantiating the scene graph.
  */
 export class SceneLoader {
+
+    static #assertSupportedVersion(data) {
+        if (!data || typeof data !== "object" || Array.isArray(data)) {
+            throw new TypeError("Scene data must be a JSON object.");
+        }
+        if (data.type && data.type !== "scene") {
+            throw new Error(`Cannot load '${data.type}' as a scene. Expected a scene payload.`);
+        }
+
+        const schemaVersion = typeof data.schemaVersion === "string"
+            ? Number.parseInt(data.schemaVersion.split(".")[0], 10)
+            : data.schemaVersion;
+        const legacyVersion = data.version;
+        const parsedLegacyVersion = typeof legacyVersion === "number"
+            ? legacyVersion
+            : typeof legacyVersion === "string"
+                ? Number.parseInt(legacyVersion.split(".")[0], 10)
+                : null;
+        const version = schemaVersion ?? parsedLegacyVersion;
+        if (version !== null && version !== undefined && version !== SCENE_SCHEMA_VERSION) {
+            throw new Error(`Unsupported scene schema version '${schemaVersion ?? legacyVersion}'. Supported version is ${SCENE_SCHEMA_VERSION}. Migrate the scene before loading it.`);
+        }
+    }
 
     /**
      * Loads a scene from a JSON file.
@@ -39,22 +64,31 @@ export class SceneLoader {
      * @param {object} data - The scene JSON data.
      * @returns {Promise<Scene>} The instantiated scene.
      */
-    static async parse(data) {
+    static parse(data) {
+        SceneLoader.#assertSupportedVersion(data);
         const sceneName = data.name || "Untitled Scene";
         const scene = new Scene(sceneName);
+        if (data.id !== undefined && data.id !== null) scene.id = data.id;
 
         // 1. Configure Global Scene properties (Camera, etc.)
-        if (data.camera && data.camera.settings) {
+        if (data.camera) {
             scene.cameraSettings = data.camera;
         }
 
         // 2. Parse Layers
+        const pendingLoads = [];
         if (Array.isArray(data.layers)) {
             for (const layerData of data.layers) {
-                await SceneLoader.#parseLayer(layerData, scene);
+                const pending = SceneLoader.#parseLayer(layerData, scene);
+                if (pending && typeof pending.then === "function") pendingLoads.push(pending);
             }
+        } else if (Array.isArray(data.entities)) {
+            data.entities.forEach(entityData => scene.AddChild(SceneLoader.#parseEntity(entityData)));
         }
 
+        if (pendingLoads.length > 0) {
+            return Promise.all(pendingLoads).then(() => scene);
+        }
         return scene;
     }
 
@@ -62,21 +96,25 @@ export class SceneLoader {
      * Parses a layer definition.
      * @private
      */
-    static async #parseLayer(layerData, scene) {
-        const parent = scene;
+    static #parseLayer(layerData, scene) {
+        if (!layerData || typeof layerData !== "object") return null;
 
         if (layerData.type === "object_layer" || layerData.type === "main" || layerData.type === "parallax") {
+            const parent = layerData.root ? scene : new Entity(layerData.name || layerData.type);
+            if (layerData.id && parent !== scene) parent.id = layerData.id;
             if (Array.isArray(layerData.entities)) {
                 layerData.entities.forEach(entityData => {
                     const entity = SceneLoader.#parseEntity(entityData);
                     parent.AddChild(entity);
                 });
             }
+            if (parent !== scene) scene.AddChild(parent);
         } else if (layerData.type === "tilemap") {
             if (layerData.src) {
-                await SceneLoader.#loadTilemap(layerData.src, scene);
+                return SceneLoader.#loadTilemap(layerData.src, scene);
             }
         }
+        return null;
     }
 
     static async #loadTilemap(path, scene) {
@@ -174,42 +212,41 @@ export class SceneLoader {
      * @private
      */
     static #parseEntity(entityData) {
+        if (!entityData || typeof entityData !== "object" || Array.isArray(entityData)) {
+            throw new Error("Invalid entity definition in scene data. Expected an entity object.");
+        }
         const entity = new Entity(entityData.name || "Entity");
         if (entityData.id) entity.id = entityData.id;
 
-        // Transform is special because it's a core requirement usually
-        if (entityData.transform) {
-            const t = entity.GetComponent(ComponentRegistry.get("Transform")); // Should be added by Entity constructor? 
-            // Actually default entity might not have transform in pure ECS
-            // But in Neptune 'every entity component must have a transform component' (transform.js doc)
-
-            // Wait, does new Entity() add Transform? 
-            // Checking entity.js... No. 
-            // So we must add it.
-
-            // If the entity doesn't have a transform, add one.
-            if (!t) {
-                // If ComponentRegistry doesn't find it (e.g. invalid name), we might crash.
-                // But "Transform" is hard registered.
-                const newT = ComponentRegistry.create("Transform");
-                if (newT) {
-                    SceneLoader.#deserializeTransform(newT, entityData.transform);
-                    entity.AddComponent(newT);
-                }
-            } else {
-                SceneLoader.#deserializeTransform(t, entityData.transform);
-            }
+        const transformType = ComponentRegistry.get("Transform");
+        let hasTransform = false;
+        if (entityData.transform && transformType) {
+            const transform = ComponentRegistry.create("Transform");
+            SceneLoader.#deserializeTransform(transform, entityData.transform);
+            entity.AddComponent(transform);
+            hasTransform = true;
         }
 
         // Components
         if (Array.isArray(entityData.components)) {
             entityData.components.forEach(compData => {
+                if (!compData || typeof compData !== "object" || typeof compData.type !== "string") {
+                    throw new Error(`Invalid component definition on entity '${entity.name}'. Expected a type and props object.`);
+                }
                 const component = ComponentRegistry.create(compData.type);
-                if (component) {
-                    component.deserialize(compData.props);
-                    entity.AddComponent(component);
-                } else {
+                if (!component) {
                     console.warn(`SceneLoader: Unknown component type '${compData.type}' for entity '${entity.name}'`);
+                } else if (compData.type === "Transform") {
+                    if (!hasTransform) {
+                        SceneLoader.#deserializeTransform(component, compData.props);
+                        if (compData.id) component.id = compData.id;
+                        entity.AddComponent(component);
+                        hasTransform = true;
+                    }
+                } else {
+                    if (typeof component.deserialize === "function") component.deserialize(compData.props);
+                    if (compData.id) component.id = compData.id;
+                    entity.AddComponent(component);
                 }
             });
         }
@@ -227,8 +264,10 @@ export class SceneLoader {
 
     static #deserializeTransform(transform, data) {
         if (!data) return;
-        if (data.pos) transform.position = new Vector2(data.pos.x, data.pos.y);
-        if (data.rot !== undefined) transform.rotation = data.rot;
+        const position = data.position || data.pos;
+        const rotation = data.rotation ?? data.rot;
+        if (position) transform.position = new Vector2(position.x, position.y);
+        if (rotation !== undefined) transform.rotation = rotation;
         if (data.scale) transform.scale = new Vector2(data.scale.x, data.scale.y);
     }
 }
