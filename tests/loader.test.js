@@ -7,10 +7,12 @@ import { Vector2 } from "../src/math/vec2.js";
 import { ComponentRegistry } from "../src/core/componentRegistry.js";
 import { Transform } from "../src/components/transform.js";
 import { Sprite } from "../src/rendering/sprite.js";
+import { BoxCollider } from "../src/components/boxCollider.js";
 
 // Manually register components since we aren't loading neptune.js
 ComponentRegistry.register("Transform", Transform);
 ComponentRegistry.register("Sprite", Sprite);
+ComponentRegistry.register("BoxCollider", BoxCollider);
 
 describe("SceneLoader Integration", () => {
     it("should load a scene from JSON", async () => {
@@ -131,5 +133,35 @@ describe("SceneLoader Integration", () => {
             }]
         });
         expect(scene.children[0].GetComponent(Sprite).path).toBe("assets/player.png");
+    });
+
+    it("loads a valid tilemap layer and creates its tile entity", async () => {
+        const originalFetch = global.fetch;
+        global.fetch = async path => {
+            expect(path).toBe("maps/start.json");
+            return {
+                ok: true,
+                json: async () => ({
+                    width: 1,
+                    height: 1,
+                    data: [1],
+                    tileset: "tiles.png"
+                })
+            };
+        };
+
+        try {
+            const scene = await SceneLoader.parse({
+                type: "scene",
+                schemaVersion: 1,
+                layers: [{ type: "tilemap", src: "maps/start.json" }]
+            });
+
+            expect(scene.children.length).toBe(1);
+            expect(scene.children[0].name).toBe("Tile_0");
+            expect(scene.children[0].GetComponent(Sprite).path).toBe("tiles.png");
+        } finally {
+            global.fetch = originalFetch;
+        }
     });
 });

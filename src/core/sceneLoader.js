@@ -212,8 +212,7 @@ export class SceneLoader {
                 const tx = (tid % texCols) * tileSize;
                 const ty = Math.floor(tid / texCols) * tileSize;
 
-                const sprite = ComponentRegistry.create("Sprite");
-                sprite.path = tileset;
+                const sprite = ComponentRegistry.create("Sprite", tileset);
                 sprite.width = 1; // 1 Unit wide
                 sprite.height = 1; // 1 Unit high
 
