@@ -1,11 +1,23 @@
-import { Scene, SCENE_SCHEMA_VERSION } from "./scene.js";
+import {
+    Scene,
+    SCENE_SCHEMA_VERSION,
+    ResourceReferenceError,
+    assertResourceReference,
+    getResourceReferenceTarget,
+    validateSceneResourceReferences
+} from "./scene.js";
 import { Entity } from "./entity.js";
 import { SceneManager } from "./sceneManager.js";
 import { ComponentRegistry } from "./componentRegistry.js";
 import { Vector2 } from "../math/vec2.js";
 import { Sprite } from "../rendering/sprite.js";
 
-export { SCENE_SCHEMA_VERSION };
+export {
+    SCENE_SCHEMA_VERSION,
+    ResourceReferenceError,
+    assertResourceReference,
+    validateSceneResourceReferences
+};
 
 /**
  * SceneLoader responsible for loading .scn (JSON) files and instantiating the scene graph.
@@ -65,7 +77,7 @@ export class SceneLoader {
      * @returns {Promise<Scene>} The instantiated scene.
      */
     static parse(data) {
-        SceneLoader.#assertSupportedVersion(data);
+        SceneLoader.validate(data);
         const sceneName = data.name || "Untitled Scene";
         const scene = new Scene(sceneName);
         if (data.id !== undefined && data.id !== null) scene.id = data.id;
@@ -92,12 +104,20 @@ export class SceneLoader {
         return scene;
     }
 
+    /** Validate a scene payload without constructing or registering a Scene. */
+    static validate(data) {
+        SceneLoader.#assertSupportedVersion(data);
+        return validateSceneResourceReferences(data);
+    }
+
     /**
      * Parses a layer definition.
      * @private
      */
     static #parseLayer(layerData, scene) {
-        if (!layerData || typeof layerData !== "object") return null;
+        if (!layerData || typeof layerData !== "object" || Array.isArray(layerData)) {
+            throw new TypeError("Invalid scene layer definition. Expected an object with a type and source location.");
+        }
 
         if (layerData.type === "object_layer" || layerData.type === "main" || layerData.type === "parallax") {
             const parent = layerData.root ? scene : new Entity(layerData.name || layerData.type);
@@ -110,32 +130,59 @@ export class SceneLoader {
             }
             if (parent !== scene) scene.AddChild(parent);
         } else if (layerData.type === "tilemap") {
-            if (layerData.src) {
-                return SceneLoader.#loadTilemap(layerData.src, scene);
-            }
+            return SceneLoader.#loadTilemap(
+                getResourceReferenceTarget(layerData.src, "tilemap", "scene.layers[].src"),
+                scene,
+                layerData.src
+            );
         }
         return null;
     }
 
-    static async #loadTilemap(path, scene) {
-        try {
-            const res = await fetch(path);
-            const map = await res.json();
+    static async #loadTilemap(path, scene, sourceReference = path) {
+        const res = await fetch(path);
+        if (!res.ok) {
+            throw new Error(`Failed to load tilemap '${path}' (${res.status}). Source reference: ${path}.`);
+        }
+        const map = await res.json();
+        if (!map || typeof map !== "object" || Array.isArray(map)) {
+            throw new TypeError(`Invalid tilemap '${path}': expected a JSON object. Source reference: ${path}.`);
+        }
 
             // Map Props: width, height (in tiles), key: "1" -> {x,y} ? No, usually linear data
             // Simple format: { width: 10, tileSize: 64, tileset: "path", columns: 10, data: [1, 2, 0...] }
 
+            if (!Array.isArray(map.data)) {
+                throw new ResourceReferenceError("tilemap", sourceReference, `${path}.data`, "tilemap data is missing or not an array", "a tilemap object with a numeric data array");
+            }
+            if (!Number.isInteger(map.width) || map.width <= 0) {
+                throw new ResourceReferenceError("tilemap", sourceReference, `${path}.width`, "tilemap width must be a positive integer", "a tilemap object with a positive integer width");
+            }
             const data = map.data;
             const cols = map.width;
-            const tileSize = map.tileSize || 64;
+            const tileSize = map.tileSize === undefined ? 64 : map.tileSize;
             const tileset = map.tileset;
+            assertResourceReference(tileset, "tileset", `${path}.tileset`);
+            if (!Number.isFinite(tileSize) || tileSize <= 0) {
+                throw new ResourceReferenceError("tileset", tileset, `${path}.tileSize`, "tile size must be a positive number", "a tileset with a positive tileSize");
+            }
 
             // Texture Columns (how many tiles wide is the image?)
-            const texCols = map.columns || 10;
+            const texCols = map.columns === undefined ? 10 : map.columns;
+            if (!Number.isInteger(texCols) || texCols <= 0) {
+                throw new ResourceReferenceError("tileset", tileset, `${path}.columns`, "tileset columns must be a positive integer", "a tileset with positive integer columns");
+            }
+            if (map.height !== undefined &&
+                (!Number.isInteger(map.height) || map.height <= 0 || data.length !== cols * map.height)) {
+                throw new ResourceReferenceError("tilemap", sourceReference, `${path}.data`, "tilemap data length does not match its dimensions", "a tilemap data array sized to width and height");
+            }
 
             for (let i = 0; i < data.length; i++) {
                 const tileId = data[i];
                 if (tileId === 0) continue; // 0 == empty
+                if (!Number.isInteger(tileId) || tileId < 0) {
+                    throw new ResourceReferenceError("tileset", tileset, `${path}.data[${i}]`, "tile id must be a non-negative integer", "a tileset tile id");
+                }
 
                 // Calculate Grid Position
                 const gx = i % cols;
@@ -202,9 +249,6 @@ export class SceneLoader {
                 scene.AddChild(entity);
             }
 
-        } catch (e) {
-            console.error("Failed to load map:", e);
-        }
     }
 
     /**
@@ -233,7 +277,10 @@ export class SceneLoader {
                 if (!compData || typeof compData !== "object" || typeof compData.type !== "string") {
                     throw new Error(`Invalid component definition on entity '${entity.name}'. Expected a type and props object.`);
                 }
-                const component = ComponentRegistry.create(compData.type);
+                const componentProps = compData.props;
+                const component = compData.type.toLowerCase() === "sprite"
+                    ? ComponentRegistry.create(compData.type, componentProps?.path ?? componentProps?.texture ?? componentProps?.asset ?? componentProps?.reference)
+                    : ComponentRegistry.create(compData.type);
                 if (!component) {
                     console.warn(`SceneLoader: Unknown component type '${compData.type}' for entity '${entity.name}'`);
                 } else if (compData.type === "Transform") {

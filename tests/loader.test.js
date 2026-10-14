@@ -1,3 +1,4 @@
+import "./setup_mocks.js";
 import { describe, it, expect } from "./tester.js";
 import { SceneLoader } from "../src/core/sceneLoader.js";
 import { Scene } from "../src/core/scene.js";
@@ -84,5 +85,51 @@ describe("SceneLoader Integration", () => {
     it("rejects unsupported scene schema versions with an actionable error", () => {
         expect(() => SceneLoader.parse({ type: "scene", schemaVersion: 99 })).toThrow(/Unsupported scene schema version/);
         expect(() => SceneLoader.parse({ type: "scene", schemaVersion: 99 })).toThrow(/Migrate the scene/);
+    });
+
+    it("rejects a missing sprite reference with its serialized source location", () => {
+        expect(() => SceneLoader.parse({
+            type: "scene",
+            schemaVersion: 1,
+            layers: [{ type: "object_layer", entities: [{
+                name: "Player",
+                components: [{ type: "Sprite", props: {} }]
+            }] }]
+        })).toThrow(/Invalid sprite resource reference '<missing>' at scene\.layers\[0\]\.entities\[0\]\.components\[0\]\.props\.path/);
+    });
+
+    it("rejects an incompatible audio reference without coercing it", () => {
+        expect(() => SceneLoader.parse({
+            type: "scene",
+            schemaVersion: 1,
+            entities: [{
+                name: "Music",
+                components: [{ type: "Sound", props: {
+                    src: { type: "sprite", path: "assets/music.wav" }
+                } }]
+            }]
+        })).toThrow(/declared type 'sprite' is incompatible/);
+    });
+
+    it("rejects malformed prefab references with the entity source key", () => {
+        expect(() => SceneLoader.parse({
+            type: "scene",
+            schemaVersion: 1,
+            entities: [{ name: "Enemy", prefab: { type: "prefab" } }]
+        })).toThrow(/prefab resource reference.*entities\[0\]\.prefab/);
+    });
+
+    it("keeps valid object references compatible with existing sprite loading", () => {
+        const scene = SceneLoader.parse({
+            type: "scene",
+            schemaVersion: 1,
+            entities: [{
+                name: "Player",
+                components: [{ type: "Sprite", props: {
+                    path: { type: "image", path: "assets/player.png" }, width: 1, height: 1
+                } }]
+            }]
+        });
+        expect(scene.children[0].GetComponent(Sprite).path).toBe("assets/player.png");
     });
 });

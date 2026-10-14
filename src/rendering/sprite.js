@@ -1,6 +1,7 @@
 import { Renderable } from "./renderable.js";
 import { Transform } from "../components/transform.js";
 import { Maths } from "../math/math.js"
+import { getResourceReferenceTarget } from "../core/scene.js";
 
 /**
  * A Sprite Component is responsible for rendering a sprite to the screen.
@@ -22,9 +23,9 @@ import { Maths } from "../math/math.js"
 export class Sprite extends Renderable {
     #image;
     #transform;
-    constructor(path = "", width = 1, height = 1) {
+    constructor(path, width = 1, height = 1) {
         super();
-        this._properties.path = path;
+        this._properties.path = getResourceReferenceTarget(path, "sprite", "sprite.path");
         this._properties.width = width;
         this._properties.height = height;
         this.#image = new Image();
@@ -42,8 +43,8 @@ export class Sprite extends Renderable {
     }
 
     set path(path) {
-        this._properties.path = path;
-        this.#image.src = path;
+        this._properties.path = getResourceReferenceTarget(path, "sprite", "sprite.path");
+        this.#image.src = this._properties.path;
     }
 
     /**

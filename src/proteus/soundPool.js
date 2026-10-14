@@ -1,3 +1,5 @@
+import { getResourceReferenceTarget, ResourceReferenceError } from "../core/scene.js";
+
 /**
  * SoundPool manages pooled sound effects for efficient playback.
  * Creates multiple instances of the same sound for overlapping play.
@@ -6,16 +8,19 @@
 export class SoundPool {
     /**
      * @param {string} path - Audio file path.
-     * @param {number} poolSize - Number of audio instances to pool.
+    * @param {number} poolSize - Number of audio instances to pool.
      */
     constructor(path, poolSize = 5) {
-        this.path = path;
+        this.path = getResourceReferenceTarget(path, "audio", "soundPool.path");
+        if (!Number.isInteger(poolSize) || poolSize <= 0) {
+            throw new ResourceReferenceError("audio", path, "soundPool.poolSize", "pool size must be a positive integer", "a positive integer pool size");
+        }
         this.pool = [];
         this.currentIndex = 0;
         this.volume = 1.0;
 
         for (let i = 0; i < poolSize; i++) {
-            const audio = new Audio(path);
+            const audio = new Audio(this.path);
             audio.volume = this.volume;
             this.pool.push(audio);
         }

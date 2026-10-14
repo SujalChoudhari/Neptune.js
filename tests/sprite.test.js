@@ -1,3 +1,4 @@
+import "./setup_mocks.js";
 import * as npt from "../src/neptune.js";
 import { describe, it, expect } from "./tester.js";
 
@@ -26,6 +27,10 @@ function createMockContext() {
 }
 
 describe("Sprite", () => {
+    it("rejects an explicit missing sprite reference", () => {
+        expect(() => new npt.Sprite("", 1, 1)).toThrow(/sprite resource reference/);
+    });
+
     it("stores constructor values and supports sourceRect rendering", () => {
         const sprite = new npt.Sprite("sprite.png", 2, 3);
         expect(sprite.path).toBe("sprite.png");

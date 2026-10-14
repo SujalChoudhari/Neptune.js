@@ -1,3 +1,4 @@
+import { validateSceneResourceReferences } from "./scene.js";
 
 export const PROJECT_SCHEMA_VERSION = 1;
 export const PROJECT_DATA_VERSION = "1.0.0";
@@ -62,6 +63,7 @@ function assertSceneVersion(data) {
 function serializeScenePayload(scene = {}) {
     const source = typeof scene.serialize === "function" ? scene.serialize() : scene;
     assertSceneVersion(source);
+    validateSceneResourceReferences(source);
     const payload = clone(source || {});
     payload.type = "scene";
     payload.version = SCENE_DATA_VERSION;
@@ -154,7 +156,12 @@ export class Storage {
             throw new TypeError("Project data must be a JSON object.");
         }
         assertProjectVersion(data);
-        if (Array.isArray(data.scenes)) data.scenes.forEach(assertSceneVersion);
+        if (Array.isArray(data.scenes)) {
+            data.scenes.forEach((scene, index) => {
+                assertSceneVersion(scene);
+                validateSceneResourceReferences(scene, `project.scenes[${index}]`);
+            });
+        }
         return Storage.SerializeProject(data);
     }
 
@@ -181,6 +188,7 @@ export class Storage {
         if (version !== null && version !== undefined && version !== 1) {
             throw new Error(`Unsupported scene schema version '${data.schemaVersion ?? data.version}'. Supported version is 1. Migrate the scene before loading it.`);
         }
+        validateSceneResourceReferences(data, `storage.scene['${key}']`);
         return data;
     }
 
