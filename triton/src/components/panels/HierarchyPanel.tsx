@@ -69,9 +69,9 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     }, [notifyGame])
 
     const addEntity = (parentId: string, name: string, type: string) => {
-        notifyGame('editor:create-entity', { parentId, name, type });
-        // We can optionally auto-rename the new entity if we get its ID back.
-        // For now, simpler is fine.
+        const id = globalThis.crypto?.randomUUID?.() || `entity-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+        EditorGameRunner.createEntity(parentId, { id, name, type })
+        notifyGame('editor:create-entity', { id, parentId, name, type });
     }
 
     // Simple search filtering
@@ -176,6 +176,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         const draggedIds = Array.isArray(draggedIdsArg) ? draggedIdsArg : [draggedIdsArg]
 
         if (typeof targetIndex === 'number' || targetIndex === undefined) {
+            EditorGameRunner.moveEntities(draggedIds, targetParentId, targetIndex as number | undefined)
             moveEntities(draggedIds, targetParentId, targetIndex as number | undefined)
             return
         }
@@ -187,6 +188,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         if (currentIndex === -1) return
 
         const finalIndex = targetIndex === 'before' ? currentIndex : currentIndex + 1
+        EditorGameRunner.moveEntities(draggedIds, targetParentId, finalIndex)
         moveEntities(draggedIds, targetParentId, finalIndex)
     }
 

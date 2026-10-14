@@ -30,6 +30,15 @@ export interface ProjectPayload {
 export type ProjectFileReader = (path: string) => Promise<string | null>
 export type ProjectFileWriter = (path: string, content: string) => Promise<boolean>
 
+export interface SceneEntityMutation {
+    id: string
+    name: string
+    type: string
+    components?: Array<Record<string, unknown>>
+    transform?: Record<string, unknown>
+    active?: boolean
+}
+
 interface ResourceValidationIssue {
     kind: string
     reference: unknown
@@ -137,6 +146,67 @@ const diagnosticFromError = (error: unknown): EditorDiagnostic => {
     }
 }
 
+type EntityRecord = Record<string, any>
+
+const sceneEntityLists = (scene: Record<string, any>): any[][] => {
+    const lists: any[][] = []
+    if (Array.isArray(scene.entities)) lists.push(scene.entities)
+    if (Array.isArray(scene.layers)) {
+        scene.layers.forEach((layer: Record<string, any>) => {
+            if (Array.isArray(layer.entities)) lists.push(layer.entities)
+        })
+    }
+    return lists
+}
+
+const findEntityContainer = (entities: unknown[], id: string): { entity: EntityRecord, list: any[], index: number } | null => {
+    for (let index = 0; index < entities.length; index += 1) {
+        const entity = entities[index]
+        if (!isRecord(entity)) continue
+        if (entity.id === id) return { entity, list: entities as any[], index }
+        if (Array.isArray(entity.children)) {
+            const nested = findEntityContainer(entity.children, id)
+            if (nested) return nested
+        }
+    }
+    return null
+}
+
+const findEntity = (scene: Record<string, any>, id: string): EntityRecord | null => {
+    for (const list of sceneEntityLists(scene)) {
+        const match = findEntityContainer(list, id)
+        if (match) return match.entity
+    }
+    return null
+}
+
+const findParentContainer = (scene: Record<string, any>, id: string): any[] | null => {
+    if (id === "root") {
+        if (!Array.isArray(scene.entities)) scene.entities = []
+        return scene.entities
+    }
+
+    const entity = findEntity(scene, id)
+    if (entity) {
+        if (!Array.isArray(entity.children)) entity.children = []
+        return entity.children
+    }
+
+    // Layer IDs are valid hierarchy parents even though layers are not entities.
+    const layer = Array.isArray(scene.layers)
+        ? scene.layers.find((candidate: unknown) => isRecord(candidate) && candidate.id === id)
+        : null
+    if (isRecord(layer)) {
+        if (!Array.isArray(layer.entities)) layer.entities = []
+        return layer.entities
+    }
+    return null
+}
+
+const containsEntity = (entity: EntityRecord, id: string): boolean => (
+    entity.id === id || (Array.isArray(entity.children) && entity.children.some((child: unknown) => isRecord(child) && containsEntity(child, id)))
+)
+
 const emit = (name: string, detail: unknown) => {
     if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(name, { detail }))
 }
@@ -220,6 +290,68 @@ export class EditorGameRunner {
         return this.openScene(JSON.parse(content), path)
     }
 
+    /** Mutate the canonical scene document before the game iframe is notified. */
+    static createEntity(parentId: string, mutation: SceneEntityMutation) {
+        if (!this.currentScene || !mutation.id) return false
+        const scene = this.currentScene as Record<string, any>
+        const parentChildren = findParentContainer(scene, parentId)
+        if (!parentChildren || findEntity(scene, mutation.id)) return false
+
+        parentChildren.push({
+            id: mutation.id,
+            name: mutation.name,
+            type: mutation.type,
+            active: mutation.active ?? true,
+            transform: mutation.transform ?? { pos: { x: 0, y: 0 }, rot: 0, scale: { x: 1, y: 1 } },
+            components: mutation.components ? clone(mutation.components) : [],
+            children: []
+        })
+        this.isDirty = true
+        return true
+    }
+
+    /** Reparent hierarchy entities in the canonical nested scene document. */
+    static moveEntities(ids: string[], targetParentId: string, targetIndex?: number) {
+        if (!this.currentScene) return false
+        const scene = this.currentScene as Record<string, any>
+        const targetChildren = findParentContainer(scene, targetParentId)
+        if (!targetChildren) return false
+
+        const requested = Array.from(new Set(ids)).filter(id => id !== "root" && id !== targetParentId)
+        const records = requested
+            .map(id => {
+                for (const list of sceneEntityLists(scene)) {
+                    const match = findEntityContainer(list, id)
+                    if (match) return match
+                }
+                return null
+            })
+            .filter((record): record is { entity: EntityRecord, list: any[], index: number } => record !== null)
+
+        const moving = records.filter(record => !records.some(other => other !== record && containsEntity(other.entity, record.entity.id)))
+        if (moving.length === 0 || moving.some(record => containsEntity(record.entity, targetParentId))) return false
+
+        // Remove from old parents first. Sort descending per list so indexes remain valid.
+        const byList = new Map<any[], typeof moving>()
+        moving.forEach(record => {
+            const group = byList.get(record.list) || []
+            group.push(record)
+            byList.set(record.list, group)
+        })
+        byList.forEach((group, list) => {
+            group.sort((a, b) => b.index - a.index).forEach(record => list.splice(record.index, 1))
+        })
+
+        const movedEntities = moving.map(record => record.entity)
+        const insertionIndex = typeof targetIndex === "number"
+            ? Math.max(0, Math.min(targetIndex, targetChildren.length))
+            : targetChildren.length
+        movedEntities.forEach(entity => { entity.parentId = targetParentId === "root" ? null : targetParentId })
+        targetChildren.splice(insertionIndex, 0, ...movedEntities)
+        this.isDirty = true
+        return true
+    }
+
     static deleteEntity(id: string) {
         if (!this.currentScene) return false
         const removeFrom = (entities: unknown[]): boolean => {
@@ -231,8 +363,7 @@ export class EditorGameRunner {
             return entities.some(entity => isRecord(entity) && Array.isArray(entity.children) && removeFrom(entity.children))
         }
         const scene = this.currentScene as Record<string, any>
-        const roots = Array.isArray(scene.entities) ? [scene.entities] : (scene.layers || []).flatMap((layer: any) => Array.isArray(layer.entities) ? [layer.entities] : [])
-        const changed = roots.some((entities: unknown) => Array.isArray(entities) && removeFrom(entities))
+        const changed = sceneEntityLists(scene).some((entities: unknown[]) => removeFrom(entities))
         if (changed) this.isDirty = true
         return changed
     }
@@ -260,8 +391,7 @@ export class EditorGameRunner {
             return Array.isArray(entity.children) && entity.children.some((child: unknown) => isRecord(child) && update(child))
         }
         const scene = this.currentScene as Record<string, any>
-        const roots = Array.isArray(scene.entities) ? scene.entities : (scene.layers || []).flatMap((layer: any) => Array.isArray(layer.entities) ? layer.entities : [])
-        const changed = roots.some((entity: unknown) => isRecord(entity) && update(entity))
+        const changed = sceneEntityLists(scene).some((entities: unknown[]) => entities.some((entity: unknown) => isRecord(entity) && update(entity)))
         if (changed) this.isDirty = true
         return changed
     }

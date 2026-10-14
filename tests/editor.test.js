@@ -1,4 +1,7 @@
 import { describe, it, expect, beforeEach } from "./tester.js";
+import { execFileSync } from "node:child_process";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 // ============================================
 // Editor Project Tests
@@ -23,6 +26,42 @@ describe('Editor Project Structure', () => {
         expect(Array.isArray(project.characters)).toBe(true);
         expect(Array.isArray(project.enemies)).toBe(true);
         expect(Array.isArray(project.cutscenes)).toBe(true);
+    });
+});
+
+describe('Triton scene mutation round-trip', () => {
+    it('preserves created component data and a reparented entity through save and reopen', () => {
+        const adapterUrl = pathToFileURL(path.resolve('triton/src/lib/editorGameRunner.ts')).href;
+        const script = `
+            import { EditorGameRunner } from ${JSON.stringify(adapterUrl)};
+            const source = {
+                type: 'scene', version: '1.0.0', schemaVersion: 1,
+                entities: [
+                    { id: 'parent-a', name: 'Parent A', type: 'group', children: [], components: [] },
+                    { id: 'parent-b', name: 'Parent B', type: 'group', children: [], components: [] }
+                ]
+            };
+            const files = new Map();
+            EditorGameRunner.openScene(source, 'scenes/main.scene');
+            EditorGameRunner.createEntity('parent-a', {
+                id: 'created-child', name: 'Created Child', type: 'empty',
+                components: [{ type: 'Sprite', props: { path: 'hero.png', width: 32 } }]
+            });
+            EditorGameRunner.moveEntities(['created-child'], 'parent-b');
+            await EditorGameRunner.saveScene(async (path, content) => { files.set(path, content); return true; });
+            EditorGameRunner.closeScene();
+            await EditorGameRunner.reopenScene(async path => files.get(path), 'scenes/main.scene');
+            const scene = EditorGameRunner.currentScene;
+            const parent = scene.entities.find(entity => entity.id === 'parent-b');
+            const child = parent.children.find(entity => entity.id === 'created-child');
+            console.log(JSON.stringify({ parent: parent.id, child: child.id, component: child.components[0] }));
+        `;
+        const result = JSON.parse(execFileSync(process.execPath, ['--experimental-strip-types', '--input-type=module', '--eval', script], { encoding: 'utf8' }));
+        expect(result).toEqual({
+            parent: 'parent-b',
+            child: 'created-child',
+            component: { type: 'Sprite', props: { path: 'hero.png', width: 32 } }
+        });
     });
 });
 
