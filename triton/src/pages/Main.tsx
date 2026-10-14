@@ -145,7 +145,7 @@ export function Main() {
             window.removeEventListener("keydown", handleKeyDown);
             unlistenPromise.then(unlisten => unlisten());
         }
-    }, [])
+    }, [saveScene])
 
     // Add a panel via Dockview API
     const openPanel = (panelId: string, title: string, component: string) => {
