@@ -57,4 +57,15 @@ describe("Storage", () => {
         expect(() => Storage.LoadProject("bad-project")).toThrow(/Migrate the project/);
     });
 
+    it("rejects unsupported nested scene schema versions before normalizing the project", () => {
+        Storage.Set("bad-nested-scene", JSON.stringify({
+            type: "project",
+            schemaVersion: 1,
+            scenes: [{ type: "scene", schemaVersion: 99, name: "Future Scene" }]
+        }), false);
+
+        expect(() => Storage.LoadProject("bad-nested-scene")).toThrow(/Unsupported scene schema version '99'/);
+        expect(() => Storage.LoadProject("bad-nested-scene")).toThrow(/Migrate the scene/);
+    });
+
 });

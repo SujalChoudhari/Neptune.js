@@ -40,14 +40,28 @@ function clone(value) {
 }
 
 function assertProjectVersion(data) {
-    const version = normalizeSchemaVersion(data?.schemaVersion ?? parseVersion(data?.version));
-    if (version !== null && version !== undefined && version !== PROJECT_SCHEMA_VERSION) {
-        throw new Error(`Unsupported project schema version '${data.schemaVersion ?? data.version}'. Supported version is ${PROJECT_SCHEMA_VERSION}. Migrate the project before loading it.`);
+    const sourceVersion = data?.schemaVersion ?? data?.version;
+    const version = normalizeSchemaVersion(sourceVersion);
+    if (sourceVersion !== undefined && (version === null || version !== PROJECT_SCHEMA_VERSION)) {
+        throw new Error(`Unsupported project schema version '${sourceVersion}'. Supported version is ${PROJECT_SCHEMA_VERSION}. Migrate the project before loading it.`);
+    }
+}
+
+function assertSceneVersion(data) {
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+        throw new TypeError("Scene data must be a JSON object.");
+    }
+
+    const sourceVersion = data.schemaVersion ?? data.version;
+    const version = normalizeSchemaVersion(sourceVersion);
+    if (sourceVersion !== undefined && (version === null || version !== SCENE_SCHEMA_VERSION)) {
+        throw new Error(`Unsupported scene schema version '${sourceVersion}'. Supported version is ${SCENE_SCHEMA_VERSION}. Migrate the scene before loading it.`);
     }
 }
 
 function serializeScenePayload(scene = {}) {
     const source = typeof scene.serialize === "function" ? scene.serialize() : scene;
+    assertSceneVersion(source);
     const payload = clone(source || {});
     payload.type = "scene";
     payload.version = SCENE_DATA_VERSION;
@@ -140,6 +154,7 @@ export class Storage {
             throw new TypeError("Project data must be a JSON object.");
         }
         assertProjectVersion(data);
+        if (Array.isArray(data.scenes)) data.scenes.forEach(assertSceneVersion);
         return Storage.SerializeProject(data);
     }
 
