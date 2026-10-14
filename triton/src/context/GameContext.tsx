@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import type { ReactNode } from "react";
 import type { SceneEntity, EntityData } from "../types/engine";
+import type { VersionedScenePayload } from "./FileSystemContext";
 
 interface GameContextType {
     isPlaying: boolean;
@@ -25,6 +26,7 @@ interface GameContextType {
     notifyGame: (type: string, payload?: any) => void;
     loadScene: (path: string) => Promise<void>;
     loadMainScene: () => Promise<void>;
+    saveScene: (scene?: VersionedScenePayload) => Promise<boolean>;
 
     // State
     mainScenePath: string | null;
@@ -36,7 +38,7 @@ const GameContext = createContext<GameContextType | null>(null);
 import { useFileSystem } from "./FileSystemContext";
 
 export function GameProvider({ children }: { children: ReactNode }) {
-    const { readFile, writeFile, rootPath } = useFileSystem();
+    const { readScene, readProject, writeProject, writeScene, rootPath } = useFileSystem();
 
     const toProjectRelativePath = useCallback((path: string) => {
         if (!rootPath) return path;
@@ -54,6 +56,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const [currentSceneName, setCurrentSceneName] = useState("Untitled");
     const [currentScenePath, setCurrentScenePath] = useState<string | null>(null);
     const [mainScenePath, setMainScenePath] = useState<string | null>(null);
+    const [currentScenePayload, setCurrentScenePayload] = useState<VersionedScenePayload | null>(null);
 
     // Hierarchy State
     const [entities, setEntities] = useState<Record<string, SceneEntity>>({});
@@ -102,10 +105,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
         // 2. Read File directly (Data)
         try {
-            const content = await readFile(path);
-            if (!content) throw new Error("Failed to read file");
-
-            const data = JSON.parse(content as string);
+            const data = await readScene(path);
+            setCurrentScenePayload(data);
 
             // Notify Game Engine
             // Send full data payload to avoid file:// access issues in iframe
@@ -293,7 +294,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         } catch (e) {
             console.error("Failed to read/parse scene file", e);
         } // HMR Trigger
-    }, [readFile, notifyGame]);
+    }, [readScene, notifyGame]);
 
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
@@ -441,45 +442,46 @@ export function GameProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        const projectFile = "project.npt";
-        console.log("Marking current scene as main:", currentSceneName, "->", projectFile);
+        console.log("Marking current scene as main:", currentSceneName, "-> project.npt");
 
         try {
-            const content = await readFile(projectFile);
-            const projectData = content ? JSON.parse(content) : {};
+            const projectData = await readProject();
 
             const normPath = currentScenePath.replace(/\\/g, '/');
             projectData.mainScene = normPath;
 
-            await writeFile(projectFile, JSON.stringify(projectData, null, 2));
+            await writeProject(projectData);
             setMainScenePath(normPath);
             console.log("Main scene saved to project.npt");
         } catch (e) {
             console.error("Failed to mark main scene", e);
         }
-    }, [rootPath, currentScenePath, currentSceneName, readFile, writeFile]);
+    }, [rootPath, currentScenePath, currentSceneName, readProject, writeProject]);
+
+    const saveScene = useCallback(async (scene = currentScenePayload || {}) => {
+        if (!currentScenePath) {
+            throw new Error("Cannot save scene: no scene is open.");
+        }
+        return writeScene(currentScenePath, scene);
+    }, [currentScenePath, currentScenePayload, writeScene]);
 
     const loadMainScene = useCallback(async () => {
         if (!rootPath) return;
-        const projectFile = "project.npt";
         try {
-            console.log("Checking for main scene in:", projectFile);
-            const content = await readFile(projectFile);
-            if (content) {
-                const projectData = JSON.parse(content);
-                if (projectData.mainScene) {
+            console.log("Checking for main scene in: project.npt");
+            const projectData = await readProject();
+            if (projectData.mainScene) {
                     console.log("Auto-loading main scene:", projectData.mainScene);
                     const scenePath = toProjectRelativePath(projectData.mainScene);
                     setMainScenePath(scenePath);
                     await loadScene(scenePath);
-                } else {
-                    console.log("No main scene defined in project.npt");
-                }
+            } else {
+                console.log("No main scene defined in project.npt");
             }
         } catch (e) {
             console.error("Failed to load main scene config", e);
         }
-    }, [rootPath, readFile, loadScene, toProjectRelativePath]);
+    }, [rootPath, readProject, loadScene, toProjectRelativePath]);
 
     // Auto-load main scene
     useEffect(() => {
@@ -507,6 +509,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             notifyGame,
             loadScene,
             loadMainScene,
+            saveScene,
             mainScenePath,
             currentScenePath
         }}>
