@@ -60,9 +60,9 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         setRenamingId(null)
     }
 
-    const removeEntity = (id: string) => {
+    const removeEntity = useCallback((id: string) => {
         notifyGame('editor:delete', { id });
-    }
+    }, [notifyGame])
 
     const addEntity = (parentId: string, name: string, type: string) => {
         notifyGame('editor:create-entity', { parentId, name, type });
@@ -140,7 +140,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
 
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [selectedIds])
+    }, [removeEntity, selectedIds])
 
     const handleBackgroundClick = () => {
         selectEntity("", false) // clear

@@ -368,7 +368,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
-    }, [notifyGame, selectedEntityData, currentScenePath, entityDataCache]); // Added entityDataCache dependency
+    }, [currentScenePath, entityDataCache, loadScene, notifyGame, selectedEntitiesData]);
 
 
     // --- Actions ---
