@@ -148,6 +148,14 @@ const diagnosticFromError = (error: unknown): EditorDiagnostic => {
 
 type EntityRecord = Record<string, any>
 
+const ensureLayerIds = (scene: Record<string, any>) => {
+    if (!Array.isArray(scene.layers)) return
+    scene.layers.forEach((layer: unknown, index: number) => {
+        if (!isRecord(layer)) return
+        if (typeof layer.id !== "string" || !layer.id.trim()) layer.id = `layer-${index}`
+    })
+}
+
 const sceneEntityLists = (scene: Record<string, any>): any[][] => {
     const lists: any[][] = []
     if (Array.isArray(scene.entities)) lists.push(scene.entities)
@@ -242,7 +250,9 @@ export class EditorGameRunner {
             Object.assign(error, { code: RESOURCE_REFERENCE_ERROR_CODE, source: issue.source, sourceLocation: issue.source })
             throw error
         }
-        return { ...clone(data), type: "scene", version: SCENE_DATA_VERSION, schemaVersion: SCENE_SCHEMA_VERSION }
+        const normalized = { ...clone(data), type: "scene" as const, version: SCENE_DATA_VERSION, schemaVersion: SCENE_SCHEMA_VERSION }
+        ensureLayerIds(normalized)
+        return normalized
     }
 
     static normalizeProject(data: unknown): ProjectPayload {
@@ -288,6 +298,32 @@ export class EditorGameRunner {
         const content = await readFile(path)
         if (!content) throw new Error(`Scene file '${path}' is empty or unavailable.`)
         return this.openScene(JSON.parse(content), path)
+    }
+
+    /**
+     * Resolve a hierarchy ID from Triton's projected entity map to the ID used
+     * by the canonical scene. GameContext projects layers with generated UI
+     * IDs, so layer order is the stable bridge until that projection is moved
+     * to the persisted ID.
+     */
+    static resolveHierarchyParentId(parentId: string, hierarchy: Record<string, any> = {}) {
+        if (!this.currentScene) return null
+        const scene = this.currentScene as Record<string, any>
+        if (parentId === "root" || findEntity(scene, parentId) || (Array.isArray(scene.layers) && scene.layers.some((layer: unknown) => isRecord(layer) && layer.id === parentId))) {
+            return parentId
+        }
+
+        if (!Array.isArray(scene.layers)) return null
+        const rootChildren = Array.isArray(hierarchy.root?.children) ? hierarchy.root.children : []
+        const projectedLayerIds = rootChildren.filter((id: unknown) => {
+            const entity = typeof id === "string" ? hierarchy[id] : null
+            return entity && entity.type !== "camera"
+        })
+        const projectedIndex = projectedLayerIds.indexOf(parentId)
+        if (projectedIndex === -1) return null
+
+        const layer = scene.layers[projectedIndex]
+        return isRecord(layer) && typeof layer.id === "string" && layer.id.trim() ? layer.id : null
     }
 
     /** Mutate the canonical scene document before the game iframe is notified. */

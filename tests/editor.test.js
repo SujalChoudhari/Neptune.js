@@ -63,6 +63,72 @@ describe('Triton scene mutation round-trip', () => {
             component: { type: 'Sprite', props: { path: 'hero.png', width: 32 } }
         });
     });
+
+    it('resolves projected layer IDs and round-trips mutations into the layer', () => {
+        const adapterUrl = pathToFileURL(path.resolve('triton/src/lib/editorGameRunner.ts')).href;
+        const script = `
+            import { EditorGameRunner } from ${JSON.stringify(adapterUrl)};
+            const source = {
+                type: 'scene', version: '1.0.0', schemaVersion: 1,
+                camera: { zoom: 1 },
+                layers: [
+                    { id: 'persisted-background', name: 'Background', type: 'image', entities: [] },
+                    { id: 'persisted-layer', name: 'Gameplay', type: 'object_layer', entities: [] }
+                ]
+            };
+            const files = new Map();
+            EditorGameRunner.openScene(source, 'scenes/layers.scene');
+            const hierarchy = {
+                root: { children: ['camera-main', 'generated-background', 'generated-layer'] },
+                'camera-main': { id: 'camera-main', name: 'Main Camera', type: 'camera', children: [] },
+                'generated-background': { id: 'generated-background', name: 'Background', type: 'image', children: [] },
+                'generated-layer': { id: 'generated-layer', name: 'Gameplay', type: 'object_layer', children: [] }
+            };
+            const parentId = EditorGameRunner.resolveHierarchyParentId('generated-layer', hierarchy);
+            const created = EditorGameRunner.createEntity(parentId, {
+                id: 'layer-child', name: 'Layer Child', type: 'empty',
+                components: [{ type: 'Sprite', props: { path: 'layer-child.png' } }]
+            });
+            await EditorGameRunner.saveScene(async (path, content) => { files.set(path, content); return true; });
+            EditorGameRunner.closeScene();
+            await EditorGameRunner.reopenScene(async path => files.get(path), 'scenes/layers.scene');
+            const layer = EditorGameRunner.currentScene.layers[1];
+            console.log(JSON.stringify({ parentId, created, layerId: layer.id, child: layer.entities[0] }));
+        `;
+        const result = JSON.parse(execFileSync(process.execPath, ['--experimental-strip-types', '--input-type=module', '--eval', script], { encoding: 'utf8' }));
+        expect(result).toEqual({
+            parentId: 'persisted-layer',
+            created: true,
+            layerId: 'persisted-layer',
+            child: {
+                id: 'layer-child',
+                name: 'Layer Child',
+                type: 'empty',
+                active: true,
+                transform: { pos: { x: 0, y: 0 }, rot: 0, scale: { x: 1, y: 1 } },
+                components: [{ type: 'Sprite', props: { path: 'layer-child.png' } }],
+                children: []
+            }
+        });
+    });
+
+    it('rejects invalid projected parents and cycles without mutating the scene', () => {
+        const adapterUrl = pathToFileURL(path.resolve('triton/src/lib/editorGameRunner.ts')).href;
+        const script = `
+            import { EditorGameRunner } from ${JSON.stringify(adapterUrl)};
+            EditorGameRunner.openScene({
+                type: 'scene', version: '1.0.0', schemaVersion: 1,
+                layers: [{ id: 'layer-a', type: 'object_layer', entities: [] }],
+                entities: [{ id: 'parent', name: 'Parent', type: 'group', children: [{ id: 'child', name: 'Child', type: 'empty', children: [] }] }]
+            });
+            const before = JSON.stringify(EditorGameRunner.currentScene);
+            const invalidParent = EditorGameRunner.resolveHierarchyParentId('unknown-layer', { root: { children: [] }, 'unknown-layer': { type: 'object_layer' } });
+            const cycle = EditorGameRunner.moveEntities(['parent'], 'child');
+            console.log(JSON.stringify({ invalidParent, cycle, unchanged: before === JSON.stringify(EditorGameRunner.currentScene) }));
+        `;
+        const result = JSON.parse(execFileSync(process.execPath, ['--experimental-strip-types', '--input-type=module', '--eval', script], { encoding: 'utf8' }));
+        expect(result).toEqual({ invalidParent: null, cycle: false, unchanged: true });
+    });
 });
 
 // ============================================

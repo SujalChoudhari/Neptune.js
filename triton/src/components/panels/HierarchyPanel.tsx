@@ -70,7 +70,8 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
 
     const addEntity = (parentId: string, name: string, type: string) => {
         const id = globalThis.crypto?.randomUUID?.() || `entity-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-        EditorGameRunner.createEntity(parentId, { id, name, type })
+        const persistenceParentId = EditorGameRunner.resolveHierarchyParentId(parentId, entities)
+        if (!persistenceParentId || !EditorGameRunner.createEntity(persistenceParentId, { id, name, type })) return
         notifyGame('editor:create-entity', { id, parentId, name, type });
     }
 
@@ -174,9 +175,11 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
 
     const handleMove = (draggedIdsArg: string | string[], targetParentId: string, targetIndex?: number | 'before' | 'after', relativeToId?: string) => {
         const draggedIds = Array.isArray(draggedIdsArg) ? draggedIdsArg : [draggedIdsArg]
+        const persistenceParentId = EditorGameRunner.resolveHierarchyParentId(targetParentId, entities)
+        if (!persistenceParentId) return
 
         if (typeof targetIndex === 'number' || targetIndex === undefined) {
-            EditorGameRunner.moveEntities(draggedIds, targetParentId, targetIndex as number | undefined)
+            if (!EditorGameRunner.moveEntities(draggedIds, persistenceParentId, targetIndex as number | undefined)) return
             moveEntities(draggedIds, targetParentId, targetIndex as number | undefined)
             return
         }
@@ -188,7 +191,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         if (currentIndex === -1) return
 
         const finalIndex = targetIndex === 'before' ? currentIndex : currentIndex + 1
-        EditorGameRunner.moveEntities(draggedIds, targetParentId, finalIndex)
+        if (!EditorGameRunner.moveEntities(draggedIds, persistenceParentId, finalIndex)) return
         moveEntities(draggedIds, targetParentId, finalIndex)
     }
 
