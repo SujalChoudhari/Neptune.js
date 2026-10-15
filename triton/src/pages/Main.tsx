@@ -8,15 +8,14 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { invoke } from "@tauri-apps/api/core";
 import { WelcomeScreen } from "@/pages/WelcomeScreen";
 import { useFileSystem } from "@/context/FileSystemContext";
-import { useGameContext } from "@/context/GameContext";
 import { StatusBar } from "@/components/layout/StatusBar";
+import { EditorGameRunner } from "@/lib/editorGameRunner";
 
 export function Main() {
     const dockApiRef = useRef<NeptuneDockApi | null>(null)
     const [isProjectLoaded, setIsProjectLoaded] = useState(false);
     const [projectError, setProjectError] = useState<string | null>(null);
-    const { loadProject, readProject } = useFileSystem();
-    const { saveScene } = useGameContext();
+    const { loadProject, readProject, writeScene } = useFileSystem();
 
     const handleProjectLoaded = async (path: string) => {
         try {
@@ -83,7 +82,7 @@ export function Main() {
                     setIsProjectLoaded(false);
                     break;
                 case 'save':
-                    void saveScene().catch((error: unknown) => {
+                    void EditorGameRunner.saveScene(async (path, content) => writeScene(path, JSON.parse(content))).catch((error: unknown) => {
                         const message = error instanceof Error ? error.message : String(error);
                         setProjectError(`Scene could not be saved. ${message}`);
                     });
@@ -145,7 +144,7 @@ export function Main() {
             window.removeEventListener("keydown", handleKeyDown);
             unlistenPromise.then(unlisten => unlisten());
         }
-    }, [saveScene])
+    }, [writeScene])
 
     // Add a panel via Dockview API
     const openPanel = (panelId: string, title: string, component: string) => {
