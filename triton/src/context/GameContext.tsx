@@ -97,8 +97,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     const loadScene = useCallback(async (path: string) => {
         console.log("GameContext: Loading scene from", path);
-        setCurrentSceneName(path.split('/').pop() || "Scene");
-        setCurrentScenePath(path);
 
         // 1. Notify Game (Visuals) - Initial notification REMOVED to avoid double-load error with file:// path
         // notifyGame('editor:load-scene', { path });
@@ -106,6 +104,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
         // 2. Read File directly (Data)
         try {
             const data = await readScene(path);
+            // A failed read must never turn an untrusted file path into the
+            // current save target. Commit the scene identity only after the
+            // versioned payload has been accepted by the native bridge.
+            setCurrentSceneName(path.split('/').pop() || "Scene");
+            setCurrentScenePath(path);
             setCurrentScenePayload(data);
 
             // Notify Game Engine

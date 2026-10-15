@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import vm from "node:vm";
+import { execFileSync } from "node:child_process";
 import { buildSync } from "esbuild";
 import { describe, it, expect } from "../../tests/tester.js";
 
@@ -203,5 +204,13 @@ describe("Triton persistence bridge", () => {
         expect(harness.writes).toHaveLength(1);
         expect(harness.writes[0].path).toBe("scenes/main.scene");
         expect(JSON.parse(harness.writes[0].content)).toEqual(harness.game.openedScene);
+    });
+
+    it("does not make a rejected scene read available to File > Save", () => {
+        execFileSync(process.execPath, ["triton/tests/rejected-scene-save-harness.mjs"], {
+            cwd: path.resolve("."),
+            stdio: "pipe"
+        });
+        expect(true).toBe(true);
     });
 });
