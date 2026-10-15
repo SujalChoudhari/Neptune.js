@@ -220,7 +220,7 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
             console.error("Failed to create folder", e);
             return null;
         }
-    }, [rootPath, refresh]);
+    }, [refresh]);
 
     const createAsset = useCallback(async (parentId: string, name: string, type: AssetType) => {
         try {
@@ -239,7 +239,7 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
             console.error("Failed to create asset", e);
             return null;
         }
-    }, [rootPath, refresh]);
+    }, [refresh]);
 
     const deleteNode = useCallback(async (nodeId: string) => {
         try {

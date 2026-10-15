@@ -44,6 +44,26 @@ freeware, shareware, and commercial games with it. See the licence for full deta
 
 The intended 2D action-RPG completion target, runtime/editor boundary, and testable vertical-slice checklist are documented in the [Neptune.js product contract](docs/PRODUCT-CONTRACT.md). These are target capabilities, not a claim that every feature is already shipped.
 
+## Branching and verification
+
+`main` is the product integration and release branch. Work uses short-lived
+`codex/*` branches and reaches `main` through a pull request. The active branch
+for this M02 delivery is `codex/hom-64-arpg-main-recovery`, and its pull request
+target is `main`.
+
+From a clean checkout, run the root quality gates with the committed lockfile:
+
+```sh
+npm ci --ignore-scripts --no-audit --no-fund
+npm test
+npm run docs
+npm run test:docs-contract
+```
+
+`npm run docs` leaves the existing documentation tree unchanged when JSDoc
+fails. A successful run replaces it with the complete generated output and
+preserves the hand-authored product contract.
+
 ## Easy to use
 It's Simple and easy to use. 
 Even kids can make simple game in Neptune.
