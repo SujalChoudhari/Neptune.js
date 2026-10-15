@@ -167,6 +167,57 @@ const sceneEntityLists = (scene: Record<string, any>): any[][] => {
     return lists
 }
 
+const collectSceneIds = (scene: Record<string, any>) => {
+    const entityIds = new Set<string>()
+    const componentIds = new Set<string>()
+    const collect = (entities: unknown[]) => {
+        entities.forEach(entity => {
+            if (!isRecord(entity)) return
+            if (typeof entity.id === "string") entityIds.add(entity.id)
+            if (Array.isArray(entity.components)) {
+                entity.components.forEach(component => {
+                    if (isRecord(component) && typeof component.id === "string") componentIds.add(component.id)
+                })
+            }
+            if (Array.isArray(entity.children)) collect(entity.children)
+        })
+    }
+    sceneEntityLists(scene).forEach(entities => collect(entities))
+    return { entityIds, componentIds }
+}
+
+const createStableId = (prefix: string, usedIds: Set<string>) => {
+    let id = ""
+    do {
+        const randomId = globalThis.crypto?.randomUUID?.()
+        id = `${prefix}-${randomId || `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`}`
+    } while (usedIds.has(id))
+    usedIds.add(id)
+    return id
+}
+
+const cloneEntityWithFreshIds = (source: EntityRecord, entityIds: Set<string>, componentIds: Set<string>, parentId?: string): EntityRecord => {
+    const duplicate = clone(source)
+    duplicate.id = createStableId("entity", entityIds)
+    if (parentId !== undefined && Object.prototype.hasOwnProperty.call(source, "parentId")) {
+        duplicate.parentId = parentId === "root" ? null : parentId
+    }
+    if (Array.isArray(duplicate.components)) {
+        duplicate.components = duplicate.components.map((component: unknown) => {
+            if (!isRecord(component)) return component
+            const duplicateComponent = clone(component)
+            duplicateComponent.id = createStableId("component", componentIds)
+            return duplicateComponent
+        })
+    }
+    if (Array.isArray(duplicate.children)) {
+        duplicate.children = duplicate.children.map((child: unknown) => (
+            isRecord(child) ? cloneEntityWithFreshIds(child, entityIds, componentIds, duplicate.id) : child
+        ))
+    }
+    return duplicate
+}
+
 const findEntityContainer = (entities: unknown[], id: string): { entity: EntityRecord, list: any[], index: number } | null => {
     for (let index = 0; index < entities.length; index += 1) {
         const entity = entities[index]
@@ -346,15 +397,31 @@ export class EditorGameRunner {
         return true
     }
 
+    /** Duplicate an entity as a sibling in the canonical scene document. */
+    static duplicateEntity(id: string) {
+        if (!this.currentScene || typeof id !== "string" || !id.trim()) return null
+        const scene = this.currentScene as Record<string, any>
+        const source = sceneEntityLists(scene)
+            .map(entities => findEntityContainer(entities, id))
+            .find((match): match is { entity: EntityRecord, list: any[], index: number } => match !== null)
+        if (!source) return null
+
+        const { entityIds, componentIds } = collectSceneIds(scene)
+        const duplicate = cloneEntityWithFreshIds(source.entity, entityIds, componentIds, source.entity.parentId)
+        source.list.splice(source.index + 1, 0, duplicate)
+        this.isDirty = true
+        return duplicate
+    }
+
     /** Reparent hierarchy entities in the canonical nested scene document. */
     static moveEntities(ids: string[], targetParentId: string, targetIndex?: number) {
         if (!this.currentScene) return false
+        if (!Array.isArray(ids) || ids.length === 0 || ids.some(id => typeof id !== "string" || !id.trim()) || new Set(ids).size !== ids.length) return false
         const scene = this.currentScene as Record<string, any>
         const targetChildren = findParentContainer(scene, targetParentId)
         if (!targetChildren) return false
 
-        const requested = Array.from(new Set(ids)).filter(id => id !== "root" && id !== targetParentId)
-        const records = requested
+        const records = ids
             .map(id => {
                 for (const list of sceneEntityLists(scene)) {
                     const match = findEntityContainer(list, id)
@@ -363,6 +430,7 @@ export class EditorGameRunner {
                 return null
             })
             .filter((record): record is { entity: EntityRecord, list: any[], index: number } => record !== null)
+        if (records.length !== ids.length) return false
 
         const moving = records.filter(record => !records.some(other => other !== record && containsEntity(other.entity, record.entity.id)))
         if (moving.length === 0 || moving.some(record => containsEntity(record.entity, targetParentId))) return false

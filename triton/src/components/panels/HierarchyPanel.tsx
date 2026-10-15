@@ -68,6 +68,11 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         notifyGame('editor:delete', { id });
     }, [notifyGame])
 
+    const duplicateEntity = (id: string) => {
+        EditorGameRunner.duplicateEntity(id)
+        notifyGame('editor:duplicate', { id })
+    }
+
     const addEntity = (parentId: string, name: string, type: string) => {
         const id = globalThis.crypto?.randomUUID?.() || `entity-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
         const persistenceParentId = EditorGameRunner.resolveHierarchyParentId(parentId, entities)
@@ -233,7 +238,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
                             <ThemedContextMenuLabel>{entity.name}</ThemedContextMenuLabel>
                             <ThemedContextMenuSeparator />
                             <ThemedContextMenuItem onClick={() => setRenamingId(id)}>Rename</ThemedContextMenuItem>
-                            <ThemedContextMenuItem onClick={() => { notifyGame('editor:duplicate', { id }) }}>Duplicate</ThemedContextMenuItem>
+                            <ThemedContextMenuItem onClick={() => duplicateEntity(id)}>Duplicate</ThemedContextMenuItem>
                             <ThemedContextMenuItem onClick={() => removeEntity(id)} className="text-red-400">Delete</ThemedContextMenuItem>
                             <ThemedContextMenuSeparator />
                             <ThemedContextMenuItem onClick={() => addEntity(id, "New GameObject", "empty")}>Create Empty Child</ThemedContextMenuItem>
