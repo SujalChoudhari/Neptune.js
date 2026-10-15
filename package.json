@@ -31,6 +31,7 @@
   "homepage": "https://github.com/SujalChoudhari/Neptune.js#readme",
   "devDependencies": {
     "clean-jsdoc-theme": "^4.1.8",
+    "esbuild": "^0.27.0",
     "fs-extra": "^11.1.0",
     "jsdoc": "^3.6.11"
   }
