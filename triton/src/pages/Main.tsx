@@ -1,5 +1,5 @@
 import { DockLayout } from "@/components/layout/DockLayout"
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef } from "react"
 import type { NeptuneDockApi } from "@/components/layout/DockLayout"
 import { EditorToolbar } from "@/components/layout/EditorToolbar"
 
@@ -18,7 +18,7 @@ export function Main() {
     const { loadProject, readProject } = useFileSystem();
     const { saveScene } = useGameContext();
 
-    const handleProjectLoaded = useCallback(async (path: string) => {
+    const handleProjectLoaded = async (path: string) => {
         try {
             setProjectError(null);
             // Validate and normalize the versioned payload before the editor is
@@ -43,7 +43,7 @@ export function Main() {
             setIsProjectLoaded(false);
             throw e;
         }
-    }, [loadProject, readProject]);
+    };
 
     useEffect(() => {
         // Check for startup config (debug mode autoload)
@@ -58,7 +58,7 @@ export function Main() {
         }).catch((err: any) => {
             console.error("Failed to check startup config", err);
         });
-    }, [handleProjectLoaded]);
+    }, []);
 
     useEffect(() => {
         const root = window.document.documentElement
