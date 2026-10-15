@@ -1,5 +1,6 @@
 import { Component } from "../components/component.js";
 import { Tileset } from "./tileset.js";
+import { ResourceReferenceError } from "../core/scene.js";
 
 /**
  * Tilemap component renders a grid of tiles from a tileset.
@@ -14,6 +15,12 @@ export class Tilemap extends Component {
      */
     constructor(tileset, width = 10, height = 10) {
         super();
+        if (!(tileset instanceof Tileset)) {
+            throw new ResourceReferenceError("tileset", tileset, "tilemap.tileset", "reference is not a Tileset instance", "a compatible Tileset instance");
+        }
+        if (!Number.isInteger(width) || width < 0 || !Number.isInteger(height) || height < 0) {
+            throw new ResourceReferenceError("tilemap", tileset.imagePath, "tilemap.dimensions", "width and height must be non-negative integers", "valid tilemap dimensions");
+        }
         this.tileset = tileset;
         this.width = width;
         this.height = height;
@@ -28,6 +35,9 @@ export class Tilemap extends Component {
      * @param {number} tileId - Tile ID from tileset (-1 for empty).
      */
     setTile(x, y, tileId) {
+        if (!Number.isInteger(tileId) || tileId < -1) {
+            throw new ResourceReferenceError("tileset", this.tileset.imagePath, `tilemap.data[${x},${y}]`, "tile id must be -1 or a non-negative integer", "a valid tile id");
+        }
         if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
             this.data[y * this.width + x] = tileId;
         }
@@ -51,13 +61,26 @@ export class Tilemap extends Component {
      * @param {number[][]} data - 2D array of tile IDs.
      */
     loadFromArray(data) {
+        if (!Array.isArray(data) || (data.length > 0 && !Array.isArray(data[0]))) {
+            throw new ResourceReferenceError("tilemap", this.tileset.imagePath, "tilemap.data", "data must be a two-dimensional array", "a two-dimensional tile data array");
+        }
         this.height = data.length;
         this.width = data[0]?.length || 0;
         this.data = new Array(this.width * this.height);
 
         for (let y = 0; y < this.height; y++) {
+            if (!Array.isArray(data[y]) || data[y].length !== this.width) {
+                throw new ResourceReferenceError("tilemap", this.tileset.imagePath, `tilemap.data[${y}]`, "rows must have the same width", "a rectangular two-dimensional tile data array");
+            }
             for (let x = 0; x < this.width; x++) {
-                this.data[y * this.width + x] = data[y][x] ?? -1;
+                const tileId = data[y][x];
+                if (tileId === undefined || tileId === null) {
+                    this.data[y * this.width + x] = -1;
+                } else if (!Number.isInteger(tileId) || tileId < -1) {
+                    throw new ResourceReferenceError("tileset", this.tileset.imagePath, `tilemap.data[${y}][${x}]`, "tile id must be -1 or a non-negative integer", "a valid tile id");
+                } else {
+                    this.data[y * this.width + x] = tileId;
+                }
             }
         }
     }

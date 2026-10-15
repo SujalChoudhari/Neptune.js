@@ -1,3 +1,4 @@
+import "./setup_mocks.js";
 import { describe, it, expect, beforeEach, afterEach } from "./tester.js";
 import { Entity, Component, Scene, SceneManager, Shape, Color, Transform, Vector2, application } from "../src/neptune.js";
 
@@ -96,6 +97,17 @@ describe('Entity', () => {
         expect(tree.children[0].name).toBe('Child1');
         expect(tree.children[1].name).toBe('Child2');
     });
+
+    it('serializes stable entity and component identifiers', () => {
+        const child = new Entity('Child');
+        entity.AddChild(child);
+        const payload = entity.serialize();
+
+        expect(payload.id).toBe(entity.id);
+        expect(payload.components[0].id).toBe(mockComponent.id);
+        expect(payload.children[0].id).toBe(child.id);
+        expect(payload.components[0].props).toEqual(mockComponent.properties);
+    });
 });
 
 
@@ -130,5 +142,13 @@ describe("Scene", () => {
 
         SceneManager.LoadScene(scene2.id);
         expect(SceneManager.GetActiveScene()).toBe(scene2);
+    });
+
+    it("serializes an explicitly versioned scene payload", () => {
+        const payload = scene.serialize();
+
+        expect(payload.type).toBe("scene");
+        expect(payload.schemaVersion).toBe(1);
+        expect(payload.version).toBe("1.0.0");
     });
 })

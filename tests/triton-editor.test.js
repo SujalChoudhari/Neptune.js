@@ -22,9 +22,13 @@ describe("Triton Editor", () => {
             "create_asset",
             "delete_fs_node",
             "rename_fs_node",
-            "duplicate_fs_node",
-            "read_file",
-            "write_file"
+        "duplicate_fs_node",
+        "read_file",
+        "write_file",
+        "read_project",
+        "write_project",
+        "read_scene",
+        "write_scene"
         ];
 
         for (const command of requiredCommands) {
@@ -32,3 +36,5 @@ describe("Triton Editor", () => {
         }
     });
 });
+
+import "../triton/tests/persistence-bridge.test.js";

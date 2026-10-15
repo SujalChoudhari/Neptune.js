@@ -1,4 +1,26 @@
 
+import { ComponentRegistry } from "./componentRegistry.js";
+
+const makeId = (prefix) => `${prefix}_${Math.random().toString(36).slice(2, 11)}`;
+
+function cloneSerializable(value, seen = new WeakSet()) {
+    if (value === null || typeof value !== "object") return value;
+    if (seen.has(value)) return undefined;
+    seen.add(value);
+
+    if (Array.isArray(value)) {
+        return value.map(item => cloneSerializable(item, seen)).filter(item => item !== undefined);
+    }
+
+    const result = {};
+    for (const [key, item] of Object.entries(value)) {
+        if (key === "entity" || key === "parent" || key === "children") continue;
+        const cloned = cloneSerializable(item, seen);
+        if (cloned !== undefined) result[key] = cloned;
+    }
+    return result;
+}
+
 /**
  * An entity is a game object. 
  * All the Objects in the game are entities. 
@@ -14,7 +36,7 @@
 export class Entity {
     constructor(name = "Entity") {
         this._name = name;
-        this.id = "ent_" + Math.random().toString(36).substr(2, 9);
+        this.id = makeId("ent");
         this._children = [];
         this._parent = null;
         this._components = [];
@@ -135,8 +157,12 @@ export class Entity {
      * 
      */
     AddComponent(component) {
+        if (!component || typeof component !== "object") {
+            throw new TypeError("Entity.AddComponent expects a component instance.");
+        }
         if (!this.HasComponent(component.constructor)) {
             component.entity = this;
+            if (!component.id) component.id = makeId("cmp");
             this._components.push(component);
         } else console.warn("Component already attached");
     }
@@ -157,6 +183,9 @@ export class Entity {
      * entity.AddChild(child);
      */
     AddChild(child) {
+        if (!child || typeof child !== "object") {
+            throw new TypeError("Entity.AddChild expects an entity instance.");
+        }
         if (this._children == null) {
             this._children = [];
         }
@@ -223,6 +252,33 @@ export class Entity {
      */
     GetChildWithComponent(type) {
         return this._children.filter(child => child.HasComponent(type));
+    }
+
+    /**
+     * Serialize this entity and its descendants into the project data contract.
+     * Component IDs are generated once when a component is attached and are then
+     * retained by save/load cycles.
+     */
+    serialize() {
+        return {
+            id: this.id,
+            name: this.name,
+            components: this._components.map(component => ({
+                id: component.id,
+                type: ComponentRegistry.nameOf(component),
+                props: cloneSerializable(component.properties || {})
+            })),
+            children: this._children.map(child => child.serialize())
+        };
+    }
+
+    toJSON() {
+        return this.serialize();
+    }
+
+    /** Backward-compatible aliases for callers using camelCase APIs. */
+    Serialize() {
+        return this.serialize();
     }
 
 

@@ -1,4 +1,5 @@
 import { Pose } from "./pose.js";
+import { ResourceReferenceError } from "../core/scene.js";
 
 /**
  * Animation represents a sequence of poses (keyframes) over time.
@@ -23,6 +24,12 @@ export class Animation {
      * @returns {Animation} This animation (for chaining).
      */
     addKeyframe(time, pose) {
+        if (!Number.isFinite(time) || time < 0) {
+            throw new ResourceReferenceError("animation", this.name, "animation.keyframes[].time", "keyframe time must be a non-negative number", "a valid animation keyframe time");
+        }
+        if (!(pose instanceof Pose)) {
+            throw new ResourceReferenceError("animation", this.name, "animation.keyframes[].pose", "keyframe pose is incompatible", "a Pose instance");
+        }
         this.keyframes.push({ time, pose });
         this.keyframes.sort((a, b) => a.time - b.time);
         this.duration = Math.max(this.duration, time);
@@ -84,6 +91,7 @@ export class Animation {
      * });
      */
     static fromJSON(data) {
+        Animation.#validateJSON(data);
         const anim = new Animation(data.name, data.loop ?? true);
 
         if (data.frames) {
@@ -94,5 +102,39 @@ export class Animation {
         }
 
         return anim;
+    }
+
+    static #validateJSON(data) {
+        if (!data || typeof data !== "object" || Array.isArray(data)) {
+            throw new ResourceReferenceError("animation", data, "animation", "animation data must be an object", "an animation object");
+        }
+        if (typeof data.name !== "string" || !data.name.trim()) {
+            throw new ResourceReferenceError("animation", data.name, "animation.name", "animation name is missing or empty", "a non-empty animation name");
+        }
+        if (data.loop !== undefined && typeof data.loop !== "boolean") {
+            throw new ResourceReferenceError("animation", data.loop, "animation.loop", "loop must be boolean", "a boolean loop value");
+        }
+        if (data.frames === undefined) return;
+        if (!Array.isArray(data.frames)) {
+            throw new ResourceReferenceError("animation", data.frames, "animation.frames", "frames must be an array", "an animation frame array");
+        }
+        data.frames.forEach((frame, index) => {
+            const location = `animation.frames[${index}]`;
+            if (!frame || typeof frame !== "object" || Array.isArray(frame)) {
+                throw new ResourceReferenceError("animation", frame, location, "frame must be an object", "a frame with time and limbs");
+            }
+            if (!Number.isFinite(frame.time) || frame.time < 0) {
+                throw new ResourceReferenceError("animation", frame.time, `${location}.time`, "frame time must be a non-negative number", "a valid frame time");
+            }
+            if (frame.limbs !== undefined &&
+                (!frame.limbs || typeof frame.limbs !== "object" || Array.isArray(frame.limbs))) {
+                throw new ResourceReferenceError("animation", frame.limbs, `${location}.limbs`, "limbs must be an object", "a limb pose object");
+            }
+            for (const [limbName, limb] of Object.entries(frame.limbs || {})) {
+                if (!limb || typeof limb !== "object" || Array.isArray(limb)) {
+                    throw new ResourceReferenceError("animation", limb, `${location}.limbs.${limbName}`, "limb pose must be an object", "a limb transform object");
+                }
+            }
+        });
     }
 }

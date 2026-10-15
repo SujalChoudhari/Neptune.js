@@ -67,6 +67,11 @@ const SidebarItem = ({
     return (
         <div>
             <div
+                role="treeitem"
+                tabIndex={0}
+                aria-selected={selectedId === node.id}
+                aria-expanded={hasChildren ? isOpen : undefined}
+                aria-label={`${node.name}, folder`}
                 className={cn(
                     "flex items-center h-6 px-1 gap-1 cursor-pointer select-none transition-colors",
                     "hover:bg-accent/30 text-xs",
@@ -74,6 +79,14 @@ const SidebarItem = ({
                 )}
                 style={{ paddingLeft: `${level * 12 + 4}px` }}
                 onClick={() => onSelect(node.id)}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        onSelect(node.id)
+                    }
+                    if (e.key === 'ArrowRight' && hasChildren && !isOpen) setIsOpen(true)
+                    if (e.key === 'ArrowLeft' && hasChildren && isOpen) setIsOpen(false)
+                }}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
@@ -120,8 +133,8 @@ export const ProjectSidebar = ({ nodes, selectedId, onSelect }: ProjectSidebarPr
     if (!rootNode) return null
 
     return (
-        <ThemedScrollArea className="h-full" maxHeight="100%">
-            <div className="py-1">
+        <ThemedScrollArea className="h-full" maxHeight="100%" aria-label="Project folders">
+            <div className="py-1" role="tree" aria-label="Project folders">
                 <SidebarItem
                     node={rootNode}
                     nodes={nodes}

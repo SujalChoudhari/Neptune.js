@@ -1,5 +1,12 @@
 import { useState, useCallback } from "react"
 
+/**
+ * Test fixture only. Production project browsing is provided by
+ * context/FileSystemContext and the selected-project Tauri capability.
+ * Keep this hook out of shipped editor components so fake files never appear
+ * in a real project session.
+ */
+
 export type AssetType = 'folder' | 'image' | 'script' | 'scene' | 'material' | 'audio' | 'prefab' | 'model'
 
 export interface FileSystemNode {

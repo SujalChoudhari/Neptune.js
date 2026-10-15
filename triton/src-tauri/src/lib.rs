@@ -4,6 +4,11 @@ use tauri::{Emitter, Manager};
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 use std::sync::Mutex;
+use serde_json::Value;
+
+const PROJECT_SCHEMA_VERSION: i64 = 1;
+const SCENE_SCHEMA_VERSION: i64 = 1;
+const DATA_VERSION: &str = "1.0.0";
 
 #[derive(Default)]
 struct SelectedProjectRoot(Mutex<Option<PathBuf>>);
@@ -43,6 +48,144 @@ fn set_selected_root(state: &SelectedProjectRoot, root: PathBuf) -> Result<(), S
         .lock()
         .map_err(|_| "Selected project state is unavailable".to_string())? = Some(root);
     Ok(())
+}
+
+fn parse_major_version(value: &Value) -> Option<i64> {
+    match value {
+        Value::Number(number) => number.as_i64(),
+        Value::String(version) => version.split('.').next()?.parse::<i64>().ok(),
+        _ => None,
+    }
+}
+
+fn validate_version(value: Option<&Value>, kind: &str, expected: i64) -> Result<(), String> {
+    let Some(value) = value else { return Ok(()); };
+    if parse_major_version(value) != Some(expected) {
+        return Err(format!(
+            "Unsupported {kind} schema version '{}'. Supported version is {expected}. Migrate the {kind} before loading it.",
+            value
+        ));
+    }
+    Ok(())
+}
+
+fn resource_target(value: &Value) -> Option<String> {
+    match value {
+        Value::String(value) if !value.trim().is_empty() => Some(value.trim().to_string()),
+        Value::Object(object) => ["path", "uri", "id", "key", "ref"]
+            .iter()
+            .find_map(|key| object.get(*key).and_then(Value::as_str))
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_string),
+        _ => None,
+    }
+}
+
+fn require_resource(value: Option<&Value>, kind: &str, location: &str) -> Result<(), String> {
+    if value.and_then(resource_target).is_none() {
+        return Err(format!(
+            "[RESOURCE_REFERENCE_INVALID] Invalid {kind} resource reference at {location}: missing or empty target. Expected a non-empty path, id, uri, or key."
+        ));
+    }
+    Ok(())
+}
+
+fn validate_resource_references(value: &Value, location: &str) -> Result<(), String> {
+    let Some(object) = value.as_object() else {
+        if value.is_array() {
+            for (index, child) in value.as_array().unwrap().iter().enumerate() {
+                validate_resource_references(child, &format!("{location}[{index}]"))?;
+            }
+        }
+        return Ok(());
+    };
+
+    let kind = object
+        .get("type")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_ascii_lowercase();
+    let props = object.get("props").and_then(Value::as_object);
+    match kind.as_str() {
+        "sprite" => require_resource(
+            props.and_then(|props| props.get("path").or_else(|| props.get("texture")).or_else(|| props.get("asset")).or_else(|| props.get("reference"))),
+            "sprite",
+            &format!("{location}.props.path"),
+        )?,
+        "sound" | "soundpool" | "audio" => require_resource(
+            props.and_then(|props| props.get("src").or_else(|| props.get("path")).or_else(|| props.get("audio")).or_else(|| props.get("asset")).or_else(|| props.get("reference"))),
+            "audio",
+            &format!("{location}.props.src"),
+        )?,
+        "tilemap" => require_resource(
+            object.get("src").or_else(|| props.and_then(|props| props.get("tileset")).or_else(|| props.and_then(|props| props.get("asset")))),
+            "tilemap",
+            &format!("{location}.src"),
+        )?,
+        "animation" => require_resource(
+            props.and_then(|props| props.get("path").or_else(|| props.get("animation")).or_else(|| props.get("asset")).or_else(|| props.get("reference"))),
+            "animation",
+            &format!("{location}.props.animation"),
+        )?,
+        _ => {}
+    }
+
+    if let Some(prefab) = object.get("prefab").or_else(|| object.get("prefabRef")) {
+        require_resource(Some(prefab), "prefab", &format!("{location}.prefab"))?;
+    }
+    for (key, child) in object {
+        validate_resource_references(child, &format!("{location}.{key}"))?;
+    }
+    Ok(())
+}
+
+fn normalize_scene_payload(mut payload: Value) -> Result<Value, String> {
+    let object = payload
+        .as_object_mut()
+        .ok_or_else(|| "Invalid scene payload: expected a JSON object.".to_string())?;
+    if let Some(kind) = object.get("type").and_then(Value::as_str) {
+        if kind != "scene" {
+            return Err(format!("Invalid scene payload type '{kind}'. Expected 'scene'."));
+        }
+    }
+    validate_version(object.get("schemaVersion").or_else(|| object.get("version")), "scene", SCENE_SCHEMA_VERSION)?;
+    validate_resource_references(&Value::Object(object.clone()), "scene")?;
+    object.insert("type".to_string(), Value::String("scene".to_string()));
+    object.insert("version".to_string(), Value::String(DATA_VERSION.to_string()));
+    object.insert("schemaVersion".to_string(), Value::Number(SCENE_SCHEMA_VERSION.into()));
+    Ok(payload)
+}
+
+fn normalize_project_payload(mut payload: Value) -> Result<Value, String> {
+    let object = payload
+        .as_object_mut()
+        .ok_or_else(|| "Invalid project payload: expected a JSON object.".to_string())?;
+    if let Some(kind) = object.get("type").and_then(Value::as_str) {
+        if kind != "project" {
+            return Err(format!("Invalid project payload type '{kind}'. Expected 'project'."));
+        }
+    }
+    validate_version(object.get("schemaVersion").or_else(|| object.get("version")), "project", PROJECT_SCHEMA_VERSION)?;
+    if let Some(scenes) = object.get_mut("scenes") {
+        let scenes = scenes
+            .as_array_mut()
+            .ok_or_else(|| "Invalid project payload: 'scenes' must be an array.".to_string())?;
+        for scene in scenes.iter_mut() {
+            *scene = normalize_scene_payload(scene.take())?;
+        }
+    } else {
+        object.insert("scenes".to_string(), Value::Array(Vec::new()));
+    }
+    validate_resource_references(&Value::Object(object.clone()), "project")?;
+    object.insert("type".to_string(), Value::String("project".to_string()));
+    object.insert("version".to_string(), Value::String(DATA_VERSION.to_string()));
+    object.insert("schemaVersion".to_string(), Value::Number(PROJECT_SCHEMA_VERSION.into()));
+    Ok(payload)
+}
+
+fn parse_json_payload(content: &str, kind: &str) -> Result<Value, String> {
+    serde_json::from_str(content).map_err(|error| format!("Invalid {kind} payload: invalid JSON ({error})."))
 }
 
 /// Resolve a client path using the selected root. Existing path components are
@@ -392,6 +535,133 @@ mod tests {
 
         cleanup(&root, &outside);
     }
+
+    #[test]
+    fn normalizes_versioned_project_and_scene_without_dropping_ids() {
+        let payload = serde_json::json!({
+            "name": "Bridge Project",
+            "scenes": [{
+                "id": "scene-main",
+                "name": "Main",
+                "layers": []
+            }]
+        });
+
+        let normalized = normalize_project_payload(payload).unwrap();
+        assert_eq!(normalized["type"], "project");
+        assert_eq!(normalized["schemaVersion"], PROJECT_SCHEMA_VERSION);
+        assert_eq!(normalized["scenes"][0]["id"], "scene-main");
+        assert_eq!(normalized["scenes"][0]["schemaVersion"], SCENE_SCHEMA_VERSION);
+    }
+
+    #[test]
+    fn rejects_invalid_payloads_before_persistence() {
+        let unsupported = serde_json::json!({ "type": "scene", "schemaVersion": 99 });
+        let error = normalize_scene_payload(unsupported).unwrap_err();
+        assert!(error.contains("Unsupported scene schema version '99'"));
+
+        let invalid_resource = serde_json::json!({
+            "type": "scene",
+            "schemaVersion": 1,
+            "layers": [{
+                "type": "tilemap",
+                "src": ""
+            }]
+        });
+        let error = normalize_scene_payload(invalid_resource).unwrap_err();
+        assert!(error.contains("RESOURCE_REFERENCE_INVALID"));
+        assert!(error.contains("non-empty path"));
+    }
+
+    #[test]
+    fn project_and_scene_commands_round_trip_through_selected_root() {
+        let (state, root, outside) = test_root();
+        fs::create_dir_all(root.join("scenes")).unwrap();
+
+        let project = serde_json::json!({
+            "type": "project",
+            "version": "1.0.0",
+            "schemaVersion": 1,
+            "name": "Bridge Project",
+            "scenes": [{
+                "type": "scene",
+                "version": "1.0.0",
+                "schemaVersion": 1,
+                "id": "scene-main",
+                "name": "Main",
+                "layers": []
+            }]
+        });
+        let scene = serde_json::json!({
+            "type": "scene",
+            "version": "1.0.0",
+            "schemaVersion": 1,
+            "id": "scene-main",
+            "name": "Main",
+            "layers": []
+        });
+
+        write_project_impl(&project.to_string(), &state).unwrap();
+        write_scene_impl("scenes/main.scene", &scene.to_string(), &state).unwrap();
+
+        let restored_project: Value = serde_json::from_str(&read_project_impl(&state).unwrap()).unwrap();
+        let restored_scene: Value = serde_json::from_str(
+            &read_scene_impl("scenes/main.scene", &state).unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(restored_project["schemaVersion"], PROJECT_SCHEMA_VERSION);
+        assert_eq!(restored_project["scenes"][0]["id"], "scene-main");
+        assert_eq!(restored_project["scenes"][0]["schemaVersion"], SCENE_SCHEMA_VERSION);
+        assert_eq!(restored_scene["id"], "scene-main");
+        assert_eq!(restored_scene["schemaVersion"], SCENE_SCHEMA_VERSION);
+        assert!(root.join("project.npt").starts_with(fs::canonicalize(&root).unwrap()));
+        assert!(root.join("scenes/main.scene").starts_with(fs::canonicalize(&root).unwrap()));
+
+        cleanup(&root, &outside);
+    }
+
+    #[test]
+    fn invalid_payloads_are_rejected_before_existing_files_are_overwritten() {
+        let (state, root, outside) = test_root();
+        fs::create_dir_all(root.join("scenes")).unwrap();
+
+        let valid_project = serde_json::json!({
+            "type": "project",
+            "schemaVersion": 1,
+            "scenes": []
+        });
+        let valid_scene = serde_json::json!({
+            "type": "scene",
+            "schemaVersion": 1,
+            "id": "scene-main",
+            "layers": []
+        });
+        write_project_impl(&valid_project.to_string(), &state).unwrap();
+        write_scene_impl("scenes/main.scene", &valid_scene.to_string(), &state).unwrap();
+        let project_before = fs::read_to_string(root.join("project.npt")).unwrap();
+        let scene_before = fs::read_to_string(root.join("scenes/main.scene")).unwrap();
+
+        let json_error = write_project_impl("{not valid json", &state).unwrap_err();
+        assert!(json_error.contains("Invalid project payload: invalid JSON"));
+        assert_eq!(fs::read_to_string(root.join("project.npt")).unwrap(), project_before);
+
+        let resource_error = write_scene_impl(
+            "scenes/main.scene",
+            &serde_json::json!({
+                "type": "scene",
+                "schemaVersion": 1,
+                "layers": [{ "type": "tilemap", "src": "" }]
+            })
+            .to_string(),
+            &state,
+        )
+        .unwrap_err();
+        assert!(resource_error.contains("RESOURCE_REFERENCE_INVALID"));
+        assert_eq!(fs::read_to_string(root.join("scenes/main.scene")).unwrap(), scene_before);
+
+        cleanup(&root, &outside);
+    }
 }
 
 #[tauri::command]
@@ -478,13 +748,25 @@ async fn initialize_project(
         .and_then(|n| n.to_str())
         .unwrap_or("New Project");
     
-    // Create marker file (.npt)
+    // Create a versioned marker file for a clean project. Existing project data
+    // is validated below and is never replaced implicitly.
     let marker_file = project_path.join("project.npt");
-    
-    // Only write if not exists
     if !marker_file.exists() {
-        let initial_config = format!(r#"{{ "name": "{}", "version": "0.0.1" }}"#, project_name);
-        fs::write(marker_file, initial_config).map_err(|e| e.to_string())?;
+        let initial_config = serde_json::json!({
+            "type": "project",
+            "name": project_name,
+            "version": DATA_VERSION,
+            "schemaVersion": PROJECT_SCHEMA_VERSION,
+            "scenes": []
+        });
+        let initial_config = serde_json::to_string_pretty(&initial_config).map_err(|e| e.to_string())?;
+        fs::write(&marker_file, initial_config).map_err(|e| e.to_string())?;
+    } else {
+        let content = fs::read_to_string(&marker_file)
+            .map_err(|e| format!("Could not read project.npt: {e}"))?;
+        let payload = parse_json_payload(&content, "project")?;
+        normalize_project_payload(payload)
+            .map_err(|error| format!("Could not open project: {error}"))?;
     }
 
     set_selected_root(&state, project_path)?;
@@ -510,6 +792,72 @@ async fn write_file(
      let path_buf = resolve_scoped_path(&state, &path, false)?;
      fs::write(path_buf, content).map_err(|e| e.to_string())?;
      Ok(true)
+}
+
+#[tauri::command]
+async fn read_project(
+    state: tauri::State<'_, SelectedProjectRoot>,
+) -> Result<String, String> {
+    read_project_impl(state.inner())
+}
+
+fn read_project_impl(state: &SelectedProjectRoot) -> Result<String, String> {
+    let path = resolve_existing_path(state, "project.npt")?;
+    let content = fs::read_to_string(path).map_err(|e| format!("Could not read project.npt: {e}"))?;
+    let payload = normalize_project_payload(parse_json_payload(&content, "project")?)?;
+    serde_json::to_string_pretty(&payload).map_err(|e| format!("Could not serialize project payload: {e}"))
+}
+
+#[tauri::command]
+async fn write_project(
+    content: String,
+    state: tauri::State<'_, SelectedProjectRoot>,
+) -> Result<bool, String> {
+    write_project_impl(&content, state.inner())
+}
+
+fn write_project_impl(content: &str, state: &SelectedProjectRoot) -> Result<bool, String> {
+    let payload = normalize_project_payload(parse_json_payload(content, "project")?)?;
+    let path = resolve_scoped_path(state, "project.npt", false)?;
+    let serialized = serde_json::to_string_pretty(&payload)
+        .map_err(|e| format!("Could not serialize project payload: {e}"))?;
+    fs::write(path, serialized).map_err(|e| format!("Could not write project.npt: {e}"))?;
+    Ok(true)
+}
+
+#[tauri::command]
+async fn read_scene(
+    path: String,
+    state: tauri::State<'_, SelectedProjectRoot>,
+) -> Result<String, String> {
+    read_scene_impl(&path, state.inner())
+}
+
+fn read_scene_impl(path: &str, state: &SelectedProjectRoot) -> Result<String, String> {
+    let path_buf = resolve_existing_path(state, path)?;
+    let content = fs::read_to_string(path_buf)
+        .map_err(|e| format!("Could not read scene '{path}': {e}"))?;
+    let payload = normalize_scene_payload(parse_json_payload(&content, "scene")?)?;
+    serde_json::to_string_pretty(&payload).map_err(|e| format!("Could not serialize scene payload: {e}"))
+}
+
+#[tauri::command]
+async fn write_scene(
+    path: String,
+    content: String,
+    state: tauri::State<'_, SelectedProjectRoot>,
+) -> Result<bool, String> {
+    write_scene_impl(&path, &content, state.inner())
+}
+
+fn write_scene_impl(path: &str, content: &str, state: &SelectedProjectRoot) -> Result<bool, String> {
+    let payload = normalize_scene_payload(parse_json_payload(content, "scene")?)?;
+    let path_buf = resolve_scoped_path(state, path, false)?;
+    let serialized = serde_json::to_string_pretty(&payload)
+        .map_err(|e| format!("Could not serialize scene payload: {e}"))?;
+    fs::write(path_buf, serialized)
+        .map_err(|e| format!("Could not write scene '{path}': {e}"))?;
+    Ok(true)
 }
 
 #[tauri::command]
@@ -696,7 +1044,11 @@ pub fn run() {
         duplicate_fs_node,
         sync_neptune_lib,
         read_file,
-        write_file
+        write_file,
+        read_project,
+        write_project,
+        read_scene,
+        write_scene
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {

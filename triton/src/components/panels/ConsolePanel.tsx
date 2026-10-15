@@ -22,13 +22,8 @@ interface LogEntry {
     count: number
 }
 
-// Mock Data
-const INITIAL_LOGS: LogEntry[] = [
-    { id: '1', type: 'info', message: 'Triton Engine initialized successfully.', timestamp: '10:45:22', count: 1 },
-];
-
 export const ConsolePanel = (_props: IDockviewPanelProps) => {
-    const [logs, setLogs] = useState<LogEntry[]>(INITIAL_LOGS)
+    const [logs, setLogs] = useState<LogEntry[]>([])
     const [searchQuery, setSearchQuery] = useState("")
     const [showInfo, setShowInfo] = useState(true)
     const [showWarn, setShowWarn] = useState(true)
@@ -66,6 +61,18 @@ export const ConsolePanel = (_props: IDockviewPanelProps) => {
             }
         };
 
+        const handleDiagnostic = (event: CustomEvent) => {
+            const diagnostic = event.detail || {};
+            const source = diagnostic.source ? ` at ${diagnostic.source}` : '';
+            const action = diagnostic.action ? ` Action: ${diagnostic.action}` : '';
+            addLog('error', `[${diagnostic.code || 'EDITOR_DATA_INVALID'}] ${diagnostic.message || 'Invalid editor data.'}${source}.${action}`);
+        };
+
+        const handleDiagnosticMessage = (event: MessageEvent) => {
+            if (event.data?.type !== 'editor:diagnostic') return;
+            handleDiagnostic({ detail: event.data.payload } as CustomEvent);
+        };
+
         const handleClear = () => {
             if (clearOnPlay) {
                 setLogs([]);
@@ -73,12 +80,16 @@ export const ConsolePanel = (_props: IDockviewPanelProps) => {
         };
 
         window.addEventListener('editor:log', handleLog as EventListener);
+        window.addEventListener('editor:diagnostic', handleDiagnostic as EventListener);
         window.addEventListener('message', handleMessage);
+        window.addEventListener('message', handleDiagnosticMessage);
         window.addEventListener('editor:play', handleClear as EventListener);
 
         return () => {
-            window.removeEventListener('editor:log', handleLog as EventListener);
+        window.removeEventListener('editor:log', handleLog as EventListener);
+            window.removeEventListener('editor:diagnostic', handleDiagnostic as EventListener);
             window.removeEventListener('message', handleMessage);
+            window.removeEventListener('message', handleDiagnosticMessage);
             window.removeEventListener('editor:play', handleClear as EventListener);
         };
     }, [clearOnPlay]);

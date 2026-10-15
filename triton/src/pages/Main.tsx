@@ -1,5 +1,5 @@
 import { DockLayout } from "@/components/layout/DockLayout"
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef } from "react"
 import type { NeptuneDockApi } from "@/components/layout/DockLayout"
 import { EditorToolbar } from "@/components/layout/EditorToolbar"
 
@@ -9,20 +9,26 @@ import { invoke } from "@tauri-apps/api/core";
 import { WelcomeScreen } from "@/pages/WelcomeScreen";
 import { useFileSystem } from "@/context/FileSystemContext";
 import { StatusBar } from "@/components/layout/StatusBar";
+import { EditorGameRunner } from "@/lib/editorGameRunner";
 
 export function Main() {
     const dockApiRef = useRef<NeptuneDockApi | null>(null)
     const [isProjectLoaded, setIsProjectLoaded] = useState(false);
-    const { loadProject } = useFileSystem();
+    const [projectError, setProjectError] = useState<string | null>(null);
+    const { loadProject, readProject, writeScene } = useFileSystem();
 
-    const handleProjectLoaded = useCallback(async (path: string) => {
-        setIsProjectLoaded(true);
+    const handleProjectLoaded = async (path: string) => {
         try {
+            setProjectError(null);
+            // Validate and normalize the versioned payload before the editor is
+            // shown. The native adapter remains the selected-project boundary.
+            await readProject();
             console.log("Syncing Neptune Lib...");
             await invoke("sync_neptune_lib");
             console.log("Lib Synced.");
 
             await loadProject(path); // Load file system
+            setIsProjectLoaded(true);
 
             const projectPath = path.replaceAll('\\', '/');
             // Extract folder name or use a default
@@ -31,10 +37,12 @@ export function Main() {
             await getCurrentWindow().setTitle(newTitle);
         } catch (e) {
             console.error("Failed to set window title", e);
-            // Fallback just in case
-            document.title = `Neptune - ${path}`;
+            const message = e instanceof Error ? e.message : String(e);
+            setProjectError(`Project could not be opened. ${message}`);
+            setIsProjectLoaded(false);
+            throw e;
         }
-    }, [loadProject]);
+    };
 
     useEffect(() => {
         // Check for startup config (debug mode autoload)
@@ -43,13 +51,13 @@ export function Main() {
                 console.log("Autoloading Debug Project:", path);
                 // Initialize just in case
                 invoke("initialize_project", { path }).then(() => {
-                    handleProjectLoaded(path);
+                    void handleProjectLoaded(path).catch(() => undefined);
                 });
             }
         }).catch((err: any) => {
             console.error("Failed to check startup config", err);
         });
-    }, [handleProjectLoaded]);
+    }, []);
 
     useEffect(() => {
         const root = window.document.documentElement
@@ -74,7 +82,10 @@ export function Main() {
                     setIsProjectLoaded(false);
                     break;
                 case 'save':
-                    console.log("Save triggered");
+                    void EditorGameRunner.saveScene(async (path, content) => writeScene(path, JSON.parse(content))).catch((error: unknown) => {
+                        const message = error instanceof Error ? error.message : String(error);
+                        setProjectError(`Scene could not be saved. ${message}`);
+                    });
                     break;
 
                 // Panels
@@ -133,7 +144,7 @@ export function Main() {
             window.removeEventListener("keydown", handleKeyDown);
             unlistenPromise.then(unlisten => unlisten());
         }
-    }, [])
+    }, [writeScene])
 
     // Add a panel via Dockview API
     const openPanel = (panelId: string, title: string, component: string) => {
@@ -160,7 +171,7 @@ export function Main() {
     }
 
     if (!isProjectLoaded) {
-        return <WelcomeScreen onProjectLoaded={handleProjectLoaded} />;
+        return <WelcomeScreen onProjectLoaded={handleProjectLoaded} errorMessage={projectError} />;
     }
 
     return (

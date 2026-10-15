@@ -13,6 +13,7 @@ import { useGameContext } from "@/context/GameContext"
 import { HierarchyItem } from "./hierarchy/HierarchyItem"
 import { HierarchyToolbar } from "./hierarchy/HierarchyToolbar"
 import type { SceneEntity } from "@/types/engine"
+import { EditorGameRunner } from "@/lib/editorGameRunner"
 
 export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     const {
@@ -41,6 +42,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     const toggleActive = (id: string) => {
         const ent = entities[id];
         if (ent) {
+            EditorGameRunner.updateEntity(id, 'active', { value: !ent.active })
             notifyGame('editor:update-component', { id, component: 'active', data: !ent.active });
             notifyGame('editor:set-active', { id, active: !ent.active });
         }
@@ -56,18 +58,26 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     }
 
     const renameEntity = (id: string, newName: string) => {
+        EditorGameRunner.updateEntity(id, 'name', { value: newName })
         notifyGame('editor:rename', { id, name: newName });
         setRenamingId(null)
     }
 
     const removeEntity = useCallback((id: string) => {
+        EditorGameRunner.deleteEntity(id)
         notifyGame('editor:delete', { id });
     }, [notifyGame])
 
+    const duplicateEntity = (id: string) => {
+        EditorGameRunner.duplicateEntity(id)
+        notifyGame('editor:duplicate', { id })
+    }
+
     const addEntity = (parentId: string, name: string, type: string) => {
-        notifyGame('editor:create-entity', { parentId, name, type });
-        // We can optionally auto-rename the new entity if we get its ID back.
-        // For now, simpler is fine.
+        const id = globalThis.crypto?.randomUUID?.() || `entity-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+        const persistenceParentId = EditorGameRunner.resolveHierarchyParentId(parentId, entities)
+        if (!persistenceParentId || !EditorGameRunner.createEntity(persistenceParentId, { id, name, type })) return
+        notifyGame('editor:create-entity', { id, parentId, name, type });
     }
 
     // Simple search filtering
@@ -140,7 +150,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
 
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [removeEntity, selectedIds])
+    }, [selectedIds, removeEntity])
 
     const handleBackgroundClick = () => {
         selectEntity("", false) // clear
@@ -170,8 +180,11 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
 
     const handleMove = (draggedIdsArg: string | string[], targetParentId: string, targetIndex?: number | 'before' | 'after', relativeToId?: string) => {
         const draggedIds = Array.isArray(draggedIdsArg) ? draggedIdsArg : [draggedIdsArg]
+        const persistenceParentId = EditorGameRunner.resolveHierarchyParentId(targetParentId, entities)
+        if (!persistenceParentId) return
 
         if (typeof targetIndex === 'number' || targetIndex === undefined) {
+            if (!EditorGameRunner.moveEntities(draggedIds, persistenceParentId, targetIndex as number | undefined)) return
             moveEntities(draggedIds, targetParentId, targetIndex as number | undefined)
             return
         }
@@ -183,6 +196,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         if (currentIndex === -1) return
 
         const finalIndex = targetIndex === 'before' ? currentIndex : currentIndex + 1
+        if (!EditorGameRunner.moveEntities(draggedIds, persistenceParentId, finalIndex)) return
         moveEntities(draggedIds, targetParentId, finalIndex)
     }
 
@@ -224,7 +238,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
                             <ThemedContextMenuLabel>{entity.name}</ThemedContextMenuLabel>
                             <ThemedContextMenuSeparator />
                             <ThemedContextMenuItem onClick={() => setRenamingId(id)}>Rename</ThemedContextMenuItem>
-                            <ThemedContextMenuItem onClick={() => { notifyGame('editor:duplicate', { id }) }}>Duplicate</ThemedContextMenuItem>
+                            <ThemedContextMenuItem onClick={() => duplicateEntity(id)}>Duplicate</ThemedContextMenuItem>
                             <ThemedContextMenuItem onClick={() => removeEntity(id)} className="text-red-400">Delete</ThemedContextMenuItem>
                             <ThemedContextMenuSeparator />
                             <ThemedContextMenuItem onClick={() => addEntity(id, "New GameObject", "empty")}>Create Empty Child</ThemedContextMenuItem>

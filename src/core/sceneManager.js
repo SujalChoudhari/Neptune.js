@@ -1,4 +1,5 @@
 import { Scene } from "./scene.js";
+import { Storage } from "./storage.js";
 
 /**
  * SceneManager is used to load and unload scenes. All scenes will automatically be added to SceneManager.
@@ -29,6 +30,11 @@ export class SceneManager {
      */
     static GetSceneByName(name) {
         return SceneManager.#scenes.find(scene => scene.name === name);
+    }
+
+    /** Return a snapshot of all registered scenes for project serialization. */
+    static GetScenes() {
+        return [...SceneManager.#scenes];
     }
 
     /**
@@ -139,6 +145,49 @@ export class SceneManager {
     static getIdForNewScene() {
         return SceneManager.#scenes.length;
     }
+
+    /** Build a versioned project payload from the currently registered scenes. */
+    static SerializeProject(name = "Untitled Project", metadata = {}) {
+        return Storage.SerializeProject({
+            ...metadata,
+            name,
+            scenes: SceneManager.#scenes
+        });
+    }
+
+    static SaveProject(key, name = "Untitled Project", persistent = false, metadata = {}) {
+        const project = typeof name === "object"
+            ? name
+            : SceneManager.SerializeProject(name, metadata);
+        return Storage.SaveProject(key, project, persistent);
+    }
+
+    /** Close the in-memory project without touching persisted data. */
+    static CloseProject() {
+        SceneManager.removeAllScenes();
+    }
+
+    /**
+     * Reopen a saved project. Parsing is dynamic to retain the existing
+     * SceneLoader -> SceneManager dependency without introducing a module cycle.
+     */
+    static async OpenProject(key) {
+        const project = Storage.LoadProject(key);
+        if (project === null) return null;
+
+        const { SceneLoader } = await import("./sceneLoader.js");
+        SceneManager.CloseProject();
+        const scenes = [];
+        for (const sceneData of project.scenes) {
+            scenes.push(await SceneLoader.parse(sceneData));
+        }
+        return { ...project, scenes };
+    }
+
+    static serializeProject(...args) { return SceneManager.SerializeProject(...args); }
+    static saveProject(...args) { return SceneManager.SaveProject(...args); }
+    static closeProject(...args) { return SceneManager.CloseProject(...args); }
+    static openProject(...args) { return SceneManager.OpenProject(...args); }
 
     /**@private */
     static removeAllScenes() {

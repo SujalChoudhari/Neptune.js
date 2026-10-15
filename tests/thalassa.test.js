@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from "./tester.js";
+import "./setup_mocks.js";
 import { Tileset, Tilemap, ParallaxLayer, ParallaxBackground, Camera } from "../src/thalassa/index.js";
 import { Vector2 } from "../src/neptune.js";
 
@@ -19,6 +20,11 @@ describe('Tileset', () => {
         const rect = ts.getTileRect(15); // Row 1, Col 5
         expect(rect.x).toBe(80); // 5 * 16
         expect(rect.y).toBe(16); // 1 * 16
+    });
+
+    it('rejects missing and incompatible tileset references', () => {
+        expect(() => new Tileset("", 16, 16)).toThrow(/tileset resource reference/);
+        expect(() => new Tilemap({ tileWidth: 16, tileHeight: 16 }, 2, 2)).toThrow(/compatible Tileset instance/);
     });
 });
 

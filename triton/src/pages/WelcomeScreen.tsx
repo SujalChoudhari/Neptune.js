@@ -13,13 +13,25 @@ interface RecentProject {
 }
 
 interface WelcomeScreenProps {
-    onProjectLoaded: (path: string) => void;
+    onProjectLoaded: (path: string) => Promise<void>;
+    errorMessage?: string | null;
 }
 
-export function WelcomeScreen({ onProjectLoaded }: WelcomeScreenProps) {
+function actionableError(error: unknown, fallback: string) {
+    return error instanceof Error ? error.message : `${fallback}. ${String(error)}`;
+}
+
+export function WelcomeScreen({ onProjectLoaded, errorMessage }: WelcomeScreenProps) {
     const [recents, setRecents] = useState<RecentProject[]>([]);
     const [selectedPath, setSelectedPath] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
+    const [localError, setLocalError] = useState<string | null>(null);
+
+    const showError = (error: unknown, fallback: string) => {
+        const message = actionableError(error, fallback);
+        setLocalError(message);
+        console.error(fallback, error);
+    };
 
     useEffect(() => {
         const stored = localStorage.getItem("triton_recent_projects");
@@ -62,10 +74,10 @@ export function WelcomeScreen({ onProjectLoaded }: WelcomeScreenProps) {
             if (selected) {
                 await invoke("initialize_project", { path: selected });
                 addToRecents(selected as string);
-                onProjectLoaded(selected as string);
+                await onProjectLoaded(selected as string);
             }
         } catch (e) {
-            console.error("Failed to create project", e);
+            showError(e, "Failed to create project");
         }
     };
 
@@ -79,10 +91,10 @@ export function WelcomeScreen({ onProjectLoaded }: WelcomeScreenProps) {
             if (selected) {
                 await invoke("initialize_project", { path: selected });
                 addToRecents(selected as string);
-                onProjectLoaded(selected as string);
+                await onProjectLoaded(selected as string);
             }
         } catch (e) {
-            console.error("Failed to open project", e);
+            showError(e, "Failed to open project");
         }
     }
 
@@ -97,9 +109,9 @@ export function WelcomeScreen({ onProjectLoaded }: WelcomeScreenProps) {
             // capability before Main invokes any scoped filesystem command.
             await invoke("initialize_project", { path });
             addToRecents(path);
-            onProjectLoaded(path);
+            await onProjectLoaded(path);
         } catch (e) {
-            console.error("Failed to launch recent project", e);
+            showError(e, "Failed to launch recent project");
         }
     };
 
@@ -136,6 +148,12 @@ export function WelcomeScreen({ onProjectLoaded }: WelcomeScreenProps) {
                     </div>
                 </div>
             </div>
+
+            {(localError || errorMessage) && (
+                <div role="alert" className="border-b border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                    {localError || errorMessage}
+                </div>
+            )}
 
             {/* MAIN CONTENT AREA */}
             <div className="flex-1 flex overflow-hidden">

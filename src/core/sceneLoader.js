@@ -1,14 +1,51 @@
-import { Scene } from "./scene.js";
+import {
+    Scene,
+    SCENE_SCHEMA_VERSION,
+    ResourceReferenceError,
+    assertResourceReference,
+    getResourceReferenceTarget,
+    validateSceneResourceReferences
+} from "./scene.js";
 import { Entity } from "./entity.js";
 import { SceneManager } from "./sceneManager.js";
 import { ComponentRegistry } from "./componentRegistry.js";
 import { Vector2 } from "../math/vec2.js";
 import { Sprite } from "../rendering/sprite.js";
 
+export {
+    SCENE_SCHEMA_VERSION,
+    ResourceReferenceError,
+    assertResourceReference,
+    validateSceneResourceReferences
+};
+
 /**
  * SceneLoader responsible for loading .scn (JSON) files and instantiating the scene graph.
  */
 export class SceneLoader {
+
+    static #assertSupportedVersion(data) {
+        if (!data || typeof data !== "object" || Array.isArray(data)) {
+            throw new TypeError("Scene data must be a JSON object.");
+        }
+        if (data.type && data.type !== "scene") {
+            throw new Error(`Cannot load '${data.type}' as a scene. Expected a scene payload.`);
+        }
+
+        const schemaVersion = typeof data.schemaVersion === "string"
+            ? Number.parseInt(data.schemaVersion.split(".")[0], 10)
+            : data.schemaVersion;
+        const legacyVersion = data.version;
+        const parsedLegacyVersion = typeof legacyVersion === "number"
+            ? legacyVersion
+            : typeof legacyVersion === "string"
+                ? Number.parseInt(legacyVersion.split(".")[0], 10)
+                : null;
+        const version = schemaVersion ?? parsedLegacyVersion;
+        if (version !== null && version !== undefined && version !== SCENE_SCHEMA_VERSION) {
+            throw new Error(`Unsupported scene schema version '${schemaVersion ?? legacyVersion}'. Supported version is ${SCENE_SCHEMA_VERSION}. Migrate the scene before loading it.`);
+        }
+    }
 
     /**
      * Loads a scene from a JSON file.
@@ -39,65 +76,113 @@ export class SceneLoader {
      * @param {object} data - The scene JSON data.
      * @returns {Promise<Scene>} The instantiated scene.
      */
-    static async parse(data) {
+    static parse(data) {
+        SceneLoader.validate(data);
         const sceneName = data.name || "Untitled Scene";
         const scene = new Scene(sceneName);
+        if (data.id !== undefined && data.id !== null) scene.id = data.id;
 
         // 1. Configure Global Scene properties (Camera, etc.)
-        if (data.camera && data.camera.settings) {
+        if (data.camera) {
             scene.cameraSettings = data.camera;
         }
 
         // 2. Parse Layers
+        const pendingLoads = [];
         if (Array.isArray(data.layers)) {
             for (const layerData of data.layers) {
-                await SceneLoader.#parseLayer(layerData, scene);
+                const pending = SceneLoader.#parseLayer(layerData, scene);
+                if (pending && typeof pending.then === "function") pendingLoads.push(pending);
             }
+        } else if (Array.isArray(data.entities)) {
+            data.entities.forEach(entityData => scene.AddChild(SceneLoader.#parseEntity(entityData)));
         }
 
+        if (pendingLoads.length > 0) {
+            return Promise.all(pendingLoads).then(() => scene);
+        }
         return scene;
+    }
+
+    /** Validate a scene payload without constructing or registering a Scene. */
+    static validate(data) {
+        SceneLoader.#assertSupportedVersion(data);
+        return validateSceneResourceReferences(data);
     }
 
     /**
      * Parses a layer definition.
      * @private
      */
-    static async #parseLayer(layerData, scene) {
-        const parent = scene;
+    static #parseLayer(layerData, scene) {
+        if (!layerData || typeof layerData !== "object" || Array.isArray(layerData)) {
+            throw new TypeError("Invalid scene layer definition. Expected an object with a type and source location.");
+        }
 
         if (layerData.type === "object_layer" || layerData.type === "main" || layerData.type === "parallax") {
+            const parent = layerData.root ? scene : new Entity(layerData.name || layerData.type);
+            if (layerData.id && parent !== scene) parent.id = layerData.id;
             if (Array.isArray(layerData.entities)) {
                 layerData.entities.forEach(entityData => {
                     const entity = SceneLoader.#parseEntity(entityData);
                     parent.AddChild(entity);
                 });
             }
+            if (parent !== scene) scene.AddChild(parent);
         } else if (layerData.type === "tilemap") {
-            if (layerData.src) {
-                await SceneLoader.#loadTilemap(layerData.src, scene);
-            }
+            return SceneLoader.#loadTilemap(
+                getResourceReferenceTarget(layerData.src, "tilemap", "scene.layers[].src"),
+                scene,
+                layerData.src
+            );
         }
+        return null;
     }
 
-    static async #loadTilemap(path, scene) {
-        try {
-            const res = await fetch(path);
-            const map = await res.json();
+    static async #loadTilemap(path, scene, sourceReference = path) {
+        const res = await fetch(path);
+        if (!res.ok) {
+            throw new Error(`Failed to load tilemap '${path}' (${res.status}). Source reference: ${path}.`);
+        }
+        const map = await res.json();
+        if (!map || typeof map !== "object" || Array.isArray(map)) {
+            throw new TypeError(`Invalid tilemap '${path}': expected a JSON object. Source reference: ${path}.`);
+        }
 
             // Map Props: width, height (in tiles), key: "1" -> {x,y} ? No, usually linear data
             // Simple format: { width: 10, tileSize: 64, tileset: "path", columns: 10, data: [1, 2, 0...] }
 
+            if (!Array.isArray(map.data)) {
+                throw new ResourceReferenceError("tilemap", sourceReference, `${path}.data`, "tilemap data is missing or not an array", "a tilemap object with a numeric data array");
+            }
+            if (!Number.isInteger(map.width) || map.width <= 0) {
+                throw new ResourceReferenceError("tilemap", sourceReference, `${path}.width`, "tilemap width must be a positive integer", "a tilemap object with a positive integer width");
+            }
             const data = map.data;
             const cols = map.width;
-            const tileSize = map.tileSize || 64;
+            const tileSize = map.tileSize === undefined ? 64 : map.tileSize;
             const tileset = map.tileset;
+            assertResourceReference(tileset, "tileset", `${path}.tileset`);
+            if (!Number.isFinite(tileSize) || tileSize <= 0) {
+                throw new ResourceReferenceError("tileset", tileset, `${path}.tileSize`, "tile size must be a positive number", "a tileset with a positive tileSize");
+            }
 
             // Texture Columns (how many tiles wide is the image?)
-            const texCols = map.columns || 10;
+            const texCols = map.columns === undefined ? 10 : map.columns;
+            if (!Number.isInteger(texCols) || texCols <= 0) {
+                throw new ResourceReferenceError("tileset", tileset, `${path}.columns`, "tileset columns must be a positive integer", "a tileset with positive integer columns");
+            }
+            if (map.height !== undefined &&
+                (!Number.isInteger(map.height) || map.height <= 0 || data.length !== cols * map.height)) {
+                throw new ResourceReferenceError("tilemap", sourceReference, `${path}.data`, "tilemap data length does not match its dimensions", "a tilemap data array sized to width and height");
+            }
 
             for (let i = 0; i < data.length; i++) {
                 const tileId = data[i];
                 if (tileId === 0) continue; // 0 == empty
+                if (!Number.isInteger(tileId) || tileId < 0) {
+                    throw new ResourceReferenceError("tileset", tileset, `${path}.data[${i}]`, "tile id must be a non-negative integer", "a tileset tile id");
+                }
 
                 // Calculate Grid Position
                 const gx = i % cols;
@@ -127,8 +212,7 @@ export class SceneLoader {
                 const tx = (tid % texCols) * tileSize;
                 const ty = Math.floor(tid / texCols) * tileSize;
 
-                const sprite = ComponentRegistry.create("Sprite");
-                sprite.path = tileset;
+                const sprite = ComponentRegistry.create("Sprite", tileset);
                 sprite.width = 1; // 1 Unit wide
                 sprite.height = 1; // 1 Unit high
 
@@ -164,9 +248,6 @@ export class SceneLoader {
                 scene.AddChild(entity);
             }
 
-        } catch (e) {
-            console.error("Failed to load map:", e);
-        }
     }
 
     /**
@@ -174,42 +255,44 @@ export class SceneLoader {
      * @private
      */
     static #parseEntity(entityData) {
+        if (!entityData || typeof entityData !== "object" || Array.isArray(entityData)) {
+            throw new Error("Invalid entity definition in scene data. Expected an entity object.");
+        }
         const entity = new Entity(entityData.name || "Entity");
         if (entityData.id) entity.id = entityData.id;
 
-        // Transform is special because it's a core requirement usually
-        if (entityData.transform) {
-            const t = entity.GetComponent(ComponentRegistry.get("Transform")); // Should be added by Entity constructor? 
-            // Actually default entity might not have transform in pure ECS
-            // But in Neptune 'every entity component must have a transform component' (transform.js doc)
-
-            // Wait, does new Entity() add Transform? 
-            // Checking entity.js... No. 
-            // So we must add it.
-
-            // If the entity doesn't have a transform, add one.
-            if (!t) {
-                // If ComponentRegistry doesn't find it (e.g. invalid name), we might crash.
-                // But "Transform" is hard registered.
-                const newT = ComponentRegistry.create("Transform");
-                if (newT) {
-                    SceneLoader.#deserializeTransform(newT, entityData.transform);
-                    entity.AddComponent(newT);
-                }
-            } else {
-                SceneLoader.#deserializeTransform(t, entityData.transform);
-            }
+        const transformType = ComponentRegistry.get("Transform");
+        let hasTransform = false;
+        if (entityData.transform && transformType) {
+            const transform = ComponentRegistry.create("Transform");
+            SceneLoader.#deserializeTransform(transform, entityData.transform);
+            entity.AddComponent(transform);
+            hasTransform = true;
         }
 
         // Components
         if (Array.isArray(entityData.components)) {
             entityData.components.forEach(compData => {
-                const component = ComponentRegistry.create(compData.type);
-                if (component) {
-                    component.deserialize(compData.props);
-                    entity.AddComponent(component);
-                } else {
+                if (!compData || typeof compData !== "object" || typeof compData.type !== "string") {
+                    throw new Error(`Invalid component definition on entity '${entity.name}'. Expected a type and props object.`);
+                }
+                const componentProps = compData.props;
+                const component = compData.type.toLowerCase() === "sprite"
+                    ? ComponentRegistry.create(compData.type, componentProps?.path ?? componentProps?.texture ?? componentProps?.asset ?? componentProps?.reference)
+                    : ComponentRegistry.create(compData.type);
+                if (!component) {
                     console.warn(`SceneLoader: Unknown component type '${compData.type}' for entity '${entity.name}'`);
+                } else if (compData.type === "Transform") {
+                    if (!hasTransform) {
+                        SceneLoader.#deserializeTransform(component, compData.props);
+                        if (compData.id) component.id = compData.id;
+                        entity.AddComponent(component);
+                        hasTransform = true;
+                    }
+                } else {
+                    if (typeof component.deserialize === "function") component.deserialize(compData.props);
+                    if (compData.id) component.id = compData.id;
+                    entity.AddComponent(component);
                 }
             });
         }
@@ -227,8 +310,10 @@ export class SceneLoader {
 
     static #deserializeTransform(transform, data) {
         if (!data) return;
-        if (data.pos) transform.position = new Vector2(data.pos.x, data.pos.y);
-        if (data.rot !== undefined) transform.rotation = data.rot;
+        const position = data.position || data.pos;
+        const rotation = data.rotation ?? data.rot;
+        if (position) transform.position = new Vector2(position.x, position.y);
+        if (rotation !== undefined) transform.rotation = rotation;
         if (data.scale) transform.scale = new Vector2(data.scale.x, data.scale.y);
     }
 }

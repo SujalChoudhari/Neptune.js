@@ -12,6 +12,24 @@ export interface FileSystemNode {
     children: string[];
 }
 
+export interface VersionedScenePayload {
+    type?: "scene";
+    version?: string;
+    schemaVersion?: number;
+    id?: string | number;
+    name?: string;
+    [key: string]: any;
+}
+
+export interface VersionedProjectPayload {
+    type?: "project";
+    version?: string;
+    schemaVersion?: number;
+    name?: string;
+    scenes: VersionedScenePayload[];
+    [key: string]: any;
+}
+
 interface FileSystemContextType {
     nodes: Record<string, FileSystemNode>;
     rootPath: string | null;
@@ -33,6 +51,10 @@ interface FileSystemContextType {
     duplicateNode: (nodeId: string) => Promise<void>;
     readFile: (path: string) => Promise<string | null>;
     writeFile: (path: string, content: string) => Promise<boolean>;
+    readProject: () => Promise<VersionedProjectPayload>;
+    writeProject: (project: VersionedProjectPayload) => Promise<boolean>;
+    readScene: (path: string) => Promise<VersionedScenePayload>;
+    writeScene: (path: string, scene: VersionedScenePayload) => Promise<boolean>;
 }
 
 const FileSystemContext = createContext<FileSystemContextType | null>(null);
@@ -65,6 +87,46 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
             // capability when the renderer supplies an invalid path.
             console.error("Failed to read file:", path, e);
             return null;
+        }
+    }, []);
+
+    const readProject = useCallback(async () => {
+        try {
+            const content = await invoke<string>("read_project");
+            return JSON.parse(content) as VersionedProjectPayload;
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            throw new Error(`Could not load project data. ${message}`);
+        }
+    }, []);
+
+    const writeProject = useCallback(async (project: VersionedProjectPayload) => {
+        try {
+            await invoke("write_project", { content: JSON.stringify(project, null, 2) });
+            return true;
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            throw new Error(`Could not save project data. ${message}`);
+        }
+    }, []);
+
+    const readScene = useCallback(async (path: string) => {
+        try {
+            const content = await invoke<string>("read_scene", { path });
+            return JSON.parse(content) as VersionedScenePayload;
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            throw new Error(`Could not load scene '${path}'. ${message}`);
+        }
+    }, []);
+
+    const writeScene = useCallback(async (path: string, scene: VersionedScenePayload) => {
+        try {
+            await invoke("write_scene", { path, content: JSON.stringify(scene, null, 2) });
+            return true;
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            throw new Error(`Could not save scene '${path}'. ${message}`);
         }
     }, []);
 
@@ -259,7 +321,11 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
             renameNode,
             duplicateNode,
             readFile,
-            writeFile
+            writeFile,
+            readProject,
+            writeProject,
+            readScene,
+            writeScene
         }}>
             {children}
         </FileSystemContext.Provider>
