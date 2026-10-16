@@ -103,10 +103,7 @@ export class Sprite extends Renderable {
         }
 
 
-        let children = this.entity.GetComponentsInChildren(Renderable);
-        for (let i = 0; i < children.length; i++) {
-            children[i].draw(ctx);
-        }
+        this.drawChildren(ctx);
 
         ctx.restore();
     }

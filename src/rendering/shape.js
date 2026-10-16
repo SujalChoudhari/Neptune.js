@@ -47,6 +47,7 @@ export class Shape extends Renderable {
 
     deserialize(props) {
         if (!props) return;
+        super.deserialize(props);
         if (props.geometry !== undefined) this.geometry = props.geometry;
 
         // Handle param merging and color conversion
@@ -230,10 +231,7 @@ export class Shape extends Renderable {
             ctx.stroke();
         }
 
-        let children = this.entity.GetComponentsInChildren(Renderable);
-        for (let i = 0; i < children.length; i++) {
-            children[i].draw(ctx);
-        }
+        this.drawChildren(ctx);
 
         ctx.restore();
     }

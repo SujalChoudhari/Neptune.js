@@ -1,3 +1,4 @@
+import "./setup_mocks.js";
 import * as npt from "../src/neptune.js";
 import { describe, it, expect } from "./tester.js";
 
@@ -27,6 +28,22 @@ function createMockContext() {
 }
 
 describe("Shape", () => {
+    it("keeps the default renderOrder after initializing shape properties", () => {
+        const shape = new npt.Shape();
+        const entity = new npt.Entity("DefaultShapeOrder");
+        entity.AddComponent(shape);
+
+        expect(shape.renderOrder).toBe(0);
+        expect(entity.serialize().components[0].props.renderOrder).toBe(0);
+    });
+
+    it("deserializes renderOrder with shape properties", () => {
+        const shape = new npt.Shape();
+        shape.deserialize({ renderOrder: 7 });
+
+        expect(shape.renderOrder).toBe(7);
+    });
+
     it("deserializes colors and renders polygons", () => {
         const shape = new npt.Shape();
         shape.deserialize({
@@ -52,5 +69,36 @@ describe("Shape", () => {
 
         const lineCalls = ctx.calls.filter((c) => Array.isArray(c) && c[0] === "lineTo");
         expect(lineCalls.length).toBe(2);
+    });
+
+    it("sorts nested Shapes through a scene and non-renderable layer hierarchy", () => {
+        const scene = new npt.Scene("NestedShapeScene");
+        const sceneLayer = new npt.Entity("SceneLayer");
+        const parent = new npt.Entity("ParentShape");
+        const nestedLayer = new npt.Entity("NestedLayer");
+        scene.AddChild(sceneLayer);
+        sceneLayer.AddChild(parent);
+        parent.AddComponent(new npt.Transform());
+        parent.AddComponent(new npt.Shape(npt.Shape.CIRCLE, { radius: 10 }));
+        parent.AddChild(nestedLayer);
+
+        const addShape = (name, radius, renderOrder) => {
+            const entity = new npt.Entity(name);
+            entity.AddComponent(new npt.Transform());
+            const shape = new npt.Shape(npt.Shape.CIRCLE, { radius });
+            shape.renderOrder = renderOrder;
+            entity.AddComponent(shape);
+            nestedLayer.AddChild(entity);
+        };
+        addShape("High", 5, 5);
+        addShape("Low", 1, -1);
+
+        const ctx = createMockContext();
+        scene.draw(ctx);
+
+        const radii = ctx.calls
+            .filter((call) => Array.isArray(call) && call[0] === "arc")
+            .map((call) => call[3]);
+        expect(radii).toEqual([10, 1, 5]);
     });
 });

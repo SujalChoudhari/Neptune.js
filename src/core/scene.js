@@ -1,4 +1,4 @@
-import { Renderable } from "../rendering/renderable.js";
+import { collectRenderableRoots, sortRenderables, withRenderablePass } from "../rendering/renderable.js";
 import { Entity } from "./entity.js";
 import { SceneManager } from "./sceneManager.js";
 import { Maths } from "../math/math.js";
@@ -258,8 +258,9 @@ export class Scene extends Entity {
             ctx.translate(-px, -py);
         }
 
-        this.GetComponentsInChildren(Renderable).forEach(renderable => {
-            renderable.draw(ctx);
+        withRenderablePass(ctx, () => {
+            sortRenderables(collectRenderableRoots(this))
+                .forEach(renderable => renderable.draw(ctx));
         });
 
         const camera = this.activeCamera;

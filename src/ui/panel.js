@@ -55,10 +55,7 @@ export class Panel extends Renderable {
         ctx.translate(-width / 2, -height / 2);
         ctx.fillRect(0, 0, width, height);
 
-        let children = this.entity.GetComponentsInChildren(Renderable);
-        for (let i = 0; i < children.length; i++) {
-            children[i].draw(ctx);
-        }
+        this.drawChildren(ctx);
 
         ctx.restore();
     }

@@ -51,25 +51,31 @@ describe("Sprite", () => {
         expect(drawCall.length).toBe(10);
     });
 
-    it("draws children renderables", () => {
+    it("draws child renderables in renderOrder", () => {
         const parent = new npt.Entity("Parent");
-        const child = new npt.Entity("Child");
-
         const parentSprite = new npt.Sprite("parent.png", 1, 1);
-        const childShape = new npt.Shape(npt.Shape.CIRCLE, { radius: 1 });
-
         parent.AddComponent(new npt.Transform());
-        child.AddComponent(new npt.Transform());
         parent.AddComponent(parentSprite);
-        child.AddComponent(childShape);
-        parent.AddChild(child);
+
+        const addShape = (name, radius, renderOrder) => {
+            const child = new npt.Entity(name);
+            child.AddComponent(new npt.Transform());
+            const shape = new npt.Shape(npt.Shape.CIRCLE, { radius });
+            shape.renderOrder = renderOrder;
+            child.AddComponent(shape);
+            parent.AddChild(child);
+        };
+        addShape("High", 5, 5);
+        addShape("Low", 1, -1);
 
         const ctx = createMockContext();
         parentSprite.draw(ctx);
 
         const drawImageCalls = ctx.calls.filter((c) => Array.isArray(c) && c[0] === "drawImage");
-        const arcCalls = ctx.calls.filter((c) => Array.isArray(c) && c[0] === "arc");
+        const arcRadii = ctx.calls
+            .filter((c) => Array.isArray(c) && c[0] === "arc")
+            .map((c) => c[3]);
         expect(drawImageCalls.length).toBe(1);
-        expect(arcCalls.length).toBe(1);
+        expect(arcRadii).toEqual([1, 5]);
     });
 });
