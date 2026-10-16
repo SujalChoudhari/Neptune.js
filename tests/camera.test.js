@@ -80,4 +80,27 @@ describe("Camera Tests", () => {
         expect(worldPos.y).toBe(10);
     });
 
+    it("transitions camera position and fade deterministically over elapsed time", () => {
+        const cam = new Camera(100, 100);
+        cam.transitionTo(new Vector2(100, 50), 2, { fade: true });
+
+        cam.update(1);
+        expect(cam.position.x).toBe(50);
+        expect(cam.position.y).toBe(25);
+        expect(cam.fadeAlpha).toBe(1);
+
+        cam.update(1);
+        expect(cam.position.x).toBe(100);
+        expect(cam.position.y).toBe(50);
+        expect(cam.fadeAlpha).toBe(0);
+    });
+
+    it("rejects invalid delta time before corrupting an active transition", () => {
+        const cam = new Camera(100, 100);
+        cam.transitionTo(new Vector2(100, 0), 2);
+
+        expect(() => cam.update(Number.NaN)).toThrow("finite non-negative");
+        expect(cam.position.x).toBe(0);
+    });
+
 });

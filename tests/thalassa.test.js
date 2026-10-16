@@ -67,6 +67,19 @@ describe('Tilemap', () => {
         expect(tilemap.isSolid(0, 0)).toBe(false);
     });
 
+    it('traverses named map layers in deterministic order for stacked traversal', () => {
+        const bridge = new Tilemap(tileset, 1, 1);
+        bridge.setTile(0, 0, 2);
+        tilemap.setTile(0, 0, 1);
+        tilemap.addLayer("bridge", bridge, 10);
+
+        expect(tilemap.getLayer("bridge")).toBe(bridge);
+        const draws = [];
+        tileset.drawTile = (_ctx, tileId) => draws.push(tileId);
+        tilemap.draw({});
+        expect(draws).toEqual([1, 2]);
+    });
+
     it('worldToTile converts correctly', () => {
         tilemap.scale = 1;
         const pos = tilemap.worldToTile(32, 48);

@@ -26,6 +26,29 @@ export class Tilemap extends Component {
         this.height = height;
         this.scale = 1;
         this.data = new Array(width * height).fill(-1); // -1 = empty
+        this.layers = [];
+    }
+
+    /** Register another traversable map layer, ordered by render order then insertion. */
+    addLayer(name, tilemap, renderOrder = 0) {
+        if (typeof name !== "string" || name.length === 0) {
+            throw new TypeError("Tilemap layer name must be a non-empty string");
+        }
+        if (!(tilemap instanceof Tilemap) || tilemap === this) {
+            throw new TypeError("Tilemap layer must be a different Tilemap instance");
+        }
+        if (!Number.isFinite(renderOrder)) {
+            throw new TypeError("Tilemap layer renderOrder must be finite");
+        }
+        if (this.layers.some(layer => layer.name === name)) {
+            throw new Error(`Tilemap layer '${name}' already exists`);
+        }
+        this.layers.push({ name, tilemap, renderOrder });
+        return tilemap;
+    }
+
+    getLayer(name) {
+        return this.layers.find(layer => layer.name === name)?.tilemap;
     }
 
     /**
@@ -129,6 +152,21 @@ export class Tilemap extends Component {
      * @param {number} offsetY - Camera offset Y.
      */
     draw(ctx, offsetX = 0, offsetY = 0) {
+        this.#drawTiles(ctx, offsetX, offsetY);
+        const visited = new Set([this]);
+        const layers = [...this.layers].sort((a, b) => a.renderOrder - b.renderOrder);
+        const drawLayer = (tilemap) => {
+            if (visited.has(tilemap)) return;
+            visited.add(tilemap);
+            tilemap.#drawTiles(ctx, offsetX, offsetY);
+            for (const layer of [...tilemap.layers].sort((a, b) => a.renderOrder - b.renderOrder)) {
+                drawLayer(layer.tilemap);
+            }
+        };
+        for (const layer of layers) drawLayer(layer.tilemap);
+    }
+
+    #drawTiles(ctx, offsetX, offsetY) {
         const tw = this.tileset.tileWidth * this.scale;
         const th = this.tileset.tileHeight * this.scale;
 

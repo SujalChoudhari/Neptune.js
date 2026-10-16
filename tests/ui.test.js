@@ -1,4 +1,6 @@
+import "./setup_mocks.js";
 import * as npt from "../src/neptune.js";
+import { Renderable } from "../src/rendering/renderable.js";
 import { describe, it, expect } from "./tester.js";
 
 function createMockContext() {
@@ -46,9 +48,28 @@ describe("UI", () => {
         panelEntity.AddComponent(panel);
         panelEntity.AddComponent(sprite);
 
+        const drawOrder = [];
+        const addChild = (name, renderOrder) => {
+            const child = new npt.Entity(name);
+            const renderable = new (class extends Renderable {
+                constructor() {
+                    super();
+                    this.renderOrder = renderOrder;
+                }
+                draw() { drawOrder.push(name); }
+            })();
+            child.AddComponent(renderable);
+            panelEntity.AddChild(child);
+        };
+        addChild("High", 5);
+        addChild("Low", -1);
+
         const ctx = createMockContext();
         panel.draw(ctx);
+        expect(drawOrder).toEqual(["Low", "High"]);
+        drawOrder.length = 0;
         sprite.draw(ctx);
+        expect(drawOrder).toEqual(["Low", "High"]);
 
         const fillRectCalls = ctx.calls.filter((c) => Array.isArray(c) && c[0] === "fillRect");
         const drawImageCalls = ctx.calls.filter((c) => Array.isArray(c) && c[0] === "drawImage");

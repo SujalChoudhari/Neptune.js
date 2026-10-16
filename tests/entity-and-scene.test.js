@@ -1,6 +1,8 @@
 import "./setup_mocks.js";
 import { describe, it, expect, beforeEach, afterEach } from "./tester.js";
 import { Entity, Component, Scene, SceneManager, Shape, Color, Transform, Vector2, application } from "../src/neptune.js";
+import { Camera } from "../src/thalassa/camera.js";
+import { Renderable } from "../src/rendering/renderable.js";
 
 describe('Entity', () => {
     let entity;
@@ -150,5 +152,177 @@ describe("Scene", () => {
         expect(payload.type).toBe("scene");
         expect(payload.schemaVersion).toBe(1);
         expect(payload.version).toBe("1.0.0");
+    });
+
+    it("draws renderables in ascending render order with insertion order as a stable tie-breaker", () => {
+        const orderedScene = new Scene("OrderedScene");
+        const firstLayer = new Entity("FirstLayer");
+        const secondLayer = new Entity("SecondLayer");
+        const drawOrder = [];
+        orderedScene.AddChildren(firstLayer, secondLayer);
+        const makeRenderable = (name, order, layer) => {
+            const entity = new Entity(name);
+            const renderable = new (class extends Renderable {
+                constructor() {
+                    super();
+                    if (order !== undefined) this.renderOrder = order;
+                }
+                draw() { drawOrder.push(name); }
+            })();
+            entity.AddComponent(renderable);
+            layer.AddChild(entity);
+        };
+        makeRenderable("late", 5, firstLayer);
+        makeRenderable("non-finite", Number.NaN, firstLayer);
+        makeRenderable("default-order", undefined, secondLayer);
+        makeRenderable("early", -1, secondLayer);
+        makeRenderable("middle", 2, firstLayer);
+        makeRenderable("same-order", 2, firstLayer);
+
+        orderedScene.draw({ save() {}, restore() {} });
+
+        expect(drawOrder).toEqual(["early", "non-finite", "default-order", "middle", "same-order", "late"]);
+    });
+
+    it("uses zero as the default render order", () => {
+        const entity = new Entity("DefaultOrderEntity");
+        const renderable = new Renderable();
+        entity.AddComponent(renderable);
+
+        expect(renderable.renderOrder).toBe(0);
+        expect(entity.serialize().components[0].props.renderOrder).toBe(0);
+    });
+
+    it("serializes render order with the component properties", () => {
+        const entity = new Entity("OrderedEntity");
+        const renderable = new Renderable();
+        entity.AddComponent(renderable);
+        renderable.renderOrder = 7;
+
+        expect(entity.serialize().components[0].props.renderOrder).toBe(7);
+    });
+
+    it("orders nested renderables inside non-renderable scene layers", () => {
+        const layeredScene = new Scene("LayeredScene");
+        const layer = new Entity("Layer");
+        const parent = new Entity("Parent");
+        const drawOrder = [];
+        layeredScene.AddChild(layer);
+        layer.AddChild(parent);
+
+        const addRenderable = (entity, name, order, drawChildren = false) => {
+            const renderable = new (class extends Renderable {
+                constructor() {
+                    super();
+                    this.renderOrder = order;
+                }
+                draw(ctx) {
+                    drawOrder.push(name);
+                    if (drawChildren) this.drawChildren(ctx);
+                }
+            })();
+            entity.AddComponent(renderable);
+        };
+        addRenderable(parent, "parent", 0, true);
+        const high = new Entity("High");
+        const low = new Entity("Low");
+        parent.AddChildren(high, low);
+        addRenderable(high, "high", 5);
+        addRenderable(low, "low", -1);
+
+        layeredScene.draw({ save() {}, restore() {} });
+
+        expect(drawOrder).toEqual(["parent", "low", "high"]);
+    });
+
+    it("draws nested renderables once during a scene pass", () => {
+        const multiRenderableScene = new Scene("MultiRenderableScene");
+        const parent = new Entity("MultiRenderableParent");
+        const drawOrder = [];
+        multiRenderableScene.AddChild(parent);
+
+        const addRenderable = (entity, name, renderOrder, drawChildren = false) => {
+            const renderable = new (class extends Renderable {
+                constructor() {
+                    super();
+                    this.renderOrder = renderOrder;
+                }
+                draw(ctx) {
+                    drawOrder.push(name);
+                    if (drawChildren) this.drawChildren(ctx);
+                }
+            })();
+            entity.AddComponent(renderable);
+        };
+
+        addRenderable(parent, "parent-low", 0, true);
+        addRenderable(parent, "parent-high", 1, true);
+        const child = new Entity("NestedRenderable");
+        parent.AddChild(child);
+        addRenderable(child, "child", 0);
+
+        multiRenderableScene.draw({ save() {}, restore() {} });
+
+        expect(drawOrder).toEqual(["parent-low", "child", "parent-high"]);
+    });
+
+    it("renders a cyclic non-renderable hierarchy without recurring forever", () => {
+        const cyclicScene = new Scene("CyclicScene");
+        const firstLayer = new Entity("FirstLayer");
+        const secondLayer = new Entity("SecondLayer");
+        const drawableEntity = new Entity("Drawable");
+        let drawCount = 0;
+        cyclicScene.AddChild(firstLayer);
+        firstLayer.AddChild(secondLayer);
+        secondLayer.AddChild(firstLayer);
+        secondLayer.AddChild(drawableEntity);
+        drawableEntity.AddComponent(new (class extends Renderable {
+            draw() { drawCount += 1; }
+        })());
+
+        cyclicScene.draw({ save() {}, restore() {} });
+
+        expect(drawCount).toBe(1);
+    });
+
+    it("draws an active camera fade as a viewport overlay", () => {
+        const fadeScene = new Scene("FadeScene");
+        const camera = new Camera(100, 80);
+        camera.position.x = 10;
+        camera.position.y = 20;
+        camera.setZoom(2);
+        camera.transitionTo(new Vector2(30, 50), 2, { fade: true });
+        camera.update(0.5);
+        fadeScene.activeCamera = camera;
+
+        const overlays = [];
+        const savedStates = [];
+        const ctx = {
+            globalAlpha: 0.8,
+            fillStyle: "#fff",
+            save() {
+                savedStates.push({ globalAlpha: this.globalAlpha, fillStyle: this.fillStyle });
+            },
+            restore() {
+                Object.assign(this, savedStates.pop());
+            },
+            scale() {},
+            translate() {},
+            fillRect(x, y, width, height) {
+                overlays.push({ x, y, width, height, alpha: this.globalAlpha, fillStyle: this.fillStyle });
+            }
+        };
+
+        fadeScene.draw(ctx);
+
+        expect(overlays).toEqual([{
+            x: 15,
+            y: 27.5,
+            width: 50,
+            height: 40,
+            alpha: 0.4,
+            fillStyle: "#000"
+        }]);
+        expect(ctx.globalAlpha).toBe(0.8);
     });
 })
