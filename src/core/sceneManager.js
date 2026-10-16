@@ -63,6 +63,41 @@ export class SceneManager {
     }
 
     /**
+     * Transition to another scene while moving selected runtime entities into it.
+     * Entity instances are transferred rather than serialized so their runtime state survives.
+     * @param {number} id - Id of the destination scene.
+     * @param {Entity[]} entities - Entities to preserve across the transition.
+     */
+    static TransitionToScene(id, entities = []) {
+        const destination = SceneManager.GetScene(id);
+        if (!destination) return false;
+        if (!Array.isArray(entities)) {
+            throw new TypeError("SceneManager.TransitionToScene expects an array of entities.");
+        }
+
+        const source = SceneManager.GetActiveScene();
+        for (const entity of entities) {
+            if (!entity || typeof entity !== "object" || !Array.isArray(entity.children)) {
+                throw new TypeError("SceneManager.TransitionToScene expects entity instances.");
+            }
+        }
+
+        for (const entity of entities) {
+            if (entity.parent && Array.isArray(entity.parent.children)) {
+                const index = entity.parent.children.indexOf(entity);
+                if (index !== -1) entity.parent.children.splice(index, 1);
+            } else if (source) {
+                const index = source.children.indexOf(entity);
+                if (index !== -1) source.children.splice(index, 1);
+            }
+            entity.parent = null;
+            destination.AddChild(entity);
+        }
+        SceneManager.LoadScene(id);
+        return true;
+    }
+
+    /**
      * Load a new scene in additive mode. This will not unload the current scene.
      * @param {number} id - Id of the scene to be loaded.
      * @method

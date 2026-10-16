@@ -80,6 +80,23 @@ describe("SceneManager", () => {
         expect(SceneManager.GetSceneByName("Third")).toBe(scene3);
     });
 
+    it("transitions to another scene while preserving selected runtime entities", () => {
+        const source = new Scene("Source");
+        const destination = new Scene("Destination");
+        const player = new (source.constructor)("Player");
+        player.runtimeHealth = 42;
+        source.AddChild(player);
+
+        SceneManager.LoadScene(source.id);
+        SceneManager.TransitionToScene(destination.id, [player]);
+
+        expect(SceneManager.GetActiveScene()).toBe(destination);
+        expect(source.children.includes(player)).toBe(false);
+        expect(destination.children.includes(player)).toBe(true);
+        expect(player.parent).toBe(destination);
+        expect(player.runtimeHealth).toBe(42);
+    });
+
     it("scenes have unique IDs", () => {
         const scene1 = new Scene("A");
         const scene2 = new Scene("B");
