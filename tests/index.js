@@ -34,6 +34,7 @@ import "./integration/gameloop.test.js"
 import "./titan.test.js"
 
 // Thalassa World/Camera tests
+import "./rendering-smoke.test.js";
 import "./thalassa.test.js"
 import "./camera.test.js"
 
