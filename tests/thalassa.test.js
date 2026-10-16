@@ -98,6 +98,41 @@ describe('Tilemap', () => {
         expect(tilemap.getTileMetadata(1)).toBe(null);
     });
 
+    it('tracks grid occupancy and routes deterministically around blocked and occupied cells', () => {
+        tilemap.loadFromArray([
+            [-1, 1, -1, -1, -1],
+            [-1, 1, -1, -1, -1],
+            [-1, 1, -1, -1, -1],
+            [-1, -1, -1, -1, -1],
+            [-1, -1, -1, -1, -1]
+        ]);
+        tilemap.setTileMetadata(1, { walkable: false });
+        const actor = {};
+        const blocker = {};
+        expect(tilemap.gridIndex(2, 3)).toBe(17);
+        expect(tilemap.gridIndex(5, 3)).toBe(null);
+        expect(tilemap.isWalkable(1, 1)).toBe(false);
+        expect(tilemap.findPath(0, 0, 4, 0)).toEqual([
+            { x: 0, y: 1 }, { x: 0, y: 2 }, { x: 0, y: 3 },
+            { x: 1, y: 3 }, { x: 2, y: 3 }, { x: 2, y: 2 },
+            { x: 2, y: 1 }, { x: 2, y: 0 }, { x: 3, y: 0 }, { x: 4, y: 0 }
+        ]);
+        expect(tilemap.occupy(2, 0, blocker)).toBe(true);
+        expect(tilemap.getOccupant(2, 0)).toBe(blocker);
+        expect(tilemap.findPath(0, 0, 4, 0)).toEqual([
+            { x: 0, y: 1 }, { x: 0, y: 2 }, { x: 0, y: 3 },
+            { x: 1, y: 3 }, { x: 2, y: 3 }, { x: 2, y: 2 },
+            { x: 2, y: 1 }, { x: 3, y: 1 }, { x: 3, y: 0 }, { x: 4, y: 0 }
+        ]);
+        expect(tilemap.occupy(2, 0, actor)).toBe(false);
+        expect(tilemap.occupy(0, 0, actor)).toBe(true);
+        expect(tilemap.occupy(0, 1, actor)).toBe(true);
+        expect(tilemap.getOccupant(0, 0)).toBe(null);
+        expect(tilemap.vacate(actor)).toEqual({ x: 0, y: 1 });
+        expect(tilemap.vacate(actor)).toBe(null);
+        expect(tilemap.findPath(0, 0, 1, 1)).toBe(null);
+    });
+
     it('traverses named map layers in deterministic order for stacked traversal', () => {
         const bridge = new Tilemap(tileset, 1, 1);
         bridge.setTile(0, 0, 2);
