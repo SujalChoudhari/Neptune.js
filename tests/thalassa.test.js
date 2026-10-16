@@ -67,6 +67,37 @@ describe('Tilemap', () => {
         expect(tilemap.isSolid(0, 0)).toBe(false);
     });
 
+    it('stores validated tile gameplay metadata by tile ID', () => {
+        const metadata = {
+            walkable: true,
+            terrain: "mud",
+            damage: 2,
+            slowdown: 0.5,
+            interaction: { prompt: "open" },
+            transition: { layer: "upper", x: 3, y: 4 }
+        };
+        tilemap.setTileMetadata(7, metadata);
+        metadata.interaction.prompt = "mutated";
+
+        expect(tilemap.getTileMetadata(7)).toEqual({
+            walkable: true,
+            terrain: "mud",
+            damage: 2,
+            slowdown: 0.5,
+            interaction: { prompt: "open" },
+            transition: { layer: "upper", x: 3, y: 4 }
+        });
+        expect(tilemap.getTileMetadata(99)).toBe(null);
+    });
+
+    it('rejects malformed or unsupported tile metadata without storing it', () => {
+        expect(() => tilemap.setTileMetadata(-1, { walkable: true })).toThrow("non-negative integer");
+        expect(() => tilemap.setTileMetadata(1, { walkable: "yes" })).toThrow("walkable must be a boolean");
+        expect(() => tilemap.setTileMetadata(1, { damage: -1 })).toThrow("damage must be a finite non-negative number");
+        expect(() => tilemap.setTileMetadata(1, { unknown: true })).toThrow("Unknown tile metadata field");
+        expect(tilemap.getTileMetadata(1)).toBe(null);
+    });
+
     it('traverses named map layers in deterministic order for stacked traversal', () => {
         const bridge = new Tilemap(tileset, 1, 1);
         bridge.setTile(0, 0, 2);

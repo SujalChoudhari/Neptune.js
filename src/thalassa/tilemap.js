@@ -26,6 +26,7 @@ export class Tilemap extends Component {
         this.height = height;
         this.scale = 1;
         this.data = new Array(width * height).fill(-1); // -1 = empty
+        this.metadata = new Map();
         this.layers = [];
     }
 
@@ -49,6 +50,45 @@ export class Tilemap extends Component {
 
     getLayer(name) {
         return this.layers.find(layer => layer.name === name)?.tilemap;
+    }
+
+    /** Set validated gameplay metadata for a tile ID. */
+    setTileMetadata(tileId, metadata) {
+        if (!Number.isInteger(tileId) || tileId < 0) {
+            throw new TypeError("Tile metadata requires a non-negative integer tileId");
+        }
+        if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+            throw new TypeError("Tile metadata must be an object");
+        }
+        const allowed = new Set(["walkable", "terrain", "damage", "slowdown", "interaction", "transition"]);
+        for (const key of Object.keys(metadata)) {
+            if (!allowed.has(key)) throw new TypeError(`Unknown tile metadata field: ${key}`);
+        }
+        if (metadata.walkable !== undefined && typeof metadata.walkable !== "boolean") {
+            throw new TypeError("Tile metadata walkable must be a boolean");
+        }
+        if (metadata.terrain !== undefined && typeof metadata.terrain !== "string") {
+            throw new TypeError("Tile metadata terrain must be a string");
+        }
+        for (const field of ["damage", "slowdown"]) {
+            if (metadata[field] !== undefined && (!Number.isFinite(metadata[field]) || metadata[field] < 0)) {
+                throw new TypeError(`Tile metadata ${field} must be a finite non-negative number`);
+            }
+        }
+        for (const field of ["interaction", "transition"]) {
+            if (metadata[field] !== undefined && metadata[field] !== null &&
+                (typeof metadata[field] !== "object" || Array.isArray(metadata[field]))) {
+                throw new TypeError(`Tile metadata ${field} must be an object or null`);
+            }
+        }
+        this.metadata.set(tileId, structuredClone(metadata));
+        return this.getTileMetadata(tileId);
+    }
+
+    /** Return a defensive copy of metadata for a tile ID, or null when unset. */
+    getTileMetadata(tileId) {
+        const metadata = this.metadata.get(tileId);
+        return metadata ? structuredClone(metadata) : null;
     }
 
     /**
