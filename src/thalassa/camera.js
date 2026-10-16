@@ -27,6 +27,8 @@ export class Camera {
 
         // Zoom
         this.zoom = 1;
+        this.transition = null;
+        this.fadeAlpha = 0;
     }
 
     /**
@@ -80,13 +82,47 @@ export class Camera {
         this.zoom = value;
     }
 
+    /** Move the camera to a world position over a fixed duration. */
+    transitionTo(position, duration, { fade = false } = {}) {
+        if (!position || !Number.isFinite(position.x) || !Number.isFinite(position.y)) {
+            throw new TypeError("Camera transition position must have finite x and y coordinates");
+        }
+        if (!Number.isFinite(duration) || duration <= 0) {
+            throw new RangeError("Camera transition duration must be positive");
+        }
+        this.transition = {
+            from: new Vector2(this.position.x, this.position.y),
+            to: new Vector2(position.x, position.y),
+            duration,
+            elapsed: 0,
+            fade
+        };
+        this.target = null;
+        this.fadeAlpha = 0;
+    }
+
     /**
      * Update camera position.
      * @param {number} deltaTime - Time since last frame.
      */
     update(deltaTime) {
+        if (!Number.isFinite(deltaTime) || deltaTime < 0) {
+            throw new RangeError("Camera deltaTime must be a finite non-negative number");
+        }
+
+        if (this.transition) {
+            const transition = this.transition;
+            transition.elapsed = Math.min(transition.duration, transition.elapsed + deltaTime);
+            const progress = transition.elapsed / transition.duration;
+            this.position.x = transition.from.x + (transition.to.x - transition.from.x) * progress;
+            this.position.y = transition.from.y + (transition.to.y - transition.from.y) * progress;
+            this.fadeAlpha = transition.fade
+                ? (progress < 0.5 ? progress * 2 : (1 - progress) * 2)
+                : 0;
+            if (progress >= 1) this.transition = null;
+        }
         // Follow target
-        if (this.target) {
+        if (this.target && !this.transition) {
             const Transform = this.target.GetComponent ?
                 this.target.GetComponent(this.target.constructor) : null;
 

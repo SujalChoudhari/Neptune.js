@@ -261,6 +261,18 @@ export class Scene extends Entity {
         this.GetComponentsInChildren(Renderable).forEach(renderable => {
             renderable.draw(ctx);
         });
+
+        const camera = this.activeCamera;
+        const fadeAlpha = camera ? Math.max(0, Math.min(1, camera.fadeAlpha || 0)) : 0;
+        if (fadeAlpha > 0) {
+            const zoom = camera.zoom || 1;
+            ctx.save();
+            ctx.globalAlpha *= fadeAlpha;
+            ctx.fillStyle = "#000";
+            ctx.fillRect(camera.x, camera.y, camera.viewWidth / zoom, camera.viewHeight / zoom);
+            ctx.restore();
+        }
+
         ctx.restore();
     }
 }

@@ -1,6 +1,7 @@
 import "./setup_mocks.js";
 import { describe, it, expect, beforeEach, afterEach } from "./tester.js";
 import { Entity, Component, Scene, SceneManager, Shape, Color, Transform, Vector2, application } from "../src/neptune.js";
+import { Camera } from "../src/thalassa/camera.js";
 
 describe('Entity', () => {
     let entity;
@@ -150,5 +151,46 @@ describe("Scene", () => {
         expect(payload.type).toBe("scene");
         expect(payload.schemaVersion).toBe(1);
         expect(payload.version).toBe("1.0.0");
+    });
+
+    it("draws an active camera fade as a viewport overlay", () => {
+        const fadeScene = new Scene("FadeScene");
+        const camera = new Camera(100, 80);
+        camera.position.x = 10;
+        camera.position.y = 20;
+        camera.setZoom(2);
+        camera.transitionTo(new Vector2(30, 50), 2, { fade: true });
+        camera.update(0.5);
+        fadeScene.activeCamera = camera;
+
+        const overlays = [];
+        const savedStates = [];
+        const ctx = {
+            globalAlpha: 0.8,
+            fillStyle: "#fff",
+            save() {
+                savedStates.push({ globalAlpha: this.globalAlpha, fillStyle: this.fillStyle });
+            },
+            restore() {
+                Object.assign(this, savedStates.pop());
+            },
+            scale() {},
+            translate() {},
+            fillRect(x, y, width, height) {
+                overlays.push({ x, y, width, height, alpha: this.globalAlpha, fillStyle: this.fillStyle });
+            }
+        };
+
+        fadeScene.draw(ctx);
+
+        expect(overlays).toEqual([{
+            x: 15,
+            y: 27.5,
+            width: 50,
+            height: 40,
+            alpha: 0.4,
+            fillStyle: "#000"
+        }]);
+        expect(ctx.globalAlpha).toBe(0.8);
     });
 })
