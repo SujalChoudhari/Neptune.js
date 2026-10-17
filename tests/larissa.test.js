@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach } from "./tester.js";
-import { Stats, Inventory, BossAI, AttackDefinition, Combatant, CombatSystem } from "../src/larissa/index.js";
+import "./setup_mocks.js";
+import { Stats, Inventory, EnemyAI, BossAI, AttackDefinition, Combatant, CombatSystem } from "../src/larissa/index.js";
+import { Tilemap, Tileset } from "../src/thalassa/index.js";
 
 // ============================================
 // Stats Tests
@@ -157,6 +159,160 @@ describe('BossAI', () => {
         const target = { name: 'Player' };
         boss.setTarget(target);
         expect(boss.target).toBe(target);
+    });
+
+    it('validates health thresholds and registers data-driven attack phases', () => {
+        const combatant = new Combatant({ id: "boss" });
+        const system = new CombatSystem();
+        const attack = new AttackDefinition({ name: "slam" });
+        boss.addAttackPhase(0.5, [attack], system, combatant);
+        expect(boss.phases[0].patterns[0]).toBe(attack);
+        expect(() => boss.addPhase(1.2, [() => {}])).toThrow(/threshold/);
+        expect(() => boss.addPhase(0.5, [attack])).toThrow(/functions/);
+    });
+
+    it('selects a different configured attack after a health phase transition', () => {
+        const system = new CombatSystem();
+        const bossFighter = new Combatant({ id: "boss", faction: "monsters", x: 0, y: 0 });
+        const player = new Combatant({ id: "player", faction: "heroes", x: 5, y: 0 });
+        const attacks = [];
+        system.on("attackStart", event => attacks.push(event.definition.name));
+        boss.addAttackPhase(1, [new AttackDefinition({ name: "claw" })], system, bossFighter);
+        boss.addAttackPhase(0.5, [new AttackDefinition({ name: "quake" })], system, bossFighter);
+        const stats = new Stats({ maxHealth: 100 });
+        boss.setTarget(player);
+        boss.update(0, stats);
+        boss.update(0, stats);
+        system.update(0.2, [bossFighter, player]);
+        stats.health = 40;
+        boss.update(0, stats);
+        expect(boss.state).toBe("transitioning");
+        boss.update(1, stats);
+        boss.update(0, stats);
+        expect(attacks).toEqual(["claw", "quake"]);
+    });
+});
+
+// ============================================
+// Enemy AI Tests
+// ============================================
+describe('EnemyAI', () => {
+    const createMap = (width = 7, height = 4) => new Tilemap(new Tileset("test.png", 16, 16), width, height);
+    const positionOf = (map, actor) => {
+        for (const [index, occupant] of map.occupants) {
+            if (occupant === actor) return { x: index % map.width, y: Math.floor(index / map.width) };
+        }
+        return null;
+    };
+
+    it('patrols configured waypoints and remains idle without a target or patrol route', () => {
+        const map = createMap();
+        const guard = {};
+        expect(map.occupy(1, 1, guard)).toBe(true);
+        const ai = new EnemyAI({ tilemap: map, actor: guard, spawn: { x: 1, y: 1 }, patrolPoints: [{ x: 3, y: 1 }], moveInterval: 0 });
+        ai.update(0);
+        expect(ai.state).toBe("patrol");
+        expect(positionOf(map, guard)).toEqual({ x: 2, y: 1 });
+        ai.update(0);
+        expect(positionOf(map, guard)).toEqual({ x: 3, y: 1 });
+
+        const idle = new EnemyAI({ tilemap: map, actor: guard, spawn: { x: 3, y: 1 } });
+        idle.update(0);
+        expect(idle.state).toBe("idle");
+    });
+
+    it('chases through a path around blocked terrain and stops adjacent to its occupied target', () => {
+        const map = createMap(7, 4);
+        const enemy = {}, player = {};
+        map.setTile(2, 1, 0);
+        map.setTileMetadata(0, { walkable: false });
+        expect(map.occupy(1, 1, enemy)).toBe(true);
+        expect(map.occupy(5, 1, player)).toBe(true);
+        const ai = new EnemyAI({ tilemap: map, actor: enemy, spawn: { x: 1, y: 1 }, perceptionRadius: 8, moveInterval: 0 });
+        for (let i = 0; i < 16; i++) ai.update(0, { target: player });
+        const position = positionOf(map, enemy);
+        expect(ai.state).toBe("attack");
+        expect(Math.abs(position.x - 5) + Math.abs(position.y - 1)).toBe(1);
+        expect(position).not.toEqual({ x: 2, y: 1 });
+    });
+
+    it('recalculates a chase route when a previously open tile becomes blocked', () => {
+        const map = createMap(7, 3);
+        const enemy = {}, player = {};
+        map.occupy(0, 1, enemy);
+        map.occupy(6, 1, player);
+        const ai = new EnemyAI({ tilemap: map, actor: enemy, spawn: { x: 0, y: 1 }, perceptionRadius: 10, moveInterval: 0 });
+        ai.update(0, { target: player });
+        expect(positionOf(map, enemy)).toEqual({ x: 1, y: 1 });
+        map.setTile(2, 1, 0);
+        map.setTileMetadata(0, { walkable: false });
+        ai.update(0, { target: player });
+        expect(positionOf(map, enemy)).not.toEqual({ x: 2, y: 1 });
+        expect(positionOf(map, enemy)).not.toEqual({ x: 1, y: 1 });
+    });
+
+    it('shares detected targets across a configured enemy group', () => {
+        const map = createMap(9, 4);
+        const group = {};
+        const scout = {}, ally = {}, player = {};
+        map.occupy(0, 0, scout);
+        map.occupy(0, 3, ally);
+        map.occupy(4, 0, player);
+        const scoutAI = new EnemyAI({ tilemap: map, actor: scout, spawn: { x: 0, y: 0 }, perceptionRadius: 6, moveInterval: 0, group });
+        const allyAI = new EnemyAI({ tilemap: map, actor: ally, spawn: { x: 0, y: 3 }, perceptionRadius: 1, moveInterval: 0, group });
+        scoutAI.update(0, { target: player });
+        allyAI.update(0);
+        expect(group.target).toBe(player);
+        expect(allyAI.target).toBe(player);
+        expect(allyAI.state).toBe("chase");
+        expect(positionOf(map, ally)).not.toEqual({ x: 0, y: 3 });
+    });
+
+    it('returns to spawn after losing its target and then idles', () => {
+        const map = createMap(7, 3);
+        const enemy = {}, player = {};
+        map.occupy(1, 1, enemy);
+        map.occupy(4, 1, player);
+        const ai = new EnemyAI({ tilemap: map, actor: enemy, spawn: { x: 0, y: 1 }, perceptionRadius: 6, moveInterval: 0 });
+        ai.update(0, { target: player });
+        expect(ai.state).toBe("chase");
+        ai.update(0);
+        expect(ai.state).toBe("return");
+        ai.update(0);
+        expect(positionOf(map, enemy)).toEqual({ x: 0, y: 1 });
+        ai.update(0);
+        expect(ai.state).toBe("idle");
+    });
+
+    it('starts a configured ranged combat attack when the target is in perception and range', () => {
+        const map = createMap(7, 2);
+        const shooter = new Combatant({ id: "archer", faction: "monsters", x: 0, y: 0 });
+        const target = new Combatant({ id: "hero", faction: "heroes", x: 4, y: 0 });
+        map.occupy(0, 0, shooter);
+        map.occupy(4, 0, target);
+        const system = new CombatSystem();
+        const attack = new AttackDefinition({ name: "arrow", mode: "ranged", range: 8, projectileSpeed: 10 });
+        const ai = new EnemyAI({ tilemap: map, actor: shooter, spawn: { x: 0, y: 0 }, perceptionRadius: 6, attackRange: 4,
+            combatSystem: system, combatant: shooter, attackDefinition: attack });
+        const events = [];
+        system.on("attackStart", event => events.push(event.definition.name));
+        ai.update(0, { target });
+        expect(ai.state).toBe("attack");
+        expect(events).toEqual(["arrow"]);
+    });
+
+    it('flees at the configured low-health threshold without moving into an occupied or blocked cell', () => {
+        const map = createMap(7, 3);
+        const enemy = {}, player = {};
+        map.setTile(2, 1, 0);
+        map.setTileMetadata(0, { walkable: false });
+        map.occupy(3, 1, enemy);
+        map.occupy(4, 1, player);
+        const ai = new EnemyAI({ tilemap: map, actor: enemy, spawn: { x: 3, y: 1 }, fleeHealthFraction: 0.3, moveInterval: 0 });
+        ai.update(0, { target: player, healthFraction: 0.2 });
+        expect(ai.state).toBe("flee");
+        expect(positionOf(map, enemy)).toEqual({ x: 3, y: 0 });
+        expect(map.getOccupant(4, 1)).toBe(player);
     });
 });
 
