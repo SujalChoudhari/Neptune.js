@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "./tester.js";
-import { Body, Collider, PlatformerController } from "../src/nereid/index.js";
+import { Body, Collider, SolidCollider, TriggerCollider, Hitbox, Hurtbox, InteractionArea, HazardArea, CollisionSystem, PlatformerController } from "../src/nereid/index.js";
 import { Entity, Transform } from "../src/neptune.js";
 
 // ============================================
@@ -29,6 +29,14 @@ describe('Body', () => {
         body.impulse(50, 25);
         expect(body.velocity.x).toBe(50);
         expect(body.velocity.y).toBe(25);
+    });
+
+    it('applies validated knockback as an immediate velocity change', () => {
+        body.velocity.x = 3;
+        body.applyKnockback(-12, 6);
+        expect(body.velocity.x).toBe(-12);
+        expect(body.velocity.y).toBe(6);
+        expect(() => body.applyKnockback(NaN, 0)).toThrow(/finite/);
     });
 
     it('update applies gravity when not grounded', () => {
@@ -93,6 +101,79 @@ describe('Collider', () => {
     it('containsPoint works correctly', () => {
         expect(collider.containsPoint(16, 16, 0, 0)).toBe(true);
         expect(collider.containsPoint(50, 50, 0, 0)).toBe(false);
+    });
+});
+
+// ============================================
+// Collision roles and event system
+// ============================================
+describe('CollisionSystem', () => {
+    it('keeps solid, trigger, hitbox, and hurtbox roles distinct and validates layer masks', () => {
+        expect(new SolidCollider().role).toBe("solid");
+        expect(new TriggerCollider().isTrigger).toBe(true);
+        expect(new Hitbox().role).toBe("hitbox");
+        expect(new Hurtbox().role).toBe("hurtbox");
+        expect(() => new Collider(0, 10)).toThrow(/positive finite/);
+        expect(() => new Collider(10, 10, 0, 0, { layer: 0 })).toThrow(/layer/);
+    });
+
+    it('emits deterministic trigger enter, stay, and exit events and filters layers by masks', () => {
+        const system = new CollisionSystem();
+        const sensor = new TriggerCollider(10, 10, 0, 0, { layer: 1, mask: 2 });
+        const target = new SolidCollider(10, 10, 0, 0, { layer: 2, mask: 1 });
+        const events = [];
+        for (const phase of ["enter", "stay", "exit"]) {
+            sensor.on(phase, event => events.push(`sensor:${event.phase}`));
+            target.on(phase, event => events.push(`target:${event.phase}`));
+        }
+        expect(system.step([{ collider: target, x: 0, y: 0 }, { collider: sensor, x: 0, y: 0 }])).toBe(1);
+        system.step([{ collider: sensor, x: 0, y: 0 }, { collider: target, x: 0, y: 0 }]);
+        system.step([{ collider: sensor, x: 20, y: 0 }, { collider: target, x: 0, y: 0 }]);
+        expect(events).toEqual(["target:enter", "sensor:enter", "target:stay", "sensor:stay", "target:exit", "sensor:exit"]);
+        expect(system.step([{ collider: sensor, x: 0, y: 0 }, { collider: new SolidCollider(10, 10, 0, 0, { layer: 4, mask: 1 }), x: 0, y: 0 }])).toBe(0);
+    });
+
+    it('reports hit, hurt, hazard, interaction, and climbable contacts with entities', () => {
+        const system = new CollisionSystem();
+        const attacker = new Hitbox(8, 8);
+        const victim = new Hurtbox(8, 8);
+        const hazard = new HazardArea(8, 8, 0, 0, { hazard: { damage: 3 } });
+        const interaction = new InteractionArea(8, 8);
+        const ladder = new Collider(8, 8, 0, 0, { climbable: true });
+        const hits = [], hurts = [], hazards = [], interactions = [], climbs = [];
+        attacker.on("hit", e => hits.push(e.otherEntity));
+        victim.on("hurt", e => hurts.push(e.entity));
+        hazard.on("hazard", e => hazards.push(e.otherEntity));
+        interaction.on("interaction", e => interactions.push(e.otherEntity));
+        ladder.on("climbable", e => climbs.push(e.otherEntity));
+        system.step([
+            { collider: attacker, x: 0, y: 0, entity: "attacker" },
+            { collider: victim, x: 0, y: 0, entity: "victim" },
+            { collider: hazard, x: 0, y: 0, entity: "spikes" },
+            { collider: interaction, x: 0, y: 0, entity: "door" },
+            { collider: ladder, x: 0, y: 0, entity: "ladder" }
+        ]);
+        expect(hits).toEqual(["victim"]);
+        expect(hurts).toEqual(["victim"]);
+        expect(hazards).toContain("attacker");
+        expect(interactions).toContain("attacker");
+        expect(climbs.length).toBeGreaterThan(0);
+        expect(hazard.hazard.damage).toBe(3);
+    });
+
+    it('checks one-way surfaces only when crossed from their permitted face and draws collider bounds', () => {
+        const platform = new SolidCollider(20, 4, 0, 0, { oneWay: "up" });
+        const surface = platform.getBounds(0, 10);
+        const before = { left: 2, top: 0, right: 8, bottom: 10 };
+        const landing = { left: 2, top: 8, right: 8, bottom: 14 };
+        const fromBelow = { left: 2, top: 12, right: 8, bottom: 18 };
+        expect(CollisionSystem.canResolveOneWay(platform, surface, before, landing)).toBe(true);
+        expect(CollisionSystem.canResolveOneWay(platform, surface, fromBelow, landing)).toBe(false);
+        const calls = [];
+        const context = { strokeStyle: "white", strokeRect: (...args) => calls.push(args) };
+        platform.debugDraw(context, 3, 10, "red");
+        expect(calls).toEqual([[3, 10, 20, 4]]);
+        expect(context.strokeStyle).toBe("white");
     });
 });
 
