@@ -26,7 +26,9 @@ export class Tilemap extends Component {
         this.height = height;
         this.scale = 1;
         this.data = new Array(width * height).fill(-1); // -1 = empty
+        this.metadata = new Map();
         this.layers = [];
+        this.occupants = new Map();
     }
 
     /** Register another traversable map layer, ordered by render order then insertion. */
@@ -49,6 +51,143 @@ export class Tilemap extends Component {
 
     getLayer(name) {
         return this.layers.find(layer => layer.name === name)?.tilemap;
+    }
+
+    /** Set validated gameplay metadata for a tile ID. */
+    setTileMetadata(tileId, metadata) {
+        if (!Number.isInteger(tileId) || tileId < 0) {
+            throw new TypeError("Tile metadata requires a non-negative integer tileId");
+        }
+        if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+            throw new TypeError("Tile metadata must be an object");
+        }
+        const allowed = new Set(["walkable", "terrain", "damage", "slowdown", "interaction", "transition"]);
+        for (const key of Object.keys(metadata)) {
+            if (!allowed.has(key)) throw new TypeError(`Unknown tile metadata field: ${key}`);
+        }
+        if (metadata.walkable !== undefined && typeof metadata.walkable !== "boolean") {
+            throw new TypeError("Tile metadata walkable must be a boolean");
+        }
+        if (metadata.terrain !== undefined && typeof metadata.terrain !== "string") {
+            throw new TypeError("Tile metadata terrain must be a string");
+        }
+        for (const field of ["damage", "slowdown"]) {
+            if (metadata[field] !== undefined && (!Number.isFinite(metadata[field]) || metadata[field] < 0)) {
+                throw new TypeError(`Tile metadata ${field} must be a finite non-negative number`);
+            }
+        }
+        for (const field of ["interaction", "transition"]) {
+            if (metadata[field] !== undefined && metadata[field] !== null &&
+                (typeof metadata[field] !== "object" || Array.isArray(metadata[field]))) {
+                throw new TypeError(`Tile metadata ${field} must be an object or null`);
+            }
+        }
+        this.metadata.set(tileId, structuredClone(metadata));
+        return this.getTileMetadata(tileId);
+    }
+
+    /** Return a defensive copy of metadata for a tile ID, or null when unset. */
+    getTileMetadata(tileId) {
+        const metadata = this.metadata.get(tileId);
+        return metadata ? structuredClone(metadata) : null;
+    }
+
+    /** Convert tile coordinates to a stable row-major grid index, or null out of bounds. */
+    gridIndex(x, y) {
+        return Number.isInteger(x) && Number.isInteger(y) && x >= 0 && x < this.width && y >= 0 && y < this.height
+            ? y * this.width + x : null;
+    }
+
+    /** Place or move an occupant; each occupant may occupy only one cell. */
+    occupy(x, y, occupant) {
+        const index = this.gridIndex(x, y);
+        if (index === null) throw new RangeError("Occupancy coordinates are outside the tilemap");
+        if (occupant === undefined || occupant === null) throw new TypeError("Occupant must be a non-null value");
+        if (!this.isWalkable(x, y, occupant)) return false;
+        for (const [cell, current] of this.occupants) if (current === occupant) this.occupants.delete(cell);
+        this.occupants.set(index, occupant);
+        return true;
+    }
+
+    /** Move an occupied actor by one cardinal tile, leaving state unchanged on failure. */
+    moveOccupant(occupant, x, y) {
+        if (occupant === undefined || occupant === null) throw new TypeError("Occupant must be a non-null value");
+        const current = [...this.occupants].find(([, value]) => value === occupant);
+        if (!current) return false;
+        const fromX = current[0] % this.width;
+        const fromY = Math.floor(current[0] / this.width);
+        if (Math.abs(x - fromX) + Math.abs(y - fromY) !== 1) return false;
+        if (!this.isWalkable(x, y, occupant)) return false;
+        this.occupants.delete(current[0]);
+        this.occupants.set(this.gridIndex(x, y), occupant);
+        return true;
+    }
+
+    /** Follow a shortest path by one step toward a destination; returns the new cell or null. */
+    moveOccupantToward(occupant, goalX, goalY) {
+        const current = [...this.occupants].find(([, value]) => value === occupant);
+        if (!current) return null;
+        const x = current[0] % this.width;
+        const y = Math.floor(current[0] / this.width);
+        const path = this.findPath(x, y, goalX, goalY, occupant);
+        if (!path?.length) return path ? { x, y } : null;
+        const step = path[0];
+        return this.moveOccupant(occupant, step.x, step.y) ? step : null;
+    }
+
+    vacate(occupant) {
+        for (const [index, current] of this.occupants) {
+            if (current === occupant) {
+                this.occupants.delete(index);
+                return { x: index % this.width, y: Math.floor(index / this.width) };
+            }
+        }
+        return null;
+    }
+
+    getOccupant(x, y) {
+        const index = this.gridIndex(x, y);
+        return index === null ? null : (this.occupants.get(index) ?? null);
+    }
+
+    isWalkable(x, y, mover = null) {
+        const index = this.gridIndex(x, y);
+        if (index === null) return false;
+        const tileId = this.getTile(x, y);
+        const metadata = this.getTileMetadata(tileId);
+        if (metadata?.walkable === false || (tileId >= 0 && metadata?.walkable !== true)) return false;
+        const occupant = this.occupants.get(index);
+        return occupant === undefined || occupant === mover;
+    }
+
+    /** Deterministic four-way shortest path; returns coordinates excluding start, or null. */
+    findPath(startX, startY, goalX, goalY, mover = null) {
+        if (this.gridIndex(startX, startY) === null || this.gridIndex(goalX, goalY) === null ||
+            !this.isWalkable(startX, startY, mover) || !this.isWalkable(goalX, goalY, mover)) return null;
+        if (startX === goalX && startY === goalY) return [];
+        const key = (x, y) => y * this.width + x;
+        const queue = [[startX, startY]];
+        const previous = new Map([[key(startX, startY), null]]);
+        const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+        for (let cursor = 0; cursor < queue.length; cursor++) {
+            const [x, y] = queue[cursor];
+            for (const [dx, dy] of directions) {
+                const nx = x + dx, ny = y + dy, next = key(nx, ny);
+                if (this.gridIndex(nx, ny) === null || previous.has(next) || !this.isWalkable(nx, ny, mover)) continue;
+                previous.set(next, key(x, y));
+                queue.push([nx, ny]);
+                if (nx === goalX && ny === goalY) {
+                    const path = [];
+                    let step = next;
+                    while (step !== key(startX, startY)) {
+                        path.push({ x: step % this.width, y: Math.floor(step / this.width) });
+                        step = previous.get(step);
+                    }
+                    return path.reverse();
+                }
+            }
+        }
+        return null;
     }
 
     /**
