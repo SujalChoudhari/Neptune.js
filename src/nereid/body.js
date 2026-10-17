@@ -38,6 +38,12 @@ export class Body extends Component {
         this.velocity.y = y;
     }
 
+    /** Apply immediate knockback velocity, replacing the current velocity. */
+    applyKnockback(x, y) {
+        if (!Number.isFinite(x) || !Number.isFinite(y)) throw new TypeError("Knockback must use finite x and y values");
+        this.impulse(x, y);
+    }
+
     /**
      * Update physics.
      * @param {number} deltaTime - Time in seconds.
