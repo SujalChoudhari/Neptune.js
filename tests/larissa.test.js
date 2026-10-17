@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "./tester.js";
 import "./setup_mocks.js";
-import { Stats, Inventory, EnemyAI, BossAI, AttackDefinition, Combatant, CombatSystem } from "../src/larissa/index.js";
+import { Stats, Inventory, EnemyAI, BossAI, AttackDefinition, Combatant, CombatSystem, Progression, GameData, RewardSystem, Shop, QuestLog } from "../src/larissa/index.js";
 import { Tilemap, Tileset } from "../src/thalassa/index.js";
 
 // ============================================
@@ -126,6 +126,65 @@ describe('Inventory', () => {
             inventory.addItem({ ...swordItem, id: `sword${i}` });
         }
         expect(inventory.isFull).toBe(true);
+    });
+});
+
+describe("Progression and RPG data", () => {
+    const setup = () => {
+        const data = new GameData({
+            items: { potion: { id: "potion", type: "consumable", stackable: 5, effects: { health: 20 } }, sword: { id: "sword", type: "weapon", stackable: 1, slot: "hand", value: 10 } },
+            lootTables: { drop: [{ itemId: "potion", quantity: 2, chance: 1 }] },
+            shops: { market: { items: [{ itemId: "potion", price: 3 }] } },
+            quests: { hunt: { objectives: [{ id: "wolf", required: 2 }] } },
+            rewards: { bounty: { experience: 100, gold: 5, items: [{ itemId: "potion", quantity: 1 }] } }
+        });
+        return { data, inventory: new Inventory(4) };
+    };
+    it("levels by configurable thresholds, unlocks skills, and round-trips progression state", () => {
+        const progression = new Progression({ baseExperience: 10, growthRate: 2 });
+        const events = [];
+        progression.onProgression(event => events.push(event.type));
+        expect(progression.grantExperience(35)).toEqual([2, 3]);
+        expect(progression.level).toBe(3);
+        expect(progression.experience).toBe(5);
+        progression.unlockSkill("dash");
+        expect(Progression.fromJSON(JSON.parse(JSON.stringify(progression))).toJSON()).toEqual(progression.toJSON());
+        expect(events).toEqual(["level-up", "level-up", "skill-unlocked"]);
+    });
+    it("uses consumables, equips items, and preserves inventory/equipment in save data", () => {
+        const { data, inventory } = setup();
+        const stats = new Stats(); stats.health = 50;
+        inventory.addItem(data.getItem("potion"));
+        expect(inventory.useItem("potion", stats)).toBe(true);
+        expect(stats.health).toBe(70);
+        inventory.addItem(data.getItem("sword"));
+        inventory.equip("sword");
+        const copy = new Inventory(); copy.loadJSON(JSON.parse(JSON.stringify(inventory)));
+        expect(copy.equipment.hand.id).toBe("sword");
+        expect(copy.gold).toBe(0);
+    });
+    it("supports deterministic loot, atomic shop purchases, quest state and reward events", () => {
+        const { data, inventory } = setup();
+        expect(data.rollLoot("drop", () => 0)).toEqual([{ itemId: "potion", quantity: 2 }]);
+        expect(GameData.fromJSON(JSON.parse(JSON.stringify(data))).getItem("sword")).toEqual(data.getItem("sword"));
+        inventory.gold = 3;
+        expect(new Shop(data, "market").buy(inventory, "potion")).toBe(true);
+        const full = new Inventory(0); full.gold = 100;
+        expect(new Shop(data, "market").buy(full, "potion")).toBe(false);
+        expect(full.gold).toBe(100);
+        const quests = new QuestLog(data), events = [];
+        quests.subscribe(event => events.push(event.type));
+        quests.start("hunt"); quests.advance("hunt", "wolf");
+        const saved = JSON.parse(JSON.stringify(quests));
+        const restored = new QuestLog(data); restored.loadJSON(saved);
+        restored.advance("hunt", "wolf");
+        expect(restored.states.get("hunt").status).toBe("complete");
+        const rewards = new RewardSystem(data), rewardEvents = [];
+        rewards.subscribe(event => rewardEvents.push(event.type));
+        rewards.grant("bounty", { inventory, progression: new Progression() });
+        expect(inventory.gold).toBe(5);
+        expect(rewardEvents).toContain("reward-granted");
+        expect(events).toEqual(["quest-started", "quest-progress"]);
     });
 });
 

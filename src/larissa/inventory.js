@@ -25,6 +25,7 @@ export class Inventory extends Component {
         this.maxSlots = maxSlots;
         this.slots = []; // { item: Item, quantity: number }
         this.gold = 0;
+        this.equipment = {};
 
         this.onItemAdded = null;
         this.onItemRemoved = null;
@@ -113,6 +114,58 @@ export class Inventory extends Component {
             }
         }
         return count;
+    }
+
+    canAddItem(item, quantity = 1) {
+        if (!item || !Number.isInteger(quantity) || quantity < 1) return false;
+        let remaining = quantity;
+        if (item.stackable > 1) for (const slot of this.slots) if (slot.item.id === item.id) remaining -= Math.max(0, item.stackable - slot.quantity);
+        const needed = item.stackable > 1 ? Math.ceil(Math.max(0, remaining) / item.stackable) : remaining;
+        return this.slots.length + needed <= this.maxSlots;
+    }
+
+    useItem(itemId, stats) {
+        const slot = this.slots.find(entry => entry.item.id === itemId);
+        if (!slot || slot.item.type !== "consumable") return false;
+        const effects = slot.item.effects ?? {};
+        if (effects.health && typeof stats?.heal === "function") stats.heal(effects.health);
+        if (effects.stamina && Number.isFinite(stats?.stamina)) stats.stamina = Math.min(stats.maxStamina, stats.stamina + effects.stamina);
+        for (const [name, amount] of Object.entries(effects.stats ?? {})) if (Number.isFinite(stats?.[name])) stats[name] += amount;
+        this.removeItem(itemId, 1);
+        return true;
+    }
+
+    equip(itemId) {
+        const slot = this.slots.find(entry => entry.item.id === itemId);
+        const item = slot?.item;
+        const key = item?.slot ?? (item?.type === "weapon" ? "weapon" : item?.type === "armor" ? "armor" : null);
+        if (!item || !key) return false;
+        const prior = this.equipment[key] ?? null;
+        this.equipment[key] = item;
+        this.removeItem(itemId, 1);
+        if (prior) this.addItem(prior, 1);
+        return prior ?? item;
+    }
+
+    unequip(key) {
+        const item = this.equipment[key];
+        if (!item || !this.canAddItem(item, 1)) return false;
+        this.addItem(item, 1);
+        delete this.equipment[key];
+        return item;
+    }
+
+    toJSON() {
+        return { maxSlots: this.maxSlots, gold: this.gold, slots: this.slots.map(slot => ({ item: structuredClone(slot.item), quantity: slot.quantity })), equipment: structuredClone(this.equipment) };
+    }
+
+    loadJSON(data) {
+        if (!data || !Number.isInteger(data.maxSlots) || data.maxSlots < 0 || !Array.isArray(data.slots) || !Number.isFinite(data.gold) || data.gold < 0) throw new TypeError("Invalid inventory data");
+        if (data.slots.length > data.maxSlots || data.slots.some(slot => !slot.item || !Number.isInteger(slot.quantity) || slot.quantity < 1 || slot.quantity > (slot.item.stackable ?? 1))) throw new TypeError("Invalid inventory slots");
+        this.maxSlots = data.maxSlots;
+        this.gold = data.gold;
+        this.slots = data.slots.map(slot => ({ item: structuredClone(slot.item), quantity: slot.quantity }));
+        this.equipment = structuredClone(data.equipment ?? {});
     }
 
     /**
