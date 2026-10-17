@@ -109,6 +109,32 @@ export class Tilemap extends Component {
         return true;
     }
 
+    /** Move an occupied actor by one cardinal tile, leaving state unchanged on failure. */
+    moveOccupant(occupant, x, y) {
+        if (occupant === undefined || occupant === null) throw new TypeError("Occupant must be a non-null value");
+        const current = [...this.occupants].find(([, value]) => value === occupant);
+        if (!current) return false;
+        const fromX = current[0] % this.width;
+        const fromY = Math.floor(current[0] / this.width);
+        if (Math.abs(x - fromX) + Math.abs(y - fromY) !== 1) return false;
+        if (!this.isWalkable(x, y, occupant)) return false;
+        this.occupants.delete(current[0]);
+        this.occupants.set(this.gridIndex(x, y), occupant);
+        return true;
+    }
+
+    /** Follow a shortest path by one step toward a destination; returns the new cell or null. */
+    moveOccupantToward(occupant, goalX, goalY) {
+        const current = [...this.occupants].find(([, value]) => value === occupant);
+        if (!current) return null;
+        const x = current[0] % this.width;
+        const y = Math.floor(current[0] / this.width);
+        const path = this.findPath(x, y, goalX, goalY, occupant);
+        if (!path?.length) return path ? { x, y } : null;
+        const step = path[0];
+        return this.moveOccupant(occupant, step.x, step.y) ? step : null;
+    }
+
     vacate(occupant) {
         for (const [index, current] of this.occupants) {
             if (current === occupant) {
