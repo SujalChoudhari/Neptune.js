@@ -2,3 +2,4 @@
 export { Stats } from "./stats.js";
 export { Inventory } from "./inventory.js";
 export { BossAI } from "./bossAI.js";
+export { AttackDefinition, Combatant, CombatSystem } from "./combat.js";

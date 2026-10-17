@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "./tester.js";
-import { Stats, Inventory, BossAI } from "../src/larissa/index.js";
+import { Stats, Inventory, BossAI, AttackDefinition, Combatant, CombatSystem } from "../src/larissa/index.js";
 
 // ============================================
 // Stats Tests
@@ -157,5 +157,110 @@ describe('BossAI', () => {
         const target = { name: 'Player' };
         boss.setTarget(target);
         expect(boss.target).toBe(target);
+    });
+});
+
+// ============================================
+// Data-driven Combat Tests
+// ============================================
+describe('CombatSystem', () => {
+    it('validates immutable attack data and rejects malformed attack windows', () => {
+        const config = { name: "slash", mode: "melee", startup: 0.1, active: 0.2, recovery: 0.3, cooldown: 0.5, range: 20, damage: 12,
+            hitbox: { width: 18, height: 12, offsetX: 2 }, knockback: { x: 3, y: -1 }, targeting: "hostile" };
+        const attack = new AttackDefinition(config);
+        config.hitbox.width = 100;
+        expect(attack.hitbox.width).toBe(18);
+        expect(Object.isFrozen(attack)).toBe(true);
+        expect(() => new AttackDefinition({ name: "bad", mode: "projectile" })).toThrow(/projectileSpeed/);
+        expect(() => new AttackDefinition({ name: "bad", active: 0 })).toThrow(/active duration/);
+    });
+
+    it('runs a timed melee attack once per valid hostile target and honors cooldown and feedback events', () => {
+        const attacker = new Combatant({ id: "hero", faction: "heroes", x: 0, y: 0 });
+        const target = new Combatant({ id: "enemy", faction: "monsters", x: 8, y: 0, maxHealth: 100, resistances: { physical: 0.25 },
+            body: { applyKnockback(x, y) { this.last = { x, y }; } } });
+        const friend = new Combatant({ id: "friend", faction: "heroes", x: 8, y: 0 });
+        const attack = new AttackDefinition({ name: "slash", startup: 0.1, active: 0.1, recovery: 0.1, cooldown: 0.2, range: 8, damage: 20,
+            hitbox: { width: 12, height: 8 }, knockback: { x: 7, y: -2 }, staggerDuration: 0.3,
+            statusEffect: { name: "burning", duration: 1, modifiers: { attack: 0.5 } } });
+        const system = new CombatSystem();
+        const events = [];
+        for (const event of ["attackStart", "attackActive", "hit", "damage", "status", "stagger", "knockback", "attackRecovery", "attackComplete"]) {
+            system.on(event, payload => events.push(payload.event));
+        }
+        expect(system.startAttack(attacker, attack)).toBe(true);
+        expect(system.startAttack(attacker, attack)).toBe(false);
+        system.update(0.1, [attacker, target, friend]);
+        expect(target.health).toBe(100);
+        system.update(0.1, [attacker, target, friend]);
+        expect(target.health).toBe(85);
+        expect(friend.health).toBe(100);
+        expect(target.body.last).toEqual({ x: 7, y: -2 });
+        expect(target.isStaggered).toBe(true);
+        expect(target.effects.length).toBe(1);
+        expect(target.getModifiedStat("attack", 10)).toBe(5);
+        system.update(0.1, [attacker, target, friend]);
+        expect(system.startAttack(attacker, attack)).toBe(false);
+        system.update(0.2, [attacker, target, friend]);
+        expect(system.startAttack(attacker, attack)).toBe(true);
+        expect(events).toContain("damage");
+        expect(events).toContain("knockback");
+        expect(events).toContain("attackComplete");
+    });
+
+    it('applies resistance, invulnerability frames, status expiry, and one-time death deterministically', () => {
+        const body = { applyKnockback(x, y) { this.velocity = { x, y }; } };
+        const target = new Combatant({ id: "target", maxHealth: 20, resistances: { fire: 0.5 }, invulnerabilityDuration: 0.2, body });
+        let deaths = 0;
+        target.onDeath = () => deaths++;
+        target.applyEffect({ name: "weak", duration: 0.5, modifiers: { defense: 0.5 } });
+        expect(target.getModifiedStat("defense", 10)).toBe(5);
+        const first = target.receiveDamage({ amount: 10, type: "fire", stagger: 0.4 });
+        expect(first.damage).toBe(5);
+        expect(target.receiveDamage({ amount: 10, type: "fire" }).applied).toBe(false);
+        target.update(0.2);
+        const lethal = target.receiveDamage({ amount: 40, type: "fire" });
+        expect(lethal.killed).toBe(true);
+        expect(target.isAlive).toBe(false);
+        expect(deaths).toBe(1);
+        target.receiveDamage({ amount: 100, type: "fire" });
+        expect(deaths).toBe(1);
+        target.update(0.5);
+        expect(target.effects.length).toBe(0);
+    });
+
+    it('launches a swept ranged projectile and emits the same hit and death event stream', () => {
+        const shooter = new Combatant({ id: "shooter", faction: "player", x: 0, y: 0 });
+        const target = new Combatant({ id: "target", faction: "enemy", x: 50, y: 0, maxHealth: 5, hurtbox: { width: 4, height: 4 } });
+        const attack = new AttackDefinition({ name: "bolt", mode: "ranged", startup: 0, active: 0.1, recovery: 0, cooldown: 0,
+            range: 100, damage: 8, projectileSpeed: 100, hitbox: { width: 4, height: 4 }, knockback: { x: 4, y: 0 } });
+        const system = new CombatSystem();
+        const events = [];
+        for (const event of ["projectile", "hit", "damage", "death"]) system.on(event, payload => events.push(payload.event));
+        expect(system.startAttack(shooter, attack, { x: 1, y: 0 })).toBe(true);
+        system.update(0, [shooter, target]);
+        expect(target.health).toBe(5);
+        system.update(0.6, [shooter, target]);
+        expect(target.health).toBe(0);
+        expect(events).toEqual(["projectile", "hit", "damage", "death"]);
+    });
+
+    it('uses the common hit pipeline for area attacks against multiple valid targets', () => {
+        const caster = new Combatant({ id: "caster", faction: "party", x: 0, y: 0 });
+        const first = new Combatant({ id: "first", faction: "enemies", x: 2, y: 0 });
+        const second = new Combatant({ id: "second", faction: "enemies", x: -2, y: 0 });
+        const ally = new Combatant({ id: "ally", faction: "party", x: 0, y: 0 });
+        const distant = new Combatant({ id: "distant", faction: "enemies", x: 20, y: 0, hurtbox: { width: 40, height: 20 } });
+        const attack = new AttackDefinition({ name: "nova", mode: "area", range: 12, damage: 9, hitbox: { width: 16, height: 16 } });
+        const system = new CombatSystem();
+        const hits = [];
+        system.on("hit", event => hits.push(event.target.id));
+        system.startAttack(caster, attack);
+        system.update(0, [second, ally, caster, distant, first]);
+        expect(first.health).toBe(91);
+        expect(second.health).toBe(91);
+        expect(ally.health).toBe(100);
+        expect(distant.health).toBe(100);
+        expect(hits).toEqual(["first", "second"]);
     });
 });
