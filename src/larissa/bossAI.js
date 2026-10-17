@@ -1,4 +1,5 @@
 import { Component } from "../components/component.js";
+import { AttackDefinition, CombatSystem, Combatant } from "./combat.js";
 
 /**
  * BossAI component for boss encounter behaviors.
@@ -31,7 +32,18 @@ export class BossAI extends Component {
      * @param {Function[]} patterns - Array of attack pattern functions.
      */
     addPhase(healthThreshold, patterns) {
+        if (!Number.isFinite(healthThreshold) || healthThreshold < 0 || healthThreshold > 1) throw new TypeError("Boss phase threshold must be between zero and one");
+        if (!Array.isArray(patterns) || patterns.some(pattern => typeof pattern !== "function")) throw new TypeError("Boss phase patterns must be an array of functions");
         this.phases.push({ threshold: healthThreshold, patterns });
+        this.phases.sort((a, b) => b.threshold - a.threshold);
+    }
+
+    /** Add a phase that selects among data-driven attacks through a CombatSystem. */
+    addAttackPhase(healthThreshold, attacks, combatSystem, combatant) {
+        if (!Number.isFinite(healthThreshold) || healthThreshold < 0 || healthThreshold > 1) throw new TypeError("Boss phase threshold must be between zero and one");
+        if (!Array.isArray(attacks) || attacks.some(attack => !(attack instanceof AttackDefinition))) throw new TypeError("Boss attacks must be an array of AttackDefinition instances");
+        if (!(combatSystem instanceof CombatSystem) || !(combatant instanceof Combatant)) throw new TypeError("Boss attack phases require a CombatSystem and Combatant");
+        this.phases.push({ threshold: healthThreshold, patterns: attacks, combatSystem, combatant });
         this.phases.sort((a, b) => b.threshold - a.threshold);
     }
 
@@ -57,7 +69,8 @@ export class BossAI extends Component {
         const healthPercent = stats.health / stats.maxHealth;
 
         // Check for phase transition
-        const newPhaseIndex = this.phases.findIndex(p => healthPercent <= p.threshold);
+        // Phases are sorted from highest to lowest threshold; select the deepest reached phase.
+        const newPhaseIndex = this.phases.findLastIndex(p => healthPercent <= p.threshold);
         if (newPhaseIndex !== -1 && newPhaseIndex > this.currentPhase) {
             this.currentPhase = newPhaseIndex;
             this.currentPattern = 0;
@@ -112,10 +125,18 @@ export class BossAI extends Component {
         if (!phase || phase.patterns.length === 0) return;
 
         const pattern = phase.patterns[this.currentPattern];
-        if (pattern) {
+        let started = false;
+        if (typeof pattern === "function") {
             pattern(this, this.target);
-            if (this.onAttack) this.onAttack(this.currentPattern);
+            started = true;
+        } else if (pattern instanceof AttackDefinition && phase.combatSystem && phase.combatant) {
+            const targetPosition = this.target instanceof Combatant ? this.target.position : null;
+            const aim = targetPosition
+                ? { x: targetPosition.x - phase.combatant.position.x, y: targetPosition.y - phase.combatant.position.y }
+                : { x: 1, y: 0 };
+            started = phase.combatSystem.startAttack(phase.combatant, pattern, aim);
         }
+        if (started && this.onAttack) this.onAttack(this.currentPattern);
 
         this.currentPattern = (this.currentPattern + 1) % phase.patterns.length;
     }
