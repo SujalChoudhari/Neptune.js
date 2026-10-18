@@ -292,6 +292,18 @@ describe("Triton persistence bridge", () => {
         expect(loader.includes('if (typeof entityData.type === "string") entity.type = entityData.type;')).toBe(true);
     });
 
+    it("offers general entity creation with a serializable default Transform", () => {
+        const toolbar = fs.readFileSync(path.join(root, "src", "components", "panels", "hierarchy", "HierarchyToolbar.tsx"), "utf8");
+        const hierarchy = fs.readFileSync(path.join(root, "src", "components", "panels", "HierarchyPanel.tsx"), "utf8");
+        const engineTypes = fs.readFileSync(path.join(root, "src", "types", "engine.ts"), "utf8");
+
+        expect(toolbar.includes("onClick={() => onAddEntity('entity')}>Create Entity")).toBe(true);
+        expect(engineTypes.includes("'entity'")).toBe(true);
+        expect(hierarchy.includes("type === 'entity' ? 'New Entity'")).toBe(true);
+        expect(hierarchy.includes("type: 'Transform', props: { position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 } }")).toBe(true);
+        expect(hierarchy.includes("EditorGameRunner.createEntity(persistenceParentId, { id, name, type, components })")).toBe(true);
+    });
+
     it("offers trigger-area creation as a typed scene entity that survives runtime loading", () => {
         const toolbar = fs.readFileSync(path.join(root, "src", "components", "panels", "hierarchy", "HierarchyToolbar.tsx"), "utf8");
         const hierarchy = fs.readFileSync(path.join(root, "src", "components", "panels", "HierarchyPanel.tsx"), "utf8");
