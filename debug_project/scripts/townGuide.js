@@ -2,7 +2,7 @@ import { Behaviour } from "../../src/scripts/script.js";
 import { Transform } from "../../src/components/transform.js";
 import { KeyboardInput } from "../../src/input/keyboardinput.js";
 import { DialogueBox } from "../../src/galatea/dialogueBox.js";
-import { GameData, QuestLog } from "../../src/larissa/index.js";
+import { GameData, Inventory, QuestLog } from "../../src/larissa/index.js";
 import { PlayerController } from "./playerController.js";
 import { Text } from "../../src/ui/text.js";
 
@@ -28,6 +28,8 @@ export class TownGuide extends Behaviour {
             }
         });
         this.quests = new QuestLog(this.questData);
+        this.inventory = new Inventory();
+        this.inventory.addItem({ id: "trainingBlade", name: "Training Blade", type: "weapon", slot: "weapon", stats: { attack: 4 }, stackable: 1 });
         this.interactionLatched = false;
     }
 
@@ -50,6 +52,7 @@ export class TownGuide extends Behaviour {
         if (!this.dialogue.isVisible) {
             this.quests.start("slimeTrouble");
             player.questLog = this.quests;
+            player.inventory = this.inventory;
             this.dialogue.start([
                 { speaker: "Town Guide", text: "The dungeon is crawling with slimes." },
                 { speaker: "Town Guide", text: "Defeat three slimes and bring peace back to town!" }

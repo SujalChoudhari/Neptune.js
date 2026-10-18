@@ -77,6 +77,7 @@ test("debug sample boots its real scene and tilemap without console errors", asy
         guide.Update();
         assert.equal(guide.dialogue.isVisible, true, "interacting with the nearby guide should open dialogue");
         assert.equal(guide.quests.states.get("slimeTrouble").status, "active", "guide dialogue should start the slime quest");
+        assert.equal(guide.inventory.hasItem("trainingBlade"), true, "the guide should provide a blade in the player's inventory");
         assert.match(guideEntity.GetComponent(ComponentRegistry.get("Text")).text, /Town Guide:/,
             "NPC dialogue should be visible as scene text");
         window.dispatchEvent(new KeyboardEvent("keyup", { keyCode: KeyboardInput.KEY_CODE.E }));
@@ -98,6 +99,11 @@ test("debug sample boots its real scene and tilemap without console errors", asy
         const encounter = encounterEntity.GetComponent(encounterType);
         encounter.Init();
         assert.equal(encounter.enemies.length, 3, "dungeon should have three tile-aware enemies");
+        window.dispatchEvent(new KeyboardEvent("keydown", { keyCode: KeyboardInput.KEY_CODE.U }));
+        encounter.Update(0);
+        assert.equal(encounter.inventory.equipment.weapon.id, "trainingBlade", "U should equip the training blade");
+        assert.equal(encounter.playerMelee.damage, 16, "equipping the blade should increase melee damage");
+        window.dispatchEvent(new KeyboardEvent("keyup", { keyCode: KeyboardInput.KEY_CODE.U }));
         for (let step = 0; step < 30; step++) encounter.Update(0.25);
         assert.ok(encounter.enemies.every(enemy => enemy.ai.state === "attack"),
             "each enemy should navigate to the player and enter its combat attack state");

@@ -18,7 +18,8 @@ export class DungeonEncounter extends Behaviour {
         super("DungeonEncounter");
         this.initializedScene = null;
         this.enemies = [];
-        this.inventory = new Inventory();
+        this.inventory = null;
+        this.equipLatched = false;
         this.progression = new Progression({ baseExperience: 10 });
         this.rewardSystem = new RewardSystem(new GameData({
             items: { slimeGel: { id: "slimeGel", name: "Slime Gel", type: "material", stackable: 10 } },
@@ -60,6 +61,15 @@ export class DungeonEncounter extends Behaviour {
 
         this.playerCombatant.position.x = playerTransform.position.x;
         this.playerCombatant.position.y = playerTransform.position.y;
+        const equipPressed = KeyboardInput.IsKeyDown(KeyboardInput.KEY_CODE.U);
+        if (!equipPressed) this.equipLatched = false;
+        else if (!this.equipLatched) {
+            this.equipLatched = true;
+            if (this.inventory.equip("trainingBlade")) {
+                const attackBonus = this.inventory.equipment.weapon?.stats?.attack ?? 0;
+                this.playerMelee = new AttackDefinition({ ...this.playerMelee, damage: 12 + attackBonus });
+            }
+        }
         const controller = this.player.GetComponent(PlayerController);
         if (KeyboardInput.IsKeyDown(KeyboardInput.KEY_CODE.J)) {
             this.combatSystem.startAttack(this.playerCombatant, this.playerMelee, controller.facing);
@@ -77,6 +87,8 @@ export class DungeonEncounter extends Behaviour {
 
         this.tilemap = new Tilemap(new Tileset("assets/tileset.png", 1, 1), 20, 15);
         this.player = player;
+        this.inventory = player.inventory ?? new Inventory();
+        player.inventory = this.inventory;
         this.questLog = player.questLog ?? null;
         this.combatSystem = new CombatSystem();
         const playerTransform = player.GetComponent(Transform);
