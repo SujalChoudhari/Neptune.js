@@ -31,6 +31,32 @@ export function setTileMetadata(map, tileId, updates) {
     return { ...map, metadata };
 }
 
+export function setCellMetadata(map, x, y, updates) {
+    if (!map || typeof map !== 'object' || Array.isArray(map) ||
+        !Number.isInteger(map.width) || map.width <= 0 || !Number.isInteger(map.height) || map.height <= 0) {
+        throw new TypeError('Tilemap dimensions must be positive integers');
+    }
+    if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || x >= map.width || y < 0 || y >= map.height) {
+        throw new RangeError('Tile coordinates are outside the map');
+    }
+    if (!updates || typeof updates !== 'object' || Array.isArray(updates) ||
+        Object.keys(updates).some((key) => key !== 'collision') ||
+        (updates.collision !== undefined && typeof updates.collision !== 'boolean')) {
+        throw new TypeError('Cell metadata supports only a boolean collision override');
+    }
+    const cellMetadata = { ...(map.cellMetadata || {}) };
+    const index = y * map.width + x;
+    const current = { ...(cellMetadata[index] || {}) };
+    if (updates.collision === undefined) delete current.collision;
+    else current.collision = updates.collision;
+    if (Object.keys(current).length) cellMetadata[index] = current;
+    else delete cellMetadata[index];
+    const result = { ...map };
+    if (Object.keys(cellMetadata).length) result.cellMetadata = cellMetadata;
+    else delete result.cellMetadata;
+    return result;
+}
+
 export function paintTileCell(map, x, y, tileId) {
     if (!map || typeof map !== 'object' || Array.isArray(map)) {
         throw new TypeError('Tilemap must be an object');

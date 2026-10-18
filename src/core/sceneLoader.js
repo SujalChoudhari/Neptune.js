@@ -200,6 +200,7 @@ export class SceneLoader {
                 // Create Entity
                 const entity = new Entity("Tile_" + i);
                 const tileMetadata = map.metadata?.[tileId];
+                const cellMetadata = map.cellMetadata?.[i];
                 if (tileMetadata && typeof tileMetadata === "object" && !Array.isArray(tileMetadata)) {
                     entity.tileId = tileId;
                     entity.tileMetadata = structuredClone(tileMetadata);
@@ -246,7 +247,7 @@ export class SceneLoader {
                 entity.AddComponent(sprite);
 
                 // Collision is solid by default; authored metadata can make a tile non-solid.
-                if (tileMetadata?.collision !== false) {
+                if ((cellMetadata?.collision ?? tileMetadata?.collision) !== false) {
                     const collider = ComponentRegistry.create("BoxCollider");
                     collider.size = new Vector2(1, 1);
                     entity.AddComponent(collider);

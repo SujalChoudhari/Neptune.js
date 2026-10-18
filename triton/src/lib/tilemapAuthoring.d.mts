@@ -6,4 +6,5 @@ export interface EditableTilemap {
 }
 
 export function setTileMetadata<T extends EditableTilemap>(map: T, tileId: number, updates: Record<string, unknown>): T;
+export function setCellMetadata<T extends EditableTilemap>(map: T, x: number, y: number, updates: { collision?: boolean }): T;
 export function paintTileCell<T extends EditableTilemap>(map: T, x: number, y: number, tileId: number): T;

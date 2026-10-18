@@ -2,7 +2,7 @@ import type { IDockviewPanelProps } from 'dockview';
 import { useEffect, useMemo, useState } from 'react';
 import { useFileSystem } from '@/context/FileSystemContext';
 import { useGameContext } from '@/context/GameContext';
-import { setTileMetadata, paintTileCell } from '@/lib/tilemapAuthoring.mjs';
+import { setTileMetadata, setCellMetadata, paintTileCell } from '@/lib/tilemapAuthoring.mjs';
 
 interface TileMetadata {
     walkable?: boolean;
@@ -16,6 +16,7 @@ interface TilemapDocument {
     height: number;
     data: number[];
     metadata?: Record<string, TileMetadata>;
+    cellMetadata?: Record<string, { collision?: boolean }>;
     [key: string]: unknown;
 }
 
@@ -28,6 +29,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
     const [mapPath, setMapPath] = useState('');
     const [tilemap, setTilemap] = useState<TilemapDocument | null>(null);
     const [tileId, setTileId] = useState(1);
+    const [selectedCell, setSelectedCell] = useState<{ x: number; y: number } | null>(null);
     const [isDirty, setIsDirty] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
@@ -93,6 +95,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
         if (!tilemap) return;
         try {
             setTilemap(paintTileCell(tilemap, x, y, tileId));
+            setSelectedCell({ x, y });
             setIsDirty(true);
         } catch (paintError) {
             setError(paintError instanceof Error ? paintError.message : String(paintError));
@@ -103,6 +106,16 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
         if (!tilemap) return;
         try {
             setTilemap(setTileMetadata(tilemap, tileId, { [field]: value }));
+            setIsDirty(true);
+        } catch (metadataError) {
+            setError(metadataError instanceof Error ? metadataError.message : String(metadataError));
+        }
+    };
+
+    const updateCellCollision = (value: boolean | undefined) => {
+        if (!tilemap || !selectedCell) return;
+        try {
+            setTilemap(setCellMetadata(tilemap, selectedCell.x, selectedCell.y, { collision: value }));
             setIsDirty(true);
         } catch (metadataError) {
             setError(metadataError instanceof Error ? metadataError.message : String(metadataError));
@@ -188,6 +201,25 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                         placeholder="e.g. water, stone"
                         onChange={(event) => updateMetadata('terrain', event.target.value || undefined)}
                     />
+                </div>
+            )}
+            {tilemap && selectedCell && (
+                <div className="flex items-center gap-2 rounded border border-border bg-card/50 p-2">
+                    <label className="text-xs" htmlFor="cell-collision">Cell ({selectedCell.x}, {selectedCell.y}) collision</label>
+                    <select
+                        id="cell-collision"
+                        aria-label={`Cell ${selectedCell.x}, ${selectedCell.y} collision`}
+                        className="rounded border border-border bg-card px-2 py-1 text-xs"
+                        value={tilemap.cellMetadata?.[String(selectedCell.y * tilemap.width + selectedCell.x)]?.collision === undefined
+                            ? 'inherit' : String(tilemap.cellMetadata[String(selectedCell.y * tilemap.width + selectedCell.x)].collision)}
+                        onChange={(event) => updateCellCollision(
+                            event.target.value === 'inherit' ? undefined : event.target.value === 'true'
+                        )}
+                    >
+                        <option value="inherit">Use tile default</option>
+                        <option value="true">Solid</option>
+                        <option value="false">Non-solid</option>
+                    </select>
                 </div>
             )}
             {error && <p className="text-xs text-red-400" role="alert">{error}</p>}

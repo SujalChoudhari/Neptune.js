@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { paintTileCell, setTileMetadata } from '../src/lib/tilemapAuthoring.mjs';
+import { paintTileCell, setCellMetadata, setTileMetadata } from '../src/lib/tilemapAuthoring.mjs';
 
 const sample = () => ({
     width: 3,
@@ -40,6 +40,17 @@ test('painting addresses row-major cells and preserves other tilemap data immuta
 
 test('painting supports clearing a cell with the runtime empty tile ID', () => {
     assert.equal(paintTileCell(sample(), 1, 1, 0).data[4], 0);
+});
+
+test('cell collision overrides are immutable, row-major, and removable', () => {
+    const source = sample();
+    const updated = setCellMetadata(source, 2, 1, { collision: false });
+    assert.deepEqual(updated.cellMetadata, { 5: { collision: false } });
+    assert.equal(source.cellMetadata, undefined);
+    assert.deepEqual(setCellMetadata(updated, 2, 1, { collision: true }).cellMetadata, { 5: { collision: true } });
+    assert.equal(setCellMetadata(updated, 2, 1, { collision: undefined }).cellMetadata, undefined);
+    assert.throws(() => setCellMetadata(sample(), 3, 0, { collision: false }), /outside the map/);
+    assert.throws(() => setCellMetadata(sample(), 0, 0, { collision: 'no' }), /boolean collision override/);
 });
 
 test('painting rejects out-of-bounds coordinates and invalid tile IDs', () => {
