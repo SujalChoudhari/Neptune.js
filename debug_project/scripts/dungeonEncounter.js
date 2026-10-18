@@ -4,7 +4,7 @@ import { SceneManager } from "../../src/core/sceneManager.js";
 import { KeyboardInput } from "../../src/input/keyboardinput.js";
 import { Tileset } from "../../src/thalassa/tileset.js";
 import { Tilemap } from "../../src/thalassa/tilemap.js";
-import { AttackDefinition, Combatant, CombatSystem, EnemyAI, Inventory, Progression, GameData, RewardSystem } from "../../src/larissa/index.js";
+import { AttackDefinition, BossAI, Combatant, CombatSystem, EnemyAI, Inventory, Progression, GameData, RewardSystem } from "../../src/larissa/index.js";
 import { PlayerController } from "./playerController.js";
 import { renderRpgHud } from "./hud.js";
 import { SaveManager } from "../../src/core/saveManager.js";
@@ -20,6 +20,7 @@ export class DungeonEncounter extends Behaviour {
         super("DungeonEncounter");
         this.initializedScene = null;
         this.enemies = [];
+        this.boss = null;
         this.inventory = null;
         this.equipLatched = false;
         this.pauseLatched = false;
@@ -53,7 +54,7 @@ export class DungeonEncounter extends Behaviour {
             this.player.paused = this.paused;
         }
         if (this.paused) {
-            renderRpgHud({ inventory: this.inventory, questLog: this.questLog, location: "Dungeon", paused: true });
+            renderRpgHud({ inventory: this.inventory, questLog: this.questLog, location: "Dungeon", paused: true, boss: this.boss });
             return;
         }
 
@@ -97,6 +98,11 @@ export class DungeonEncounter extends Behaviour {
             }
         }
 
+        if (this.boss?.combatant.isAlive && this.enemies.every(enemy => !enemy.combatant.isAlive)) {
+            this.boss.ai.setTarget(this.playerCombatant);
+            this.boss.ai.update(deltaTime, this.boss.combatant);
+        }
+
         this.playerCombatant.position.x = playerTransform.position.x;
         this.playerCombatant.position.y = playerTransform.position.y;
         const equipPressed = KeyboardInput.IsKeyDown(KeyboardInput.KEY_CODE.U);
@@ -115,8 +121,8 @@ export class DungeonEncounter extends Behaviour {
         if (KeyboardInput.IsKeyDown(KeyboardInput.KEY_CODE.K)) {
             this.combatSystem.startAttack(this.playerCombatant, this.playerRanged, controller.facing);
         }
-        this.combatSystem.update(deltaTime, [this.playerCombatant, ...this.enemies.map(enemy => enemy.combatant)]);
-        renderRpgHud({ inventory: this.inventory, questLog: this.questLog, location: "Dungeon", paused: this.paused, saveMessage: this.saveMessage });
+        this.combatSystem.update(deltaTime, [this.playerCombatant, ...this.enemies.map(enemy => enemy.combatant), ...(this.boss ? [this.boss.combatant] : [])]);
+        renderRpgHud({ inventory: this.inventory, questLog: this.questLog, location: "Dungeon", paused: this.paused, saveMessage: this.saveMessage, boss: this.boss });
     }
 
     #captureState() {
@@ -149,7 +155,8 @@ export class DungeonEncounter extends Behaviour {
     #initialize(scene) {
         const player = collect(scene, entity => entity.components.some(component => component instanceof PlayerController))[0];
         const enemyEntities = collect(scene, entity => entity.name.startsWith("Slime "));
-        if (!player || enemyEntities.length !== 3) return false;
+        const bossEntity = collect(scene, entity => entity.name === "Dungeon Warden")[0];
+        if (!player || enemyEntities.length !== 3 || !bossEntity) return false;
 
         this.tilemap = new Tilemap(new Tileset("assets/tileset.png", 1, 1), 20, 15);
         this.player = player;
@@ -184,6 +191,18 @@ export class DungeonEncounter extends Behaviour {
             hitbox: { width: 1.25, height: 1.25 },
             staggerDuration: 0.1
         });
+        const bossTransform = bossEntity.GetComponent(Transform);
+        const bossCombatant = new Combatant({ id: bossEntity.id, faction: "monsters", x: bossTransform.position.x, y: bossTransform.position.y, maxHealth: 100, hurtbox: { width: 1.5, height: 1.5 } });
+        const bossAI = new BossAI();
+        bossAI.patternDuration = 1.2;
+        bossAI.addAttackPhase(1, [
+            new AttackDefinition({ name: "warden-bolt", mode: "projectile", startup: 0.1, active: 0.2, recovery: 0.1, cooldown: 0.6, range: 12, damage: 8, projectileSpeed: 12, hitbox: { width: 0.6, height: 0.6 } })
+        ], this.combatSystem, bossCombatant);
+        bossAI.addAttackPhase(0.5, [
+            new AttackDefinition({ name: "warden-quake", mode: "area", startup: 0.2, active: 0.3, recovery: 0.2, cooldown: 0.8, range: 6, damage: 12, hitbox: { width: 6, height: 6 } })
+        ], this.combatSystem, bossCombatant);
+        bossCombatant.onDeath = () => { bossEntity.name = "Dungeon Warden (defeated)"; };
+        this.boss = { entity: bossEntity, combatant: bossCombatant, ai: bossAI };
         this.enemies = enemyEntities.map(entity => {
             const transform = entity.GetComponent(Transform);
             const spawn = { x: Math.round(transform.position.x), y: Math.round(transform.position.y) };

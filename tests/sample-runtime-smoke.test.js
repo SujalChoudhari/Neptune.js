@@ -103,6 +103,9 @@ test("debug sample boots its real scene and tilemap without console errors", asy
         const encounter = encounterEntity.GetComponent(encounterType);
         encounter.Init();
         assert.equal(encounter.enemies.length, 3, "dungeon should have three tile-aware enemies");
+        assert.ok(encounter.boss, "dungeon should instantiate its named Warden boss");
+        assert.equal(encounter.boss.combatant.maxHealth, 100, "Warden should have a boss health pool");
+        assert.equal(encounter.boss.ai.phases.length, 2, "Warden should have two configured attack phases");
         window.dispatchEvent(new KeyboardEvent("keydown", { keyCode: KeyboardInput.KEY_CODE.U }));
         encounter.Update(0);
         assert.equal(encounter.inventory.equipment.weapon.id, "trainingBlade", "U should equip the training blade");
@@ -191,6 +194,27 @@ test("debug sample boots its real scene and tilemap without console errors", asy
         assert.equal(guide.quests.states.get("slimeTrouble").progress.defeatSlimes, 1, "L should restore saved quest progress");
         assert.match(document.getElementById("rpg-hud").textContent, /Loaded/, "the HUD should report a successful load");
         window.dispatchEvent(new KeyboardEvent("keyup", { keyCode: KeyboardInput.KEY_CODE.L }));
+        for (const enemy of encounter.enemies) if (enemy.combatant.isAlive) {
+            enemy.combatant.invulnerableRemaining = 0;
+            enemy.combatant.receiveDamage({ amount: enemy.combatant.maxHealth });
+        }
+        encounter.boss.combatant.health = 40;
+        encounter.boss.combatant.invulnerableRemaining = 0;
+        encounter.boss.ai.setTarget(encounter.playerCombatant);
+        encounter.Update(0);
+        assert.ok(encounter.enemies.every(enemy => !enemy.combatant.isAlive), "the Warden should activate after all three slimes fall");
+        assert.equal(encounter.boss.ai.target, encounter.playerCombatant, "the Warden should acquire the player after the slime wave");
+        assert.equal(encounter.boss.ai.currentPhase, 1, "Warden should switch phases below half health");
+        assert.equal(encounter.boss.ai.state, "transitioning", "Warden should telegraph its phase transition");
+        let phaseTwoAttackStarted = false;
+        encounter.boss.ai.onAttack = () => { phaseTwoAttackStarted = true; };
+        encounter.Update(1);
+        encounter.Update(0);
+        assert.equal(encounter.boss.ai.state, "attacking", "Warden should attack after its transition");
+        assert.equal(phaseTwoAttackStarted, true, "Warden should launch its phase-two attack through the combat system");
+        assert.match(document.getElementById("rpg-hud").textContent, /Warden: 40\/100 \(Phase 2\)/,
+            "the HTML HUD should show Warden health and current phase");
+        assert.equal(encounter.boss.combatant.isAlive, true, "phase transition should not defeat the boss");
         window.dispatchEvent(new KeyboardEvent("keyup", { keyCode: KeyboardInput.KEY_CODE.E }));
         entryPortal.GetComponent(portalType).Update(0);
 
