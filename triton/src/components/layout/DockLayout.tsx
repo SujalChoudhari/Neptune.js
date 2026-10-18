@@ -9,6 +9,7 @@ import { ConsolePanel } from "@/components/panels/ConsolePanel";
 import { HierarchyPanel } from "@/components/panels/HierarchyPanel";
 import { GameViewPanel } from "@/components/panels/GameViewPanel";
 import { SceneViewPanel } from "@/components/panels/SceneViewPanel";
+import { TilemapPanel } from "@/components/panels/TilemapPanel";
 import { useSettings } from "@/components/context/SettingsContext";
 
 const ViewportPanel = (_props: IDockviewPanelProps) => (
@@ -158,6 +159,13 @@ export const DockLayout = ({ onApiReady }: DockLayoutProps) => {
                 position: { referencePanel: 'console', direction: 'within' }
             });
 
+            api.addPanel({
+                id: 'tilemap',
+                component: 'tilemap',
+                title: 'Tilemap',
+                position: { referencePanel: 'console', direction: 'within' }
+            });
+
             // Activate Scene View by default
             mainPanel.api.setActive();
 
@@ -228,6 +236,7 @@ const componentMap = {
     atlas: StoryBook,
     game: GameViewPanel,
     scene: SceneViewPanel,
+    tilemap: TilemapPanel,
 };
 
 export type NeptuneDockApi = DockviewApi & { applyLayout: (type: 'default' | 'animation' | 'debug') => void };
