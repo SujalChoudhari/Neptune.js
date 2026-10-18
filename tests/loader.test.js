@@ -146,7 +146,7 @@ describe("SceneLoader Integration", () => {
                     height: 1,
                     data: [1],
                     metadata: { 1: { walkable: false, collision: false } },
-                    cellMetadata: { 0: { collision: true } },
+                    cellMetadata: { 0: { collision: true, walkable: true, terrain: "bridge" } },
                     tileset: "tiles.png"
                 })
             };
@@ -163,7 +163,7 @@ describe("SceneLoader Integration", () => {
             expect(scene.children[0].name).toBe("Tile_0");
             expect(scene.children[0].GetComponent(Sprite).path).toBe("tiles.png");
             expect(scene.children[0].tileId).toBe(1);
-            expect(scene.children[0].tileMetadata).toEqual({ walkable: false, collision: false });
+            expect(scene.children[0].tileMetadata).toEqual({ walkable: true, collision: true, terrain: "bridge" });
             expect(scene.children[0].GetComponent(BoxCollider)).not.toBe(undefined);
         } finally {
             global.fetch = originalFetch;

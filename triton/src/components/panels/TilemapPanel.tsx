@@ -16,7 +16,7 @@ interface TilemapDocument {
     height: number;
     data: number[];
     metadata?: Record<string, TileMetadata>;
-    cellMetadata?: Record<string, { collision?: boolean }>;
+    cellMetadata?: Record<string, { collision?: boolean; walkable?: boolean; terrain?: string }>;
     tileset?: string;
     columns?: number;
     tileCount?: number;
@@ -122,10 +122,10 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
         }
     };
 
-    const updateCellCollision = (value: boolean | undefined) => {
+    const updateCellMetadata = (field: 'collision' | 'walkable' | 'terrain', value: boolean | string | undefined) => {
         if (!tilemap || !selectedCell) return;
         try {
-            setTilemap(setCellMetadata(tilemap, selectedCell.x, selectedCell.y, { collision: value }));
+            setTilemap(setCellMetadata(tilemap, selectedCell.x, selectedCell.y, { [field]: value }));
             setIsDirty(true);
         } catch (metadataError) {
             setError(metadataError instanceof Error ? metadataError.message : String(metadataError));
@@ -275,7 +275,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                         className="rounded border border-border bg-card px-2 py-1 text-xs"
                         value={tilemap.cellMetadata?.[String(selectedCell.y * tilemap.width + selectedCell.x)]?.collision === undefined
                             ? 'inherit' : String(tilemap.cellMetadata[String(selectedCell.y * tilemap.width + selectedCell.x)].collision)}
-                        onChange={(event) => updateCellCollision(
+                        onChange={(event) => updateCellMetadata('collision',
                             event.target.value === 'inherit' ? undefined : event.target.value === 'true'
                         )}
                     >
@@ -283,6 +283,28 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                         <option value="true">Solid</option>
                         <option value="false">Non-solid</option>
                     </select>
+                    <label className="text-xs" htmlFor="cell-walkable">Navigation</label>
+                    <select
+                        id="cell-walkable"
+                        aria-label={`Cell ${selectedCell.x}, ${selectedCell.y} walkability`}
+                        className="rounded border border-border bg-card px-2 py-1 text-xs"
+                        value={tilemap.cellMetadata?.[String(selectedCell.y * tilemap.width + selectedCell.x)]?.walkable === undefined
+                            ? 'inherit' : String(tilemap.cellMetadata[String(selectedCell.y * tilemap.width + selectedCell.x)].walkable)}
+                        onChange={(event) => updateCellMetadata('walkable',
+                            event.target.value === 'inherit' ? undefined : event.target.value === 'true')}
+                    >
+                        <option value="inherit">Use tile default</option>
+                        <option value="true">Walkable</option>
+                        <option value="false">Blocked</option>
+                    </select>
+                    <label className="text-xs" htmlFor="cell-terrain">Cell terrain</label>
+                    <input
+                        id="cell-terrain"
+                        aria-label={`Cell ${selectedCell.x}, ${selectedCell.y} terrain`}
+                        className="min-w-0 flex-1 rounded border border-border bg-card px-2 py-1 text-xs"
+                        value={tilemap.cellMetadata?.[String(selectedCell.y * tilemap.width + selectedCell.x)]?.terrain || ''}
+                        onChange={(event) => updateCellMetadata('terrain', event.target.value || undefined)}
+                    />
                 </div>
             )}
             {error && <p className="text-xs text-red-400" role="alert">{error}</p>}

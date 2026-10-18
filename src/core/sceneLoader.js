@@ -201,9 +201,12 @@ export class SceneLoader {
                 const entity = new Entity("Tile_" + i);
                 const tileMetadata = map.metadata?.[tileId];
                 const cellMetadata = map.cellMetadata?.[i];
-                if (tileMetadata && typeof tileMetadata === "object" && !Array.isArray(tileMetadata)) {
+                const resolvedTileMetadata = tileMetadata || cellMetadata
+                    ? { ...(tileMetadata || {}), ...(cellMetadata || {}) }
+                    : null;
+                if (resolvedTileMetadata && typeof resolvedTileMetadata === "object" && !Array.isArray(resolvedTileMetadata)) {
                     entity.tileId = tileId;
-                    entity.tileMetadata = structuredClone(tileMetadata);
+                    entity.tileMetadata = structuredClone(resolvedTileMetadata);
                 }
 
                 // Add Transform

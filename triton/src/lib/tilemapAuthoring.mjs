@@ -46,16 +46,22 @@ export function setCellMetadata(map, x, y, updates) {
     if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || x >= map.width || y < 0 || y >= map.height) {
         throw new RangeError('Tile coordinates are outside the map');
     }
-    if (!updates || typeof updates !== 'object' || Array.isArray(updates) ||
-        Object.keys(updates).some((key) => key !== 'collision') ||
-        (updates.collision !== undefined && typeof updates.collision !== 'boolean')) {
-        throw new TypeError('Cell metadata supports only a boolean collision override');
+    if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
+        throw new TypeError('Cell metadata updates must be an object');
+    }
+    for (const [field, value] of Object.entries(updates)) {
+        if (!['collision', 'walkable', 'terrain'].includes(field)) throw new TypeError(`Unknown cell metadata field: ${field}`);
+        if (value !== undefined && !TILE_METADATA_VALIDATORS[field](value)) {
+            throw new TypeError(`Invalid cell metadata value for ${field}`);
+        }
     }
     const cellMetadata = { ...(map.cellMetadata || {}) };
     const index = y * map.width + x;
     const current = { ...(cellMetadata[index] || {}) };
-    if (updates.collision === undefined) delete current.collision;
-    else current.collision = updates.collision;
+    for (const [field, value] of Object.entries(updates)) {
+        if (value === undefined) delete current[field];
+        else current[field] = value;
+    }
     if (Object.keys(current).length) cellMetadata[index] = current;
     else delete cellMetadata[index];
     const result = { ...map };

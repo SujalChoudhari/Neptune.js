@@ -48,15 +48,20 @@ test('painting supports clearing a cell with the runtime empty tile ID', () => {
     assert.equal(paintTileCell(sample(), 1, 1, 0).data[4], 0);
 });
 
-test('cell collision overrides are immutable, row-major, and removable', () => {
+test('cell collision and navigation overrides are immutable, row-major, and removable', () => {
     const source = sample();
-    const updated = setCellMetadata(source, 2, 1, { collision: false });
-    assert.deepEqual(updated.cellMetadata, { 5: { collision: false } });
+    const updated = setCellMetadata(source, 2, 1, { collision: false, walkable: true, terrain: 'stone' });
+    assert.deepEqual(updated.cellMetadata, { 5: { collision: false, walkable: true, terrain: 'stone' } });
     assert.equal(source.cellMetadata, undefined);
-    assert.deepEqual(setCellMetadata(updated, 2, 1, { collision: true }).cellMetadata, { 5: { collision: true } });
-    assert.equal(setCellMetadata(updated, 2, 1, { collision: undefined }).cellMetadata, undefined);
+    assert.deepEqual(setCellMetadata(updated, 2, 1, { walkable: false }).cellMetadata,
+        { 5: { collision: false, walkable: false, terrain: 'stone' } });
+    assert.equal(setCellMetadata(updated, 2, 1, {
+        collision: undefined, walkable: undefined, terrain: undefined
+    }).cellMetadata, undefined);
     assert.throws(() => setCellMetadata(sample(), 3, 0, { collision: false }), /outside the map/);
-    assert.throws(() => setCellMetadata(sample(), 0, 0, { collision: 'no' }), /boolean collision override/);
+    assert.throws(() => setCellMetadata(sample(), 0, 0, { collision: 'no' }), /Invalid cell metadata value for collision/);
+    assert.throws(() => setCellMetadata(sample(), 0, 0, { walkable: 'yes' }), /Invalid cell metadata value for walkable/);
+    assert.throws(() => setCellMetadata(sample(), 0, 0, { elevation: 2 }), /Unknown cell metadata field/);
 });
 
 test('painting rejects out-of-bounds coordinates and invalid tile IDs', () => {
