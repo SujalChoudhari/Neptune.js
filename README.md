@@ -75,6 +75,7 @@ preserves the hand-authored product contract.
 - [Combat and enemy AI](docs/tutorials/combat-ai.md): configure attacks, combatants, and tile-aware enemies.
 - [RPG progression and inventory](docs/tutorials/rpg-systems.md): manage stats, items, quests, shops, and rewards.
 - [HTML UI bridge](docs/tutorials/html-ui-bridge.md): securely connect an embedded HTML interface to the game.
+- [Canvas UI layout](docs/tutorials/ui-layout.md): render UI components and arrange children with containers.
 
 ## Easy to use
 It's Simple and easy to use. 
