@@ -71,7 +71,7 @@ export function createUIBridge({ window: target = globalThis.window, parent = ta
             if (destroyed) throw new Error('UI bridge has been destroyed');
             if (typeof name !== 'string' || !name) throw new TypeError('UI event name must be a non-empty string');
             const data = clonePayload(payload);
-            target.postMessage({ [BRIDGE_MARKER]: true, version: 1, direction: 'engine-to-ui', name, payload: data }, targetOrigin);
+            parent.postMessage({ [BRIDGE_MARKER]: true, version: 1, direction: 'engine-to-ui', name, payload: data }, targetOrigin);
         },
         destroy() {
             if (destroyed) return;

@@ -1,0 +1,16 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Neptune UI bridge browser smoke</title></head><body><h1>Browser smoke</h1><pre id="result">Running…</pre><iframe title="Game UI demo" src="index.html"></iframe><script type="module">
+import {createUIBridge} from '../../src/ui/bridge.js';
+const out=document.querySelector('#result');const frame=document.querySelector('iframe');
+try{await new Promise((resolve,reject)=>{frame.addEventListener('load',resolve,{once:true});setTimeout(()=>reject(new Error('iframe load timeout')),5000)});
+const engine=createUIBridge({window, parent:frame.contentWindow, origin:location.origin,targetOrigin:location.origin,actions:['dialogue:choose']});
+const action=new Promise(resolve=>engine.onAction('dialogue:choose',resolve));
+frame.contentWindow.document.querySelector('#screens button:nth-child(3)').click();frame.contentWindow.document.querySelector('#panel button').click();
+const received=await Promise.race([action,new Promise((_,reject)=>setTimeout(()=>reject(new Error('UI-to-engine action timeout')),2000))]);
+if(received.choice!==0)throw new Error('unexpected action payload');
+engine.emit('hud:update',{health:73});
+await new Promise(resolve=>setTimeout(resolve,50));
+const state=frame.contentWindow.document.querySelector('#status').textContent;
+if(!state.includes('health'))throw new Error(`engine-to-UI state not received: ${state}`);
+engine.destroy();out.textContent='PASS: UI-to-engine choice action and engine-to-UI HUD state; nine screen controls present.';document.body.dataset.result='pass';
+}catch(error){out.textContent=`FAIL: ${error.stack||error}`;document.body.dataset.result='fail';throw error}
+</script></body></html>

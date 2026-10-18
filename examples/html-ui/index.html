@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neptune HTML UI bridge demo</title>
+<style>
+:root{color-scheme:dark;--scale:1;--accent:#69d6ca;font:calc(16px * var(--scale))/1.5 system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:#10202b;color:#eff8f6}main{max-width:900px;margin:2rem auto;padding:1rem}nav{display:flex;flex-wrap:wrap;gap:.5rem}button{font:inherit;color:inherit;background:#24404d;border:2px solid transparent;border-radius:.5rem;padding:.65rem 1rem;cursor:pointer}button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}button[aria-pressed=true]{border-color:var(--accent)}section{margin-top:1.5rem;padding:1.5rem;background:#19313e;border-radius:1rem}label{display:block;margin-top:1rem}output{color:var(--accent)}.sr{position:absolute;left:-10000px}
+</style></head>
+<body><main id="ui" aria-label="Game interface"><h1>Neptune UI bridge</h1><p id="status" role="status" aria-live="polite">Waiting for game state…</p>
+<nav aria-label="Game screens" id="screens"></nav><section id="panel" aria-live="polite"></section>
+<label for="scale">UI scale <output id="scale-value">100%</output></label><input id="scale" type="range" min="80" max="150" value="100" aria-label="UI scale">
+</main><script type="module">
+import {installHTMLUI,installUINavigation} from '../../src/ui/bridge.js';
+const names=['HUD','Dialogue','Choices','Inventory','Equipment','Quests','Shop','Pause','Settings'];
+const actions=['dialogue:choose','inventory:use','equipment:equip','quest:track','shop:buy','pause:toggle','settings:save'];
+const events=['hud:update','dialogue:show','choices:show','inventory:update','equipment:update','quest:update','shop:update','pause:update','settings:update'];
+const ui=installHTMLUI({window,actions,events}); const nav=document.querySelector('#screens'), panel=document.querySelector('#panel'), status=document.querySelector('#status');
+const screenEvents=Object.fromEntries(names.map((n,i)=>[n.toLowerCase(),events[i]]));
+for(const name of names){const b=document.createElement('button');b.textContent=name;b.setAttribute('aria-pressed','false');b.addEventListener('click',()=>show(name));nav.append(b)}
+function show(name){for(const b of nav.children)b.setAttribute('aria-pressed',String(b.textContent===name));panel.innerHTML='';const title=document.createElement('h2');title.textContent=name;panel.append(title);const text=document.createElement('p');text.textContent=({HUD:'Health 100 · Gold 25',Dialogue:'A traveler approaches.',Choices:'Choose your response.',Inventory:'Potion · Key · Map',Equipment:'Sword · Shield · Armor',Quests:'Find the northern gate.',Shop:'Potion — 10 gold',Pause:'Game paused.',Settings:'Audio and display options.'})[name];panel.append(text);if(name==='Choices'){for(const [i,label] of ['Tell me more','Goodbye'].entries()){const b=document.createElement('button');b.textContent=label;b.addEventListener('click',()=>ui.emit('dialogue:choose',{choice:i}));panel.append(b)}}if(name==='Inventory'){const b=document.createElement('button');b.textContent='Use potion';b.addEventListener('click',()=>ui.emit('inventory:use',{item:'potion'}));panel.append(b)}if(name==='Pause'){const b=document.createElement('button');b.textContent='Resume';b.addEventListener('click',()=>ui.emit('pause:toggle',{paused:false}));panel.append(b)}}
+for(const event of events)ui.on(event,payload=>{status.textContent=`Game event: ${event} · ${JSON.stringify(payload)}`;const screen=names[events.indexOf(event)];show(screen)});
+installUINavigation(document.querySelector('#ui'));document.querySelector('#scale').addEventListener('input',e=>{document.documentElement.style.setProperty('--scale',e.target.value/100);document.querySelector('#scale-value').value=`${e.target.value}%`});
+show('HUD');ui.emit('demo:ready',{screens:names});
+</script></body></html>
