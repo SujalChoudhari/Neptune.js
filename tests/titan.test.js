@@ -210,6 +210,36 @@ describe('Animator', () => {
         expect(animator.isPlaying("idle")).toBe(true);
     });
 
+    it('binds gameplay events to animation changes and can unbind safely', () => {
+        const run = new Animation("run", true);
+        const attack = new Animation("attack", false);
+        animator.addAnimation(anim).addAnimation(run).addAnimation(attack);
+        const listeners = new Map();
+        const source = {
+            on(name, listener) {
+                listeners.set(name, listener);
+                return () => listeners.delete(name);
+            }
+        };
+        const result = animator.bindGameplayEvents(source, {
+            "player-moved": (event) => event.speed > 0 ? "run" : "idle",
+            "player-attack": "attack"
+        });
+        expect(result).toBe(animator);
+        listeners.get("player-moved")({ speed: 2 });
+        expect(animator.currentAnimation).toBe(run);
+        listeners.get("player-attack")({});
+        expect(animator.currentAnimation).toBe(attack);
+        animator.unbindGameplayEvents();
+        expect(listeners.size).toBe(0);
+    });
+
+    it('validates gameplay event bindings', () => {
+        expect(() => animator.bindGameplayEvents(null, {})).toThrow();
+        expect(() => animator.bindGameplayEvents({ on() {} }, null)).toThrow();
+        expect(() => animator.bindGameplayEvents({ on() {} }, { jump: 42 })).toThrow();
+    });
+
     it('update advances animation time', () => {
         // Create entity with rig and animator
         const root = new Entity("Character");

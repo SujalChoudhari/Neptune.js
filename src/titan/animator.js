@@ -16,6 +16,50 @@ export class Animator extends Component {
         this.speed = 1.0;
         this.playing = false;
         this._rig = null;
+        this._gameplayEventUnsubscribers = [];
+    }
+
+    /**
+     * Bind gameplay events to animation names. The event source must expose
+     * on(eventName, listener), returning an unsubscribe function (or provide
+     * off(eventName, listener)). Mapping values may be animation names or
+     * functions that return an animation name for the event payload.
+     * Existing bindings are replaced when this method is called again.
+     * @param {Object} eventSource - Event emitter with on(event, listener).
+     * @param {Object<string, string|Function>} eventMap - Event-to-animation mapping.
+     * @returns {Animator} This animator (for chaining).
+     */
+    bindGameplayEvents(eventSource, eventMap) {
+        if (!eventSource || typeof eventSource.on !== "function") {
+            throw new TypeError("Animator.bindGameplayEvents requires an event source with on(event, listener)");
+        }
+        if (!eventMap || typeof eventMap !== "object" || Array.isArray(eventMap)) {
+            throw new TypeError("Animator.bindGameplayEvents requires an event mapping object");
+        }
+        this.unbindGameplayEvents();
+        for (const [eventName, resolveAnimation] of Object.entries(eventMap)) {
+            if (typeof resolveAnimation !== "string" && typeof resolveAnimation !== "function") {
+                throw new TypeError(`Animation mapping for event \\"${eventName}\\" must be a name or function`);
+            }
+            const listener = (event) => {
+                const animationName = typeof resolveAnimation === "function"
+                    ? resolveAnimation(event)
+                    : resolveAnimation;
+                if (typeof animationName === "string" && animationName) this.play(animationName);
+            };
+            const unsubscribe = eventSource.on(eventName, listener);
+            this._gameplayEventUnsubscribers.push(typeof unsubscribe === "function"
+                ? unsubscribe
+                : () => eventSource.off?.(eventName, listener));
+        }
+        return this;
+    }
+
+    /** Remove all gameplay event bindings. */
+    unbindGameplayEvents() {
+        for (const unsubscribe of this._gameplayEventUnsubscribers) unsubscribe();
+        this._gameplayEventUnsubscribers = [];
+        return this;
     }
 
     /**

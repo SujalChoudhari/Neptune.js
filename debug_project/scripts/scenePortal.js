@@ -1,5 +1,6 @@
 import { Behaviour, KeyboardInput, SceneLoader, SceneManager, Transform } from "../../src/neptune.js";
 import { PlayerController } from "./playerController.js";
+import { GameFeel } from "../../src/thalassa/gameFeel.js";
 
 let interactionLatched = false;
 
@@ -20,6 +21,8 @@ export class ScenePortal extends Behaviour {
         this.destinationX = 0;
         this.destinationY = 0;
         this.transitioning = false;
+        this.gameFeel = new GameFeel({ onUIFeedback: event => { this.feedbackEvent = event; } });
+        this.feedbackEvent = null;
     }
 
     Update() {
@@ -64,6 +67,7 @@ export class ScenePortal extends Behaviour {
             transform.position.x = this.destinationX;
             transform.position.y = this.destinationY;
             player.paused = false;
+            this.gameFeel.flash("white", 0.2).notifyUI({ type: "scene-transition", from: sourceScene.name, to: destination.name });
             return true;
         } catch (error) {
             interactionLatched = false;

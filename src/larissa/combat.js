@@ -187,6 +187,16 @@ export class CombatSystem {
         for (const listener of [...(this._listeners.get(event) ?? [])]) listener({ event, ...payload });
     }
 
+    /** Publish an environment interaction (hazard, landing, trigger, etc.) for feedback consumers. */
+    reportEnvironmentContact(combatant, contact) {
+        if (!(combatant instanceof Combatant)) throw new TypeError("reportEnvironmentContact requires a Combatant");
+        if (!contact || typeof contact !== "object" || Array.isArray(contact) || typeof contact.type !== "string" || !contact.type) {
+            throw new TypeError("Environment contact requires an object with a non-empty type");
+        }
+        this._emit("environment", { combatant, contact: { ...contact } });
+        return true;
+    }
+
     startAttack(attacker, definition, aim = { x: 1, y: 0 }) {
         if (!(attacker instanceof Combatant) || !(definition instanceof AttackDefinition)) throw new TypeError("startAttack requires a Combatant and AttackDefinition");
         if (!attacker.isAlive) return false;
@@ -232,7 +242,10 @@ export class CombatSystem {
             this._emit("knockback", { attacker, target, definition, velocity: { ...definition.knockback } });
         }
         this._emit("hit", { attacker, target, definition, result });
-        if (result.applied) this._emit("damage", { attacker, target, definition, result });
+        if (result.applied) {
+            this._emit("damage", { attacker, target, definition, result });
+            this._emit("hurt", { attacker, target, definition, result });
+        }
         if (result.killed) this._emit("death", { attacker, target, definition });
     }
 

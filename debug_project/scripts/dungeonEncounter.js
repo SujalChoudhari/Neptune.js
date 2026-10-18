@@ -8,6 +8,7 @@ import { AttackDefinition, BossAI, Combatant, CombatSystem, EnemyAI, Inventory, 
 import { PlayerController } from "./playerController.js";
 import { renderRpgHud } from "./hud.js";
 import { SaveManager } from "../../src/core/saveManager.js";
+import { GameFeel } from "../../src/thalassa/gameFeel.js";
 
 function collect(entity, predicate, matches = []) {
     if (predicate(entity)) matches.push(entity);
@@ -29,6 +30,7 @@ export class DungeonEncounter extends Behaviour {
         this.loadLatched = false;
         this.saveManager = new SaveManager({ prefix: "neptune.m16" });
         this.saveMessage = "";
+        this.feedbackMessage = "";
         this.progression = new Progression({ baseExperience: 10 });
         this.rewardSystem = new RewardSystem(new GameData({
             items: { slimeGel: { id: "slimeGel", name: "Slime Gel", type: "material", stackable: 10 } },
@@ -54,7 +56,7 @@ export class DungeonEncounter extends Behaviour {
             this.player.paused = this.paused;
         }
         if (this.paused) {
-            renderRpgHud({ inventory: this.inventory, questLog: this.questLog, location: "Dungeon", paused: true, boss: this.boss });
+            renderRpgHud({ inventory: this.inventory, questLog: this.questLog, location: "Dungeon", paused: true, boss: this.boss, feedbackMessage: this.feedbackMessage });
             return;
         }
 
@@ -122,7 +124,7 @@ export class DungeonEncounter extends Behaviour {
             this.combatSystem.startAttack(this.playerCombatant, this.playerRanged, controller.facing);
         }
         this.combatSystem.update(deltaTime, [this.playerCombatant, ...this.enemies.map(enemy => enemy.combatant), ...(this.boss ? [this.boss.combatant] : [])]);
-        renderRpgHud({ inventory: this.inventory, questLog: this.questLog, location: "Dungeon", paused: this.paused, saveMessage: this.saveMessage, boss: this.boss });
+        renderRpgHud({ inventory: this.inventory, questLog: this.questLog, location: "Dungeon", paused: this.paused, saveMessage: this.saveMessage, boss: this.boss, feedbackMessage: this.feedbackMessage });
     }
 
     #captureState() {
@@ -165,6 +167,17 @@ export class DungeonEncounter extends Behaviour {
         player.inventory = this.inventory;
         this.questLog = player.questLog ?? null;
         this.combatSystem = new CombatSystem();
+        this.gameFeel = new GameFeel({ onUIFeedback: ({ message }) => { this.feedbackMessage = message; } });
+        for (const [event, message, color] of [["attackStart", "Attack!", "gold"], ["hurt", "Hit!", "red"], ["death", "Enemy defeated", "white"], ["environment", "Environment contact", "cyan"]]) {
+            this.combatSystem.on(event, payload => {
+                this.feedbackMessage = message;
+                this.gameFeel.flash(color, 0.12).notifyUI({ event, message, payload });
+                if (event === "hit" || event === "hurt" || event === "death") {
+                    const position = payload.target?.position ?? payload.attacker?.position;
+                    if (position) this.gameFeel.burst({ ...position, count: event === "death" ? 12 : 5, color, speed: 3, lifetime: 0.25, radius: 0.1 });
+                }
+            });
+        }
         const playerTransform = player.GetComponent(Transform);
         this.playerCombatant = new Combatant({
             id: "dungeon-player",
@@ -201,7 +214,11 @@ export class DungeonEncounter extends Behaviour {
         bossAI.addAttackPhase(0.5, [
             new AttackDefinition({ name: "warden-quake", mode: "area", startup: 0.2, active: 0.3, recovery: 0.2, cooldown: 0.8, range: 6, damage: 12, hitbox: { width: 6, height: 6 } })
         ], this.combatSystem, bossCombatant);
-        bossCombatant.onDeath = () => { bossEntity.name = "Dungeon Warden (defeated)"; };
+        bossCombatant.onDeath = () => {
+            bossEntity.name = "Dungeon Warden (defeated)";
+            this.gameFeel.flash("white", 0.2).notifyUI({ event: "death", message: "Boss defeated" });
+            this.feedbackMessage = "Boss defeated";
+        };
         this.boss = { entity: bossEntity, combatant: bossCombatant, ai: bossAI };
         this.enemies = enemyEntities.map(entity => {
             const transform = entity.GetComponent(Transform);
@@ -220,6 +237,9 @@ export class DungeonEncounter extends Behaviour {
             combatant.onDeath = () => {
                 this.tilemap.vacate(entity);
                 entity.name = `${entity.name} (defeated)`;
+                this.gameFeel.flash("white", 0.12).burst({ ...combatant.position, count: 12, color: "white", speed: 3, lifetime: 0.25, radius: 0.1 });
+                this.gameFeel.notifyUI({ event: "death", message: "Enemy defeated" });
+                this.feedbackMessage = "Enemy defeated";
                 this.rewardSystem.grant("slimeDefeat", { inventory: this.inventory, progression: this.progression });
                 this.questLog?.advance("slimeTrouble", "defeatSlimes");
             };

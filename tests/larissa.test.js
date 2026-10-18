@@ -423,6 +423,25 @@ describe('CombatSystem', () => {
         expect(events).toContain("attackComplete");
     });
 
+    it('publishes hurt only for applied hits and exposes environment contact feedback hooks', () => {
+        const attacker = new Combatant({ id: "attacker", faction: "heroes", x: 0, y: 0 });
+        const target = new Combatant({ id: "target", faction: "monsters", x: 1, y: 0, invulnerabilityDuration: 1 });
+        const system = new CombatSystem();
+        const events = [];
+        for (const name of ["hit", "hurt", "environment"]) system.on(name, event => events.push(event));
+        const attack = new AttackDefinition({ name: "tap", range: 2, active: 0.1, hitbox: { width: 4, height: 4 } });
+        system.startAttack(attacker, attack);
+        system.update(0.1, [attacker, target]);
+        expect(events.map(event => event.event)).toEqual(["hit", "hurt"]);
+        system.reportEnvironmentContact(target, { type: "hazard", hazard: "lava", damage: 5 });
+        expect(events[2].event).toBe("environment");
+        expect(events[2].combatant).toBe(target);
+        expect(events[2].contact).toEqual({ type: "hazard", hazard: "lava", damage: 5 });
+        expect(events[2].contact).not.toBe(target);
+        expect(() => system.reportEnvironmentContact({}, { type: "hazard" })).toThrow();
+        expect(() => system.reportEnvironmentContact(target, {})).toThrow();
+    });
+
     it('applies resistance, invulnerability frames, status expiry, and one-time death deterministically', () => {
         const body = { applyKnockback(x, y) { this.velocity = { x, y }; } };
         const target = new Combatant({ id: "target", maxHealth: 20, resistances: { fire: 0.5 }, invulnerabilityDuration: 0.2, body });

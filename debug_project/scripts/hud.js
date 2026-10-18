@@ -1,4 +1,4 @@
-export function renderRpgHud({ inventory, questLog, location, paused = false, saveMessage = "", boss = null }) {
+export function renderRpgHud({ inventory, questLog, location, paused = false, saveMessage = "", feedbackMessage = "", boss = null }) {
     const root = globalThis.document?.getElementById("rpg-hud");
     if (!root || !inventory) return;
 
@@ -20,6 +20,7 @@ export function renderRpgHud({ inventory, questLog, location, paused = false, sa
         questLine,
         `Status: ${paused ? "PAUSED" : "Playing"}`,
         boss?.combatant.isAlive ? `Warden: ${boss.combatant.health}/${boss.combatant.maxHealth} (Phase ${boss.ai.currentPhase + 1})` : "",
-        saveMessage
+        saveMessage,
+        feedbackMessage
     ].join(" | ");
 }

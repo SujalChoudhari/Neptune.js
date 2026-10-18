@@ -89,6 +89,8 @@ test("debug sample boots its real scene and tilemap without console errors", asy
         player.GetComponent(Transform).position.y = entryPortal.GetComponent(Transform).position.y;
         window.dispatchEvent(new KeyboardEvent("keydown", { keyCode: KeyboardInput.KEY_CODE.E }));
         await entryPortal.GetComponent(portalType).Update(0);
+        assert.deepEqual(entryPortal.GetComponent(portalType).feedbackEvent, { type: "scene-transition", from: "Town", to: "Dungeon" },
+            "scene transitions should trigger reusable feedback without engine changes");
         const dungeon = SceneManager.GetActiveScene();
         assert.equal(dungeon.name, "Dungeon");
         assert.equal(player.parent, dungeon, "the same player entity should survive the transition");
@@ -155,8 +157,12 @@ test("debug sample boots its real scene and tilemap without console errors", asy
         meleeTarget.combatant.position.y = encounter.playerCombatant.position.y;
         const meleeHealth = meleeTarget.combatant.health;
         assert.equal(encounter.combatSystem.startAttack(encounter.playerCombatant, encounter.playerMelee, { x: 1, y: 0 }), true);
+        assert.equal(encounter.feedbackMessage, "Attack!", "the sample should surface attack-start feedback in its game-owned HUD");
         encounter.combatSystem.update(0.4, [encounter.playerCombatant, ...encounter.enemies.map(enemy => enemy.combatant)]);
         assert.ok(meleeTarget.combatant.health < meleeHealth, "player melee hitbox should damage a nearby enemy hurtbox");
+        assert.equal(encounter.feedbackMessage, "Hit!", "the sample should route applied hurt events to its HUD feedback");
+        assert.ok(encounter.gameFeel.flashEffect, "combat feedback should use reusable viewport flash state");
+        assert.ok(encounter.gameFeel.particles.length > 0, "combat feedback should use reusable particle bursts");
         const rangedTarget = encounter.enemies.find(enemy => enemy.combatant.isAlive && enemy !== meleeTarget);
         for (const enemy of encounter.enemies) {
             if (enemy !== rangedTarget) enemy.combatant.position.y = encounter.playerCombatant.position.y + 10;
@@ -172,6 +178,7 @@ test("debug sample boots its real scene and tilemap without console errors", asy
         const defeatedEnemy = encounter.enemies[0];
         defeatedEnemy.combatant.receiveDamage({ amount: defeatedEnemy.combatant.maxHealth });
         assert.equal(defeatedEnemy.combatant.isAlive, false, "a defeated enemy should be removed from combat");
+        assert.equal(encounter.feedbackMessage, "Enemy defeated", "the sample should surface death feedback in its game-owned HUD");
         assert.equal(encounter.inventory.getItemCount("slimeGel"), 1, "enemy death should grant its loot");
         assert.equal(encounter.progression.level, 2, "enemy death should grant enough XP to level up");
         assert.equal(guide.quests.states.get("slimeTrouble").progress.defeatSlimes, 1,
@@ -230,6 +237,8 @@ test("debug sample boots its real scene and tilemap without console errors", asy
         player.GetComponent(Transform).position.y = exitPortal.GetComponent(Transform).position.y;
         window.dispatchEvent(new KeyboardEvent("keydown", { keyCode: KeyboardInput.KEY_CODE.E }));
         await exitPortal.GetComponent(portalType).Update(0);
+        assert.deepEqual(exitPortal.GetComponent(portalType).feedbackEvent, { type: "scene-transition", from: "Dungeon", to: "Town" },
+            "return transitions should also trigger reusable feedback");
         assert.equal(SceneManager.GetActiveScene().name, "Town", "the town scene should be reused on return");
         assert.equal(SceneManager.GetActiveScene().id, scene.id);
         assert.equal(player.parent, scene, "the same player should return to the town scene");
