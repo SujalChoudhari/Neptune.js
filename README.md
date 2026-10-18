@@ -71,6 +71,7 @@ preserves the hand-authored product contract.
 - [First game](docs/tutorials/first-game.md): run a minimal project from this checkout.
 - [Action RPG](docs/tutorials/action-rpg.md): explore the playable sample.
 - [Saving and loading](docs/tutorials/save-load.md): persist player state and project scenes.
+- [Tilemaps and tilesets](docs/tutorials/tilemaps.md): build layered maps and grid navigation.
 
 ## Easy to use
 It's Simple and easy to use. 
