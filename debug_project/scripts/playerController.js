@@ -9,6 +9,7 @@ export class PlayerController extends Behaviour {
         this.velocity = new Vector2(0, 0);
         this.grounded = false;
         this.size = new Vector2(0.8, 0.8); // Slightly smaller than 1 tile
+        this.facing = { x: 1, y: 0 };
     }
 
     Init() {
@@ -19,6 +20,7 @@ export class PlayerController extends Behaviour {
     }
 
     Update(deltaTime) {
+        if (this.entity?.paused) return;
         // Log basic heartbeat to confirm script is running
         // console.log("PlayerController Update Heartbeat");
 
@@ -37,6 +39,7 @@ export class PlayerController extends Behaviour {
         if (KeyboardInput.IsKeyDown(KeyboardInput.KEY_CODE.D) || KeyboardInput.IsKeyDown(KeyboardInput.KEY_CODE.RIGHTARROW)) {
             inputX += 1;
         }
+        if (inputX !== 0) this.facing = { x: Math.sign(inputX), y: 0 };
 
         if (KeyboardInput.IsKeyDown(KeyboardInput.KEY_CODE.SPACE) && this.grounded) {
             this.velocity.y = -this.jumpForce;
