@@ -93,6 +93,9 @@ test("debug sample boots its real scene and tilemap without console errors", asy
         encounter.combatSystem.update(0.4, [encounter.playerCombatant, ...encounter.enemies.map(enemy => enemy.combatant)]);
         assert.ok(meleeTarget.combatant.health < meleeHealth, "player melee hitbox should damage a nearby enemy hurtbox");
         const rangedTarget = encounter.enemies.find(enemy => enemy.combatant.isAlive && enemy !== meleeTarget);
+        for (const enemy of encounter.enemies) {
+            if (enemy !== rangedTarget) enemy.combatant.position.y = encounter.playerCombatant.position.y + 10;
+        }
         rangedTarget.combatant.position.x = encounter.playerCombatant.position.x + 3;
         rangedTarget.combatant.position.y = encounter.playerCombatant.position.y;
         rangedTarget.combatant.invulnerableRemaining = 0;
