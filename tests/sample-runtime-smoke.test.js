@@ -139,6 +139,12 @@ test("debug sample boots its real scene and tilemap without console errors", asy
         encounter.Update(0);
         assert.equal(encounter.paused, false, "pressing P again should resume the dungeon");
         window.dispatchEvent(new KeyboardEvent("keyup", { keyCode: KeyboardInput.KEY_CODE.P }));
+        const positionBeforeMovement = player.GetComponent(Transform).position.x;
+        window.dispatchEvent(new KeyboardEvent("keydown", { keyCode: KeyboardInput.KEY_CODE.RIGHTARROW }));
+        player.GetComponent(PlayerController).Update(0.2);
+        window.dispatchEvent(new KeyboardEvent("keyup", { keyCode: KeyboardInput.KEY_CODE.RIGHTARROW }));
+        assert.ok(player.GetComponent(Transform).position.x > positionBeforeMovement,
+            "live directional input should move the player after resuming");
         for (let step = 0; step < 30; step++) encounter.Update(0.25);
         assert.ok(encounter.enemies.every(enemy => enemy.ai.state === "attack"),
             "each enemy should navigate to the player and enter its combat attack state");
