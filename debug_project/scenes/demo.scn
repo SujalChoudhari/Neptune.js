@@ -1,5 +1,5 @@
 {
-  "name": "Metroidvania Demo",
+  "name": "Town",
   "type": "scene",
   "version": "1.0",
   "camera": {
@@ -89,12 +89,22 @@
           ]
         },
         {
+          "name": "Town Square",
+          "transform": { "pos": { "x": 8, "y": 7 }, "rot": 0, "scale": { "x": 1, "y": 1 } },
+          "components": [
+            {
+              "type": "Shape",
+              "props": { "geometry": 1, "param": { "width": 6, "height": 2, "color": { "r": 90, "g": 150, "b": 105, "a": 1 }, "fill": true } }
+            }
+          ]
+        },
+        {
             "name": "Label",
             "transform": { "pos": { "x": 5, "y": 3 }, "rot": 0, "scale": { "x": 1, "y": 1 } },
             "components": [
                 {
                     "type": "Text",
-                    "props": { "text": "Arrow keys move; E enters the dungeon", "font": { "size": 0.5, "color": "white" } }
+                    "props": { "text": "Town Square - safe area | Arrows move; E enters dungeon", "font": { "size": 0.5, "color": "white" } }
                 }
             ]
         }

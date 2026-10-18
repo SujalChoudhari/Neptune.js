@@ -86,7 +86,7 @@
             },
             {
               "type": "ScenePortal",
-              "props": { "targetScene": "./scenes/demo.scn", "targetSceneName": "Metroidvania Demo", "destinationX": 15, "destinationY": 5 }
+              "props": { "targetScene": "./scenes/demo.scn", "targetSceneName": "Town", "destinationX": 15, "destinationY": 5 }
             }
           ]
         },

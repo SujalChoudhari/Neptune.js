@@ -36,6 +36,9 @@ test("debug sample boots its real scene and tilemap without console errors", asy
 
     try {
         const project = JSON.parse(await readFile(new URL("project.npt", sampleRoot), "utf8"));
+        const townDefinition = JSON.parse(await readFile(new URL("scenes/demo.scn", sampleRoot), "utf8"));
+        assert.deepEqual(new Set(townDefinition.layers.map(layer => layer.type)), new Set(["parallax", "tilemap", "main"]),
+            "town should include background, tilemap, and gameplay layers");
         assert.equal(
             new URL(project.mainScene, sampleRoot).href,
             new URL("scenes/demo.scn", sampleRoot).href,
@@ -47,7 +50,9 @@ test("debug sample boots its real scene and tilemap without console errors", asy
         const scene = await ready;
 
         assert.ok(scene, "sample startup should return the loaded scene");
-        assert.equal(scene.name, "Metroidvania Demo");
+        assert.equal(scene.name, "Town");
+        assert.ok(findEntity(scene, entity => entity.name === "Town Square"), "town should include a named safe area");
+        assert.equal(findEntity(scene, entity => entity.name.startsWith("Slime ")), null, "the town should not contain hostile slimes");
         assert.equal(SceneManager.GetActiveScene(), scene);
         const gameplay = scene.children.find(entity => entity.name === "Gameplay");
         const player = gameplay?.children.find(entity => entity.name === "Player");
@@ -117,7 +122,7 @@ test("debug sample boots its real scene and tilemap without console errors", asy
         player.GetComponent(Transform).position.y = exitPortal.GetComponent(Transform).position.y;
         window.dispatchEvent(new KeyboardEvent("keydown", { keyCode: KeyboardInput.KEY_CODE.E }));
         await exitPortal.GetComponent(portalType).Update(0);
-        assert.equal(SceneManager.GetActiveScene().name, scene.name, "the town scene should be reused on return");
+        assert.equal(SceneManager.GetActiveScene().name, "Town", "the town scene should be reused on return");
         assert.equal(SceneManager.GetActiveScene().id, scene.id);
         assert.equal(player.parent, scene, "the same player should return to the town scene");
         assert.equal(fetched.length, 4, "the dungeon and its tilemap should load only once");
