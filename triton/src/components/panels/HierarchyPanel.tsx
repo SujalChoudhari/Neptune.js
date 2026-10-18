@@ -270,7 +270,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
             <HierarchyToolbar
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
-                onAddEntity={(type) => addEntity('root', type === 'spawn-point' ? 'Spawn Point' : `New ${type}`, type)}
+                onAddEntity={(type) => addEntity('root', type === 'spawn-point' ? 'Spawn Point' : type === 'trigger-area' ? 'Trigger Area' : `New ${type}`, type)}
                 onExpandAll={handleExpandAll}
                 onCollapseAll={handleCollapseAll}
             />

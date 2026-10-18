@@ -1,7 +1,7 @@
 import { Plus, Search, ChevronDown, ChevronUp } from "lucide-react"
 import { ThemedIconButton, ThemedInput } from "@/components/library"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import type { EntityType } from "@/lib/mockHierarchy"
+import type { EntityType } from "@/types/engine"
 
 interface HierarchyToolbarProps {
     searchQuery: string
@@ -58,6 +58,7 @@ export const HierarchyToolbar = ({
                     <DropdownMenuContent align="end" className="min-w-[160px] bg-popover border-border">
                         <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('empty')}>Create Empty</DropdownMenuItem>
                         <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('spawn-point')}>Create Spawn Point</DropdownMenuItem>
+                        <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('trigger-area')}>Create Trigger Area</DropdownMenuItem>
                         <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('group')}>Create Group</DropdownMenuItem>
                         <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('cube')}>3D Object &gt; Cube</DropdownMenuItem>
                         <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('sphere')}>3D Object &gt; Sphere</DropdownMenuItem>
