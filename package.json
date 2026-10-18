@@ -33,6 +33,7 @@
     "clean-jsdoc-theme": "^4.1.8",
     "esbuild": "^0.27.0",
     "fs-extra": "^11.1.0",
-    "jsdoc": "^3.6.11"
+    "jsdoc": "^3.6.11",
+    "playwright": "^1.64.1"
   }
 }

@@ -26,4 +26,4 @@ The engine owns the browser animation loop. The example deliberately leaves move
 
 Change the player's position in `examples/first-game/main.js`, for example from `new Vector2(8, 6)` to `new Vector2(5, 5)`, refresh the page, and press **Play Game** again. The coordinate values are in meters; Neptune converts them to canvas pixels when drawing.
 
-If the page is blank, check that the server was started in the repository root and inspect the browser console for module-load errors. The automated smoke test for this example runs as part of `npm test`.
+If the page is blank, check that the server was started in the repository root and inspect the browser console for module-load errors. `npm test` runs this example in headless Chromium, clicks **Play Game**, confirms the canvas renders the scene, and fails on browser console or page errors. CI installs Chromium before running the suite.
