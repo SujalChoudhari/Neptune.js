@@ -145,6 +145,7 @@ describe("SceneLoader Integration", () => {
                     width: 1,
                     height: 1,
                     data: [1],
+                    metadata: { 1: { walkable: false, collision: false } },
                     tileset: "tiles.png"
                 })
             };
@@ -160,6 +161,9 @@ describe("SceneLoader Integration", () => {
             expect(scene.children.length).toBe(1);
             expect(scene.children[0].name).toBe("Tile_0");
             expect(scene.children[0].GetComponent(Sprite).path).toBe("tiles.png");
+            expect(scene.children[0].tileId).toBe(1);
+            expect(scene.children[0].tileMetadata).toEqual({ walkable: false, collision: false });
+            expect(scene.children[0].GetComponent(BoxCollider)).toBe(undefined);
         } finally {
             global.fetch = originalFetch;
         }

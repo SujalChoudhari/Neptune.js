@@ -62,7 +62,7 @@ export class Tilemap extends Component {
         if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
             throw new TypeError("Tile metadata must be an object");
         }
-        const allowed = new Set(["walkable", "terrain", "damage", "slowdown", "interaction", "transition"]);
+        const allowed = new Set(["walkable", "terrain", "collision", "damage", "slowdown", "interaction", "transition"]);
         for (const key of Object.keys(metadata)) {
             if (!allowed.has(key)) throw new TypeError(`Unknown tile metadata field: ${key}`);
         }
@@ -71,6 +71,9 @@ export class Tilemap extends Component {
         }
         if (metadata.terrain !== undefined && typeof metadata.terrain !== "string") {
             throw new TypeError("Tile metadata terrain must be a string");
+        }
+        if (metadata.collision !== undefined && typeof metadata.collision !== "boolean") {
+            throw new TypeError("Tile metadata collision must be a boolean");
         }
         for (const field of ["damage", "slowdown"]) {
             if (metadata[field] !== undefined && (!Number.isFinite(metadata[field]) || metadata[field] < 0)) {
@@ -284,7 +287,8 @@ export class Tilemap extends Component {
      * @returns {boolean}
      */
     isSolid(x, y) {
-        return this.getTile(x, y) >= 0;
+        const tileId = this.getTile(x, y);
+        return tileId >= 0 && this.getTileMetadata(tileId)?.collision !== false;
     }
 
     /**

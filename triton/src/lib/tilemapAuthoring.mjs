@@ -1,6 +1,7 @@
 const TILE_METADATA_VALIDATORS = {
     walkable: (value) => typeof value === 'boolean',
     terrain: (value) => typeof value === 'string',
+    collision: (value) => typeof value === 'boolean',
     damage: (value) => Number.isFinite(value) && value >= 0,
     slowdown: (value) => Number.isFinite(value) && value >= 0,
     interaction: (value) => value === null || (typeof value === 'object' && !Array.isArray(value)),

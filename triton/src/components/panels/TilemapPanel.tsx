@@ -7,6 +7,7 @@ import { setTileMetadata, paintTileCell } from '@/lib/tilemapAuthoring.mjs';
 interface TileMetadata {
     walkable?: boolean;
     terrain?: string;
+    collision?: boolean;
     [key: string]: unknown;
 }
 
@@ -98,7 +99,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
         }
     };
 
-    const updateMetadata = (field: 'walkable' | 'terrain', value: boolean | string | undefined) => {
+    const updateMetadata = (field: 'walkable' | 'terrain' | 'collision', value: boolean | string | undefined) => {
         if (!tilemap) return;
         try {
             setTilemap(setTileMetadata(tilemap, tileId, { [field]: value }));
@@ -162,6 +163,21 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                         <option value="unset">Unspecified</option>
                         <option value="true">Walkable</option>
                         <option value="false">Blocked</option>
+                    </select>
+                    <label className="text-xs" htmlFor="tilemap-collision">Collision</label>
+                    <select
+                        id="tilemap-collision"
+                        aria-label={`Tile ${tileId} collision`}
+                        className="rounded border border-border bg-card px-2 py-1 text-xs"
+                        value={activeMetadata.collision === undefined ? 'unset' : String(activeMetadata.collision)}
+                        onChange={(event) => updateMetadata(
+                            'collision',
+                            event.target.value === 'unset' ? undefined : event.target.value === 'true'
+                        )}
+                    >
+                        <option value="unset">Default</option>
+                        <option value="true">Solid</option>
+                        <option value="false">Non-solid</option>
                     </select>
                     <label className="text-xs" htmlFor="tilemap-terrain">Terrain</label>
                     <input

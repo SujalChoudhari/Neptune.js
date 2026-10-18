@@ -67,10 +67,19 @@ describe('Tilemap', () => {
         expect(tilemap.isSolid(0, 0)).toBe(false);
     });
 
+    it('uses per-tile collision metadata to disable solid collision', () => {
+        tilemap.setTile(1, 1, 7);
+        tilemap.setTileMetadata(7, { collision: false });
+        expect(tilemap.isSolid(1, 1)).toBe(false);
+        tilemap.setTileMetadata(7, { collision: true });
+        expect(tilemap.isSolid(1, 1)).toBe(true);
+    });
+
     it('stores validated tile gameplay metadata by tile ID', () => {
         const metadata = {
             walkable: true,
             terrain: "mud",
+            collision: false,
             damage: 2,
             slowdown: 0.5,
             interaction: { prompt: "open" },
@@ -82,6 +91,7 @@ describe('Tilemap', () => {
         expect(tilemap.getTileMetadata(7)).toEqual({
             walkable: true,
             terrain: "mud",
+            collision: false,
             damage: 2,
             slowdown: 0.5,
             interaction: { prompt: "open" },
@@ -93,6 +103,7 @@ describe('Tilemap', () => {
     it('rejects malformed or unsupported tile metadata without storing it', () => {
         expect(() => tilemap.setTileMetadata(-1, { walkable: true })).toThrow("non-negative integer");
         expect(() => tilemap.setTileMetadata(1, { walkable: "yes" })).toThrow("walkable must be a boolean");
+        expect(() => tilemap.setTileMetadata(1, { collision: "yes" })).toThrow("collision must be a boolean");
         expect(() => tilemap.setTileMetadata(1, { damage: -1 })).toThrow("damage must be a finite non-negative number");
         expect(() => tilemap.setTileMetadata(1, { unknown: true })).toThrow("Unknown tile metadata field");
         expect(tilemap.getTileMetadata(1)).toBe(null);

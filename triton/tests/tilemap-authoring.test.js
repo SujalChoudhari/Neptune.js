@@ -14,18 +14,19 @@ const sample = () => ({
 
 test('metadata editing supports navigation and terrain fields without mutating prior map data', () => {
     const source = sample();
-    const updated = setTileMetadata(source, 1, { walkable: true, terrain: 'stone' });
-    assert.deepEqual(updated.metadata['1'], { walkable: true, terrain: 'stone' });
+    const updated = setTileMetadata(source, 1, { walkable: true, terrain: 'stone', collision: false });
+    assert.deepEqual(updated.metadata['1'], { walkable: true, terrain: 'stone', collision: false });
     assert.deepEqual(source.metadata['1'], { walkable: false });
     assert.equal(updated.tileset, source.tileset);
-    assert.deepEqual(setTileMetadata(updated, 1, { walkable: undefined }).metadata['1'], { terrain: 'stone' });
+    assert.deepEqual(setTileMetadata(updated, 1, { walkable: undefined }).metadata['1'], { terrain: 'stone', collision: false });
 });
 
 test('metadata editing validates supported fields and values', () => {
     assert.throws(() => setTileMetadata(sample(), -1, { walkable: true }), /non-negative integer/);
     assert.throws(() => setTileMetadata(sample(), 1, { walkable: 'yes' }), /Invalid tile metadata value/);
     assert.throws(() => setTileMetadata(sample(), 1, { terrain: 3 }), /Invalid tile metadata value/);
-    assert.throws(() => setTileMetadata(sample(), 1, { collision: true }), /Unknown tile metadata field/);
+    assert.throws(() => setTileMetadata(sample(), 1, { collision: 'solid' }), /Invalid tile metadata value/);
+    assert.throws(() => setTileMetadata(sample(), 1, { opacity: 0.5 }), /Unknown tile metadata field/);
 });
 
 test('painting addresses row-major cells and preserves other tilemap data immutably', () => {
