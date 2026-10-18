@@ -49,6 +49,8 @@ import * as Galatea from "./galatea/index.js";
 
 import { ComponentRegistry } from "./core/componentRegistry.js";
 import { SceneLoader } from "./core/sceneLoader.js";
+import { SaveManager } from "./core/saveManager.js";
+import { GameClock } from "./core/gameClock.js";
 
 const application = new Application();
 window.game = application;
@@ -60,7 +62,7 @@ ComponentRegistry.register("Shape", Shape);
 // Register other components as needed...
 
 export {
-    application,
+    application, SaveManager, GameClock,
     Storage, Color, Filter, Entity, Scene, DestroyQueue, SceneManager, SceneLoader,
     Component, Transform, BoxCollider, ComponentRegistry,
     Renderable, Shape, Sprite,
