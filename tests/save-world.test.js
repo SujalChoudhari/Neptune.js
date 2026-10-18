@@ -19,3 +19,12 @@ test("game clock advances calendars and fires scheduled world events", () => {
  assert.equal(fired, 1); assert.deepEqual(clock.calendar, { year: 1, day: 2, minuteOfDay: 0 });
  assert.deepEqual(GameClock.restore(clock.serialize()).calendar, clock.calendar);
 });
+
+test("timed autosave awaits asynchronous capture and does not overlap runs", async () => {
+ const storage = new Memory(); let captures = 0;
+ const saves = new SaveManager({ storage, autosaveInterval: 5 });
+ saves.enableAutosave(async () => { captures++; await new Promise(resolve => setTimeout(resolve, 15)); return { captures }; });
+ await new Promise(resolve => setTimeout(resolve, 43)); saves.disableAutosave();
+ assert.ok(captures > 0); assert.equal(captures, 2);
+ assert.deepEqual(saves.recover(), { captures: 2 });
+});

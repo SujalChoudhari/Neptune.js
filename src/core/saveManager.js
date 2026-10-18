@@ -31,7 +31,10 @@ export class SaveManager {
   enableAutosave(capture, slot = "autosave") {
     if (typeof capture !== "function") throw new TypeError("Autosave capture must be a function.");
     this.disableAutosave(); this.capture = capture; this.autosaveSlot = slot;
-    if (this.autosaveInterval) this.timer = setInterval(() => { try { this.recoverable = this.save(slot, capture()); } catch (error) { this.onError(error); } }, this.autosaveInterval);
+    if (this.autosaveInterval) this.timer = setInterval(() => {
+      if (this.autosavePending) return;
+      this.autosavePending = this.autosaveNow().finally(() => { this.autosavePending = null; });
+    }, this.autosaveInterval);
     return this;
   }
   disableAutosave() { if (this.timer !== null) clearInterval(this.timer); this.timer = null; }
