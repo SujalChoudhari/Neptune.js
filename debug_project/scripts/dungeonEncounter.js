@@ -156,7 +156,7 @@ export class DungeonEncounter extends Behaviour {
         const player = collect(scene, entity => entity.components.some(component => component instanceof PlayerController))[0];
         const enemyEntities = collect(scene, entity => entity.name.startsWith("Slime "));
         const bossEntity = collect(scene, entity => entity.name === "Dungeon Warden")[0];
-        if (!player || enemyEntities.length !== 3 || !bossEntity) return false;
+        if (!player || enemyEntities.length < 3 || !bossEntity) return false;
 
         this.tilemap = new Tilemap(new Tileset("assets/tileset.png", 1, 1), 20, 15);
         this.player = player;

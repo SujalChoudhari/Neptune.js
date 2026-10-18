@@ -102,7 +102,8 @@ test("debug sample boots its real scene and tilemap without console errors", asy
         const encounterEntity = findEntity(dungeon, entity => entity.GetComponent(encounterType));
         const encounter = encounterEntity.GetComponent(encounterType);
         encounter.Init();
-        assert.equal(encounter.enemies.length, 3, "dungeon should have three tile-aware enemies");
+        assert.equal(encounter.enemies.length, 4, "dungeon should load all four authored tile-aware enemies");
+        assert.ok(encounter.enemies.some(enemy => enemy.entity.name === "Slime Verdant"), "an additional scene-authored slime should be playable without runtime code changes");
         assert.ok(encounter.boss, "dungeon should instantiate its named Warden boss");
         assert.equal(encounter.boss.combatant.maxHealth, 100, "Warden should have a boss health pool");
         assert.equal(encounter.boss.ai.phases.length, 2, "Warden should have two configured attack phases");
