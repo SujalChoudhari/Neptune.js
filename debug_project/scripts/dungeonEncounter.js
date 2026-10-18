@@ -21,6 +21,8 @@ export class DungeonEncounter extends Behaviour {
         this.enemies = [];
         this.inventory = null;
         this.equipLatched = false;
+        this.pauseLatched = false;
+        this.paused = false;
         this.progression = new Progression({ baseExperience: 10 });
         this.rewardSystem = new RewardSystem(new GameData({
             items: { slimeGel: { id: "slimeGel", name: "Slime Gel", type: "material", stackable: 10 } },
@@ -37,6 +39,18 @@ export class DungeonEncounter extends Behaviour {
         const scene = SceneManager.GetActiveScene();
         if (scene?.name !== "Dungeon") return;
         if (this.initializedScene !== scene && !this.#initialize(scene)) return;
+
+        const pausePressed = KeyboardInput.IsKeyDown(KeyboardInput.KEY_CODE.P);
+        if (!pausePressed) this.pauseLatched = false;
+        else if (!this.pauseLatched) {
+            this.pauseLatched = true;
+            this.paused = !this.paused;
+            this.player.paused = this.paused;
+        }
+        if (this.paused) {
+            renderRpgHud({ inventory: this.inventory, questLog: this.questLog, location: "Dungeon", paused: true });
+            return;
+        }
 
         const playerTransform = this.player.GetComponent(Transform);
         const requestedCell = {
@@ -79,7 +93,7 @@ export class DungeonEncounter extends Behaviour {
             this.combatSystem.startAttack(this.playerCombatant, this.playerRanged, controller.facing);
         }
         this.combatSystem.update(deltaTime, [this.playerCombatant, ...this.enemies.map(enemy => enemy.combatant)]);
-        renderRpgHud({ inventory: this.inventory, questLog: this.questLog, location: "Dungeon" });
+        renderRpgHud({ inventory: this.inventory, questLog: this.questLog, location: "Dungeon", paused: this.paused });
     }
 
     #initialize(scene) {
@@ -89,6 +103,7 @@ export class DungeonEncounter extends Behaviour {
 
         this.tilemap = new Tilemap(new Tileset("assets/tileset.png", 1, 1), 20, 15);
         this.player = player;
+        player.paused = false;
         this.inventory = player.inventory ?? new Inventory();
         player.inventory = this.inventory;
         this.questLog = player.questLog ?? null;

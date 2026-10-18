@@ -110,6 +110,31 @@ test("debug sample boots its real scene and tilemap without console errors", asy
         assert.match(document.getElementById("rpg-hud").textContent, /Equipment: weapon: Training Blade/,
             "the HTML HUD should reflect equipped gear");
         window.dispatchEvent(new KeyboardEvent("keyup", { keyCode: KeyboardInput.KEY_CODE.U }));
+        const healthBeforePause = encounter.playerCombatant.health;
+        const enemyPositionsBeforePause = encounter.enemies.map(enemy => ({ ...enemy.combatant.position }));
+        const playerPositionBeforePause = { ...player.GetComponent(Transform).position };
+        window.dispatchEvent(new KeyboardEvent("keydown", { keyCode: KeyboardInput.KEY_CODE.P }));
+        encounter.Update(1);
+        window.dispatchEvent(new KeyboardEvent("keydown", { keyCode: KeyboardInput.KEY_CODE.RIGHTARROW }));
+        player.GetComponent(PlayerController).Update(1);
+        window.dispatchEvent(new KeyboardEvent("keyup", { keyCode: KeyboardInput.KEY_CODE.RIGHTARROW }));
+        assert.equal(encounter.paused, true, "P should pause dungeon simulation");
+        assert.equal(encounter.playerCombatant.health, healthBeforePause, "paused enemies should not damage the player");
+        assert.deepEqual(
+            [player.GetComponent(Transform).position.x, player.GetComponent(Transform).position.y],
+            [playerPositionBeforePause.x, playerPositionBeforePause.y],
+            "paused player movement should not advance"
+        );
+        assert.deepEqual(encounter.enemies.map(enemy => enemy.combatant.position), enemyPositionsBeforePause,
+            "paused enemy navigation should not advance");
+        assert.match(document.getElementById("rpg-hud").textContent, /Status: PAUSED/,
+            "the HTML HUD should display the paused state");
+        window.dispatchEvent(new KeyboardEvent("keyup", { keyCode: KeyboardInput.KEY_CODE.P }));
+        encounter.Update(0);
+        window.dispatchEvent(new KeyboardEvent("keydown", { keyCode: KeyboardInput.KEY_CODE.P }));
+        encounter.Update(0);
+        assert.equal(encounter.paused, false, "pressing P again should resume the dungeon");
+        window.dispatchEvent(new KeyboardEvent("keyup", { keyCode: KeyboardInput.KEY_CODE.P }));
         for (let step = 0; step < 30; step++) encounter.Update(0.25);
         assert.ok(encounter.enemies.every(enemy => enemy.ai.state === "attack"),
             "each enemy should navigate to the player and enter its combat attack state");

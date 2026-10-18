@@ -63,6 +63,7 @@ export class ScenePortal extends Behaviour {
             const transform = player.GetComponent(Transform);
             transform.position.x = this.destinationX;
             transform.position.y = this.destinationY;
+            player.paused = false;
             return true;
         } catch (error) {
             interactionLatched = false;

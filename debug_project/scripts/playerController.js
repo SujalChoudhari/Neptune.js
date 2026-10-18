@@ -20,6 +20,7 @@ export class PlayerController extends Behaviour {
     }
 
     Update(deltaTime) {
+        if (this.entity?.paused) return;
         // Log basic heartbeat to confirm script is running
         // console.log("PlayerController Update Heartbeat");
 
