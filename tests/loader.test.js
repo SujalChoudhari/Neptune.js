@@ -10,6 +10,7 @@ import { Sprite } from "../src/rendering/sprite.js";
 import { BoxCollider } from "../src/components/boxCollider.js";
 import { TriggerCollider, Hitbox, Hurtbox } from "../src/nereid/collider.js";
 import { Dialogue } from "../src/components/dialogue.js";
+import { QuestDefinition } from "../src/components/questDefinition.js";
 
 // Manually register components since we aren't loading neptune.js
 ComponentRegistry.register("Transform", Transform);
@@ -19,6 +20,7 @@ ComponentRegistry.register("TriggerCollider", TriggerCollider);
 ComponentRegistry.register("Hitbox", Hitbox);
 ComponentRegistry.register("Hurtbox", Hurtbox);
 ComponentRegistry.register("Dialogue", Dialogue);
+ComponentRegistry.register("QuestDefinition", QuestDefinition);
 
 describe("SceneLoader Integration", () => {
     it("should load a scene from JSON", async () => {
@@ -161,6 +163,29 @@ describe("SceneLoader Integration", () => {
         expect(entity.type).toBe("dialogue");
         expect(dialogue.id).toBe("dialogue-data");
         expect(dialogue.properties).toEqual({ speaker: "Guide", text: "Welcome to town.", next: "quest-start" });
+    });
+
+    it("loads editor-authored quest definitions on their runtime entities", () => {
+        const scene = SceneLoader.parse({
+            type: "scene",
+            schemaVersion: 1,
+            entities: [{
+                id: "quest-entity",
+                name: "Slime Trouble",
+                type: "quest",
+                components: [{
+                    id: "quest-definition",
+                    type: "QuestDefinition",
+                    props: { name: "Slime Trouble", description: "Help the town.", objectiveId: "defeat-slimes", objective: "Defeat slimes", required: 3 }
+                }]
+            }]
+        });
+        const entity = scene.children[0];
+        const quest = entity.GetComponent(QuestDefinition);
+
+        expect(entity.type).toBe("quest");
+        expect(quest.id).toBe("quest-definition");
+        expect(quest.properties).toEqual({ name: "Slime Trouble", description: "Help the town.", objectiveId: "defeat-slimes", objective: "Defeat slimes", required: 3 });
     });
 
     it("rejects unsupported scene schema versions with an actionable error", () => {

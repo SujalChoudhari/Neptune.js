@@ -58,6 +58,7 @@ export const HierarchyToolbar = ({
                     <DropdownMenuContent align="end" className="min-w-[160px] bg-popover border-border">
                         <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('entity')}>Create Entity</DropdownMenuItem>
                         <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('dialogue')}>Create Dialogue</DropdownMenuItem>
+                        <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('quest')}>Create Quest</DropdownMenuItem>
                         <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('empty')}>Create Empty</DropdownMenuItem>
                         <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('spawn-point')}>Create Spawn Point</DropdownMenuItem>
                         <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('trigger-area')}>Create Trigger Area</DropdownMenuItem>

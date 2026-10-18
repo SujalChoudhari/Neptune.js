@@ -315,6 +315,17 @@ describe("Triton persistence bridge", () => {
         expect(runtime.includes('ComponentRegistry.register("Dialogue", Dialogue)')).toBe(true);
     });
 
+    it("authors quest entities with editable runtime objective properties", () => {
+        const toolbar = fs.readFileSync(path.join(root, "src", "components", "panels", "hierarchy", "HierarchyToolbar.tsx"), "utf8");
+        const hierarchy = fs.readFileSync(path.join(root, "src", "components", "panels", "HierarchyPanel.tsx"), "utf8");
+        const runtime = fs.readFileSync(path.resolve("src", "neptune.js"), "utf8");
+
+        expect(toolbar.includes("onClick={() => onAddEntity('quest')}>Create Quest")).toBe(true);
+        expect(hierarchy.includes("type === 'quest' ? 'Quest'")).toBe(true);
+        expect(hierarchy.includes("type: 'QuestDefinition', props: { name: 'New Quest', description: 'Describe the quest...', objectiveId: 'objective-1', objective: 'Describe the objective...', required: 1 }")).toBe(true);
+        expect(runtime.includes('ComponentRegistry.register("QuestDefinition", QuestDefinition)')).toBe(true);
+    });
+
     it("offers trigger-area creation as a typed scene entity that survives runtime loading", () => {
         const toolbar = fs.readFileSync(path.join(root, "src", "components", "panels", "hierarchy", "HierarchyToolbar.tsx"), "utf8");
         const hierarchy = fs.readFileSync(path.join(root, "src", "components", "panels", "HierarchyPanel.tsx"), "utf8");
