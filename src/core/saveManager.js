@@ -21,8 +21,10 @@ export class SaveManager {
     while (record.schemaVersion !== SaveManager.SCHEMA_VERSION) {
       const migrate = migrations[record.schemaVersion];
       if (typeof migrate !== "function") throw new Error(`Save slot '${slot}' uses unsupported schema ${record.schemaVersion}; supply a migration to ${SaveManager.SCHEMA_VERSION}.`);
+      const previousVersion = record.schemaVersion;
       record = migrate(structuredClone(record));
-      if (!record || !Number.isInteger(record.schemaVersion)) throw new Error(`Migration for '${slot}' returned an invalid record.`);
+      if (!record || !Number.isInteger(record.schemaVersion) || !record.state || typeof record.state !== "object") throw new Error(`Migration for '${slot}' returned an invalid record.`);
+      if (record.schemaVersion !== previousVersion + 1) throw new Error(`Migration for '${slot}' must advance schema ${previousVersion} to ${previousVersion + 1}.`);
     }
     return structuredClone(record.state);
   }

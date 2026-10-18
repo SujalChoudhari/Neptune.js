@@ -10,6 +10,7 @@ test("save manager supports slots, migration, corruption and autosave recovery",
  assert.deepEqual(saves.load("manual"), state); assert.deepEqual(saves.slots().sort(), ["backup", "manual"]);
  storage.setItem(saves.key("old"), JSON.stringify({ schemaVersion: 0, state: { health: 4 } }));
  assert.deepEqual(saves.load("old", { 0: r => ({ schemaVersion: 1, state: { player: { hp: r.state.health } } }) }), { player: { hp: 4 } });
+ assert.throws(() => saves.load("old", { 0: r => r }), /must advance schema 0 to 1/);
  storage.setItem(saves.key("broken"), "{"); assert.throws(() => saves.load("broken"), /corrupt JSON/);
  saves.enableAutosave(() => state); await saves.autosaveNow(); assert.deepEqual(saves.recover(), state); saves.disableAutosave();
 });
