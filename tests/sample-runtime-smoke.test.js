@@ -26,6 +26,12 @@ test("debug sample boots its real scene and tilemap without console errors", asy
     console.error = (...args) => errors.push(args.map(String).join(" "));
 
     try {
+        const project = JSON.parse(await readFile(new URL("project.npt", sampleRoot), "utf8"));
+        assert.equal(
+            new URL(project.mainScene, sampleRoot).href,
+            new URL("scenes/demo.scn", sampleRoot).href,
+            "project mainScene should resolve to the bundled sample scene from any checkout location"
+        );
         await access(new URL("assets/player.png", sampleRoot));
         await access(new URL("assets/tileset.png", sampleRoot));
         const { ready } = await import("../debug_project/main.js");
