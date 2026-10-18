@@ -89,6 +89,8 @@ test("debug sample boots its real scene and tilemap without console errors", asy
         player.GetComponent(Transform).position.y = entryPortal.GetComponent(Transform).position.y;
         window.dispatchEvent(new KeyboardEvent("keydown", { keyCode: KeyboardInput.KEY_CODE.E }));
         await entryPortal.GetComponent(portalType).Update(0);
+        assert.deepEqual(entryPortal.GetComponent(portalType).feedbackEvent, { type: "scene-transition", from: "Town", to: "Dungeon" },
+            "scene transitions should trigger reusable feedback without engine changes");
         const dungeon = SceneManager.GetActiveScene();
         assert.equal(dungeon.name, "Dungeon");
         assert.equal(player.parent, dungeon, "the same player entity should survive the transition");
@@ -235,6 +237,8 @@ test("debug sample boots its real scene and tilemap without console errors", asy
         player.GetComponent(Transform).position.y = exitPortal.GetComponent(Transform).position.y;
         window.dispatchEvent(new KeyboardEvent("keydown", { keyCode: KeyboardInput.KEY_CODE.E }));
         await exitPortal.GetComponent(portalType).Update(0);
+        assert.deepEqual(exitPortal.GetComponent(portalType).feedbackEvent, { type: "scene-transition", from: "Dungeon", to: "Town" },
+            "return transitions should also trigger reusable feedback");
         assert.equal(SceneManager.GetActiveScene().name, "Town", "the town scene should be reused on return");
         assert.equal(SceneManager.GetActiveScene().id, scene.id);
         assert.equal(player.parent, scene, "the same player should return to the town scene");
