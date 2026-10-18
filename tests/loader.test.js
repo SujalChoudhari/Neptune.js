@@ -8,11 +8,13 @@ import { ComponentRegistry } from "../src/core/componentRegistry.js";
 import { Transform } from "../src/components/transform.js";
 import { Sprite } from "../src/rendering/sprite.js";
 import { BoxCollider } from "../src/components/boxCollider.js";
+import { TriggerCollider } from "../src/nereid/collider.js";
 
 // Manually register components since we aren't loading neptune.js
 ComponentRegistry.register("Transform", Transform);
 ComponentRegistry.register("Sprite", Sprite);
 ComponentRegistry.register("BoxCollider", BoxCollider);
+ComponentRegistry.register("TriggerCollider", TriggerCollider);
 
 describe("SceneLoader Integration", () => {
     it("should load a scene from JSON", async () => {
@@ -84,6 +86,32 @@ describe("SceneLoader Integration", () => {
         expect(player.components[0].id).toBe("component-stable");
         expect(player.GetComponent(Transform).position.x).toBe(4);
         expect(player.GetComponent(Transform).scale.y).toBe(3);
+    });
+
+    it("loads editor-authored trigger areas as runtime trigger colliders", () => {
+        const scene = SceneLoader.parse({
+            type: "scene",
+            schemaVersion: 1,
+            entities: [{
+                id: "trigger-area-1",
+                name: "Trigger Area",
+                type: "trigger-area",
+                components: [{
+                    id: "trigger-component-1",
+                    type: "TriggerCollider",
+                    props: { width: 1, height: 1, offsetX: 0, offsetY: 0 }
+                }]
+            }]
+        });
+        const triggerEntity = scene.children[0];
+        const trigger = triggerEntity.GetComponent(TriggerCollider);
+
+        expect(triggerEntity.type).toBe("trigger-area");
+        expect(trigger.id).toBe("trigger-component-1");
+        expect(trigger.width).toBe(1);
+        expect(trigger.height).toBe(1);
+        expect(trigger.role).toBe("trigger");
+        expect(trigger.isTrigger).toBe(true);
     });
 
     it("rejects unsupported scene schema versions with an actionable error", () => {

@@ -76,7 +76,10 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     const addEntity = (parentId: string, name: string, type: string) => {
         const id = globalThis.crypto?.randomUUID?.() || `entity-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
         const persistenceParentId = EditorGameRunner.resolveHierarchyParentId(parentId, entities)
-        if (!persistenceParentId || !EditorGameRunner.createEntity(persistenceParentId, { id, name, type })) return
+        const components = type === 'trigger-area'
+            ? [{ type: 'TriggerCollider', props: { width: 1, height: 1, offsetX: 0, offsetY: 0 } }]
+            : undefined
+        if (!persistenceParentId || !EditorGameRunner.createEntity(persistenceParentId, { id, name, type, components })) return
         notifyGame('editor:create-entity', { id, parentId, name, type });
     }
 

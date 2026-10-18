@@ -288,7 +288,7 @@ describe("Triton persistence bridge", () => {
         expect(toolbar.includes("Create Spawn Point")).toBe(true);
         expect(toolbar.includes("onAddEntity('spawn-point')")).toBe(true);
         expect(hierarchy.includes("type === 'spawn-point' ? 'Spawn Point' : type === 'trigger-area' ? 'Trigger Area'")).toBe(true);
-        expect(hierarchy.includes("EditorGameRunner.createEntity(persistenceParentId, { id, name, type })")).toBe(true);
+        expect(hierarchy.includes("EditorGameRunner.createEntity(persistenceParentId, { id, name, type, components })")).toBe(true);
         expect(loader.includes('if (typeof entityData.type === "string") entity.type = entityData.type;')).toBe(true);
     });
 
@@ -296,12 +296,15 @@ describe("Triton persistence bridge", () => {
         const toolbar = fs.readFileSync(path.join(root, "src", "components", "panels", "hierarchy", "HierarchyToolbar.tsx"), "utf8");
         const hierarchy = fs.readFileSync(path.join(root, "src", "components", "panels", "HierarchyPanel.tsx"), "utf8");
         const engineTypes = fs.readFileSync(path.join(root, "src", "types", "engine.ts"), "utf8");
+        const runtime = fs.readFileSync(path.resolve("src", "neptune.js"), "utf8");
         const loader = fs.readFileSync(path.resolve("src", "core", "sceneLoader.js"), "utf8");
 
         expect(toolbar.includes("Create Trigger Area")).toBe(true);
         expect(toolbar.includes("onAddEntity('trigger-area')")).toBe(true);
         expect(hierarchy.includes("type === 'trigger-area' ? 'Trigger Area'")).toBe(true);
         expect(engineTypes.includes("'trigger-area'")).toBe(true);
+        expect(runtime.includes('ComponentRegistry.register("TriggerCollider", TriggerCollider)')).toBe(true);
+        expect(hierarchy.includes("type: 'TriggerCollider', props: { width: 1, height: 1, offsetX: 0, offsetY: 0 }")).toBe(true);
         expect(loader.includes('if (typeof entityData.type === "string") entity.type = entityData.type;')).toBe(true);
     });
 
