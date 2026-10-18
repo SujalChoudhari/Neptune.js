@@ -1,5 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+import path from 'node:path';
+import { buildSync } from 'esbuild';
 import { pickEntityAt, translateOnAxis } from '../src/lib/scenePicking.mjs';
 
 const entity = (id, x, y, children = []) => ({
@@ -7,6 +11,80 @@ const entity = (id, x, y, children = []) => ({
     components: [{ position: { x, y }, scale: { x: 1, y: 1 } }, { width: 32, height: 24 }],
     children
 });
+
+function createSceneViewHarness() {
+    const sourcefile = path.resolve('triton/src/components/panels/SceneViewPanel.tsx');
+    const external = [
+        'react', 'react/jsx-runtime', 'lucide-react', '@/components/library', '@/context/GameContext',
+        '@/lib/editorGameRunner', '@/lib/scenePicking.mjs', '../../../../debug_project/main.js?url',
+        '../../../../src/thalassa/camera.js?url', '@/lib/scenePicking.mjs?url'
+    ];
+    const bundle = buildSync({
+        bundle: true, format: 'cjs', platform: 'node', write: false,
+        stdin: { contents: fs.readFileSync(sourcefile, 'utf8'), loader: 'tsx', sourcefile }, external
+    }).outputFiles[0].text;
+    const slots = [];
+    let hookIndex = 0;
+    const notifications = [];
+    const react = {
+        createElement: (type, props, ...children) => ({ type, props: { ...(props || {}), children: children.length > 1 ? children : children[0] } }),
+        useRef(initial) { const index = hookIndex++; return slots[index] ||= { current: initial }; },
+        useState(initial) {
+            const index = hookIndex++;
+            slots[index] ||= { value: initial };
+            return [slots[index].value, value => {
+                slots[index].value = typeof value === 'function' ? value(slots[index].value) : value;
+            }];
+        },
+        useCallback(callback) { hookIndex++; return callback; },
+        useEffect() { hookIndex++; }
+    };
+    const jsx = (type, props) => ({ type, props: props || {} });
+    const modules = {
+        react,
+        'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' },
+        'lucide-react': { Maximize: 'Maximize', ZoomIn: 'ZoomIn', ZoomOut: 'ZoomOut' },
+        '@/components/library': { ThemedIconButton: 'ThemedIconButton' },
+        '@/context/GameContext': { useGameContext: () => ({
+            notifyGame: (type, payload) => notifications.push({ type, payload }),
+            selectedEntityData: { transform: { position: { x: 2, y: 3 } } },
+            selectedIds: ['entity-1']
+        }) },
+        '@/lib/editorGameRunner': { EditorGameRunner: {} },
+        '@/lib/scenePicking.mjs': { translateOnAxis },
+        '../../../../debug_project/main.js?url': '/main.js',
+        '../../../../src/thalassa/camera.js?url': '/camera.js',
+        '@/lib/scenePicking.mjs?url': '/scenePicking.js'
+    };
+    const module = { exports: {} };
+    vm.runInNewContext(bundle, {
+        React: react,
+        module,
+        exports: module.exports,
+        require: id => {
+            if (!(id in modules)) throw new Error(`Unexpected SceneViewPanel dependency: ${id}`);
+            return modules[id];
+        }
+    });
+    const render = () => {
+        hookIndex = 0;
+        const tree = module.exports.SceneViewPanel();
+        tree.props.ref.current = { getBoundingClientRect: () => ({ left: 10, top: 20 }) };
+        return tree;
+    };
+    return { render, notifications };
+}
+
+function findNode(node, predicate) {
+    if (!node || typeof node !== 'object') return null;
+    if (predicate(node)) return node;
+    const children = node.props?.children;
+    for (const child of Array.isArray(children) ? children : [children]) {
+        const found = findNode(child, predicate);
+        if (found) return found;
+    }
+    return null;
+}
 
 test('gizmo drag converts screen deltas to world units and constrains movement to its axis', () => {
     assert.deepEqual(translateOnAxis({ x: 10, y: 20 }, 30, 24, 2, 'x'), { x: 25, y: 20 });
@@ -36,4 +114,37 @@ test('viewport picking uses configured tolerance for entities without visual bou
     }] };
     assert.equal(pickEntityAt(root, 50, 50, 12)?.id, 'point');
     assert.equal(pickEntityAt(root, 53, 50, 12), null);
+});
+
+test('Scene View UI emits viewport selection and cursor-anchored zoom updates', () => {
+    const harness = createSceneViewHarness();
+    const viewport = findNode(harness.render(), node => node.props?.className === 'flex-1 relative cursor-crosshair');
+    viewport.props.onClick({ button: 0, altKey: false, clientX: 40, clientY: 70, currentTarget: {
+        getBoundingClientRect: () => ({ left: 10, top: 20 })
+    } });
+    viewport.props.onWheel({ clientX: 60, clientY: 80, deltaY: -1 });
+    assert.deepEqual(JSON.parse(JSON.stringify(harness.notifications)), [
+        { type: 'editor:viewport-select', payload: { x: 30, y: 50 } },
+        { type: 'editor:camera-update', payload: { zoom: 1.1, x: 4.545454545454547, y: 5.45454545454546 } }
+    ]);
+});
+
+test('Scene View UI pans the camera and moves a selected entity on its gizmo axis', () => {
+    const harness = createSceneViewHarness();
+    let tree = harness.render();
+    const viewport = findNode(tree, node => node.props?.className === 'flex-1 relative cursor-crosshair');
+    viewport.props.onMouseDown({ button: 1, altKey: false, clientX: 10, clientY: 20, preventDefault() {} });
+    tree = harness.render();
+    tree.props.onMouseMove({ clientX: 30, clientY: 50 });
+    tree = harness.render();
+    const handle = findNode(tree, node => node.type === 'circle' && node.props?.cx === 78);
+    assert.ok(handle, 'selected entity x-axis handle is rendered');
+    handle.props.onMouseDown({ button: 0, clientX: 58, clientY: 3, preventDefault() {}, stopPropagation() {} });
+    tree.props.onMouseMove({ clientX: 78, clientY: 3 });
+    assert.deepEqual(JSON.parse(JSON.stringify(harness.notifications)), [
+        { type: 'editor:camera-update', payload: { zoom: 1, x: -20, y: -30 } },
+        { type: 'editor:update-component', payload: {
+            id: 'entity-1', component: 'transform', data: { position: { x: 22, y: 3 } }
+        } }
+    ]);
 });
