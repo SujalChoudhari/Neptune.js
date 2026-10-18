@@ -169,6 +169,28 @@ test("debug sample boots its real scene and tilemap without console errors", asy
         encounter.Update(0);
         assert.match(document.getElementById("rpg-hud").textContent, /Slime Trouble: 1\/3 \(active\)/,
             "the HTML HUD should refresh after quest progress changes");
+        const savedPosition = { ...player.GetComponent(Transform).position };
+        const savedExperience = encounter.progression.experience;
+        window.dispatchEvent(new KeyboardEvent("keydown", { keyCode: KeyboardInput.KEY_CODE.S }));
+        encounter.Update(0);
+        assert.match(document.getElementById("rpg-hud").textContent, /Saved/, "S should save the dungeon state");
+        window.dispatchEvent(new KeyboardEvent("keyup", { keyCode: KeyboardInput.KEY_CODE.S }));
+        player.GetComponent(Transform).position.x = 12;
+        encounter.inventory.removeItem("slimeGel", 1);
+        encounter.progression.grantExperience(3);
+        guide.quests.advance("slimeTrouble", "defeatSlimes");
+        window.dispatchEvent(new KeyboardEvent("keydown", { keyCode: KeyboardInput.KEY_CODE.L }));
+        encounter.Update(0);
+        assert.deepEqual(
+            [player.GetComponent(Transform).position.x, player.GetComponent(Transform).position.y],
+            [savedPosition.x, savedPosition.y],
+            "L should restore the saved player position"
+        );
+        assert.equal(encounter.inventory.getItemCount("slimeGel"), 1, "L should restore saved inventory");
+        assert.equal(encounter.progression.experience, savedExperience, "L should restore saved progression");
+        assert.equal(guide.quests.states.get("slimeTrouble").progress.defeatSlimes, 1, "L should restore saved quest progress");
+        assert.match(document.getElementById("rpg-hud").textContent, /Loaded/, "the HUD should report a successful load");
+        window.dispatchEvent(new KeyboardEvent("keyup", { keyCode: KeyboardInput.KEY_CODE.L }));
         window.dispatchEvent(new KeyboardEvent("keyup", { keyCode: KeyboardInput.KEY_CODE.E }));
         entryPortal.GetComponent(portalType).Update(0);
 

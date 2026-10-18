@@ -1,4 +1,4 @@
-export function renderRpgHud({ inventory, questLog, location, paused = false }) {
+export function renderRpgHud({ inventory, questLog, location, paused = false, saveMessage = "" }) {
     const root = globalThis.document?.getElementById("rpg-hud");
     if (!root || !inventory) return;
 
@@ -18,6 +18,7 @@ export function renderRpgHud({ inventory, questLog, location, paused = false }) 
         `Inventory: ${items.length ? items.join(", ") : "empty"}`,
         `Equipment: ${equipment.length ? equipment.join(", ") : "none"}`,
         questLine,
-        `Status: ${paused ? "PAUSED" : "Playing"}`
+        `Status: ${paused ? "PAUSED" : "Playing"}`,
+        saveMessage
     ].join(" | ");
 }
