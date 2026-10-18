@@ -82,6 +82,8 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
             ? [{ type: 'QuestDefinition', props: { name: 'New Quest', description: 'Describe the quest...', objectiveId: 'objective-1', objective: 'Describe the objective...', required: 1 } }]
             : type === 'dialogue'
             ? [{ type: 'Dialogue', props: { speaker: 'Speaker', text: 'Enter dialogue...', next: '' } }]
+            : type === 'scene-transition'
+            ? [{ type: 'SceneTransition', props: { targetScene: 'scenes/', spawnPoint: '', trigger: 'enter' } }, { type: 'TriggerCollider', props: { width: 1, height: 1, offsetX: 0, offsetY: 0 } }]
             : type === 'entity'
             ? [{ type: 'Transform', props: { position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 } } }]
             : type === 'trigger-area'
@@ -285,7 +287,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
             <HierarchyToolbar
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
-                onAddEntity={(type) => addEntity('root', type === 'enemy' ? 'Enemy' : type === 'quest' ? 'Quest' : type === 'dialogue' ? 'Dialogue' : type === 'entity' ? 'New Entity' : type === 'spawn-point' ? 'Spawn Point' : type === 'trigger-area' ? 'Trigger Area' : type === 'hitbox' ? 'Hitbox' : type === 'hurtbox' ? 'Hurtbox' : `New ${type}`, type)}
+                onAddEntity={(type) => addEntity('root', type === 'scene-transition' ? 'Scene Transition' : type === 'enemy' ? 'Enemy' : type === 'quest' ? 'Quest' : type === 'dialogue' ? 'Dialogue' : type === 'entity' ? 'New Entity' : type === 'spawn-point' ? 'Spawn Point' : type === 'trigger-area' ? 'Trigger Area' : type === 'hitbox' ? 'Hitbox' : type === 'hurtbox' ? 'Hurtbox' : `New ${type}`, type)}
                 onExpandAll={handleExpandAll}
                 onCollapseAll={handleCollapseAll}
             />

@@ -13,6 +13,7 @@ import { BoxCollider } from "./components/boxCollider.js";
 import { Dialogue } from "./components/dialogue.js";
 import { QuestDefinition } from "./components/questDefinition.js";
 import { EnemyConfig } from "./components/enemyConfig.js";
+import { SceneTransition } from "./components/sceneTransition.js";
 import { TriggerCollider, Hitbox, Hurtbox } from "./nereid/collider.js";
 import { Renderable } from "./rendering/renderable.js";
 import { Shape } from "./rendering/shape.js";
@@ -69,12 +70,13 @@ ComponentRegistry.register("Hurtbox", Hurtbox);
 ComponentRegistry.register("Dialogue", Dialogue);
 ComponentRegistry.register("QuestDefinition", QuestDefinition);
 ComponentRegistry.register("EnemyConfig", EnemyConfig);
+ComponentRegistry.register("SceneTransition", SceneTransition);
 // Register other components as needed...
 
 export {
     application, SaveManager, GameClock,
     Storage, Color, Filter, Entity, Scene, DestroyQueue, SceneManager, SceneLoader,
-    Component, Transform, BoxCollider, TriggerCollider, Hitbox, Hurtbox, Dialogue, QuestDefinition, EnemyConfig, ComponentRegistry,
+    Component, Transform, BoxCollider, TriggerCollider, Hitbox, Hurtbox, Dialogue, QuestDefinition, EnemyConfig, SceneTransition, ComponentRegistry,
     Renderable, Shape, Sprite,
     Sound,
     UI,

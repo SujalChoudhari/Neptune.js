@@ -337,6 +337,19 @@ describe("Triton persistence bridge", () => {
         expect(runtime.includes('ComponentRegistry.register("EnemyConfig", EnemyConfig)')).toBe(true);
     });
 
+    it("authors scene transitions with destination data and a runtime trigger", () => {
+        const toolbar = fs.readFileSync(path.join(root, "src", "components", "panels", "hierarchy", "HierarchyToolbar.tsx"), "utf8");
+        const hierarchy = fs.readFileSync(path.join(root, "src", "components", "panels", "HierarchyPanel.tsx"), "utf8");
+        const runtime = fs.readFileSync(path.resolve("src", "neptune.js"), "utf8");
+        const component = fs.readFileSync(path.resolve("src", "components", "sceneTransition.js"), "utf8");
+
+        expect(toolbar.includes("Create Scene Transition")).toBe(true);
+        expect(hierarchy.includes("type: 'SceneTransition', props: { targetScene: 'scenes/', spawnPoint: '', trigger: 'enter' }")).toBe(true);
+        expect(hierarchy.includes("{ type: 'TriggerCollider', props: { width: 1, height: 1, offsetX: 0, offsetY: 0 } }")).toBe(true);
+        expect(component.includes('targetScene: "scenes/"')).toBe(true);
+        expect(runtime.includes('ComponentRegistry.register("SceneTransition", SceneTransition)')).toBe(true);
+    });
+
     it("offers trigger-area creation as a typed scene entity that survives runtime loading", () => {
         const toolbar = fs.readFileSync(path.join(root, "src", "components", "panels", "hierarchy", "HierarchyToolbar.tsx"), "utf8");
         const hierarchy = fs.readFileSync(path.join(root, "src", "components", "panels", "HierarchyPanel.tsx"), "utf8");
