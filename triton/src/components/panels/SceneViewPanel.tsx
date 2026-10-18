@@ -192,7 +192,12 @@ export function SceneViewPanel() {
                              }, '*');
                          });
                  }
-                 else if (type === 'editor:update-component') {
+                 else if (type === 'editor:rename') {
+                    if (!game.scene || typeof payload?.name !== 'string') return;
+                    const entity = findEntity(game.scene, payload.id);
+                    if (entity) entity.name = payload.name;
+                }
+                else if (type === 'editor:update-component') {
                      if (!game.scene) return;
                      const ent = findEntity(game.scene, payload.id);
                      if (ent) {

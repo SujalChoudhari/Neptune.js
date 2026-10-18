@@ -54,6 +54,11 @@ export function GameViewPanel() {
                     if (type === 'editor:load-scene' && game.loadScene) {
                          game.loadScene(payload.data || payload.path).catch(console.error);
                     }
+                    else if (type === 'editor:rename') {
+                         if (typeof payload?.name !== 'string') return;
+                         const entity = findEntity(game.scene, payload.id);
+                         if (entity) entity.name = payload.name;
+                    }
                     else if (type === 'editor:update-component') {
                          // Inspector Update Logic
                          const ent = findEntity(game.scene, payload.id);

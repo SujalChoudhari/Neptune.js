@@ -290,6 +290,32 @@ describe("Triton persistence bridge", () => {
         expect(inspector.includes("as any as MockEntity")).toBe(false);
     });
 
+    it("applies inspector renames to both game views and persists them across reopen", async () => {
+        const sceneView = fs.readFileSync(path.join(root, "src", "components", "panels", "SceneViewPanel.tsx"), "utf8");
+        const gameView = fs.readFileSync(path.join(root, "src", "components", "panels", "GameViewPanel.tsx"), "utf8");
+        for (const view of [sceneView, gameView]) {
+            expect(view.includes("type === 'editor:rename'")).toBe(true);
+            expect(view.includes("entity.name = payload.name")).toBe(true);
+        }
+
+        const harness = createMainHarness();
+        const scene = {
+            type: "scene", version: "1.0.0", schemaVersion: 1,
+            entities: [{ id: "entity-1", name: "Before", type: "empty", components: [], children: [] }]
+        };
+        harness.runner.openScene(scene, "scenes/main.scene");
+        expect(harness.runner.updateEntity("entity-1", "name", { value: "After" })).toBe(true);
+        expect(harness.runner.isDirty).toBe(true);
+        await harness.runner.saveScene(async (filePath, content) => {
+            harness.files.set(filePath, content);
+            return true;
+        });
+        harness.runner.closeScene();
+        harness.runner.openScene(JSON.parse(harness.files.get("scenes/main.scene")), "scenes/main.scene");
+
+        expect(harness.runner.currentScene.entities[0].name).toBe("After");
+    });
+
     it("saves the opened versioned scene through File > Save", () => {
         const harness = createMainHarness();
         harness.render();
