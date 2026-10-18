@@ -4,9 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Neptune.js Debug Demo</title>
+    <style>
+        #rpg-hud { position: fixed; z-index: 10; top: 0.5rem; left: 0.5rem; max-width: calc(100vw - 2rem); padding: 0.6rem 0.8rem; color: #fff; background: #17212ddd; font: 14px/1.5 system-ui, sans-serif; }
+    </style>
 </head>
 <body>
     <div id="neptune-loading">Loading Engine...</div>
+    <aside id="rpg-hud" aria-label="Game status" aria-live="polite">Talk to the Town Guide to begin.</aside>
     <script type="module" src="./main.js"></script>
 </body>
 </html>

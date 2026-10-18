@@ -80,6 +80,10 @@ test("debug sample boots its real scene and tilemap without console errors", asy
         assert.equal(guide.inventory.hasItem("trainingBlade"), true, "the guide should provide a blade in the player's inventory");
         assert.match(guideEntity.GetComponent(ComponentRegistry.get("Text")).text, /Town Guide:/,
             "NPC dialogue should be visible as scene text");
+        assert.match(document.getElementById("rpg-hud").textContent, /Inventory: Training Blade ×1/,
+            "the HTML HUD should show the player's starting inventory");
+        assert.match(document.getElementById("rpg-hud").textContent, /Slime Trouble: 0\/3 \(active\)/,
+            "the HTML HUD should show active quest progress");
         window.dispatchEvent(new KeyboardEvent("keyup", { keyCode: KeyboardInput.KEY_CODE.E }));
         player.GetComponent(Transform).position.x = entryPortal.GetComponent(Transform).position.x;
         player.GetComponent(Transform).position.y = entryPortal.GetComponent(Transform).position.y;
@@ -103,6 +107,8 @@ test("debug sample boots its real scene and tilemap without console errors", asy
         encounter.Update(0);
         assert.equal(encounter.inventory.equipment.weapon.id, "trainingBlade", "U should equip the training blade");
         assert.equal(encounter.playerMelee.damage, 16, "equipping the blade should increase melee damage");
+        assert.match(document.getElementById("rpg-hud").textContent, /Equipment: weapon: Training Blade/,
+            "the HTML HUD should reflect equipped gear");
         window.dispatchEvent(new KeyboardEvent("keyup", { keyCode: KeyboardInput.KEY_CODE.U }));
         for (let step = 0; step < 30; step++) encounter.Update(0.25);
         assert.ok(encounter.enemies.every(enemy => enemy.ai.state === "attack"),
@@ -135,6 +141,9 @@ test("debug sample boots its real scene and tilemap without console errors", asy
         assert.equal(encounter.progression.level, 2, "enemy death should grant enough XP to level up");
         assert.equal(guide.quests.states.get("slimeTrouble").progress.defeatSlimes, 1,
             "defeating a dungeon slime should advance the guide's quest");
+        encounter.Update(0);
+        assert.match(document.getElementById("rpg-hud").textContent, /Slime Trouble: 1\/3 \(active\)/,
+            "the HTML HUD should refresh after quest progress changes");
         window.dispatchEvent(new KeyboardEvent("keyup", { keyCode: KeyboardInput.KEY_CODE.E }));
         entryPortal.GetComponent(portalType).Update(0);
 

@@ -6,6 +6,7 @@ import { Tileset } from "../../src/thalassa/tileset.js";
 import { Tilemap } from "../../src/thalassa/tilemap.js";
 import { AttackDefinition, Combatant, CombatSystem, EnemyAI, Inventory, Progression, GameData, RewardSystem } from "../../src/larissa/index.js";
 import { PlayerController } from "./playerController.js";
+import { renderRpgHud } from "./hud.js";
 
 function collect(entity, predicate, matches = []) {
     if (predicate(entity)) matches.push(entity);
@@ -78,6 +79,7 @@ export class DungeonEncounter extends Behaviour {
             this.combatSystem.startAttack(this.playerCombatant, this.playerRanged, controller.facing);
         }
         this.combatSystem.update(deltaTime, [this.playerCombatant, ...this.enemies.map(enemy => enemy.combatant)]);
+        renderRpgHud({ inventory: this.inventory, questLog: this.questLog, location: "Dungeon" });
     }
 
     #initialize(scene) {

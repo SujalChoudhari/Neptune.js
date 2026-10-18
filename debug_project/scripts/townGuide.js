@@ -5,6 +5,7 @@ import { DialogueBox } from "../../src/galatea/dialogueBox.js";
 import { GameData, Inventory, QuestLog } from "../../src/larissa/index.js";
 import { PlayerController } from "./playerController.js";
 import { Text } from "../../src/ui/text.js";
+import { renderRpgHud } from "./hud.js";
 
 function findPlayer(entity) {
     if (entity.components.some(component => component instanceof PlayerController)) return entity;
@@ -61,5 +62,6 @@ export class TownGuide extends Behaviour {
             this.dialogue.advance();
         }
         text.text = this.dialogue.isVisible ? `${this.dialogue.speaker}: ${this.dialogue.displayedText || this.dialogue.fullText} [E]` : "";
+        renderRpgHud({ inventory: this.inventory, questLog: this.quests, location: "Town" });
     }
 }
