@@ -133,6 +133,37 @@ describe('Tilemap', () => {
         expect(tilemap.findPath(0, 0, 1, 1)).toBe(null);
     });
 
+    it('moves occupied actors one navigable step at a time toward a destination', () => {
+        tilemap.loadFromArray([
+            [-1, 1, -1, -1, -1],
+            [-1, 1, -1, -1, -1],
+            [-1, 1, -1, -1, -1],
+            [-1, -1, -1, -1, -1],
+            [-1, -1, -1, -1, -1]
+        ]);
+        tilemap.setTileMetadata(1, { walkable: false });
+        const actor = {};
+        const blocker = {};
+        expect(tilemap.occupy(0, 0, actor)).toBe(true);
+        expect(tilemap.occupy(2, 2, blocker)).toBe(true);
+        expect(tilemap.moveOccupant(actor, 2, 0)).toBe(false);
+        expect(tilemap.getOccupant(0, 0)).toBe(actor);
+        expect(tilemap.moveOccupantToward(actor, 4, 0)).toEqual({ x: 0, y: 1 });
+        expect(tilemap.getOccupant(0, 1)).toBe(actor);
+        expect(tilemap.moveOccupantToward(actor, 4, 0)).toEqual({ x: 0, y: 2 });
+        expect(tilemap.moveOccupantToward(actor, 4, 0)).toEqual({ x: 0, y: 3 });
+        expect(tilemap.moveOccupantToward(actor, 4, 0)).toEqual({ x: 1, y: 3 });
+        expect(tilemap.moveOccupantToward(actor, 4, 0)).toEqual({ x: 2, y: 3 });
+        expect(tilemap.moveOccupantToward(actor, 4, 0)).toEqual({ x: 3, y: 3 });
+        expect(tilemap.moveOccupantToward(actor, 4, 0)).toEqual({ x: 3, y: 2 });
+        expect(tilemap.moveOccupantToward(actor, 4, 0)).toEqual({ x: 3, y: 1 });
+        expect(tilemap.moveOccupantToward(actor, 4, 0)).toEqual({ x: 3, y: 0 });
+        expect(tilemap.moveOccupantToward(actor, 4, 0)).toEqual({ x: 4, y: 0 });
+        expect(tilemap.moveOccupantToward(actor, 2, 2)).toBe(null);
+        expect(tilemap.getOccupant(4, 0)).toBe(actor);
+        expect(tilemap.getOccupant(2, 2)).toBe(blocker);
+    });
+
     it('traverses named map layers in deterministic order for stacked traversal', () => {
         const bridge = new Tilemap(tileset, 1, 1);
         bridge.setTile(0, 0, 2);
