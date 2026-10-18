@@ -3,10 +3,19 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { SceneManager } from "../src/core/sceneManager.js";
+import { ComponentRegistry, KeyboardInput, SceneManager, Transform } from "../src/neptune.js";
 import { PlayerController } from "../debug_project/scripts/playerController.js";
 
 const sampleRoot = new URL("../debug_project/", import.meta.url);
+
+function findEntity(entity, predicate) {
+    if (predicate(entity)) return entity;
+    for (const child of entity.children ?? []) {
+        const match = findEntity(child, predicate);
+        if (match) return match;
+    }
+    return null;
+}
 
 test("debug sample boots its real scene and tilemap without console errors", async () => {
     const originalFetch = globalThis.fetch;
@@ -44,9 +53,39 @@ test("debug sample boots its real scene and tilemap without console errors", asy
         const player = gameplay?.children.find(entity => entity.name === "Player");
         assert.ok(player, "sample scene should contain its player");
         assert.ok(player.components.some(component => component instanceof PlayerController));
+        const portalType = ComponentRegistry.get("ScenePortal");
+        assert.ok(portalType, "sample should register its scene transition component");
+        const entryPortal = findEntity(scene, entity => entity.GetComponent(portalType));
+        assert.ok(entryPortal, "sample should contain an entry portal");
         assert.ok(scene.children.filter(entity => entity.name.startsWith("Tile_")).length > 0,
             "sample tilemap should instantiate tile entities");
         assert.equal(fetched.length, 2, "startup should fetch the scene and its tilemap");
+
+        KeyboardInput.init(document.createElement("canvas"));
+        player.GetComponent(Transform).position.x = entryPortal.GetComponent(Transform).position.x;
+        player.GetComponent(Transform).position.y = entryPortal.GetComponent(Transform).position.y;
+        window.dispatchEvent(new KeyboardEvent("keydown", { keyCode: KeyboardInput.KEY_CODE.E }));
+        await entryPortal.GetComponent(portalType).Update(0);
+        const dungeon = SceneManager.GetActiveScene();
+        assert.equal(dungeon.name, "Dungeon");
+        assert.equal(player.parent, dungeon, "the same player entity should survive the transition");
+        assert.deepEqual(
+            [player.GetComponent(Transform).position.x, player.GetComponent(Transform).position.y],
+            [3, 5],
+            "the player should arrive at the configured dungeon entrance"
+        );
+        window.dispatchEvent(new KeyboardEvent("keyup", { keyCode: KeyboardInput.KEY_CODE.E }));
+        entryPortal.GetComponent(portalType).Update(0);
+
+        const exitPortal = findEntity(dungeon, entity => entity.GetComponent(portalType));
+        player.GetComponent(Transform).position.x = exitPortal.GetComponent(Transform).position.x;
+        player.GetComponent(Transform).position.y = exitPortal.GetComponent(Transform).position.y;
+        window.dispatchEvent(new KeyboardEvent("keydown", { keyCode: KeyboardInput.KEY_CODE.E }));
+        await exitPortal.GetComponent(portalType).Update(0);
+        assert.equal(SceneManager.GetActiveScene().name, scene.name, "the town scene should be reused on return");
+        assert.equal(SceneManager.GetActiveScene().id, scene.id);
+        assert.equal(player.parent, scene, "the same player should return to the town scene");
+        assert.equal(fetched.length, 4, "the dungeon and its tilemap should load only once");
         assert.deepEqual(errors, [], `sample logged console errors: ${errors.join("; ")}`);
     } finally {
         globalThis.fetch = originalFetch;
