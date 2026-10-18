@@ -12,6 +12,7 @@ import { TriggerCollider, Hitbox, Hurtbox } from "../src/nereid/collider.js";
 import { Dialogue } from "../src/components/dialogue.js";
 import { QuestDefinition } from "../src/components/questDefinition.js";
 import { EnemyConfig } from "../src/components/enemyConfig.js";
+import { SceneTransition } from "../src/components/sceneTransition.js";
 
 // Manually register components since we aren't loading neptune.js
 ComponentRegistry.register("Transform", Transform);
@@ -23,6 +24,7 @@ ComponentRegistry.register("Hurtbox", Hurtbox);
 ComponentRegistry.register("Dialogue", Dialogue);
 ComponentRegistry.register("QuestDefinition", QuestDefinition);
 ComponentRegistry.register("EnemyConfig", EnemyConfig);
+ComponentRegistry.register("SceneTransition", SceneTransition);
 
 describe("SceneLoader Integration", () => {
     it("should load a scene from JSON", async () => {
@@ -211,6 +213,31 @@ describe("SceneLoader Integration", () => {
         expect(entity.type).toBe("enemy");
         expect(config.id).toBe("enemy-config");
         expect(config.properties).toEqual({ maxHealth: 40, moveSpeed: 1.5, contactDamage: 6, behavior: "chase" });
+    });
+
+    it("loads an editor-authored scene transition from saved scene JSON", () => {
+        const serialized = JSON.stringify({
+            type: "scene",
+            schemaVersion: 1,
+            entities: [{
+                id: "transition-door",
+                name: "Dungeon Door",
+                type: "scene-transition",
+                components: [
+                    { id: "transition-config", type: "SceneTransition", props: { targetScene: "scenes/dungeon.scene", spawnPoint: "entrance", trigger: "interact" } },
+                    { id: "transition-trigger", type: "TriggerCollider", props: { width: 1, height: 2, offsetX: 0, offsetY: 0 } }
+                ]
+            }]
+        });
+        const scene = SceneLoader.parse(JSON.parse(serialized));
+        const entity = scene.children[0];
+        const transition = entity.GetComponent(SceneTransition);
+        const trigger = entity.GetComponent(TriggerCollider);
+
+        expect(entity.type).toBe("scene-transition");
+        expect(transition.properties).toEqual({ targetScene: "scenes/dungeon.scene", spawnPoint: "entrance", trigger: "interact" });
+        expect(trigger.width).toBe(1);
+        expect(trigger.height).toBe(2);
     });
 
     it("rejects unsupported scene schema versions with an actionable error", () => {
