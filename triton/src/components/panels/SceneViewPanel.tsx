@@ -1,6 +1,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import gameMainUrl from "../../../../debug_project/main.js?url";
 import cameraUrl from "../../../../src/thalassa/camera.js?url";
+import scenePickingUrl from "@/lib/scenePicking.mjs?url";
 import { ThemedIconButton } from "@/components/library";
 import { Maximize, ZoomIn, ZoomOut } from "lucide-react";
 import { useGameContext } from '@/context/GameContext';
@@ -59,6 +60,15 @@ export function SceneViewPanel() {
         setPan(newPan);
         notifyGame('editor:camera-update', { zoom: newZoom, x: newPanX, y: newPanY });
     }, [zoom, pan, notifyGame]);
+
+    const handleViewportClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+        if (e.button !== 0 || e.altKey) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        notifyGame('editor:viewport-select', {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        });
+    }, [notifyGame]);
 
     const handleMouseDown = useCallback((e: React.MouseEvent) => {
         if (e.button === 1 || (e.button === 0 && e.altKey)) { // Middle mouse or Alt+Left
@@ -122,6 +132,7 @@ export function SceneViewPanel() {
     
     <script type="module">
         import { Camera } from "${cameraUrl}";
+        import { pickEntityAt } from "${scenePickingUrl}";
         import "${gameMainUrl}";
         
         const findEntity = (root, id) => {
@@ -172,6 +183,14 @@ export function SceneViewPanel() {
                      editorCamera.position.x = payload.x;
                      editorCamera.position.y = payload.y;
                      editorCamera.setZoom(payload.zoom);
+                 }
+                 else if (type === 'editor:viewport-select') {
+                     const world = editorCamera.screenToWorld(payload.x, payload.y);
+                     const selected = game.scene && pickEntityAt(game.scene, world.x, world.y);
+                     window.parent.postMessage({
+                         type: 'game:selection-changed',
+                         payload: { ids: selected ? [selected.id] : [] }
+                     }, '*');
                  }
                  else if (type === 'editor:load-scene' && game.loadScene) {
                      game.loadScene(payload.data || payload.path)
@@ -261,6 +280,7 @@ export function SceneViewPanel() {
             <div
                 className="flex-1 relative cursor-crosshair"
                 onMouseDown={handleMouseDown}
+                onClick={handleViewportClick}
                 onWheel={handleWheel}
             >
                 <iframe
