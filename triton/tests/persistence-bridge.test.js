@@ -326,6 +326,17 @@ describe("Triton persistence bridge", () => {
         expect(runtime.includes('ComponentRegistry.register("QuestDefinition", QuestDefinition)')).toBe(true);
     });
 
+    it("authors enemy entities with editable runtime configuration properties", () => {
+        const toolbar = fs.readFileSync(path.join(root, "src", "components", "panels", "hierarchy", "HierarchyToolbar.tsx"), "utf8");
+        const hierarchy = fs.readFileSync(path.join(root, "src", "components", "panels", "HierarchyPanel.tsx"), "utf8");
+        const runtime = fs.readFileSync(path.resolve("src", "neptune.js"), "utf8");
+
+        expect(toolbar.includes("onClick={() => onAddEntity('enemy')}>Create Enemy")).toBe(true);
+        expect(hierarchy.includes("type === 'enemy' ? 'Enemy'")).toBe(true);
+        expect(hierarchy.includes("type: 'EnemyConfig', props: { maxHealth: 100, moveSpeed: 2, contactDamage: 10, behavior: 'patrol' }")).toBe(true);
+        expect(runtime.includes('ComponentRegistry.register("EnemyConfig", EnemyConfig)')).toBe(true);
+    });
+
     it("offers trigger-area creation as a typed scene entity that survives runtime loading", () => {
         const toolbar = fs.readFileSync(path.join(root, "src", "components", "panels", "hierarchy", "HierarchyToolbar.tsx"), "utf8");
         const hierarchy = fs.readFileSync(path.join(root, "src", "components", "panels", "HierarchyPanel.tsx"), "utf8");

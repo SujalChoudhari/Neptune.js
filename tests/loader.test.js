@@ -11,6 +11,7 @@ import { BoxCollider } from "../src/components/boxCollider.js";
 import { TriggerCollider, Hitbox, Hurtbox } from "../src/nereid/collider.js";
 import { Dialogue } from "../src/components/dialogue.js";
 import { QuestDefinition } from "../src/components/questDefinition.js";
+import { EnemyConfig } from "../src/components/enemyConfig.js";
 
 // Manually register components since we aren't loading neptune.js
 ComponentRegistry.register("Transform", Transform);
@@ -21,6 +22,7 @@ ComponentRegistry.register("Hitbox", Hitbox);
 ComponentRegistry.register("Hurtbox", Hurtbox);
 ComponentRegistry.register("Dialogue", Dialogue);
 ComponentRegistry.register("QuestDefinition", QuestDefinition);
+ComponentRegistry.register("EnemyConfig", EnemyConfig);
 
 describe("SceneLoader Integration", () => {
     it("should load a scene from JSON", async () => {
@@ -186,6 +188,29 @@ describe("SceneLoader Integration", () => {
         expect(entity.type).toBe("quest");
         expect(quest.id).toBe("quest-definition");
         expect(quest.properties).toEqual({ name: "Slime Trouble", description: "Help the town.", objectiveId: "defeat-slimes", objective: "Defeat slimes", required: 3 });
+    });
+
+    it("loads editor-authored enemy configuration on its runtime entity", () => {
+        const scene = SceneLoader.parse({
+            type: "scene",
+            schemaVersion: 1,
+            entities: [{
+                id: "enemy-slime",
+                name: "Slime",
+                type: "enemy",
+                components: [{
+                    id: "enemy-config",
+                    type: "EnemyConfig",
+                    props: { maxHealth: 40, moveSpeed: 1.5, contactDamage: 6, behavior: "chase" }
+                }]
+            }]
+        });
+        const entity = scene.children[0];
+        const config = entity.GetComponent(EnemyConfig);
+
+        expect(entity.type).toBe("enemy");
+        expect(config.id).toBe("enemy-config");
+        expect(config.properties).toEqual({ maxHealth: 40, moveSpeed: 1.5, contactDamage: 6, behavior: "chase" });
     });
 
     it("rejects unsupported scene schema versions with an actionable error", () => {
