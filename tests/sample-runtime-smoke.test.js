@@ -85,6 +85,11 @@ test("debug sample boots its real scene and tilemap without console errors", asy
             "each enemy should navigate to the player and enter its combat attack state");
         assert.ok(encounter.playerCombatant.health < encounter.playerCombatant.maxHealth,
             "enemy combat behaviors should damage the player");
+        const defeatedEnemy = encounter.enemies[0];
+        defeatedEnemy.combatant.receiveDamage({ amount: defeatedEnemy.combatant.maxHealth });
+        assert.equal(defeatedEnemy.combatant.isAlive, false, "a defeated enemy should be removed from combat");
+        assert.equal(encounter.inventory.getItemCount("slimeGel"), 1, "enemy death should grant its loot");
+        assert.equal(encounter.progression.level, 2, "enemy death should grant enough XP to level up");
         window.dispatchEvent(new KeyboardEvent("keyup", { keyCode: KeyboardInput.KEY_CODE.E }));
         entryPortal.GetComponent(portalType).Update(0);
 

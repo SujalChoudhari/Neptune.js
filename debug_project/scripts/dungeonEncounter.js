@@ -3,7 +3,7 @@ import { Transform } from "../../src/components/transform.js";
 import { SceneManager } from "../../src/core/sceneManager.js";
 import { Tileset } from "../../src/thalassa/tileset.js";
 import { Tilemap } from "../../src/thalassa/tilemap.js";
-import { AttackDefinition, Combatant, CombatSystem, EnemyAI } from "../../src/larissa/index.js";
+import { AttackDefinition, Combatant, CombatSystem, EnemyAI, Inventory, Progression, GameData, RewardSystem } from "../../src/larissa/index.js";
 import { PlayerController } from "./playerController.js";
 
 function collect(entity, predicate, matches = []) {
@@ -17,6 +17,12 @@ export class DungeonEncounter extends Behaviour {
         super("DungeonEncounter");
         this.initializedScene = null;
         this.enemies = [];
+        this.inventory = new Inventory();
+        this.progression = new Progression({ baseExperience: 10 });
+        this.rewardSystem = new RewardSystem(new GameData({
+            items: { slimeGel: { id: "slimeGel", name: "Slime Gel", type: "material", stackable: 10 } },
+            rewards: { slimeDefeat: { experience: 10, items: [{ itemId: "slimeGel", quantity: 1 }] } }
+        }));
     }
 
     Init() {
@@ -105,6 +111,7 @@ export class DungeonEncounter extends Behaviour {
             combatant.onDeath = () => {
                 this.tilemap.vacate(entity);
                 entity.name = `${entity.name} (defeated)`;
+                this.rewardSystem.grant("slimeDefeat", { inventory: this.inventory, progression: this.progression });
             };
             return {
                 entity,
