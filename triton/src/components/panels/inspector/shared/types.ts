@@ -1,87 +1,18 @@
 import type { ReactNode } from "react"
+import type { EntityData, Vector2, TransformComponent, SpriteComponent, ColliderComponent, BodyComponent, SoundComponent, StatsComponent, AnimatorComponent, ScriptComponent } from "@/types/engine"
 
-export interface MockVector2 {
-    x: number
-    y: number
-}
+export type InspectorVector2 = Vector2
+export type InspectorTransform = TransformComponent
+export type InspectorSprite = SpriteComponent
+export type InspectorCollider = ColliderComponent
+export type InspectorBody = BodyComponent
+export type InspectorSound = SoundComponent
+export type InspectorStats = StatsComponent
+export type InspectorAnimator = AnimatorComponent
+export type InspectorScript = ScriptComponent
+export type InspectorEntity = EntityData
 
-export interface MockTransform {
-    position: MockVector2
-    rotation: number
-    scale: MockVector2
-}
-
-export interface MockSprite {
-    path: string
-    width: number
-    height: number
-    blendMode: string
-}
-
-export interface MockCollider {
-    width: number
-    height: number
-    offsetX: number
-    offsetY: number
-    isTrigger: boolean
-}
-
-export interface MockBody {
-    velocityX: number
-    velocityY: number
-    gravity: number
-    maxFallSpeed: number
-    grounded: boolean
-    friction: number
-    drag: number
-}
-
-export interface MockSound {
-    name: string
-    src: string
-    volume: number
-    loop: boolean
-    playing: boolean
-}
-
-export interface MockStats {
-    maxHealth: number
-    health: number
-    maxStamina: number
-    stamina: number
-    attack: number
-    defense: number
-    speed: number
-}
-
-export interface MockAnimator {
-    currentAnimation: string
-    speed: number
-    playing: boolean
-    animations: string[]
-}
-
-export interface MockScript {
-    path: string
-    enabled: boolean
-}
-
-export interface MockEntity {
-    id: string
-    name: string
-    active: boolean
-    transform: MockTransform
-    sprite?: MockSprite
-    collider?: MockCollider
-    body?: MockBody
-    sound?: MockSound
-    stats?: MockStats
-    animator?: MockAnimator
-    scripts?: MockScript[]
-    components?: Record<string, any>
-}
-
-export type ComponentId = keyof Omit<MockEntity, 'name' | 'active' | 'transform' | 'id' | 'components'> | 'transform'
+export type ComponentId = keyof Omit<InspectorEntity, 'name' | 'active' | 'transform' | 'id' | 'components'> | 'transform'
 
 export interface ComponentSectionProps {
     title: string

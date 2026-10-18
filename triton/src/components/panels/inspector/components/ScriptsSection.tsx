@@ -2,13 +2,13 @@ import { Code } from "lucide-react"
 import { ComponentSection } from "../shared/ComponentSection"
 import { PropertyRow } from "../shared/PropertyRow"
 import { ThemedReferenceInput } from "@/components/library"
-import type { MockEntity, MockScript } from "../shared/types"
+import type { InspectorEntity, InspectorScript } from "../shared/types"
 
 interface ScriptsGroupProps {
-    entity: MockEntity
+    entity: InspectorEntity
     isActive: boolean // Group active state
     onToggleActive: () => void // Group toggle
-    onUpdate: (index: number, key: keyof MockScript, value: string | boolean) => void
+    onUpdate: (index: number, key: keyof InspectorScript, value: string | boolean) => void
     onMoveUp?: (index: number) => void
     onMoveDown?: (index: number) => void
 }
