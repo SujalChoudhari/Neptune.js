@@ -73,6 +73,7 @@ preserves the hand-authored product contract.
 - [Saving and loading](docs/tutorials/save-load.md): persist player state and project scenes.
 - [Tilemaps and tilesets](docs/tutorials/tilemaps.md): build layered maps and grid navigation.
 - [Combat and enemy AI](docs/tutorials/combat-ai.md): configure attacks, combatants, and tile-aware enemies.
+- [RPG progression and inventory](docs/tutorials/rpg-systems.md): manage stats, items, quests, shops, and rewards.
 
 ## Easy to use
 It's Simple and easy to use. 
