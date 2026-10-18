@@ -27,7 +27,7 @@ import { Play, Pause, Square, Plus, Minus, Search, Home, Save, Settings, Trash2 
 import { useState } from "react"
 
 import { renderInspectorComponent } from "./inspector/InspectorRegistry"
-import type { ComponentId, MockEntity } from "./inspector/shared/types"
+import type { EntityData } from "@/types/engine"
 
 /**
  * ATLAS PANEL
@@ -48,16 +48,17 @@ export const StoryBook = (_props: IDockviewPanelProps) => {
     const [textAreaValue, setTextAreaValue] = useState("Multi-line text\neditor example")
 
     // PREVIEW ENTITY for Inspector Components
-    const previewEntity: MockEntity = {
+    const previewEntity: EntityData = {
         id: 'storybook-entity',
         name: "Preview_Entity",
         active: true,
         transform: {
             position: { x: 128, y: 256 },
             rotation: 0,
-            scale: { x: 1, y: 1 }
+            scale: { x: 1, y: 1 },
+            z: 0
         },
-        sprite: { path: "player.png", width: 64, height: 64, blendMode: "Normal" },
+        sprite: { path: "player.png", width: 64, height: 64, blendMode: "Normal", color: "#ffffff" },
         collider: { width: 48, height: 56, offsetX: 8, offsetY: 4, isTrigger: false },
         body: { velocityX: 0, velocityY: 0, gravity: 980, maxFallSpeed: 800, friction: 90, drag: 98, grounded: true },
         sound: { name: "Jump", src: "jump.wav", volume: 80, loop: false, playing: false },
@@ -66,10 +67,20 @@ export const StoryBook = (_props: IDockviewPanelProps) => {
         scripts: [
             { path: "/scripts/player_controller.js", enabled: true },
             { path: "/scripts/camera_follow.js", enabled: true }
-        ]
+        ],
+        components: {
+            transform: { position: { x: 128, y: 256 }, rotation: 0, scale: { x: 1, y: 1 }, z: 0 },
+            sprite: { path: "player.png", width: 64, height: 64, blendMode: "Normal", color: "#ffffff" },
+            collider: { width: 48, height: 56, offsetX: 8, offsetY: 4, isTrigger: false },
+            body: { velocityX: 0, velocityY: 0, gravity: 980, maxFallSpeed: 800, friction: 90, drag: 98, grounded: true },
+            sound: { name: "Jump", src: "jump.wav", volume: 80, loop: false, playing: false },
+            stats: { health: 85, maxHealth: 100, stamina: 60, maxStamina: 100, attack: 15, defense: 8, speed: 120 },
+            animator: { currentAnimation: "idle", speed: 100, playing: true, animations: ["idle", "walk", "run"] },
+            scripts: [{ path: "/scripts/player_controller.js", enabled: true }, { path: "/scripts/camera_follow.js", enabled: true }]
+        }
     }
 
-    const componentList: (ComponentId)[] = ["transform", "sprite", "collider", "body", "sound", "stats", "animator", "scripts"]
+    const componentList = ["transform", "sprite", "collider", "body", "sound", "stats", "animator", "scripts"]
 
     return (
         <ThemedScrollArea maxHeight="100%" className="h-full w-full bg-card p-4">

@@ -323,6 +323,20 @@ describe("Triton persistence bridge", () => {
         }
     });
 
+    it("uses live EntityData in the production Inspector without mock entity casts", () => {
+        const inspector = fs.readFileSync(path.join(root, "src", "components", "panels", "InspectorPanel.tsx"), "utf8");
+        const registry = fs.readFileSync(path.join(root, "src", "components", "panels", "inspector", "InspectorRegistry.tsx"), "utf8");
+
+        expect(inspector.includes('import type { EntityData } from "@/types/engine"')).toBe(true);
+        expect(inspector.includes("const entity: EntityData = selectedEntityData")).toBe(true);
+        expect(inspector.includes("MockEntity")).toBe(false);
+        expect(inspector.includes("as any as")).toBe(false);
+        expect(registry.includes('import type { EntityData } from "@/types/engine"')).toBe(true);
+        expect(registry.includes("entity: EntityData")).toBe(true);
+        expect(registry.includes("entity.components[compId]")).toBe(true);
+        expect(registry.includes("MockEntity")).toBe(false);
+    });
+
     it("saves the opened versioned scene through File > Save", () => {
         const harness = createMainHarness();
         harness.render();

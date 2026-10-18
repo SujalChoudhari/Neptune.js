@@ -5,7 +5,7 @@ import { Box, Eye, EyeOff, Plus, Save } from "lucide-react"
 import { ThemedInput } from "@/components/library"
 import { useGameContext } from "@/context/GameContext"
 import { renderInspectorComponent } from "./inspector/InspectorRegistry"
-import type { MockEntity } from "./inspector/shared/types"  // Still needed for shared types in registry?
+import type { EntityData } from "@/types/engine"
 import { useFileSystem } from "@/context/FileSystemContext"
 import { EditorGameRunner } from "@/lib/editorGameRunner"
 
@@ -78,9 +78,7 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
         )
     }
 
-    // Cast to MockEntity because our Inspector components are typed with it
-    // EntityData and MockEntity should be compatible enough for now
-    const entity = selectedEntityData as any as MockEntity;
+    const entity: EntityData = selectedEntityData
 
     // HELPERS
     // We map specifics to generic updateComponent(id, comp, field, value)
@@ -203,7 +201,7 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
 
                 {/* DYNAMIC COMPONENTS */}
                 {componentOrder.map((compId, index) => renderInspectorComponent({
-                    compId: compId as any,
+                    compId,
                     index,
                     entity,
                     isActive: activeStates[compId],
