@@ -4,7 +4,7 @@
   "description": "A JavaScript Based Game Development Framework",
   "main": "src/neptune.js",
   "scripts": {
-    "test": "node tests/index.js && node --test tests/sample-runtime-smoke.test.js tests/first-game-tutorial.test.js tests/action-rpg-tutorial.test.js tests/save-load-docs.test.js tests/tilemap-docs.test.js tests/combat-ai-docs.test.js tests/rpg-docs.test.js tests/html-ui-docs.test.js tests/ui-layout-docs.test.js tests/runtime-docs.test.js tests/editor-api-docs.test.js tests/tauri-packaging.test.js tests/release-notes.test.js",
+    "test": "node tests/index.js && node --test tests/sample-runtime-smoke.test.js tests/first-game-tutorial.test.js tests/action-rpg-tutorial.test.js tests/docs-preservation.test.js tests/save-load-docs.test.js tests/tilemap-docs.test.js tests/combat-ai-docs.test.js tests/rpg-docs.test.js tests/html-ui-docs.test.js tests/ui-layout-docs.test.js tests/runtime-docs.test.js tests/editor-api-docs.test.js tests/tauri-packaging.test.js tests/release-notes.test.js",
     "docs": "node scripts/generate-docs.js",
     "test:docs-contract": "node scripts/check-docs-contract.js",
     "dev": "cd triton && yarn tauri dev"
