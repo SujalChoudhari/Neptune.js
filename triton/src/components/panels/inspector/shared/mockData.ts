@@ -6,6 +6,7 @@ export const MOCK_ENTITY: MockEntity = {
     active: true,
     transform: {
         position: { x: 128, y: 256 },
+        z: 0,
         rotation: 0,
         scale: { x: 1, y: 1 }
     },
@@ -13,6 +14,7 @@ export const MOCK_ENTITY: MockEntity = {
         path: "assets/sprites/player.png",
         width: 64,
         height: 64,
+        color: "#ffffff",
         blendMode: "source-over"
     },
     collider: {
@@ -56,5 +58,6 @@ export const MOCK_ENTITY: MockEntity = {
     scripts: [
         { path: "assets/scripts/player_controller.js", enabled: true },
         { path: "assets/scripts/camera_follow.js", enabled: true }
-    ]
+    ],
+    components: {}
 }

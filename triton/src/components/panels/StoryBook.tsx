@@ -54,10 +54,11 @@ export const StoryBook = (_props: IDockviewPanelProps) => {
         active: true,
         transform: {
             position: { x: 128, y: 256 },
+            z: 0,
             rotation: 0,
             scale: { x: 1, y: 1 }
         },
-        sprite: { path: "player.png", width: 64, height: 64, blendMode: "Normal" },
+        sprite: { path: "player.png", width: 64, height: 64, color: "#ffffff", blendMode: "Normal" },
         collider: { width: 48, height: 56, offsetX: 8, offsetY: 4, isTrigger: false },
         body: { velocityX: 0, velocityY: 0, gravity: 980, maxFallSpeed: 800, friction: 90, drag: 98, grounded: true },
         sound: { name: "Jump", src: "jump.wav", volume: 80, loop: false, playing: false },
@@ -66,7 +67,8 @@ export const StoryBook = (_props: IDockviewPanelProps) => {
         scripts: [
             { path: "/scripts/player_controller.js", enabled: true },
             { path: "/scripts/camera_follow.js", enabled: true }
-        ]
+        ],
+        components: {}
     }
 
     const componentList: (ComponentId)[] = ["transform", "sprite", "collider", "body", "sound", "stats", "animator", "scripts"]
