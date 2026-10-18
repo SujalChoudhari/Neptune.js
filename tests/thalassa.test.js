@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "./tester.js";
 import "./setup_mocks.js";
-import { Tileset, Tilemap, ParallaxLayer, ParallaxBackground, Camera } from "../src/thalassa/index.js";
+import { Tileset, Tilemap, ParallaxLayer, ParallaxBackground, Camera, GameFeel } from "../src/thalassa/index.js";
 import { Vector2 } from "../src/neptune.js";
 
 // ============================================
@@ -282,5 +282,43 @@ describe('Camera', () => {
         const screen = camera.worldToScreen(100, 50);
         expect(screen.x).toBe(0);
         expect(screen.y).toBe(0);
+    });
+});
+
+describe('GameFeel', () => {
+    it('renders and expires a viewport flash, particle burst, and UI feedback without engine changes', () => {
+        const camera = new Camera(100, 80);
+        const uiEvents = [];
+        const feel = new GameFeel({ camera, onUIFeedback: event => uiEvents.push(event), random: () => 0 });
+        const rectangles = [];
+        const arcs = [];
+        const ctx = {
+            globalAlpha: 0.75,
+            fillStyle: "black",
+            fillRect(...args) { rectangles.push({ args, alpha: this.globalAlpha, color: this.fillStyle }); },
+            save() {}, restore() {}, beginPath() {},
+            arc(...args) { arcs.push(args); }, fill() {}
+        };
+        feel.shake(5, 0.25).flash("red", 1).burst({ x: 10, y: 20, count: 4, color: "gold", speed: 10, lifetime: 0.5 });
+        feel.notifyUI({ type: "damage", amount: 3 });
+        feel.update(0.25);
+        feel.draw(ctx, 100, 80);
+        expect(rectangles[0]).toEqual({ args: [0, 0, 100, 80], alpha: 0.75, color: "red" });
+        expect(arcs.length).toBe(4);
+        expect(feel.particles[0].x).toBeGreaterThan(10);
+        expect(uiEvents).toEqual([{ type: "damage", amount: 3 }]);
+        expect(camera.shakeAmount).toBe(5);
+        feel.update(0.75);
+        expect(feel.flashEffect).toBe(null);
+        expect(feel.particles.length).toBe(0);
+    });
+
+    it('validates feedback input and draw context', () => {
+        const feel = new GameFeel();
+        expect(() => feel.flash("", 1)).toThrow();
+        expect(() => feel.burst({ x: 0, y: 0, count: 0 })).toThrow();
+        expect(() => feel.update(-1)).toThrow();
+        expect(() => feel.draw(null, 100, 100)).toThrow();
+        expect(() => feel.shake(1, 0.1)).toThrow();
     });
 });
