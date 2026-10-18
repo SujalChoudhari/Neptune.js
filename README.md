@@ -66,6 +66,19 @@ npm run test:docs-contract
 fails. A successful run replaces it with the complete generated output and
 preserves the hand-authored product contract.
 
+## Tutorials
+
+- [Runtime and scene lifecycle](docs/tutorials/runtime.md): entities, components, behaviours, and scene transitions.
+- [Triton editor API](docs/tutorials/editor-api.md): project filesystem and versioned scene/project persistence.
+- [First game](docs/tutorials/first-game.md): run a minimal project from this checkout.
+- [Action RPG](docs/tutorials/action-rpg.md): explore the playable sample.
+- [Saving and loading](docs/tutorials/save-load.md): persist player state and project scenes.
+- [Tilemaps and tilesets](docs/tutorials/tilemaps.md): build layered maps and grid navigation.
+- [Combat and enemy AI](docs/tutorials/combat-ai.md): configure attacks, combatants, and tile-aware enemies.
+- [RPG progression and inventory](docs/tutorials/rpg-systems.md): manage stats, items, quests, shops, and rewards.
+- [HTML UI bridge](docs/tutorials/html-ui-bridge.md): securely connect an embedded HTML interface to the game.
+- [Canvas UI layout](docs/tutorials/ui-layout.md): render UI components and arrange children with containers.
+
 ## Easy to use
 It's Simple and easy to use. 
 Even kids can make simple game in Neptune.

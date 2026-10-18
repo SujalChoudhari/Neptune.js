@@ -9,6 +9,7 @@ import {
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { preserveAuthoredDocs } from "./preserve-authored-docs.js";
 
 const projectRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const docsDirectory = join(projectRoot, "docs");
@@ -38,6 +39,9 @@ try {
   if (productContract !== null) {
     writeFileSync(join(temporaryDirectory, "PRODUCT-CONTRACT.md"), productContract);
   }
+
+  // These developer guides are hand-authored and are not JSDoc tutorials.
+  preserveAuthoredDocs(docsDirectory, temporaryDirectory);
 
   // Replace the old tree only after JSDoc has produced a complete result.
   rmSync(docsDirectory, { recursive: true, force: true });
