@@ -280,6 +280,16 @@ describe("Triton persistence bridge", () => {
         expect(rust.includes("Migrate the {kind} before loading it")).toBe(true);
     });
 
+    it("types inspector selections as runtime EntityData without a mock cast", () => {
+        const types = fs.readFileSync(path.join(root, "src", "components", "panels", "inspector", "shared", "types.ts"), "utf8");
+        const inspector = fs.readFileSync(path.join(root, "src", "components", "panels", "InspectorPanel.tsx"), "utf8");
+
+        expect(types.includes('export type MockEntity = EntityData')).toBe(true);
+        expect(inspector.includes('import type { EntityData } from "@/types/engine"')).toBe(true);
+        expect(inspector.includes("const entity: EntityData = selectedEntityData")).toBe(true);
+        expect(inspector.includes("as any as MockEntity")).toBe(false);
+    });
+
     it("saves the opened versioned scene through File > Save", () => {
         const harness = createMainHarness();
         harness.render();

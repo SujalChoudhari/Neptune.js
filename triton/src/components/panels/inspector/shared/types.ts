@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import type { EntityData } from "@/types/engine"
 
 export interface MockVector2 {
     x: number
@@ -66,20 +67,7 @@ export interface MockScript {
     enabled: boolean
 }
 
-export interface MockEntity {
-    id: string
-    name: string
-    active: boolean
-    transform: MockTransform
-    sprite?: MockSprite
-    collider?: MockCollider
-    body?: MockBody
-    sound?: MockSound
-    stats?: MockStats
-    animator?: MockAnimator
-    scripts?: MockScript[]
-    components?: Record<string, any>
-}
+export type MockEntity = EntityData
 
 export type ComponentId = keyof Omit<MockEntity, 'name' | 'active' | 'transform' | 'id' | 'components'> | 'transform'
 
