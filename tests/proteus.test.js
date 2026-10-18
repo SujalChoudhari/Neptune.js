@@ -88,6 +88,34 @@ describe('AudioMixer', () => {
         expect(mixer._getEffectiveVolume('sfx')).toBe(0.4);
     });
 
+    it('routes data-driven gameplay events to sound effects and music', () => {
+        const listeners = new Map();
+        const source = {
+            on(name, listener) {
+                listeners.set(name, listener);
+                return () => listeners.delete(name);
+            }
+        };
+        const played = [];
+        mixer.playSound = (name, channel) => played.push(["sound", name, channel]);
+        mixer.playMusic = (name) => played.push(["music", name]);
+        mixer.bindGameplayEvents(source, {
+            "enemy-hit": { type: "sound", name: "hit", channel: "sfx" },
+            "scene-enter": (event) => ({ type: "music", name: event.theme })
+        });
+        listeners.get("enemy-hit")({});
+        listeners.get("scene-enter")({ theme: "dungeon" });
+        expect(played).toEqual([["sound", "hit", "sfx"], ["music", "dungeon"]]);
+        mixer.unbindGameplayEvents();
+        expect(listeners.size).toBe(0);
+    });
+
+    it('validates event binding inputs', () => {
+        expect(() => mixer.bindGameplayEvents(null, {})).toThrow();
+        expect(() => mixer.bindGameplayEvents({ on() {} }, null)).toThrow();
+        expect(() => mixer.bindGameplayEvents({ on() {} }, { hit: 4 })).toThrow();
+    });
+
     it('muted channel returns 0 volume', () => {
         mixer.setChannelMuted('music', true);
         expect(mixer._getEffectiveVolume('music')).toBe(0);

@@ -17,6 +17,50 @@ export class AudioMixer {
 
         this.music = new MusicManager();
         this.sounds = {}; // { name: SoundPool }
+        this._gameplayEventUnsubscribers = [];
+    }
+
+    /**
+     * Route gameplay events to registered sound effects or music tracks.
+     * Mapping values are { type: "sound"|"music", name, channel? } or a
+     * function that returns one of those records for the event payload.
+     * @param {Object} eventSource - Emitter exposing on(event, listener).
+     * @param {Object} eventMap - Event-name to audio action mapping.
+     * @returns {AudioMixer} This mixer (for chaining).
+     */
+    bindGameplayEvents(eventSource, eventMap) {
+        if (!eventSource || typeof eventSource.on !== "function") {
+            throw new TypeError("AudioMixer.bindGameplayEvents requires an event source with on(event, listener)");
+        }
+        if (!eventMap || typeof eventMap !== "object" || Array.isArray(eventMap)) {
+            throw new TypeError("AudioMixer.bindGameplayEvents requires an event mapping object");
+        }
+        for (const [eventName, action] of Object.entries(eventMap)) {
+            if (typeof action !== "function" && (!action || typeof action !== "object" || Array.isArray(action))) {
+                throw new TypeError(`Audio mapping for event \\"${eventName}\\" must be an action or resolver`);
+            }
+        }
+        this.unbindGameplayEvents();
+        for (const [eventName, actionOrResolver] of Object.entries(eventMap)) {
+            const listener = (event) => {
+                const action = typeof actionOrResolver === "function" ? actionOrResolver(event) : actionOrResolver;
+                if (!action || typeof action !== "object") return;
+                if (action.type === "sound" && typeof action.name === "string") this.playSound(action.name, action.channel ?? "sfx");
+                else if (action.type === "music" && typeof action.name === "string") this.playMusic(action.name);
+            };
+            const unsubscribe = eventSource.on(eventName, listener);
+            this._gameplayEventUnsubscribers.push(typeof unsubscribe === "function"
+                ? unsubscribe
+                : () => eventSource.off?.(eventName, listener));
+        }
+        return this;
+    }
+
+    /** Remove all gameplay event bindings. */
+    unbindGameplayEvents() {
+        for (const unsubscribe of this._gameplayEventUnsubscribers) unsubscribe();
+        this._gameplayEventUnsubscribers = [];
+        return this;
     }
 
     /**

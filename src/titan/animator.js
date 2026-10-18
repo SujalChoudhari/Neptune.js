@@ -25,7 +25,7 @@ export class Animator extends Component {
      * off(eventName, listener)). Mapping values may be animation names or
      * functions that return an animation name for the event payload.
      * Existing bindings are replaced when this method is called again.
-     * @param {{on: Function, off?: Function}} eventSource - Event emitter.
+     * @param {Object} eventSource - Event emitter with on(event, listener).
      * @param {Object<string, string|Function>} eventMap - Event-to-animation mapping.
      * @returns {Animator} This animator (for chaining).
      */
