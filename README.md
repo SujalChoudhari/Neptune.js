@@ -68,6 +68,7 @@ preserves the hand-authored product contract.
 
 ## Tutorials
 
+- [Runtime and scene lifecycle](docs/tutorials/runtime.md): entities, components, behaviours, and scene transitions.
 - [First game](docs/tutorials/first-game.md): run a minimal project from this checkout.
 - [Action RPG](docs/tutorials/action-rpg.md): explore the playable sample.
 - [Saving and loading](docs/tutorials/save-load.md): persist player state and project scenes.
