@@ -77,6 +77,7 @@ export class DungeonEncounter extends Behaviour {
 
         this.tilemap = new Tilemap(new Tileset("assets/tileset.png", 1, 1), 20, 15);
         this.player = player;
+        this.questLog = player.questLog ?? null;
         this.combatSystem = new CombatSystem();
         const playerTransform = player.GetComponent(Transform);
         this.playerCombatant = new Combatant({
@@ -122,6 +123,7 @@ export class DungeonEncounter extends Behaviour {
                 this.tilemap.vacate(entity);
                 entity.name = `${entity.name} (defeated)`;
                 this.rewardSystem.grant("slimeDefeat", { inventory: this.inventory, progression: this.progression });
+                this.questLog?.advance("slimeTrouble", "defeatSlimes");
             };
             return {
                 entity,

@@ -67,6 +67,19 @@ test("debug sample boots its real scene and tilemap without console errors", asy
         assert.equal(fetched.length, 2, "startup should fetch the scene and its tilemap");
 
         KeyboardInput.init(document.createElement("canvas"));
+        const guideType = ComponentRegistry.get("TownGuide");
+        const guideEntity = findEntity(scene, entity => entity.GetComponent(guideType));
+        assert.ok(guideEntity, "town should include an interactable guide NPC");
+        const guide = guideEntity.GetComponent(guideType);
+        player.GetComponent(Transform).position.x = 8;
+        player.GetComponent(Transform).position.y = 5;
+        window.dispatchEvent(new KeyboardEvent("keydown", { keyCode: KeyboardInput.KEY_CODE.E }));
+        guide.Update();
+        assert.equal(guide.dialogue.isVisible, true, "interacting with the nearby guide should open dialogue");
+        assert.equal(guide.quests.states.get("slimeTrouble").status, "active", "guide dialogue should start the slime quest");
+        assert.match(guideEntity.GetComponent(ComponentRegistry.get("Text")).text, /Town Guide:/,
+            "NPC dialogue should be visible as scene text");
+        window.dispatchEvent(new KeyboardEvent("keyup", { keyCode: KeyboardInput.KEY_CODE.E }));
         player.GetComponent(Transform).position.x = entryPortal.GetComponent(Transform).position.x;
         player.GetComponent(Transform).position.y = entryPortal.GetComponent(Transform).position.y;
         window.dispatchEvent(new KeyboardEvent("keydown", { keyCode: KeyboardInput.KEY_CODE.E }));
@@ -114,6 +127,8 @@ test("debug sample boots its real scene and tilemap without console errors", asy
         assert.equal(defeatedEnemy.combatant.isAlive, false, "a defeated enemy should be removed from combat");
         assert.equal(encounter.inventory.getItemCount("slimeGel"), 1, "enemy death should grant its loot");
         assert.equal(encounter.progression.level, 2, "enemy death should grant enough XP to level up");
+        assert.equal(guide.quests.states.get("slimeTrouble").progress.defeatSlimes, 1,
+            "defeating a dungeon slime should advance the guide's quest");
         window.dispatchEvent(new KeyboardEvent("keyup", { keyCode: KeyboardInput.KEY_CODE.E }));
         entryPortal.GetComponent(portalType).Update(0);
 
