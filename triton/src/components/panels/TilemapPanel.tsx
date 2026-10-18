@@ -2,12 +2,19 @@ import type { IDockviewPanelProps } from 'dockview';
 import { useEffect, useMemo, useState } from 'react';
 import { useFileSystem } from '@/context/FileSystemContext';
 import { useGameContext } from '@/context/GameContext';
-import { paintTileCell } from '@/lib/tilemapAuthoring.mjs';
+import { setTileMetadata, paintTileCell } from '@/lib/tilemapAuthoring.mjs';
+
+interface TileMetadata {
+    walkable?: boolean;
+    terrain?: string;
+    [key: string]: unknown;
+}
 
 interface TilemapDocument {
     width: number;
     height: number;
     data: number[];
+    metadata?: Record<string, TileMetadata>;
     [key: string]: unknown;
 }
 
@@ -91,6 +98,18 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
         }
     };
 
+    const updateMetadata = (field: 'walkable' | 'terrain', value: boolean | string | undefined) => {
+        if (!tilemap) return;
+        try {
+            setTilemap(setTileMetadata(tilemap, tileId, { [field]: value }));
+            setIsDirty(true);
+        } catch (metadataError) {
+            setError(metadataError instanceof Error ? metadataError.message : String(metadataError));
+        }
+    };
+
+    const activeMetadata = tilemap?.metadata?.[String(tileId)] || {};
+
     return (
         <section className="h-full flex flex-col gap-2 bg-background p-3 text-foreground">
             <div className="flex items-center gap-2">
@@ -127,6 +146,34 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                     {isSaving ? 'Saving…' : isDirty ? 'Save Map' : 'Saved'}
                 </button>
             </div>
+            {tilemap && (
+                <div className="flex items-center gap-2 rounded border border-border bg-card/50 p-2">
+                    <label className="text-xs" htmlFor="tilemap-walkable">Tile {tileId} walkability</label>
+                    <select
+                        id="tilemap-walkable"
+                        aria-label={`Tile ${tileId} walkability`}
+                        className="rounded border border-border bg-card px-2 py-1 text-xs"
+                        value={activeMetadata.walkable === undefined ? 'unset' : String(activeMetadata.walkable)}
+                        onChange={(event) => updateMetadata(
+                            'walkable',
+                            event.target.value === 'unset' ? undefined : event.target.value === 'true'
+                        )}
+                    >
+                        <option value="unset">Unspecified</option>
+                        <option value="true">Walkable</option>
+                        <option value="false">Blocked</option>
+                    </select>
+                    <label className="text-xs" htmlFor="tilemap-terrain">Terrain</label>
+                    <input
+                        id="tilemap-terrain"
+                        aria-label={`Tile ${tileId} terrain`}
+                        className="min-w-0 flex-1 rounded border border-border bg-card px-2 py-1 text-xs"
+                        value={activeMetadata.terrain || ''}
+                        placeholder="e.g. water, stone"
+                        onChange={(event) => updateMetadata('terrain', event.target.value || undefined)}
+                    />
+                </div>
+            )}
             {error && <p className="text-xs text-red-400" role="alert">{error}</p>}
             {tilemap ? (
                 <div className="min-h-0 flex-1 overflow-auto rounded border border-border p-2" aria-label="Tilemap paint grid">

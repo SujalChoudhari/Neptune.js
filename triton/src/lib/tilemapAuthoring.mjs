@@ -1,3 +1,35 @@
+const TILE_METADATA_VALIDATORS = {
+    walkable: (value) => typeof value === 'boolean',
+    terrain: (value) => typeof value === 'string',
+    damage: (value) => Number.isFinite(value) && value >= 0,
+    slowdown: (value) => Number.isFinite(value) && value >= 0,
+    interaction: (value) => value === null || (typeof value === 'object' && !Array.isArray(value)),
+    transition: (value) => value === null || (typeof value === 'object' && !Array.isArray(value))
+};
+
+export function setTileMetadata(map, tileId, updates) {
+    if (!map || typeof map !== 'object' || Array.isArray(map)) throw new TypeError('Tilemap must be an object');
+    if (!Number.isInteger(tileId) || tileId < 0) throw new TypeError('Tile metadata requires a non-negative integer tile ID');
+    if (!updates || typeof updates !== 'object' || Array.isArray(updates)) throw new TypeError('Tile metadata updates must be an object');
+
+    const metadata = { ...(map.metadata || {}) };
+    const current = { ...(metadata[tileId] || {}) };
+    for (const [field, value] of Object.entries(updates)) {
+        const validate = TILE_METADATA_VALIDATORS[field];
+        if (!validate) throw new TypeError(`Unknown tile metadata field: ${field}`);
+        if (value === undefined) {
+            delete current[field];
+        } else if (!validate(value)) {
+            throw new TypeError(`Invalid tile metadata value for ${field}`);
+        } else {
+            current[field] = structuredClone(value);
+        }
+    }
+    if (Object.keys(current).length) metadata[tileId] = current;
+    else delete metadata[tileId];
+    return { ...map, metadata };
+}
+
 export function paintTileCell(map, x, y, tileId) {
     if (!map || typeof map !== 'object' || Array.isArray(map)) {
         throw new TypeError('Tilemap must be an object');

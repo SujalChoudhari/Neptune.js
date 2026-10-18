@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { paintTileCell } from '../src/lib/tilemapAuthoring.mjs';
+import { paintTileCell, setTileMetadata } from '../src/lib/tilemapAuthoring.mjs';
 
 const sample = () => ({
     width: 3,
@@ -10,6 +10,22 @@ const sample = () => ({
     tileset: 'assets/tiles.png',
     data: [0, 0, 0, 1, 1, 0],
     metadata: { 1: { walkable: false } }
+});
+
+test('metadata editing supports navigation and terrain fields without mutating prior map data', () => {
+    const source = sample();
+    const updated = setTileMetadata(source, 1, { walkable: true, terrain: 'stone' });
+    assert.deepEqual(updated.metadata['1'], { walkable: true, terrain: 'stone' });
+    assert.deepEqual(source.metadata['1'], { walkable: false });
+    assert.equal(updated.tileset, source.tileset);
+    assert.deepEqual(setTileMetadata(updated, 1, { walkable: undefined }).metadata['1'], { terrain: 'stone' });
+});
+
+test('metadata editing validates supported fields and values', () => {
+    assert.throws(() => setTileMetadata(sample(), -1, { walkable: true }), /non-negative integer/);
+    assert.throws(() => setTileMetadata(sample(), 1, { walkable: 'yes' }), /Invalid tile metadata value/);
+    assert.throws(() => setTileMetadata(sample(), 1, { terrain: 3 }), /Invalid tile metadata value/);
+    assert.throws(() => setTileMetadata(sample(), 1, { collision: true }), /Unknown tile metadata field/);
 });
 
 test('painting addresses row-major cells and preserves other tilemap data immutably', () => {
