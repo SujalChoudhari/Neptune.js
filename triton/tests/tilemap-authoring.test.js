@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { paintTileCell, setCellMetadata, setTileMetadata } from '../src/lib/tilemapAuthoring.mjs';
+import { paintTileCell, setCellMetadata, setTileMetadata, getTilesetPaletteIds } from '../src/lib/tilemapAuthoring.mjs';
 
 const sample = () => ({
     width: 3,
@@ -10,6 +10,12 @@ const sample = () => ({
     tileset: 'assets/tiles.png',
     data: [0, 0, 0, 1, 1, 0],
     metadata: { 1: { walkable: false } }
+});
+
+test('tileset palette enumerates row-major tile IDs and rejects invalid dimensions', () => {
+    assert.deepEqual(getTilesetPaletteIds(3, 5), [0, 1, 2, 3, 4]);
+    assert.throws(() => getTilesetPaletteIds(0, 5), /positive columns/);
+    assert.throws(() => getTilesetPaletteIds(3, 4097), /up to 4096/);
 });
 
 test('metadata editing supports navigation and terrain fields without mutating prior map data', () => {

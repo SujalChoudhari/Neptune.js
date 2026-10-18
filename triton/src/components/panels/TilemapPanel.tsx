@@ -2,7 +2,7 @@ import type { IDockviewPanelProps } from 'dockview';
 import { useEffect, useMemo, useState } from 'react';
 import { useFileSystem } from '@/context/FileSystemContext';
 import { useGameContext } from '@/context/GameContext';
-import { setTileMetadata, setCellMetadata, paintTileCell } from '@/lib/tilemapAuthoring.mjs';
+import { setTileMetadata, setCellMetadata, paintTileCell, getTilesetPaletteIds } from '@/lib/tilemapAuthoring.mjs';
 
 interface TileMetadata {
     walkable?: boolean;
@@ -17,6 +17,9 @@ interface TilemapDocument {
     data: number[];
     metadata?: Record<string, TileMetadata>;
     cellMetadata?: Record<string, { collision?: boolean }>;
+    tileset?: string;
+    columns?: number;
+    tileCount?: number;
     [key: string]: unknown;
 }
 
@@ -26,9 +29,13 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
     const mapFiles = useMemo(() => Object.values(nodes)
         .filter((node) => node.type === 'file' && node.name.toLowerCase().endsWith('.map'))
         .sort((a, b) => a.id.localeCompare(b.id)), [nodes]);
+    const tilesetFiles = useMemo(() => Object.values(nodes)
+        .filter((node) => node.type === 'image' || /\.(png|jpe?g|webp)$/i.test(node.name))
+        .sort((a, b) => a.id.localeCompare(b.id)), [nodes]);
     const [mapPath, setMapPath] = useState('');
     const [tilemap, setTilemap] = useState<TilemapDocument | null>(null);
     const [tileId, setTileId] = useState(1);
+    const [paletteCount, setPaletteCount] = useState(25);
     const [selectedCell, setSelectedCell] = useState<{ x: number; y: number } | null>(null);
     const [isDirty, setIsDirty] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -62,6 +69,9 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                     throw new Error('Map must have positive dimensions and one non-negative tile ID per cell.');
                 }
                 setTilemap(parsed);
+                setPaletteCount(typeof parsed.tileCount === 'number' && Number.isInteger(parsed.tileCount) && parsed.tileCount > 0
+                    ? Math.min(parsed.tileCount, 4096)
+                    : Math.min(Math.max(1, parsed.columns || 5) ** 2, 4096));
             } catch (loadError) {
                 setTilemap(null);
                 setError(loadError instanceof Error ? loadError.message : String(loadError));
@@ -139,6 +149,24 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                     {mapFiles.map((file) => <option key={file.id} value={file.id}>{file.id}</option>)}
                 </select>
             </div>
+            {tilemap && (
+                <div className="flex items-center gap-2">
+                    <label className="text-xs shrink-0" htmlFor="tilemap-tileset">Tileset</label>
+                    <select
+                        id="tilemap-tileset"
+                        aria-label="Tileset asset"
+                        className="min-w-0 flex-1 rounded border border-border bg-card px-2 py-1 text-xs"
+                        value={tilemap.tileset || ''}
+                        onChange={(event) => {
+                            setTilemap({ ...tilemap, tileset: event.target.value });
+                            setIsDirty(true);
+                        }}
+                    >
+                        <option value="">Choose an image asset</option>
+                        {tilesetFiles.map((file) => <option key={file.id} value={file.id}>{file.id}</option>)}
+                    </select>
+                </div>
+            )}
             <div className="flex items-center gap-2">
                 <label className="text-xs" htmlFor="tilemap-paint-id">Tile ID</label>
                 <input
@@ -160,6 +188,41 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                     {isSaving ? 'Saving…' : isDirty ? 'Save Map' : 'Saved'}
                 </button>
             </div>
+            {tilemap && (
+                <div className="flex min-h-0 max-h-40 flex-col gap-1 overflow-auto rounded border border-border bg-card/50 p-2" aria-label="Tileset tile palette">
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs">Tileset tile palette</span>
+                        <label className="ml-auto text-xs" htmlFor="tileset-tile-count">Tiles</label>
+                        <input
+                            id="tileset-tile-count"
+                            aria-label="Tileset palette tile count"
+                            className="w-16 rounded border border-border bg-card px-2 py-1 text-xs"
+                            type="number"
+                            min="1"
+                            max="4096"
+                            value={paletteCount}
+                            onChange={(event) => {
+                                const count = Math.max(1, Math.min(4096, Math.floor(Number(event.target.value) || 1)));
+                                setPaletteCount(count);
+                                setTilemap({ ...tilemap, tileCount: count });
+                                setIsDirty(true);
+                            }}
+                        />
+                    </div>
+                    <div className="grid w-max gap-1" style={{ gridTemplateColumns: `repeat(${Math.max(1, tilemap.columns || 5)}, 28px)` }}>
+                        {getTilesetPaletteIds(Math.max(1, tilemap.columns || 5), paletteCount).map((id) => (
+                            <button
+                                key={id}
+                                type="button"
+                                aria-label={`Select tileset tile ${id}`}
+                                aria-pressed={tileId === id}
+                                className={`h-7 w-7 rounded border text-[9px] ${tileId === id ? 'border-primary bg-primary/30' : 'border-border bg-card'}`}
+                                onClick={() => setTileId(id)}
+                            >{id}</button>
+                        ))}
+                    </div>
+                </div>
+            )}
             {tilemap && (
                 <div className="flex items-center gap-2 rounded border border-border bg-card/50 p-2">
                     <label className="text-xs" htmlFor="tilemap-walkable">Tile {tileId} walkability</label>

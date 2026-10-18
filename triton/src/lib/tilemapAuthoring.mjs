@@ -31,6 +31,13 @@ export function setTileMetadata(map, tileId, updates) {
     return { ...map, metadata };
 }
 
+export function getTilesetPaletteIds(columns, tileCount) {
+    if (!Number.isInteger(columns) || columns <= 0 || !Number.isInteger(tileCount) || tileCount <= 0 || tileCount > 4096) {
+        throw new TypeError('Tileset palette requires positive columns and a tile count up to 4096');
+    }
+    return Array.from({ length: tileCount }, (_, index) => index);
+}
+
 export function setCellMetadata(map, x, y, updates) {
     if (!map || typeof map !== 'object' || Array.isArray(map) ||
         !Number.isInteger(map.width) || map.width <= 0 || !Number.isInteger(map.height) || map.height <= 0) {
