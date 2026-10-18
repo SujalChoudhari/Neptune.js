@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react"
 
-export type EntityType = 'cube' | 'sphere' | 'light' | 'camera' | 'empty' | 'group'
+export type EntityType = 'cube' | 'sphere' | 'light' | 'camera' | 'empty' | 'group' | 'spawn-point'
 
 export interface SceneEntity {
     id: string

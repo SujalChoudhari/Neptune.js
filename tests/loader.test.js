@@ -67,6 +67,7 @@ describe("SceneLoader Integration", () => {
                 entities: [{
                     id: "entity-stable",
                     name: "Player",
+                    type: "spawn-point",
                     components: [{
                         id: "component-stable",
                         type: "Transform",
@@ -79,6 +80,7 @@ describe("SceneLoader Integration", () => {
         const player = scene.children[0].children[0];
         expect(scene.id).toBe("scene-stable");
         expect(player.id).toBe("entity-stable");
+        expect(player.type).toBe("spawn-point");
         expect(player.components[0].id).toBe("component-stable");
         expect(player.GetComponent(Transform).position.x).toBe(4);
         expect(player.GetComponent(Transform).scale.y).toBe(3);
