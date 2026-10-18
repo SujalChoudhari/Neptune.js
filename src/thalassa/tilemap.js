@@ -29,6 +29,7 @@ export class Tilemap extends Component {
         this.metadata = new Map();
         this.layers = [];
         this.occupants = new Map();
+        this.occupantCells = new Map();
     }
 
     /** Register another traversable map layer, ordered by render order then insertion. */
@@ -104,31 +105,35 @@ export class Tilemap extends Component {
         if (index === null) throw new RangeError("Occupancy coordinates are outside the tilemap");
         if (occupant === undefined || occupant === null) throw new TypeError("Occupant must be a non-null value");
         if (!this.isWalkable(x, y, occupant)) return false;
-        for (const [cell, current] of this.occupants) if (current === occupant) this.occupants.delete(cell);
+        const previousCell = this.occupantCells.get(occupant);
+        if (previousCell !== undefined) this.occupants.delete(previousCell);
         this.occupants.set(index, occupant);
+        this.occupantCells.set(occupant, index);
         return true;
     }
 
     /** Move an occupied actor by one cardinal tile, leaving state unchanged on failure. */
     moveOccupant(occupant, x, y) {
         if (occupant === undefined || occupant === null) throw new TypeError("Occupant must be a non-null value");
-        const current = [...this.occupants].find(([, value]) => value === occupant);
-        if (!current) return false;
-        const fromX = current[0] % this.width;
-        const fromY = Math.floor(current[0] / this.width);
+        const currentIndex = this.occupantCells.get(occupant);
+        if (currentIndex === undefined) return false;
+        const fromX = currentIndex % this.width;
+        const fromY = Math.floor(currentIndex / this.width);
         if (Math.abs(x - fromX) + Math.abs(y - fromY) !== 1) return false;
         if (!this.isWalkable(x, y, occupant)) return false;
-        this.occupants.delete(current[0]);
-        this.occupants.set(this.gridIndex(x, y), occupant);
+        const nextIndex = this.gridIndex(x, y);
+        this.occupants.delete(currentIndex);
+        this.occupants.set(nextIndex, occupant);
+        this.occupantCells.set(occupant, nextIndex);
         return true;
     }
 
     /** Follow a shortest path by one step toward a destination; returns the new cell or null. */
     moveOccupantToward(occupant, goalX, goalY) {
-        const current = [...this.occupants].find(([, value]) => value === occupant);
-        if (!current) return null;
-        const x = current[0] % this.width;
-        const y = Math.floor(current[0] / this.width);
+        const currentIndex = this.occupantCells.get(occupant);
+        if (currentIndex === undefined) return null;
+        const x = currentIndex % this.width;
+        const y = Math.floor(currentIndex / this.width);
         const path = this.findPath(x, y, goalX, goalY, occupant);
         if (!path?.length) return path ? { x, y } : null;
         const step = path[0];
@@ -136,13 +141,11 @@ export class Tilemap extends Component {
     }
 
     vacate(occupant) {
-        for (const [index, current] of this.occupants) {
-            if (current === occupant) {
-                this.occupants.delete(index);
-                return { x: index % this.width, y: Math.floor(index / this.width) };
-            }
-        }
-        return null;
+        const index = this.occupantCells.get(occupant);
+        if (index === undefined) return null;
+        this.occupantCells.delete(occupant);
+        this.occupants.delete(index);
+        return { x: index % this.width, y: Math.floor(index / this.width) };
     }
 
     getOccupant(x, y) {

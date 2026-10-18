@@ -44,6 +44,8 @@ freeware, shareware, and commercial games with it. See the licence for full deta
 
 The intended 2D action-RPG completion target, runtime/editor boundary, and testable vertical-slice checklist are documented in the [Neptune.js product contract](docs/PRODUCT-CONTRACT.md). These are target capabilities, not a claim that every feature is already shipped.
 
+Runtime workload limits and tilemap scaling behavior are documented in [performance budgets](docs/performance-budgets.md).
+
 ## Branching and verification
 
 `main` is the product integration and release branch. Work uses short-lived

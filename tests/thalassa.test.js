@@ -165,6 +165,24 @@ describe('Tilemap', () => {
         expect(tilemap.getOccupant(2, 2)).toBe(blocker);
     });
 
+    it('keeps occupancy updates constant-time on a large map with many actors', () => {
+        const largeMap = new Tilemap(tileset, 100, 100);
+        const actors = Array.from({ length: 10000 }, () => ({}));
+        actors.forEach((actor, index) => {
+            if (!largeMap.occupy(index % 100, Math.floor(index / 100), actor)) throw new Error(`Could not occupy cell ${index}`);
+        });
+        largeMap.vacate(actors[0]);
+        largeMap.vacate(actors[1]);
+
+        // Occupancy mutation must use the cell and actor indexes, not scan all actors.
+        largeMap.occupants[Symbol.iterator] = () => { throw new Error('occupancy scan'); };
+        const actor = actors[9999];
+        expect(largeMap.occupy(0, 0, actor)).toBe(true);
+        expect(largeMap.moveOccupant(actor, 1, 0)).toBe(true);
+        expect(largeMap.vacate(actor)).toEqual({ x: 1, y: 0 });
+        expect(largeMap.occupantCells.size).toBe(9997);
+    });
+
     it('traverses named map layers in deterministic order for stacked traversal', () => {
         const bridge = new Tilemap(tileset, 1, 1);
         bridge.setTile(0, 0, 2);
