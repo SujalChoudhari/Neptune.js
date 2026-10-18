@@ -1,11 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { pickEntityAt } from '../src/lib/scenePicking.mjs';
+import { pickEntityAt, translateOnAxis } from '../src/lib/scenePicking.mjs';
 
 const entity = (id, x, y, children = []) => ({
     id,
     components: [{ position: { x, y }, scale: { x: 1, y: 1 } }, { width: 32, height: 24 }],
     children
+});
+
+test('gizmo drag converts screen deltas to world units and constrains movement to its axis', () => {
+    assert.deepEqual(translateOnAxis({ x: 10, y: 20 }, 30, 24, 2, 'x'), { x: 25, y: 20 });
+    assert.deepEqual(translateOnAxis({ x: 10, y: 20 }, 30, 24, 2, 'y'), { x: 10, y: 32 });
+    assert.throws(() => translateOnAxis({ x: 0, y: 0 }, 1, 1, 0, 'x'), /positive zoom/);
+    assert.throws(() => translateOnAxis({ x: 0, y: 0 }, 1, 1, 1, 'z'), /axis/);
 });
 
 test('viewport picking chooses the closest overlapping entity, including nested entities', () => {

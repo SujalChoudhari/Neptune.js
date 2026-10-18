@@ -1,3 +1,14 @@
+export function translateOnAxis(position, deltaX, deltaY, zoom, axis) {
+    if (!position || ![position.x, position.y, deltaX, deltaY, zoom].every(Number.isFinite) || zoom <= 0) {
+        throw new TypeError('Gizmo translation needs finite coordinates and a positive zoom');
+    }
+    if (axis !== 'x' && axis !== 'y') throw new TypeError('Gizmo axis must be x or y');
+    return {
+        x: position.x + (axis === 'x' ? deltaX / zoom : 0),
+        y: position.y + (axis === 'y' ? deltaY / zoom : 0)
+    };
+}
+
 export function pickEntityAt(root, x, y, tolerance = 12) {
     if (!root || !Number.isFinite(x) || !Number.isFinite(y)) return null;
 

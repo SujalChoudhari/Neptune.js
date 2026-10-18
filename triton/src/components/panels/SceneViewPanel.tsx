@@ -2,6 +2,7 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 import gameMainUrl from "../../../../debug_project/main.js?url";
 import cameraUrl from "../../../../src/thalassa/camera.js?url";
 import scenePickingUrl from "@/lib/scenePicking.mjs?url";
+import { translateOnAxis } from "@/lib/scenePicking.mjs";
 import { ThemedIconButton } from "@/components/library";
 import { Maximize, ZoomIn, ZoomOut } from "lucide-react";
 import { useGameContext } from '@/context/GameContext';
@@ -10,7 +11,21 @@ import { EditorGameRunner } from '@/lib/editorGameRunner';
 export function SceneViewPanel() {
     const containerRef = useRef<HTMLDivElement>(null);
     const iframeRef = useRef<HTMLIFrameElement>(null);
-    const { notifyGame } = useGameContext();
+    const { notifyGame, selectedEntityData, selectedIds } = useGameContext();
+    const [gizmoPosition, setGizmoPosition] = useState<{ x: number; y: number } | null>(null);
+    const gizmoDragRef = useRef<{
+        axis: 'x' | 'y';
+        id: string;
+        startX: number;
+        startY: number;
+        position: { x: number; y: number };
+    } | null>(null);
+    const suppressClickRef = useRef(false);
+
+    useEffect(() => {
+        const position = selectedEntityData?.transform.position;
+        setGizmoPosition(position ? { x: position.x, y: position.y } : null);
+    }, [selectedEntityData]);
 
     useEffect(() => {
         const handleBridgeMessage = (event: MessageEvent) => {
@@ -61,7 +76,25 @@ export function SceneViewPanel() {
         notifyGame('editor:camera-update', { zoom: newZoom, x: newPanX, y: newPanY });
     }, [zoom, pan, notifyGame]);
 
+    const beginGizmoDrag = (axis: 'x' | 'y', event: React.MouseEvent<SVGCircleElement>) => {
+        if (event.button !== 0 || selectedIds.length !== 1 || !selectedEntityData) return;
+        const position = gizmoPosition || selectedEntityData.transform.position;
+        gizmoDragRef.current = {
+            axis,
+            id: selectedIds[0],
+            startX: event.clientX,
+            startY: event.clientY,
+            position: { x: position.x, y: position.y }
+        };
+        event.preventDefault();
+        event.stopPropagation();
+    };
+
     const handleViewportClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+        if (suppressClickRef.current) {
+            suppressClickRef.current = false;
+            return;
+        }
         if (e.button !== 0 || e.altKey) return;
         const rect = e.currentTarget.getBoundingClientRect();
         notifyGame('editor:viewport-select', {
@@ -79,6 +112,23 @@ export function SceneViewPanel() {
     }, []);
 
     const handleMouseMove = useCallback((e: React.MouseEvent) => {
+        const drag = gizmoDragRef.current;
+        if (drag) {
+            const nextPosition = translateOnAxis(
+                drag.position,
+                e.clientX - drag.startX,
+                e.clientY - drag.startY,
+                zoom,
+                drag.axis
+            );
+            setGizmoPosition(nextPosition);
+            notifyGame('editor:update-component', {
+                id: drag.id,
+                component: 'transform',
+                data: { position: nextPosition }
+            });
+            return;
+        }
         if (isPanning) {
             const dx = e.clientX - lastMousePos.x;
             const dy = e.clientY - lastMousePos.y;
@@ -96,6 +146,10 @@ export function SceneViewPanel() {
     }, [isPanning, lastMousePos, pan, zoom, notifyGame]);
 
     const handleMouseUp = useCallback(() => {
+        if (gizmoDragRef.current) {
+            gizmoDragRef.current = null;
+            suppressClickRef.current = true;
+        }
         setIsPanning(false);
     }, []);
 
@@ -245,6 +299,10 @@ export function SceneViewPanel() {
 </html>
     `;
 
+    const activeGizmoPosition = gizmoPosition || selectedEntityData?.transform.position;
+    const gizmoX = activeGizmoPosition ? (activeGizmoPosition.x - pan.x) * zoom : 0;
+    const gizmoY = activeGizmoPosition ? (activeGizmoPosition.y - pan.y) * zoom : 0;
+
     return (
         <div
             ref={containerRef}
@@ -290,6 +348,31 @@ export function SceneViewPanel() {
                     title="Scene View"
                     sandbox="allow-scripts allow-same-origin allow-modals"
                 />
+                {selectedEntityData && selectedIds.length === 1 && activeGizmoPosition && (
+                    <svg
+                        aria-label="Move selected entity"
+                        className="absolute inset-0 w-full h-full overflow-visible pointer-events-none"
+                    >
+                        <line x1={gizmoX} y1={gizmoY} x2={gizmoX + 56} y2={gizmoY} stroke="#ff5b5b" strokeWidth="3" />
+                        <line x1={gizmoX} y1={gizmoY} x2={gizmoX} y2={gizmoY + 56} stroke="#55c878" strokeWidth="3" />
+                        <circle
+                            cx={gizmoX + 56}
+                            cy={gizmoY}
+                            r="7"
+                            fill="#ff5b5b"
+                            className="pointer-events-auto cursor-ew-resize"
+                            onMouseDown={(event) => beginGizmoDrag('x', event)}
+                        />
+                        <circle
+                            cx={gizmoX}
+                            cy={gizmoY + 56}
+                            r="7"
+                            fill="#55c878"
+                            className="pointer-events-auto cursor-ns-resize"
+                            onMouseDown={(event) => beginGizmoDrag('y', event)}
+                        />
+                    </svg>
+                )}
             </div>
         </div>
     );

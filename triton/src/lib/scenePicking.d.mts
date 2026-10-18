@@ -1,0 +1,8 @@
+export function translateOnAxis(
+    position: { x: number; y: number },
+    deltaX: number,
+    deltaY: number,
+    zoom: number,
+    axis: 'x' | 'y'
+): { x: number; y: number };
+export function pickEntityAt(root: unknown, x: number, y: number, tolerance?: number): unknown;
