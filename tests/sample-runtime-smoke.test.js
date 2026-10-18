@@ -74,6 +74,17 @@ test("debug sample boots its real scene and tilemap without console errors", asy
             [3, 5],
             "the player should arrive at the configured dungeon entrance"
         );
+        const encounterType = ComponentRegistry.get("DungeonEncounter");
+        assert.ok(encounterType, "dungeon should register its enemy encounter controller");
+        const encounterEntity = findEntity(dungeon, entity => entity.GetComponent(encounterType));
+        const encounter = encounterEntity.GetComponent(encounterType);
+        encounter.Init();
+        assert.equal(encounter.enemies.length, 3, "dungeon should have three tile-aware enemies");
+        for (let step = 0; step < 30; step++) encounter.Update(0.25);
+        assert.ok(encounter.enemies.every(enemy => enemy.ai.state === "attack"),
+            "each enemy should navigate to the player and enter its combat attack state");
+        assert.ok(encounter.playerCombatant.health < encounter.playerCombatant.maxHealth,
+            "enemy combat behaviors should damage the player");
         window.dispatchEvent(new KeyboardEvent("keyup", { keyCode: KeyboardInput.KEY_CODE.E }));
         entryPortal.GetComponent(portalType).Update(0);
 
