@@ -85,6 +85,22 @@ test("debug sample boots its real scene and tilemap without console errors", asy
             "each enemy should navigate to the player and enter its combat attack state");
         assert.ok(encounter.playerCombatant.health < encounter.playerCombatant.maxHealth,
             "enemy combat behaviors should damage the player");
+        const meleeTarget = encounter.enemies.find(enemy => enemy.combatant.isAlive);
+        meleeTarget.combatant.position.x = encounter.playerCombatant.position.x + 1;
+        meleeTarget.combatant.position.y = encounter.playerCombatant.position.y;
+        const meleeHealth = meleeTarget.combatant.health;
+        assert.equal(encounter.combatSystem.startAttack(encounter.playerCombatant, encounter.playerMelee, { x: 1, y: 0 }), true);
+        encounter.combatSystem.update(0.4, [encounter.playerCombatant, ...encounter.enemies.map(enemy => enemy.combatant)]);
+        assert.ok(meleeTarget.combatant.health < meleeHealth, "player melee hitbox should damage a nearby enemy hurtbox");
+        const rangedTarget = encounter.enemies.find(enemy => enemy.combatant.isAlive && enemy !== meleeTarget);
+        rangedTarget.combatant.position.x = encounter.playerCombatant.position.x + 3;
+        rangedTarget.combatant.position.y = encounter.playerCombatant.position.y;
+        rangedTarget.combatant.invulnerableRemaining = 0;
+        const rangedHealth = rangedTarget.combatant.health;
+        assert.equal(encounter.combatSystem.startAttack(encounter.playerCombatant, encounter.playerRanged, { x: 1, y: 0 }), true);
+        encounter.combatSystem.update(0.1, [encounter.playerCombatant, ...encounter.enemies.map(enemy => enemy.combatant)]);
+        encounter.combatSystem.update(0.4, [encounter.playerCombatant, ...encounter.enemies.map(enemy => enemy.combatant)]);
+        assert.ok(rangedTarget.combatant.health < rangedHealth, "player ranged projectile should hit an enemy hurtbox");
         const defeatedEnemy = encounter.enemies[0];
         defeatedEnemy.combatant.receiveDamage({ amount: defeatedEnemy.combatant.maxHealth });
         assert.equal(defeatedEnemy.combatant.isAlive, false, "a defeated enemy should be removed from combat");

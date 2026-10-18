@@ -1,6 +1,7 @@
 import { Behaviour } from "../../src/scripts/script.js";
 import { Transform } from "../../src/components/transform.js";
 import { SceneManager } from "../../src/core/sceneManager.js";
+import { KeyboardInput } from "../../src/input/keyboardinput.js";
 import { Tileset } from "../../src/thalassa/tileset.js";
 import { Tilemap } from "../../src/thalassa/tilemap.js";
 import { AttackDefinition, Combatant, CombatSystem, EnemyAI, Inventory, Progression, GameData, RewardSystem } from "../../src/larissa/index.js";
@@ -59,6 +60,13 @@ export class DungeonEncounter extends Behaviour {
 
         this.playerCombatant.position.x = playerTransform.position.x;
         this.playerCombatant.position.y = playerTransform.position.y;
+        const controller = this.player.GetComponent(PlayerController);
+        if (KeyboardInput.IsKeyDown(KeyboardInput.KEY_CODE.J)) {
+            this.combatSystem.startAttack(this.playerCombatant, this.playerMelee, controller.facing);
+        }
+        if (KeyboardInput.IsKeyDown(KeyboardInput.KEY_CODE.K)) {
+            this.combatSystem.startAttack(this.playerCombatant, this.playerRanged, controller.facing);
+        }
         this.combatSystem.update(deltaTime, [this.playerCombatant, ...this.enemies.map(enemy => enemy.combatant)]);
     }
 
@@ -79,6 +87,8 @@ export class DungeonEncounter extends Behaviour {
             maxHealth: 100,
             hurtbox: { width: 1, height: 1 }
         });
+        this.playerMelee = new AttackDefinition({ name: "hero-slash", mode: "melee", startup: 0.05, active: 0.15, recovery: 0.1, cooldown: 0.3, range: 2, damage: 12, hitbox: { width: 2, height: 1.5 } });
+        this.playerRanged = new AttackDefinition({ name: "hero-bolt", mode: "ranged", startup: 0.05, active: 0.1, recovery: 0.1, cooldown: 0.4, range: 8, damage: 8, projectileSpeed: 20, hitbox: { width: 0.5, height: 0.5 } });
         const playerCell = { x: Math.round(playerTransform.position.x), y: Math.round(playerTransform.position.y) };
         if (!this.tilemap.occupy(playerCell.x, playerCell.y, player)) return false;
 
