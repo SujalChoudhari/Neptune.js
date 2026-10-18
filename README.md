@@ -66,6 +66,12 @@ npm run test:docs-contract
 fails. A successful run replaces it with the complete generated output and
 preserves the hand-authored product contract.
 
+## Tutorials
+
+- [First game](docs/tutorials/first-game.md): run a minimal project from this checkout.
+- [Action RPG](docs/tutorials/action-rpg.md): explore the playable sample.
+- [Saving and loading](docs/tutorials/save-load.md): persist player state and project scenes.
+
 ## Easy to use
 It's Simple and easy to use. 
 Even kids can make simple game in Neptune.
