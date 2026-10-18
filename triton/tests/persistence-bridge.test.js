@@ -3,7 +3,14 @@ import path from "path";
 import vm from "node:vm";
 import { execFileSync } from "node:child_process";
 import { buildSync } from "esbuild";
+import { SceneLoader } from "../../src/core/sceneLoader.js";
+import { ComponentRegistry } from "../../src/core/componentRegistry.js";
+import { SceneTransition } from "../../src/components/sceneTransition.js";
+import { TriggerCollider } from "../../src/nereid/collider.js";
 import { describe, it, expect } from "../../tests/tester.js";
+
+ComponentRegistry.register("SceneTransition", SceneTransition);
+ComponentRegistry.register("TriggerCollider", TriggerCollider);
 
 const root = path.resolve("triton");
 
@@ -415,6 +422,26 @@ describe("Triton persistence bridge", () => {
         expect(harness.writes).toHaveLength(1);
         expect(harness.writes[0].path).toBe("scenes/main.scene");
         expect(JSON.parse(harness.writes[0].content)).toEqual(harness.game.openedScene);
+    });
+
+    it("loads editor-created scene transition output in the runtime after save and reopen", () => {
+        const harness = createMainHarness();
+        harness.runner.openScene({ type: "scene", version: "1.0.0", schemaVersion: 1, id: "scene-transition-integration", name: "Transition Integration", entities: [] }, "scenes/main.scene");
+        expect(harness.runner.createEntity("root", {
+            id: "door-to-dungeon",
+            name: "Dungeon Door",
+            type: "scene-transition",
+            components: [
+                { type: "SceneTransition", props: { targetScene: "scenes/dungeon.scene", spawnPoint: "entrance", trigger: "interact" } },
+                { type: "TriggerCollider", props: { width: 1, height: 2, offsetX: 0, offsetY: 0 } }
+            ]
+        })).toBe(true);
+
+        const savedPayload = JSON.parse(JSON.stringify(harness.runner.currentScene));
+        const runtimeScene = SceneLoader.parse(savedPayload);
+        const runtimeEntity = runtimeScene.children[0];
+        expect(runtimeEntity.GetComponent(SceneTransition).properties).toEqual({ targetScene: "scenes/dungeon.scene", spawnPoint: "entrance", trigger: "interact" });
+        expect(runtimeEntity.GetComponent(TriggerCollider).height).toBe(2);
     });
 
     it("keeps a HierarchyPanel duplicate after File > Save, close, and reopen", () => {
