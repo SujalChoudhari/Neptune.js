@@ -8,13 +8,15 @@ import { ComponentRegistry } from "../src/core/componentRegistry.js";
 import { Transform } from "../src/components/transform.js";
 import { Sprite } from "../src/rendering/sprite.js";
 import { BoxCollider } from "../src/components/boxCollider.js";
-import { TriggerCollider } from "../src/nereid/collider.js";
+import { TriggerCollider, Hitbox, Hurtbox } from "../src/nereid/collider.js";
 
 // Manually register components since we aren't loading neptune.js
 ComponentRegistry.register("Transform", Transform);
 ComponentRegistry.register("Sprite", Sprite);
 ComponentRegistry.register("BoxCollider", BoxCollider);
 ComponentRegistry.register("TriggerCollider", TriggerCollider);
+ComponentRegistry.register("Hitbox", Hitbox);
+ComponentRegistry.register("Hurtbox", Hurtbox);
 
 describe("SceneLoader Integration", () => {
     it("should load a scene from JSON", async () => {
@@ -112,6 +114,28 @@ describe("SceneLoader Integration", () => {
         expect(trigger.height).toBe(1);
         expect(trigger.role).toBe("trigger");
         expect(trigger.isTrigger).toBe(true);
+    });
+
+    it("loads editor-authored hitboxes and hurtboxes with their combat roles", () => {
+        const scene = SceneLoader.parse({
+            type: "scene",
+            schemaVersion: 1,
+            entities: [
+                { id: "hitbox-1", name: "Hitbox", type: "hitbox", components: [{ id: "hitbox-component", type: "Hitbox", props: { width: 2, height: 1, offsetX: 0.5, offsetY: 0 } }] },
+                { id: "hurtbox-1", name: "Hurtbox", type: "hurtbox", components: [{ id: "hurtbox-component", type: "Hurtbox", props: { width: 1, height: 2, offsetX: 0, offsetY: 0.5 } }] }
+            ]
+        });
+        const hitbox = scene.children[0].GetComponent(Hitbox);
+        const hurtbox = scene.children[1].GetComponent(Hurtbox);
+
+        expect(scene.children[0].type).toBe("hitbox");
+        expect(hitbox.width).toBe(2);
+        expect(hitbox.height).toBe(1);
+        expect(hitbox.role).toBe("hitbox");
+        expect(scene.children[1].type).toBe("hurtbox");
+        expect(hurtbox.width).toBe(1);
+        expect(hurtbox.height).toBe(2);
+        expect(hurtbox.role).toBe("hurtbox");
     });
 
     it("rejects unsupported scene schema versions with an actionable error", () => {

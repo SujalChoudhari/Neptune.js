@@ -308,6 +308,21 @@ describe("Triton persistence bridge", () => {
         expect(loader.includes('if (typeof entityData.type === "string") entity.type = entityData.type;')).toBe(true);
     });
 
+    it("offers hitbox and hurtbox creation with runtime combat collider components", () => {
+        const toolbar = fs.readFileSync(path.join(root, "src", "components", "panels", "hierarchy", "HierarchyToolbar.tsx"), "utf8");
+        const hierarchy = fs.readFileSync(path.join(root, "src", "components", "panels", "HierarchyPanel.tsx"), "utf8");
+        const engineTypes = fs.readFileSync(path.join(root, "src", "types", "engine.ts"), "utf8");
+        const runtime = fs.readFileSync(path.resolve("src", "neptune.js"), "utf8");
+
+        for (const [type, component] of [["hitbox", "Hitbox"], ["hurtbox", "Hurtbox"]]) {
+            expect(toolbar.includes(`onAddEntity('${type}')`)).toBe(true);
+            expect(engineTypes.includes(`'${type}'`)).toBe(true);
+            expect(hierarchy.includes(`type === '${type}'`)).toBe(true);
+            expect(runtime.includes(`ComponentRegistry.register("${component}", ${component})`)).toBe(true);
+            expect(hierarchy.includes(`type: '${component}', props: { width: 1, height: 1, offsetX: 0, offsetY: 0 }`)).toBe(true);
+        }
+    });
+
     it("saves the opened versioned scene through File > Save", () => {
         const harness = createMainHarness();
         harness.render();

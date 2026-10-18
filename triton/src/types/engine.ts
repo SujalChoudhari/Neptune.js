@@ -6,7 +6,7 @@ export interface Vector2 {
 }
 
 // Scene Entity Structure (Heirarchy)
-export type EntityType = 'cube' | 'sphere' | 'light' | 'camera' | 'empty' | 'group' | 'folder' | 'entity' | 'spawn-point' | 'trigger-area'
+export type EntityType = 'cube' | 'sphere' | 'light' | 'camera' | 'empty' | 'group' | 'folder' | 'entity' | 'spawn-point' | 'trigger-area' | 'hitbox' | 'hurtbox'
 
 export interface SceneEntity {
     id: string

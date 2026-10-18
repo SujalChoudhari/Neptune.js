@@ -78,6 +78,10 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         const persistenceParentId = EditorGameRunner.resolveHierarchyParentId(parentId, entities)
         const components = type === 'trigger-area'
             ? [{ type: 'TriggerCollider', props: { width: 1, height: 1, offsetX: 0, offsetY: 0 } }]
+            : type === 'hitbox'
+                ? [{ type: 'Hitbox', props: { width: 1, height: 1, offsetX: 0, offsetY: 0 } }]
+                : type === 'hurtbox'
+                    ? [{ type: 'Hurtbox', props: { width: 1, height: 1, offsetX: 0, offsetY: 0 } }]
             : undefined
         if (!persistenceParentId || !EditorGameRunner.createEntity(persistenceParentId, { id, name, type, components })) return
         notifyGame('editor:create-entity', { id, parentId, name, type });
@@ -273,7 +277,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
             <HierarchyToolbar
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
-                onAddEntity={(type) => addEntity('root', type === 'spawn-point' ? 'Spawn Point' : type === 'trigger-area' ? 'Trigger Area' : `New ${type}`, type)}
+                onAddEntity={(type) => addEntity('root', type === 'spawn-point' ? 'Spawn Point' : type === 'trigger-area' ? 'Trigger Area' : type === 'hitbox' ? 'Hitbox' : type === 'hurtbox' ? 'Hurtbox' : `New ${type}`, type)}
                 onExpandAll={handleExpandAll}
                 onCollapseAll={handleCollapseAll}
             />
