@@ -16,7 +16,8 @@ import "./storage.test.js"
 // Rendering tests
 import "./sprite.test.js"
 import "./shape.test.js"
-import "./ui.test.js"
+import "./ui.test.js";
+import "./ui-bridge.test.js";
 
 // Script tests
 import "./script.test.js"
