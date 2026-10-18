@@ -2,7 +2,7 @@ import type { IDockviewPanelProps } from 'dockview';
 import { useEffect, useMemo, useState } from 'react';
 import { useFileSystem } from '@/context/FileSystemContext';
 import { useGameContext } from '@/context/GameContext';
-import { setTileMetadata, setCellMetadata, paintTileCell, getTilesetPaletteIds } from '@/lib/tilemapAuthoring.mjs';
+import { setTileMetadata, setCellMetadata, paintTileCells, getTilesetPaletteIds } from '@/lib/tilemapAuthoring.mjs';
 
 interface TileMetadata {
     walkable?: boolean;
@@ -37,6 +37,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
     const [tileId, setTileId] = useState(1);
     const [paletteCount, setPaletteCount] = useState(25);
     const [selectedCell, setSelectedCell] = useState<{ x: number; y: number } | null>(null);
+    const [isPainting, setIsPainting] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
@@ -104,7 +105,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
     const paint = (x: number, y: number) => {
         if (!tilemap) return;
         try {
-            setTilemap(paintTileCell(tilemap, x, y, tileId));
+            setTilemap(paintTileCells(tilemap, [{ x, y }], tileId));
             setSelectedCell({ x, y });
             setIsDirty(true);
         } catch (paintError) {
@@ -309,7 +310,12 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
             )}
             {error && <p className="text-xs text-red-400" role="alert">{error}</p>}
             {tilemap ? (
-                <div className="min-h-0 flex-1 overflow-auto rounded border border-border p-2" aria-label="Tilemap paint grid">
+                <div
+                    className="min-h-0 flex-1 overflow-auto rounded border border-border p-2"
+                    aria-label="Tilemap paint grid"
+                    onMouseUp={() => setIsPainting(false)}
+                    onMouseLeave={() => setIsPainting(false)}
+                >
                     <div
                         className="grid w-max gap-px bg-border"
                         style={{ gridTemplateColumns: `repeat(${tilemap.width}, 24px)` }}
@@ -324,6 +330,12 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                                     aria-label={`Paint cell ${x}, ${y}; tile ${value}`}
                                     title={`(${x}, ${y}) = ${value}`}
                                     className="h-6 w-6 bg-card text-[9px] hover:bg-primary/30 focus-visible:outline focus-visible:outline-1 focus-visible:outline-primary"
+                                    onMouseDown={(event) => {
+                                        event.preventDefault();
+                                        setIsPainting(true);
+                                        paint(x, y);
+                                    }}
+                                    onMouseEnter={() => { if (isPainting) paint(x, y); }}
                                     onClick={() => paint(x, y)}
                                 >
                                     {value}

@@ -91,3 +91,8 @@ export function paintTileCell(map, x, y, tileId) {
     data[y * map.width + x] = tileId;
     return { ...map, data };
 }
+
+export function paintTileCells(map, cells, tileId) {
+    if (!Array.isArray(cells)) throw new TypeError('Tile brush cells must be an array');
+    return cells.reduce((updated, cell) => paintTileCell(updated, cell?.x, cell?.y, tileId), map);
+}

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { paintTileCell, setCellMetadata, setTileMetadata, getTilesetPaletteIds } from '../src/lib/tilemapAuthoring.mjs';
+import { paintTileCell, paintTileCells, setCellMetadata, setTileMetadata, getTilesetPaletteIds } from '../src/lib/tilemapAuthoring.mjs';
 
 const sample = () => ({
     width: 3,
@@ -42,6 +42,15 @@ test('painting addresses row-major cells and preserves other tilemap data immuta
     assert.equal(painted.tileset, source.tileset);
     assert.deepEqual(painted.metadata, source.metadata);
     assert.deepEqual(source.data, [0, 0, 0, 1, 1, 0]);
+});
+
+test('brush painting applies one tile across multiple cells immutably and rejects invalid strokes', () => {
+    const source = sample();
+    const painted = paintTileCells(source, [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 1 }], 4);
+    assert.deepEqual(painted.data, [4, 4, 0, 1, 1, 4]);
+    assert.deepEqual(source.data, [0, 0, 0, 1, 1, 0]);
+    assert.throws(() => paintTileCells(sample(), [{ x: 0, y: 0 }, { x: 3, y: 0 }], 2), /outside the map/);
+    assert.throws(() => paintTileCells(sample(), null, 2), /array/);
 });
 
 test('painting supports clearing a cell with the runtime empty tile ID', () => {
