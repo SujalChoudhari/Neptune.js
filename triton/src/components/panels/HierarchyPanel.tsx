@@ -76,7 +76,9 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     const addEntity = (parentId: string, name: string, type: string) => {
         const id = globalThis.crypto?.randomUUID?.() || `entity-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
         const persistenceParentId = EditorGameRunner.resolveHierarchyParentId(parentId, entities)
-        const components = type === 'entity'
+        const components = type === 'dialogue'
+            ? [{ type: 'Dialogue', props: { speaker: 'Speaker', text: 'Enter dialogue...', next: '' } }]
+            : type === 'entity'
             ? [{ type: 'Transform', props: { position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 } } }]
             : type === 'trigger-area'
             ? [{ type: 'TriggerCollider', props: { width: 1, height: 1, offsetX: 0, offsetY: 0 } }]
@@ -279,7 +281,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
             <HierarchyToolbar
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
-                onAddEntity={(type) => addEntity('root', type === 'entity' ? 'New Entity' : type === 'spawn-point' ? 'Spawn Point' : type === 'trigger-area' ? 'Trigger Area' : type === 'hitbox' ? 'Hitbox' : type === 'hurtbox' ? 'Hurtbox' : `New ${type}`, type)}
+                onAddEntity={(type) => addEntity('root', type === 'dialogue' ? 'Dialogue' : type === 'entity' ? 'New Entity' : type === 'spawn-point' ? 'Spawn Point' : type === 'trigger-area' ? 'Trigger Area' : type === 'hitbox' ? 'Hitbox' : type === 'hurtbox' ? 'Hurtbox' : `New ${type}`, type)}
                 onExpandAll={handleExpandAll}
                 onCollapseAll={handleCollapseAll}
             />

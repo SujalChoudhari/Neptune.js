@@ -304,6 +304,17 @@ describe("Triton persistence bridge", () => {
         expect(hierarchy.includes("EditorGameRunner.createEntity(persistenceParentId, { id, name, type, components })")).toBe(true);
     });
 
+    it("authors dialogue entities with editable runtime Dialogue properties", () => {
+        const toolbar = fs.readFileSync(path.join(root, "src", "components", "panels", "hierarchy", "HierarchyToolbar.tsx"), "utf8");
+        const hierarchy = fs.readFileSync(path.join(root, "src", "components", "panels", "HierarchyPanel.tsx"), "utf8");
+        const runtime = fs.readFileSync(path.resolve("src", "neptune.js"), "utf8");
+
+        expect(toolbar.includes("onClick={() => onAddEntity('dialogue')}>Create Dialogue")).toBe(true);
+        expect(hierarchy.includes("type === 'dialogue' ? 'Dialogue'")).toBe(true);
+        expect(hierarchy.includes("type: 'Dialogue', props: { speaker: 'Speaker', text: 'Enter dialogue...', next: '' }")).toBe(true);
+        expect(runtime.includes('ComponentRegistry.register("Dialogue", Dialogue)')).toBe(true);
+    });
+
     it("offers trigger-area creation as a typed scene entity that survives runtime loading", () => {
         const toolbar = fs.readFileSync(path.join(root, "src", "components", "panels", "hierarchy", "HierarchyToolbar.tsx"), "utf8");
         const hierarchy = fs.readFileSync(path.join(root, "src", "components", "panels", "HierarchyPanel.tsx"), "utf8");

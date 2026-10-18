@@ -10,6 +10,7 @@ import { SceneManager } from "./core/sceneManager.js";
 import { Component } from './components/component.js';
 import { Transform } from "./components/transform.js";
 import { BoxCollider } from "./components/boxCollider.js";
+import { Dialogue } from "./components/dialogue.js";
 import { TriggerCollider, Hitbox, Hurtbox } from "./nereid/collider.js";
 import { Renderable } from "./rendering/renderable.js";
 import { Shape } from "./rendering/shape.js";
@@ -63,12 +64,13 @@ ComponentRegistry.register("Shape", Shape);
 ComponentRegistry.register("TriggerCollider", TriggerCollider);
 ComponentRegistry.register("Hitbox", Hitbox);
 ComponentRegistry.register("Hurtbox", Hurtbox);
+ComponentRegistry.register("Dialogue", Dialogue);
 // Register other components as needed...
 
 export {
     application, SaveManager, GameClock,
     Storage, Color, Filter, Entity, Scene, DestroyQueue, SceneManager, SceneLoader,
-    Component, Transform, BoxCollider, TriggerCollider, Hitbox, Hurtbox, ComponentRegistry,
+    Component, Transform, BoxCollider, TriggerCollider, Hitbox, Hurtbox, Dialogue, ComponentRegistry,
     Renderable, Shape, Sprite,
     Sound,
     UI,

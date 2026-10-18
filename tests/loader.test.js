@@ -9,6 +9,7 @@ import { Transform } from "../src/components/transform.js";
 import { Sprite } from "../src/rendering/sprite.js";
 import { BoxCollider } from "../src/components/boxCollider.js";
 import { TriggerCollider, Hitbox, Hurtbox } from "../src/nereid/collider.js";
+import { Dialogue } from "../src/components/dialogue.js";
 
 // Manually register components since we aren't loading neptune.js
 ComponentRegistry.register("Transform", Transform);
@@ -17,6 +18,7 @@ ComponentRegistry.register("BoxCollider", BoxCollider);
 ComponentRegistry.register("TriggerCollider", TriggerCollider);
 ComponentRegistry.register("Hitbox", Hitbox);
 ComponentRegistry.register("Hurtbox", Hurtbox);
+ComponentRegistry.register("Dialogue", Dialogue);
 
 describe("SceneLoader Integration", () => {
     it("should load a scene from JSON", async () => {
@@ -136,6 +138,29 @@ describe("SceneLoader Integration", () => {
         expect(hurtbox.width).toBe(1);
         expect(hurtbox.height).toBe(2);
         expect(hurtbox.role).toBe("hurtbox");
+    });
+
+    it("loads editor-authored dialogue data on its runtime entity", () => {
+        const scene = SceneLoader.parse({
+            type: "scene",
+            schemaVersion: 1,
+            entities: [{
+                id: "dialogue-npc",
+                name: "Village Guide",
+                type: "dialogue",
+                components: [{
+                    id: "dialogue-data",
+                    type: "Dialogue",
+                    props: { speaker: "Guide", text: "Welcome to town.", next: "quest-start" }
+                }]
+            }]
+        });
+        const entity = scene.children[0];
+        const dialogue = entity.GetComponent(Dialogue);
+
+        expect(entity.type).toBe("dialogue");
+        expect(dialogue.id).toBe("dialogue-data");
+        expect(dialogue.properties).toEqual({ speaker: "Guide", text: "Welcome to town.", next: "quest-start" });
     });
 
     it("rejects unsupported scene schema versions with an actionable error", () => {
