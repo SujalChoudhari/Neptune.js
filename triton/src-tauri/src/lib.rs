@@ -237,6 +237,40 @@ fn resolve_existing_path(state: &SelectedProjectRoot, raw_path: &str) -> Result<
     Ok(fs::canonicalize(path).map_err(|_| scoped_error())?)
 }
 
+fn image_data_uri(path: &Path, bytes: &[u8]) -> Result<String, String> {
+    if bytes.len() > 16 * 1024 * 1024 {
+        return Err("Tileset image exceeds the 16 MiB preview limit".to_string());
+    }
+    let extension = path.extension().and_then(|value| value.to_str()).unwrap_or_default().to_ascii_lowercase();
+    let (mime, valid) = match extension.as_str() {
+        "png" => ("image/png", bytes.starts_with(b"\x89PNG\r\n\x1a\n")),
+        "jpg" | "jpeg" => ("image/jpeg", bytes.starts_with(&[0xff, 0xd8, 0xff])),
+        "webp" => ("image/webp", bytes.len() >= 12 && &bytes[..4] == b"RIFF" && &bytes[8..12] == b"WEBP"),
+        _ => return Err("Tileset previews support PNG, JPEG, and WebP assets only".to_string()),
+    };
+    if !valid {
+        return Err("Tileset image content does not match its file extension".to_string());
+    }
+    const BASE64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut encoded = String::with_capacity(bytes.len().div_ceil(3) * 4);
+    for chunk in bytes.chunks(3) {
+        let first = chunk[0] as usize;
+        let second = chunk.get(1).copied().unwrap_or_default() as usize;
+        let third = chunk.get(2).copied().unwrap_or_default() as usize;
+        encoded.push(BASE64[first >> 2] as char);
+        encoded.push(BASE64[((first & 3) << 4) | (second >> 4)] as char);
+        encoded.push(if chunk.len() > 1 { BASE64[((second & 15) << 2) | (third >> 6)] as char } else { '=' });
+        encoded.push(if chunk.len() > 2 { BASE64[third & 63] as char } else { '=' });
+    }
+    Ok(format!("data:{mime};base64,{encoded}"))
+}
+
+fn read_image_asset_impl(raw_path: &str, state: &SelectedProjectRoot) -> Result<String, String> {
+    let path = resolve_existing_path(state, raw_path)?;
+    let bytes = fs::read(&path).map_err(|error| error.to_string())?;
+    image_data_uri(&path, &bytes)
+}
+
 #[tauri::command]
 fn get_startup_config() -> Option<String> {
     if cfg!(debug_assertions) {
@@ -473,6 +507,30 @@ mod tests {
         assert!(resolve_existing_path(&state, "assets/moved.txt").is_err());
         assert!(destination.starts_with(fs::canonicalize(&root).unwrap()));
         assert!(!destination.starts_with(&outside));
+        cleanup(&root, &outside);
+    }
+
+    #[test]
+    fn tileset_previews_encode_only_supported_matching_image_formats() {
+        let png = image_data_uri(Path::new("atlas.PNG"), b"\x89PNG\r\n\x1a\n").unwrap();
+        assert_eq!(png, "data:image/png;base64,iVBORw0KGgo=");
+        assert_eq!(image_data_uri(Path::new("atlas.jpg"), &[0xff, 0xd8, 0xff]).unwrap(), "data:image/jpeg;base64,/9j/");
+        assert!(image_data_uri(Path::new("atlas.svg"), b"<svg/>").unwrap_err().contains("PNG, JPEG, and WebP"));
+        assert!(image_data_uri(Path::new("atlas.png"), b"not a png").unwrap_err().contains("does not match"));
+        assert!(image_data_uri(Path::new("atlas.webp"), b"RIFF0000WEBP").is_ok());
+    }
+
+    #[test]
+    fn image_asset_reads_are_project_scoped_and_reject_non_images() {
+        let (state, root, outside) = test_root();
+        fs::create_dir_all(root.join("assets")).unwrap();
+        fs::write(root.join("assets/tiles.png"), b"\x89PNG\r\n\x1a\n").unwrap();
+        fs::write(root.join("assets/notes.txt"), "not an image").unwrap();
+        fs::write(outside.join("escape.png"), b"\x89PNG\r\n\x1a\n").unwrap();
+
+        assert_eq!(read_image_asset_impl("assets/tiles.png", &state).unwrap(), "data:image/png;base64,iVBORw0KGgo=");
+        assert!(read_image_asset_impl("assets/notes.txt", &state).unwrap_err().contains("PNG, JPEG, and WebP"));
+        assert!(read_image_asset_impl("../triton-containment-outside/escape.png", &state).is_err());
         cleanup(&root, &outside);
     }
 
@@ -784,6 +842,14 @@ async fn read_file(
 }
 
 #[tauri::command]
+async fn read_image_asset(
+    path: String,
+    state: tauri::State<'_, SelectedProjectRoot>,
+) -> Result<String, String> {
+    read_image_asset_impl(&path, state.inner())
+}
+
+#[tauri::command]
 async fn write_file(
     path: String,
     content: String,
@@ -1044,6 +1110,7 @@ pub fn run() {
         duplicate_fs_node,
         sync_neptune_lib,
         read_file,
+        read_image_asset,
         write_file,
         read_project,
         write_project,

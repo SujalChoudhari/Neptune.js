@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { paintTileCell, paintTileCells, setCellMetadata, setTileMetadata, getTilesetPaletteIds } from '../src/lib/tilemapAuthoring.mjs';
+import { readFileSync } from 'node:fs';
+import { paintTileCell, paintTileCells, setCellMetadata, setTileMetadata, getTilesetPaletteIds, getTilesetTileOffset } from '../src/lib/tilemapAuthoring.mjs';
 
 const sample = () => ({
     width: 3,
@@ -10,6 +11,23 @@ const sample = () => ({
     tileset: 'assets/tiles.png',
     data: [0, 0, 0, 1, 1, 0],
     metadata: { 1: { walkable: false } }
+});
+
+test('tileset thumbnails are wired through the selected-project scoped image command', () => {
+    const panel = readFileSync(new URL('../src/components/panels/TilemapPanel.tsx', import.meta.url), 'utf8');
+    const native = readFileSync(new URL('../src-tauri/src/lib.rs', import.meta.url), 'utf8');
+    assert.match(panel, /invoke<string>\('read_image_asset', \{ path: tilemap\.tileset \}\)/);
+    assert.match(panel, /backgroundImage: `url/);
+    assert.match(native, /async fn read_image_asset[\s\S]*?read_image_asset_impl\(&path, state\.inner\(\)\)/);
+    assert.match(native, /fn read_image_asset_impl[\s\S]*?resolve_existing_path\(state, raw_path\)/);
+    assert.match(native, /read_image_asset,/);
+});
+
+test('tileset thumbnail crops use row-major atlas offsets and validate inputs', () => {
+    assert.deepEqual(getTilesetTileOffset(7, 4, 16), { x: 48, y: 16 });
+    assert.deepEqual(getTilesetTileOffset(0, 4, 16), { x: 0, y: 0 });
+    assert.throws(() => getTilesetTileOffset(-1, 4, 16), /non-negative ID/);
+    assert.throws(() => getTilesetTileOffset(1, 0, 16), /positive columns/);
 });
 
 test('tileset palette enumerates row-major tile IDs and rejects invalid dimensions', () => {

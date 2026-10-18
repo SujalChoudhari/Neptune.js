@@ -38,6 +38,14 @@ export function getTilesetPaletteIds(columns, tileCount) {
     return Array.from({ length: tileCount }, (_, index) => index);
 }
 
+export function getTilesetTileOffset(tileId, columns, tileSize) {
+    if (!Number.isInteger(tileId) || tileId < 0 || !Number.isInteger(columns) || columns <= 0 ||
+        !Number.isFinite(tileSize) || tileSize <= 0) {
+        throw new TypeError('Tileset tile offsets require a non-negative ID and positive columns and tile size');
+    }
+    return { x: (tileId % columns) * tileSize, y: Math.floor(tileId / columns) * tileSize };
+}
+
 export function setCellMetadata(map, x, y, updates) {
     if (!map || typeof map !== 'object' || Array.isArray(map) ||
         !Number.isInteger(map.width) || map.width <= 0 || !Number.isInteger(map.height) || map.height <= 0) {

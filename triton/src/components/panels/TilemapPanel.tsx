@@ -1,8 +1,9 @@
 import type { IDockviewPanelProps } from 'dockview';
 import { useEffect, useMemo, useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { useFileSystem } from '@/context/FileSystemContext';
 import { useGameContext } from '@/context/GameContext';
-import { setTileMetadata, setCellMetadata, paintTileCells, getTilesetPaletteIds } from '@/lib/tilemapAuthoring.mjs';
+import { setTileMetadata, setCellMetadata, paintTileCells, getTilesetPaletteIds, getTilesetTileOffset } from '@/lib/tilemapAuthoring.mjs';
 
 interface TileMetadata {
     walkable?: boolean;
@@ -20,6 +21,7 @@ interface TilemapDocument {
     tileset?: string;
     columns?: number;
     tileCount?: number;
+    tileSize?: number;
     [key: string]: unknown;
 }
 
@@ -36,6 +38,8 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
     const [tilemap, setTilemap] = useState<TilemapDocument | null>(null);
     const [tileId, setTileId] = useState(1);
     const [paletteCount, setPaletteCount] = useState(25);
+    const [tilesetPreview, setTilesetPreview] = useState('');
+    const [atlasSize, setAtlasSize] = useState<{ width: number; height: number } | null>(null);
     const [selectedCell, setSelectedCell] = useState<{ x: number; y: number } | null>(null);
     const [isPainting, setIsPainting] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
@@ -85,6 +89,23 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
         });
         return () => { cancelled = true; };
     }, [mapPath, readFile]);
+
+    useEffect(() => {
+        if (!tilemap?.tileset) {
+            setTilesetPreview('');
+            setAtlasSize(null);
+            return;
+        }
+        let cancelled = false;
+        setTilesetPreview('');
+        setAtlasSize(null);
+        invoke<string>('read_image_asset', { path: tilemap.tileset })
+            .then((dataUrl) => { if (!cancelled) setTilesetPreview(dataUrl); })
+            .catch((previewError) => {
+                if (!cancelled) setError(previewError instanceof Error ? previewError.message : String(previewError));
+            });
+        return () => { cancelled = true; };
+    }, [tilemap?.tileset]);
 
     const handleSave = async () => {
         if (!tilemap || !mapPath || isSaving) return;
@@ -191,6 +212,9 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
             </div>
             {tilemap && (
                 <div className="flex min-h-0 max-h-40 flex-col gap-1 overflow-auto rounded border border-border bg-card/50 p-2" aria-label="Tileset tile palette">
+                    {tilesetPreview && <img src={tilesetPreview} alt="Tileset atlas" className="hidden" onLoad={(event) => {
+                        setAtlasSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight });
+                    }} />}
                     <div className="flex items-center gap-2">
                         <span className="text-xs">Tileset tile palette</span>
                         <label className="ml-auto text-xs" htmlFor="tileset-tile-count">Tiles</label>
@@ -217,7 +241,17 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                                 type="button"
                                 aria-label={`Select tileset tile ${id}`}
                                 aria-pressed={tileId === id}
-                                className={`h-7 w-7 rounded border text-[9px] ${tileId === id ? 'border-primary bg-primary/30' : 'border-border bg-card'}`}
+                                className={`h-7 w-7 rounded border text-[9px] ${tileId === id ? 'border-primary ring-1 ring-primary' : 'border-border'} ${tilesetPreview && atlasSize ? 'text-transparent' : 'bg-card'}`}
+                                style={tilesetPreview && atlasSize ? (() => {
+                                    const tileSize = tilemap.tileSize || 32;
+                                    const offset = getTilesetTileOffset(id, Math.max(1, tilemap.columns || 5), tileSize);
+                                    const scale = 28 / tileSize;
+                                    return {
+                                        backgroundImage: `url("${tilesetPreview}")`,
+                                        backgroundSize: `${atlasSize.width * scale}px ${atlasSize.height * scale}px`,
+                                        backgroundPosition: `-${offset.x * scale}px -${offset.y * scale}px`
+                                    };
+                                })() : undefined}
                                 onClick={() => setTileId(id)}
                             >{id}</button>
                         ))}
