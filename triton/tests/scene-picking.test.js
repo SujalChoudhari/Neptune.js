@@ -17,7 +17,8 @@ function createSceneViewHarness() {
     const external = [
         'react', 'react/jsx-runtime', 'lucide-react', '@/components/library', '@/context/GameContext',
         '@/lib/editorGameRunner', '@/lib/scenePicking.mjs', '../../../../src/neptune.js?url',
-        '../../../../src/thalassa/camera.js?url', '@/lib/scenePicking.mjs?url'
+        '../../../../src/thalassa/camera.js?url', '@/lib/scenePicking.mjs?url',
+        '@/lib/projectResourceBridge.mjs?url', '@tauri-apps/api/core'
     ];
     const bundle = buildSync({
         bundle: true, format: 'cjs', platform: 'node', write: false,
@@ -52,9 +53,11 @@ function createSceneViewHarness() {
         }) },
         '@/lib/editorGameRunner': { EditorGameRunner: {} },
         '@/lib/scenePicking.mjs': { translateOnAxis },
+        '@tauri-apps/api/core': { invoke: async () => '' },
         '../../../../src/neptune.js?url': '/neptune.js',
         '../../../../src/thalassa/camera.js?url': '/camera.js',
-        '@/lib/scenePicking.mjs?url': '/scenePicking.js'
+        '@/lib/scenePicking.mjs?url': '/scenePicking.js',
+        '@/lib/projectResourceBridge.mjs?url': '/projectResourceBridge.js'
     };
     const module = { exports: {} };
     vm.runInNewContext(bundle, {
@@ -177,6 +180,7 @@ test('Scene View boots the engine runtime without loading the debug sample proje
     const harness = createSceneViewHarness();
     const iframe = findNode(harness.render(), node => node.type === 'iframe' && node.props?.title === 'Scene View');
     assert.ok(iframe);
-    assert.match(iframe.props.srcDoc, /import "\/neptune\.js";/);
+    assert.match(iframe.props.srcDoc, /installProjectResourceBridge\(\);[\s\S]*await import\("\/neptune\.js"\)/);
+    assert.match(iframe.props.srcDoc, /\/projectResourceBridge\.js/);
     assert.doesNotMatch(iframe.props.srcDoc, /debug_project|scenes\/demo\.scn/);
 });

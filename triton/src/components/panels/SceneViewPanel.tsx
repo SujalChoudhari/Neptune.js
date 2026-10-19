@@ -2,7 +2,9 @@ import { useRef, useState, useCallback, useEffect } from 'react';
 import neptuneEntryUrl from "../../../../src/neptune.js?url";
 import cameraUrl from "../../../../src/thalassa/camera.js?url";
 import scenePickingUrl from "@/lib/scenePicking.mjs?url";
+import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
 import { translateOnAxis } from "@/lib/scenePicking.mjs";
+import { invoke } from "@tauri-apps/api/core";
 import { ThemedIconButton } from "@/components/library";
 import { Maximize, ZoomIn, ZoomOut } from "lucide-react";
 import { useGameContext } from '@/context/GameContext';
@@ -32,7 +34,23 @@ export function SceneViewPanel() {
     useEffect(() => {
         const handleBridgeMessage = (event: MessageEvent) => {
             const { type, payload } = event.data || {};
-            if (type === 'editor:scene-loaded' && payload?.data) {
+            if (type === 'editor:project-resource-request' && payload?.id) {
+                if (event.source !== iframeRef.current?.contentWindow) return;
+                const command = payload.kind === 'image' ? 'read_image_asset' : payload.kind === 'text' ? 'read_file' : null;
+                const reply = (content: string | null, error: string | null) => {
+                    (event.source as WindowProxy | null)?.postMessage({
+                        type: 'editor:project-resource-response',
+                        payload: { id: payload.id, content, error }
+                    }, '*');
+                };
+                if (!command || typeof payload.path !== 'string') {
+                    reply(null, 'Invalid project resource request');
+                    return;
+                }
+                void invoke<string>(command, { path: payload.path })
+                    .then(content => reply(content, null))
+                    .catch(error => reply(null, String(error)));
+            } else if (type === 'editor:scene-loaded' && payload?.data) {
                 try {
                     EditorGameRunner.openScene(payload.data, payload.path);
                 } catch {
@@ -204,7 +222,9 @@ export function SceneViewPanel() {
     <script type="module">
         import { Camera } from "${cameraUrl}";
         import { pickEntityAt } from "${scenePickingUrl}";
-        import "${neptuneEntryUrl}";
+        import { installProjectResourceBridge } from "${projectResourceBridgeUrl}";
+        installProjectResourceBridge();
+        await import("${neptuneEntryUrl}");
         
         const findEntity = (root, id) => {
              if (!root) return null;
