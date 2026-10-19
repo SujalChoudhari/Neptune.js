@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
+import { runRuntimeControl } from "../src/lib/runtimeControlBridge.mjs"
 
 const context = {
     clearRect() {},
@@ -55,26 +56,37 @@ test("Application playback controls pause, stop, and restart one frame loop", as
     try {
         const { Application } = await import("../../src/core/application.js")
         const app = new Application()
+        const reportedStates = []
+        const sendControl = (type, payload) => runRuntimeControl(app, type, payload, state => reportedStates.push(state))
         assert.equal(app.isRunning, false)
-        app.start()
-        app.start()
+        assert.equal(sendControl("editor:play"), true)
+        assert.equal(sendControl("editor:play"), true)
         assert.equal(app.isRunning, true)
         assert.equal(frameQueue.length, 1)
-        app.pause()
+        assert.equal(sendControl("editor:pause", { paused: true }), true)
         assert.equal(app.isPaused, true)
-        app.resume()
+        assert.equal(sendControl("editor:pause", { paused: false }), true)
         assert.equal(app.isPaused, false)
 
-        app.stop()
+        assert.equal(sendControl("editor:stop"), true)
         assert.equal(app.isRunning, false)
         const staleFrame = frameQueue.shift()
         staleFrame(16)
         assert.equal(frameQueue.length, 0)
 
-        app.start()
+        assert.equal(sendControl("editor:play"), true)
         assert.equal(app.isRunning, true)
         assert.equal(frameQueue.length, 1)
-        app.stop()
+        assert.equal(sendControl("editor:stop"), true)
+        assert.deepEqual(reportedStates, [
+            { isPlaying: true, isPaused: false },
+            { isPlaying: true, isPaused: false },
+            { isPlaying: true, isPaused: true },
+            { isPlaying: true, isPaused: false },
+            { isPlaying: false, isPaused: false },
+            { isPlaying: true, isPaused: false },
+            { isPlaying: false, isPaused: false }
+        ])
     } finally {
         globalThis.document = previous.document
         globalThis.window = previous.window
