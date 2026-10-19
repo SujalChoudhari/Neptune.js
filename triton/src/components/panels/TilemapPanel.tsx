@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useFileSystem } from '@/context/FileSystemContext';
 import { useGameContext } from '@/context/GameContext';
-import { setTileMetadata, setCellMetadata, paintTileCells, getTilesetPaletteIds, getTilesetTileOffset, createEmptyTilemap } from '@/lib/tilemapAuthoring.mjs';
+import { setTileMetadata, setCellMetadata, paintTileCells, getTilesetPaletteIds, getTilesetTileOffset, createEmptyTilemap, getTilemapAttachError } from '@/lib/tilemapAuthoring.mjs';
 
 interface TileMetadata {
     walkable?: boolean;
@@ -168,6 +168,11 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
 
     const handleAddToScene = () => {
         setError('');
+        const attachError = getTilemapAttachError({ tilemap, mapPath, currentScenePath, isDirty });
+        if (attachError) {
+            setError(attachError);
+            return;
+        }
         if (!addTilemapLayer(mapPath)) {
             setError('Could not add this map to the active scene. Open a scene and select a saved .map file.');
         }
@@ -307,13 +312,22 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                     type="button"
                     className="rounded border border-border px-3 py-1 text-xs disabled:opacity-50"
                     aria-label="Add tilemap to active scene"
-                    title={isDirty ? 'Save the map before adding it to the scene' : undefined}
-                    disabled={!tilemap || !mapPath || isDirty || !currentScenePath}
+                    title={!currentScenePath
+                        ? 'Open a scene before adding a tilemap'
+                        : !tilemap?.tileset?.trim()
+                            ? 'Choose a tileset before adding this map to a scene'
+                            : isDirty ? 'Save the map before adding it to the scene' : undefined}
+                    disabled={!tilemap || !mapPath || !tilemap.tileset?.trim() || isDirty || !currentScenePath}
                     onClick={handleAddToScene}
                 >
                     Add to Scene
                 </button>
             </div>
+            {tilemap && !tilemap.tileset?.trim() && (
+                <p className="text-xs text-muted-foreground" role="status">
+                    Choose a tileset asset before adding this map to a scene; the runtime needs it to render painted cells.
+                </p>
+            )}
             {tilemap && (
                 <div className="flex min-h-0 max-h-40 flex-col gap-1 overflow-auto rounded border border-border bg-card/50 p-2" aria-label="Tileset tile palette">
                     {tilesetPreview && <img src={tilesetPreview} alt="Tileset atlas" className="hidden" onLoad={(event) => {

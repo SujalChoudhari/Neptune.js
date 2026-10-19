@@ -133,3 +133,13 @@ export function createEmptyTilemap({ name, width, height, columns = 8, tileSize 
     if (tileset) tilemap.tileset = tileset;
     return tilemap;
 }
+
+export function getTilemapAttachError({ tilemap, mapPath, currentScenePath, isDirty } = {}) {
+    if (!tilemap || !mapPath) return 'Choose a tilemap before adding it to a scene.';
+    if (!currentScenePath) return 'Open a scene before adding a tilemap.';
+    if (isDirty) return 'Save the tilemap before adding it to the scene.';
+    if (typeof tilemap.tileset !== 'string' || tilemap.tileset.trim() === '') {
+        return 'Choose a tileset before adding the tilemap to the scene.';
+    }
+    return null;
+}

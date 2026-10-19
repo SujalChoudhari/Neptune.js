@@ -23,3 +23,9 @@ export function createEmptyTilemap(options: {
     tileSize?: number;
     tileset?: string;
 }): EditableTilemap & { columns: number; tileCount: number; tileSize: number };
+export function getTilemapAttachError(options: {
+    tilemap?: EditableTilemap | null;
+    mapPath?: string | null;
+    currentScenePath?: string | null;
+    isDirty?: boolean;
+}): string | null;

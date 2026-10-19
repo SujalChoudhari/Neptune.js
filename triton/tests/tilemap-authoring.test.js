@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { paintTileCell, paintTileCells, setCellMetadata, setTileMetadata, getTilesetPaletteIds, getTilesetTileOffset, createEmptyTilemap } from '../src/lib/tilemapAuthoring.mjs';
+import { paintTileCell, paintTileCells, setCellMetadata, setTileMetadata, getTilesetPaletteIds, getTilesetTileOffset, createEmptyTilemap, getTilemapAttachError } from '../src/lib/tilemapAuthoring.mjs';
 
 const sample = () => ({
     width: 3,
@@ -131,6 +131,14 @@ test('new tilemap assets reject unsafe filenames and unsupported dimensions', ()
     assert.throws(() => createEmptyTilemap({ name: 'level.map', width: 257, height: 2 }), /dimensions/);
 });
 
+test('tilemap scene attachment requires a selected tileset, saved map, and open scene', () => {
+    const map = createEmptyTilemap({ name: 'draft.map', width: 2, height: 2 });
+    assert.match(getTilemapAttachError({ tilemap: map, mapPath: 'draft.map', currentScenePath: 'main.scene' }), /Choose a tileset/);
+    assert.match(getTilemapAttachError({ tilemap: { ...map, tileset: 'tiles.png' }, mapPath: 'draft.map' }), /Open a scene/);
+    assert.match(getTilemapAttachError({ tilemap: { ...map, tileset: 'tiles.png' }, mapPath: 'draft.map', currentScenePath: 'main.scene', isDirty: true }), /Save the tilemap/);
+    assert.equal(getTilemapAttachError({ tilemap: { ...map, tileset: 'tiles.png' }, mapPath: 'draft.map', currentScenePath: 'main.scene' }), null);
+});
+
 test('TilemapPanel creates and rescans a new asset before editing it', () => {
     const panel = readFileSync(new URL('../src/components/panels/TilemapPanel.tsx', import.meta.url), 'utf8');
     assert.match(panel, /createEmptyTilemap\(/);
@@ -138,4 +146,10 @@ test('TilemapPanel creates and rescans a new asset before editing it', () => {
     assert.match(panel, /await refresh\(\)/);
     assert.match(panel, /setMapPath\(filename\)/);
     assert.match(panel, /aria-label="Create new tilemap"/);
+});
+
+test('TilemapPanel prevents attaching maps that the runtime cannot render yet', () => {
+    const panel = readFileSync(new URL('../src/components/panels/TilemapPanel.tsx', import.meta.url), 'utf8');
+    assert.match(panel, /getTilemapAttachError\(\{ tilemap, mapPath, currentScenePath, isDirty \}\)/);
+    assert.ok(panel.includes('!tilemap.tileset?.trim()'));
 });
