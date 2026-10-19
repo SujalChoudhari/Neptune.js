@@ -3,6 +3,7 @@ import { useRef } from 'react';
 // This requires Vite to solve the path.
 // Path: src/components/panels/GameViewPanel.tsx -> ../../../.. -> root
 import gameMainUrl from "../../../../debug_project/main.js?url";
+import { runtimeSelectionBridgeScript } from "@/lib/runtimeSelectionBridge.mjs";
 
 export function GameViewPanel() {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -24,6 +25,8 @@ export function GameViewPanel() {
 <body>
     <canvas id="neptune-canvas"></canvas>
     <script type="module">
+        ${runtimeSelectionBridgeScript}
+
         const reportRuntimeError = (code, message, source) => {
             window.parent.postMessage({
                 type: 'editor:diagnostic',
@@ -70,6 +73,7 @@ export function GameViewPanel() {
         const wait = () => {
             if (window.game) {
                 console.log("[GameView] Game Loaded");
+                window.dispatchEvent(new Event('neptune:editor-selection-ready'));
                 // Notify parent we are ready to receive scene load commands
                 window.parent.postMessage({ type: 'game:ready' }, '*');
                 
@@ -89,7 +93,9 @@ export function GameViewPanel() {
                          game.stop();
                     }
                     else if (type === 'editor:load-scene' && game.loadScene) {
-                         game.loadScene(payload.data || payload.path).catch(console.error);
+                         game.loadScene(payload.data || payload.path)
+                             .then(() => window.dispatchEvent(new Event('neptune:editor-selection-ready')))
+                             .catch(console.error);
                     }
                     else if (type === 'editor:rename') {
                          if (typeof payload?.name !== 'string') return;

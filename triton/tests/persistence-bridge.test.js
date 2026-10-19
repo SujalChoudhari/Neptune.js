@@ -4,6 +4,7 @@ import vm from "node:vm";
 import { execFileSync } from "node:child_process";
 import { buildSync } from "esbuild";
 import { describe, it, expect } from "../../tests/tester.js";
+import { runtimeSelectionBridgeScript } from "../src/lib/runtimeSelectionBridge.mjs";
 
 const root = path.resolve("triton");
 
@@ -298,6 +299,39 @@ describe("Triton persistence bridge", () => {
         expect(gameView.includes("type: 'editor:diagnostic'")).toBe(true);
         expect(gameView.includes("type: 'editor:log'")).toBe(true);
         expect(gameView.includes("GAME_BOOT_ERROR")).toBe(true);
+    });
+
+    it("synchronizes editor selection into the live game and runtime selection back to the editor", () => {
+        const gameView = fs.readFileSync(path.join(root, "src", "components", "panels", "GameViewPanel.tsx"), "utf8");
+        expect(gameView.includes("${runtimeSelectionBridgeScript}")).toBe(true);
+
+        const handlers = new Map();
+        const editorEvents = [];
+        const parentMessages = [];
+        const parent = { postMessage: message => parentMessages.push(message) };
+        const scene = { id: "root", children: [{ id: "hero", children: [] }, { id: "npc", children: [] }] };
+        const game = { scene };
+        const runtimeWindow = {
+            parent,
+            game,
+            addEventListener: (name, handler) => handlers.set(name, handler),
+            dispatchEvent: event => editorEvents.push(event)
+        };
+        class RuntimeCustomEvent {
+            constructor(type, options) {
+                this.type = type;
+                this.detail = options.detail;
+            }
+        }
+
+        vm.runInNewContext(runtimeSelectionBridgeScript, { window: runtimeWindow, CustomEvent: RuntimeCustomEvent });
+        handlers.get("message")({ source: parent, data: { type: "editor:select", payload: { ids: ["hero", "missing", "hero"] } } });
+        expect(game.editorSelection).toEqual(["hero"]);
+        expect(editorEvents[0].type).toBe("neptune:editor-selection-changed");
+        expect(editorEvents[0].detail.entities[0].id).toBe("hero");
+
+        handlers.get("neptune:selection-changed")({ detail: { ids: ["npc", "missing", "npc"] } });
+        expect(parentMessages).toEqual([{ type: "game:selection-changed", payload: { ids: ["npc"] } }]);
     });
 
     it("applies inspector renames to both game views and persists them across reopen", async () => {
