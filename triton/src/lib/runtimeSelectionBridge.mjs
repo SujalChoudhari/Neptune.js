@@ -1,3 +1,22 @@
+export function readRuntimeSelection(payload) {
+    if (!payload || typeof payload !== "object" || Array.isArray(payload) || !Array.isArray(payload.ids)) return null;
+    const ids = [...new Set(payload.ids.filter(id => typeof id === "string" && id.trim()))];
+    const data = {};
+    const source = payload.data;
+    const isRecord = value => value !== null && typeof value === "object" && !Array.isArray(value);
+    if (Array.isArray(source)) {
+        source.forEach(entity => {
+            if (isRecord(entity) && typeof entity.id === "string" && entity.id.trim()) data[entity.id] = entity;
+        });
+    } else if (isRecord(source)) {
+        if (typeof source.id === "string" && source.id.trim()) data[source.id] = source;
+        else Object.entries(source).forEach(([id, entity]) => {
+            if (isRecord(entity)) data[id] = entity;
+        });
+    }
+    return { ids, data };
+}
+
 export function pickRuntimeEntityAt(scene, screenX, screenY, pixelsPerMeter = 64) {
     if (!scene || !Number.isFinite(screenX) || !Number.isFinite(screenY)) return null;
     const camera = scene.activeCamera;

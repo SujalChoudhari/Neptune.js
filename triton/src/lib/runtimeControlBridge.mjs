@@ -1,3 +1,10 @@
+export function readRuntimeState(payload) {
+    if (!payload || typeof payload !== "object"
+        || typeof payload.isPlaying !== "boolean"
+        || typeof payload.isPaused !== "boolean") return null;
+    return { isPlaying: payload.isPlaying, isPaused: payload.isPaused };
+}
+
 export function runRuntimeControl(game, type, payload, reportState) {
     if (!game || typeof reportState !== "function") return false;
 

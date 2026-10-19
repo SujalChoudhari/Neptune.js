@@ -8,9 +8,9 @@ import { SceneLoader } from "../../src/core/sceneLoader.js";
 import { ComponentRegistry } from "../../src/core/componentRegistry.js";
 import { Transform } from "../../src/components/transform.js";
 import { Sprite } from "../../src/rendering/sprite.js";
-import { pickRuntimeEntityAt, runtimeSelectionBridgeScript } from "../src/lib/runtimeSelectionBridge.mjs";
+import { pickRuntimeEntityAt, readRuntimeSelection, runtimeSelectionBridgeScript } from "../src/lib/runtimeSelectionBridge.mjs";
 import { runtimeConsoleBridgeScript } from "../src/lib/runtimeConsoleBridge.mjs";
-import { runtimeControlBridgeScript, runRuntimeControl } from "../src/lib/runtimeControlBridge.mjs";
+import { readRuntimeState, runtimeControlBridgeScript, runRuntimeControl } from "../src/lib/runtimeControlBridge.mjs";
 import { getSceneNavigationPath } from "../src/lib/projectNavigation.mjs";
 import { createEmptySceneAssetContent } from "../src/lib/projectAssetContent.mjs";
 
@@ -134,6 +134,15 @@ function createMainHarness() {
         stdin: { contents: fs.readFileSync(movementPath, "utf8"), loader: "ts", sourcefile: movementPath }
     }).outputFiles[0].text;
     const { moveHierarchyEntities } = loadBundle(movementBundle, {});
+    const removalPath = path.resolve("triton/src/lib/hierarchyEntityRemoval.ts");
+    const removalBundle = buildSync({
+        bundle: true,
+        format: "cjs",
+        platform: "node",
+        write: false,
+        stdin: { contents: fs.readFileSync(removalPath, "utf8"), loader: "ts", sourcefile: removalPath }
+    }).outputFiles[0].text;
+    const { removeEntityBranch } = loadBundle(removalBundle, {});
 
     const listen = (_eventName, handler) => {
         const listener = { active: true, handler };
@@ -208,6 +217,9 @@ function createMainHarness() {
                 },
                 addEntityBranchToHierarchy(branch, parentId) {
                     game.entities = appendHierarchyBranch(game.entities || {}, branch, parentId);
+                },
+                removeEntityFromHierarchy(id) {
+                    game.entities = removeEntityBranch(game.entities || {}, id).entities;
                 },
                 moveEntities(ids, targetParentId, index) {
                     game.entities = moveHierarchyEntities(game.entities || {}, ids, targetParentId, index);
@@ -551,6 +563,14 @@ describe("Triton persistence bridge", () => {
         expect(runRuntimeControl(game, "editor:unknown", {}, () => {})).toBe(false);
     });
 
+    it("ignores malformed runtime playback-state messages", () => {
+        expect(readRuntimeState({ isPlaying: true, isPaused: false })).toEqual({ isPlaying: true, isPaused: false });
+        expect(readRuntimeState({ isPlaying: false, isPaused: true })).toEqual({ isPlaying: false, isPaused: true });
+        for (const payload of [null, undefined, {}, { isPlaying: 1, isPaused: false }, { isPlaying: true }, { isPlaying: false, isPaused: "false" }]) {
+            expect(readRuntimeState(payload)).toBe(null);
+        }
+    });
+
     it("opens existing projects without initializing them and keeps creation explicit", async () => {
         const sourcefile = path.resolve("triton/src/pages/WelcomeScreen.tsx");
         const bundle = buildSync({
@@ -655,6 +675,25 @@ describe("Triton persistence bridge", () => {
 
         handlers.get("neptune:selection-changed")({ detail: { ids: ["npc", "missing", "npc"] } });
         expect(parentMessages).toEqual([{ type: "game:selection-changed", payload: { ids: ["npc"] } }]);
+    });
+
+    it("normalizes runtime-origin selection IDs and entity data before editor synchronization", () => {
+        const gameContext = fs.readFileSync(path.resolve("triton/src/context/GameContext.tsx"), "utf8");
+        expect(gameContext.includes("const runtimeSelection = readRuntimeSelection(payload)")).toBe(true);
+        expect(gameContext.includes("if (!runtimeSelection) break")).toBe(true);
+        expect(readRuntimeSelection(null)).toBe(null);
+        expect(readRuntimeSelection({ ids: "hero" })).toBe(null);
+        expect(readRuntimeSelection({
+            ids: ["hero", "hero", null, "", "npc"],
+            data: [{ id: "hero", name: "Hero" }, null, { name: "Missing ID" }, { id: "npc", name: "NPC" }]
+        })).toEqual({
+            ids: ["hero", "npc"],
+            data: { hero: { id: "hero", name: "Hero" }, npc: { id: "npc", name: "NPC" } }
+        });
+        expect(readRuntimeSelection({ ids: ["hero"], data: { hero: { id: "hero" }, invalid: null } })).toEqual({
+            ids: ["hero"],
+            data: { hero: { id: "hero" } }
+        });
     });
 
     it("selects the runtime Sprite under a Game View pointer and clears selection on empty space", () => {
@@ -1084,6 +1123,62 @@ describe("Triton persistence bridge", () => {
         harness.runner.openScene(JSON.parse(harness.files.get("scenes/main.scene")), "scenes/main.scene");
         expect(harness.runner.currentScene.entities[0].id).toBe(createdId);
         expect(harness.runner.currentScene.entities[0].name).toBe("New empty");
+    });
+
+    it("completes HierarchyPanel create, rename, duplicate, and delete through save and reopen", () => {
+        const harness = createMainHarness();
+        const source = {
+            type: "scene", version: "1.0.0", schemaVersion: 1,
+            id: "scene-hierarchy-crud", name: "Hierarchy CRUD", entities: [{
+                id: "original", name: "Original", type: "empty", parentId: null,
+                components: [], children: []
+            }]
+        };
+        harness.game.staleScene = JSON.parse(JSON.stringify(source));
+        harness.game.entities = {
+            root: { id: "root", parentId: null, name: "Hierarchy CRUD", type: "group", children: ["original"], active: true, locked: false, expanded: true },
+            original: { id: "original", parentId: "root", name: "Original", type: "empty", children: [], active: true, locked: false, expanded: false }
+        };
+        harness.runner.openScene(source, "scenes/hierarchy-crud.scene");
+        harness.render();
+
+        expect(harness.clickCreateEntity(harness.renderHierarchy(), "empty")).toBe(true);
+        const created = harness.runner.currentScene.entities.find(entity => entity.name === "New empty");
+        expect(created !== undefined).toBe(true);
+        expect(harness.game.entities[created.id].parentId).toBe("root");
+
+        expect(harness.clickRenameEntity(harness.renderHierarchy(), created.id, "Renamed Entity")).toBe(true);
+        expect(harness.runner.currentScene.entities.find(entity => entity.id === created.id).name).toBe("Renamed Entity");
+        expect(harness.game.entities[created.id].name).toBe("Renamed Entity");
+
+        expect(harness.clickDuplicate(harness.renderHierarchy())).toBe(true);
+        const duplicate = harness.runner.currentScene.entities.find(entity => entity.id !== "original" && entity.id !== created.id);
+        expect(duplicate.name).toBe("Original");
+        expect(harness.game.entities["root"].children).toContain(duplicate.id);
+
+        const clickDelete = node => {
+            if (Array.isArray(node)) return node.some(clickDelete);
+            if (!node || typeof node !== "object") return false;
+            if (node.type === "ThemedContextMenuItem" && node.props?.children === "Delete") {
+                node.props.onClick();
+                return true;
+            }
+            const children = node.props?.children;
+            return Array.isArray(children) ? children.some(clickDelete) : clickDelete(children);
+        };
+        expect(clickDelete(harness.renderHierarchy())).toBe(true);
+        expect(harness.runner.currentScene.entities.some(entity => entity.id === "original")).toBe(false);
+        expect(harness.game.entities.original).toBeUndefined();
+        expect(harness.notifications.some(message => message.type === "editor:rename" && message.payload.id === created.id)).toBe(true);
+        expect(harness.notifications.some(message => message.type === "editor:delete" && message.payload.id === "original")).toBe(true);
+
+        harness.dispatchMenuEvent("save");
+        harness.runner.closeScene();
+        harness.runner.openScene(JSON.parse(harness.files.get("scenes/hierarchy-crud.scene")), "scenes/hierarchy-crud.scene");
+        const reopened = harness.runner.currentScene.entities;
+        expect(reopened.some(entity => entity.id === "original")).toBe(false);
+        expect(reopened.find(entity => entity.id === created.id).name).toBe("Renamed Entity");
+        expect(reopened.some(entity => entity.id === duplicate.id && entity.name === "Original")).toBe(true);
     });
 
     it("keeps a HierarchyPanel duplicate after File > Save, close, and reopen", () => {

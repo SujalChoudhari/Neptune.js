@@ -7,6 +7,8 @@ import { applyInspectorFieldUpdate } from "../lib/inspectorEntityData";
 import { appendHierarchyBranch, appendHierarchyEntity } from "../lib/hierarchyEntityAddition";
 import { moveHierarchyEntities } from "../lib/hierarchyEntityMovement";
 import { removeEntityBranch } from "../lib/hierarchyEntityRemoval";
+import { readRuntimeState } from "../lib/runtimeControlBridge.mjs";
+import { readRuntimeSelection } from "../lib/runtimeSelectionBridge.mjs";
 
 interface GameContextType {
     isPlaying: boolean;
@@ -328,32 +330,26 @@ export function GameProvider({ children }: { children: ReactNode }) {
                     }
                     break;
                 case 'game:state-update':
-                    setIsPlaying(payload.isPlaying);
-                    setIsPaused(payload.isPaused);
+                    const runtimeState = readRuntimeState(payload);
+                    if (!runtimeState) break;
+                    setIsPlaying(runtimeState.isPlaying);
+                    setIsPaused(runtimeState.isPaused);
                     break;
                 case 'game:hierarchy-update':
                     // Payload should be Record<string, SceneEntity>
                     setEntities(payload);
                     break;
                 case 'game:selection-changed':
-                    setSelectedIds(payload.ids);
+                    const runtimeSelection = readRuntimeSelection(payload);
+                    if (!runtimeSelection) break;
+                    setSelectedIds(runtimeSelection.ids);
 
-                    console.log("Selection changed debug:", payload.ids, payload.data);
+                    console.log("Selection changed debug:", runtimeSelection.ids, runtimeSelection.data);
 
-                    const newBinding: Record<string, EntityData> = {};
-                    if (payload.data) {
-                        if (Array.isArray(payload.data)) {
-                            payload.data.forEach((d: EntityData) => newBinding[d.id] = d);
-                        } else if (payload.data.id) {
-                            newBinding[payload.data.id] = payload.data;
-                        } else {
-                            // Map
-                            Object.assign(newBinding, payload.data);
-                        }
-                    }
+                    const newBinding = runtimeSelection.data as Record<string, EntityData>;
 
                     // Merge with cache if game sent incomplete data (or nothing)
-                    payload.ids.forEach((id: string) => {
+                    runtimeSelection.ids.forEach((id: string) => {
                         if (!newBinding[id] && entityDataCache[id]) {
                             newBinding[id] = entityDataCache[id];
                         }
