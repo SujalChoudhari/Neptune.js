@@ -245,7 +245,18 @@ function createMainHarness() {
         return Array.isArray(children) ? children.some(clickDuplicate) : clickDuplicate(children);
     };
 
-    return { game, runner: runner.EditorGameRunner, files, writes, listeners, invokedCommands, render, renderHierarchy, clickDuplicate, dispatchMenuEvent, writeScene };
+    const clickAddEntity = (node, type) => {
+        if (Array.isArray(node)) return node.some(child => clickAddEntity(child, type));
+        if (!node || typeof node !== "object") return false;
+        if (node.type === "HierarchyToolbar" && typeof node.props?.onAddEntity === "function") {
+            node.props.onAddEntity(type);
+            return true;
+        }
+        const children = node.props?.children;
+        return Array.isArray(children) ? children.some(child => clickAddEntity(child, type)) : clickAddEntity(children, type);
+    };
+
+    return { game, runner: runner.EditorGameRunner, files, writes, listeners, invokedCommands, render, renderHierarchy, clickDuplicate, clickAddEntity, dispatchMenuEvent, writeScene };
 }
 
 function loadBundle(bundle, context) {
@@ -509,15 +520,14 @@ describe("Triton persistence bridge", () => {
     it("saves and reloads a positioned editor-authored spawn point in the runtime", async () => {
         const harness = createMainHarness();
         harness.runner.openScene({ type: "scene", version: "1.0.0", schemaVersion: 1, id: "scene-spawn-point", name: "Spawn Point Scene", entities: [] }, "scenes/spawn-point.scene");
-        expect(harness.runner.createEntity("root", {
-            id: "spawn-dungeon-entrance",
-            name: "Dungeon Entrance",
-            type: "spawn-point",
-            components: [
-                { type: "SpawnPoint", props: { spawnId: "dungeon-entrance", facing: "left" } }
-            ]
-        })).toBe(true);
-        expect(harness.runner.updateEntity("spawn-dungeon-entrance", "transform", {
+        harness.game.entities = { root: { id: "root", children: [] } };
+        expect(harness.clickAddEntity(harness.renderHierarchy(), "spawn-point")).toBe(true);
+        const authored = harness.runner.currentScene.entities[0];
+        expect(authored.name).toBe("Spawn Point");
+        expect(authored.type).toBe("spawn-point");
+        expect(authored.components[0].type).toBe("SpawnPoint");
+        expect(harness.runner.updateEntity(authored.id, "SpawnPoint", { spawnId: "dungeon-entrance", facing: "left" })).toBe(true);
+        expect(harness.runner.updateEntity(authored.id, "transform", {
             position: { x: 14, y: 28 }, rotation: 0, scale: { x: 1, y: 1 }
         })).toBe(true);
 
@@ -527,7 +537,7 @@ describe("Triton persistence bridge", () => {
         harness.runner.closeScene();
         const reopened = harness.runner.openScene(JSON.parse(saved), "scenes/spawn-point.scene");
         const runtimeScene = SceneLoader.parse(reopened);
-        const runtimeEntity = runtimeScene.children.find(entity => entity.name === "Dungeon Entrance");
+        const runtimeEntity = runtimeScene.children.find(entity => entity.name === "Spawn Point");
 
         expect(runtimeEntity).toBeDefined();
         const position = runtimeEntity.GetComponent(Transform).position;
