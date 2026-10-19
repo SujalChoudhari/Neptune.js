@@ -233,7 +233,7 @@ function createMainHarness() {
         return Array.isArray(children) ? children.some(clickDuplicate) : clickDuplicate(children);
     };
 
-    return { game, runner: runner.EditorGameRunner, files, writes, listeners, render, renderHierarchy, clickDuplicate, dispatchMenuEvent };
+    return { game, runner: runner.EditorGameRunner, files, writes, listeners, render, renderHierarchy, clickDuplicate, dispatchMenuEvent, writeScene };
 }
 
 function loadBundle(bundle, context) {
@@ -440,6 +440,39 @@ describe("Triton persistence bridge", () => {
         const savedPayload = JSON.parse(JSON.stringify(harness.runner.currentScene));
         const runtimeScene = SceneLoader.parse(savedPayload);
         const runtimeEntity = runtimeScene.children[0];
+        expect(runtimeEntity.GetComponent(SceneTransition).properties).toEqual({ targetScene: "scenes/dungeon.scene", spawnPoint: "entrance", trigger: "interact" });
+        expect(runtimeEntity.GetComponent(TriggerCollider).height).toBe(2);
+    });
+
+    it("loads the saved editor-authored scene through the runtime SceneLoader", async () => {
+        const harness = createMainHarness();
+        const authored = {
+            type: "scene",
+            version: "1.0.0",
+            schemaVersion: 1,
+            id: "scene-runtime-smoke",
+            name: "Runtime Smoke",
+            entities: []
+        };
+        harness.runner.openScene(authored, "scenes/runtime-smoke.scene");
+        expect(harness.runner.createEntity("root", {
+            id: "authored-spawn",
+            name: "Player Spawn",
+            type: "spawn-point",
+            components: [
+                { type: "SceneTransition", props: { targetScene: "scenes/dungeon.scene", spawnPoint: "entrance", trigger: "interact" } },
+                { type: "TriggerCollider", props: { width: 1, height: 2, offsetX: 0, offsetY: 0 } }
+            ]
+        })).toBe(true);
+
+        await harness.writeScene("scenes/runtime-smoke.scene", harness.runner.currentScene);
+        const stored = harness.files.get("scenes/runtime-smoke.scene");
+        expect(stored).toBeDefined();
+        harness.runner.closeScene();
+        const reopened = harness.runner.openScene(JSON.parse(stored), "scenes/runtime-smoke.scene");
+        const runtimeScene = SceneLoader.parse(reopened);
+        const runtimeEntity = runtimeScene.children.find(entity => entity.name === "Player Spawn");
+        expect(runtimeEntity).toBeDefined();
         expect(runtimeEntity.GetComponent(SceneTransition).properties).toEqual({ targetScene: "scenes/dungeon.scene", spawnPoint: "entrance", trigger: "interact" });
         expect(runtimeEntity.GetComponent(TriggerCollider).height).toBe(2);
     });
