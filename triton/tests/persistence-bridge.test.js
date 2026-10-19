@@ -11,6 +11,7 @@ import { Sprite } from "../../src/rendering/sprite.js";
 import { BoxCollider } from "../../src/components/boxCollider.js";
 import { SceneTransition } from "../../src/components/sceneTransition.js";
 import { TriggerCollider } from "../../src/nereid/collider.js";
+import { createEmptyTilemap, paintTileCell } from "../src/lib/tilemapAuthoring.mjs";
 import { describe, it, expect } from "../../tests/tester.js";
 
 ComponentRegistry.register("SceneTransition", SceneTransition);
@@ -552,6 +553,12 @@ describe("Triton persistence bridge", () => {
         const reopened = harness.runner.openScene(JSON.parse(harness.files.get("scenes/tilemap.scene")), "scenes/tilemap.scene");
         expect(reopened.layers).toEqual([editedLayer]);
 
+        const authoredMap = paintTileCell(createEmptyTilemap({
+            name: "edited.map",
+            width: 1,
+            height: 1,
+            tileset: "tiles.png"
+        }), 0, 0, 1);
         const originalFetch = global.fetch;
         const originalImage = global.Image;
         global.Image = class { set src(_value) {} };
@@ -559,7 +566,7 @@ describe("Triton persistence bridge", () => {
             expect(source).toBe("maps/edited.map");
             return {
                 ok: true,
-                json: async () => ({ width: 1, height: 1, data: [1], tileset: "tiles.png" })
+                json: async () => JSON.parse(JSON.stringify(authoredMap))
             };
         };
         try {
@@ -594,12 +601,12 @@ describe("Triton persistence bridge", () => {
             try {
                 const page = await browser.newPage();
                 await page.setContent("<!doctype html><html><body></body></html>");
-                await page.evaluate(() => {
+                await page.evaluate(mapPayload => {
                     window.fetch = async () => ({
                         ok: true,
-                        json: async () => ({ width: 1, height: 1, data: [1], tileset: "tiles.png" })
+                        json: async () => mapPayload
                     });
-                });
+                }, JSON.parse(JSON.stringify(authoredMap)));
                 await page.addScriptTag({ content: runtimeBundle });
                 const browserRuntime = await page.evaluate(async payload => {
                     const scene = await EditorRuntimeSmoke.loadEditorScene(payload);

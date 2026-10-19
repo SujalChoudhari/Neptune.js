@@ -104,3 +104,32 @@ export function paintTileCells(map, cells, tileId) {
     if (!Array.isArray(cells)) throw new TypeError('Tile brush cells must be an array');
     return cells.reduce((updated, cell) => paintTileCell(updated, cell?.x, cell?.y, tileId), map);
 }
+
+export function createEmptyTilemap({ name, width, height, columns = 8, tileSize = 32, tileset } = {}) {
+    const filename = typeof name === 'string' ? name.trim() : '';
+    if (!/^[a-z0-9][a-z0-9._ -]*\.map$/i.test(filename) || filename.includes('..')) {
+        throw new TypeError('Map name must be a project-root filename ending in .map');
+    }
+    if (!Number.isInteger(width) || width < 1 || width > 256 ||
+        !Number.isInteger(height) || height < 1 || height > 256 || width * height > 65536) {
+        throw new TypeError('New tilemap dimensions must be integers from 1 to 256');
+    }
+    if (!Number.isInteger(columns) || columns < 1 || columns > 64 ||
+        !Number.isInteger(tileSize) || tileSize < 1 || tileSize > 256) {
+        throw new TypeError('Tileset columns and tile size must be positive supported integers');
+    }
+    if (tileset !== undefined && typeof tileset !== 'string') {
+        throw new TypeError('Tileset reference must be a project-relative path');
+    }
+
+    const tilemap = {
+        width,
+        height,
+        tileSize,
+        columns,
+        tileCount: Math.min(columns * columns, 4096),
+        data: new Array(width * height).fill(0)
+    };
+    if (tileset) tilemap.tileset = tileset;
+    return tilemap;
+}

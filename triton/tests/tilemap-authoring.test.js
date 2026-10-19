@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { paintTileCell, paintTileCells, setCellMetadata, setTileMetadata, getTilesetPaletteIds, getTilesetTileOffset } from '../src/lib/tilemapAuthoring.mjs';
+import { paintTileCell, paintTileCells, setCellMetadata, setTileMetadata, getTilesetPaletteIds, getTilesetTileOffset, createEmptyTilemap } from '../src/lib/tilemapAuthoring.mjs';
 
 const sample = () => ({
     width: 3,
@@ -101,4 +101,41 @@ test('painting rejects out-of-bounds coordinates and invalid tile IDs', () => {
 test('painting rejects malformed tilemap dimensions and data', () => {
     assert.throws(() => paintTileCell({ ...sample(), height: 0 }, 0, 0, 1), /positive integers/);
     assert.throws(() => paintTileCell({ ...sample(), data: [0] }, 0, 0, 1), /match its dimensions/);
+});
+
+test('new tilemap assets have valid dimensions, a tileset, and paintable empty cells', () => {
+    const map = createEmptyTilemap({
+        name: 'level-one.map',
+        width: 2,
+        height: 3,
+        columns: 4,
+        tileSize: 16,
+        tileset: 'assets/tiles.png'
+    });
+    assert.deepEqual(map, {
+        width: 2,
+        height: 3,
+        columns: 4,
+        tileSize: 16,
+        tileCount: 16,
+        tileset: 'assets/tiles.png',
+        data: [0, 0, 0, 0, 0, 0]
+    });
+    assert.deepEqual(paintTileCell(map, 1, 2, 7).data, [0, 0, 0, 0, 0, 7]);
+});
+
+test('new tilemap assets reject unsafe filenames and unsupported dimensions', () => {
+    assert.throws(() => createEmptyTilemap({ name: '../escape.map', width: 2, height: 2 }), /project-root filename/);
+    assert.throws(() => createEmptyTilemap({ name: 'folder/level.map', width: 2, height: 2 }), /project-root filename/);
+    assert.throws(() => createEmptyTilemap({ name: 'level.map', width: 0, height: 2 }), /dimensions/);
+    assert.throws(() => createEmptyTilemap({ name: 'level.map', width: 257, height: 2 }), /dimensions/);
+});
+
+test('TilemapPanel creates and rescans a new asset before editing it', () => {
+    const panel = readFileSync(new URL('../src/components/panels/TilemapPanel.tsx', import.meta.url), 'utf8');
+    assert.match(panel, /createEmptyTilemap\(/);
+    assert.match(panel, /await writeFile\(filename, JSON\.stringify\(createdMap, null, 2\)\)/);
+    assert.match(panel, /await refresh\(\)/);
+    assert.match(panel, /setMapPath\(filename\)/);
+    assert.match(panel, /aria-label="Create new tilemap"/);
 });

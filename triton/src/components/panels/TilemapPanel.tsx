@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useFileSystem } from '@/context/FileSystemContext';
 import { useGameContext } from '@/context/GameContext';
-import { setTileMetadata, setCellMetadata, paintTileCells, getTilesetPaletteIds, getTilesetTileOffset } from '@/lib/tilemapAuthoring.mjs';
+import { setTileMetadata, setCellMetadata, paintTileCells, getTilesetPaletteIds, getTilesetTileOffset, createEmptyTilemap } from '@/lib/tilemapAuthoring.mjs';
 
 interface TileMetadata {
     walkable?: boolean;
@@ -26,7 +26,7 @@ interface TilemapDocument {
 }
 
 export function TilemapPanel(_props: IDockviewPanelProps) {
-    const { nodes, readFile, writeFile } = useFileSystem();
+    const { nodes, readFile, writeFile, rootPath, refresh } = useFileSystem();
     const { currentScenePath, loadScene, addTilemapLayer } = useGameContext();
     const mapFiles = useMemo(() => Object.values(nodes)
         .filter((node) => node.type === 'file' && node.name.toLowerCase().endsWith('.map'))
@@ -45,6 +45,12 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
     const [isDirty, setIsDirty] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
+    const [showNewMap, setShowNewMap] = useState(false);
+    const [newMapName, setNewMapName] = useState('new-map.map');
+    const [newMapWidth, setNewMapWidth] = useState(16);
+    const [newMapHeight, setNewMapHeight] = useState(16);
+    const [newMapTileset, setNewMapTileset] = useState('');
+    const [isCreatingMap, setIsCreatingMap] = useState(false);
 
     useEffect(() => {
         if (!mapPath && mapFiles.length > 0) setMapPath(mapFiles[0].id);
@@ -123,6 +129,43 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
         }
     };
 
+    const handleCreateMap = async () => {
+        const filename = newMapName.trim();
+        setError('');
+        if (!rootPath) {
+            setError('Open a project before creating a tilemap.');
+            return;
+        }
+        if (mapFiles.some((file) => file.id.toLowerCase() === filename.toLowerCase())) {
+            setError(`A tilemap named ${filename} already exists.`);
+            return;
+        }
+
+        setIsCreatingMap(true);
+        try {
+            const createdMap = createEmptyTilemap({
+                name: filename,
+                width: newMapWidth,
+                height: newMapHeight,
+                tileset: newMapTileset || undefined
+            });
+            if (!await writeFile(filename, JSON.stringify(createdMap, null, 2))) {
+                throw new Error(`Could not create ${filename}.`);
+            }
+            await refresh();
+            setMapPath(filename);
+            setTilemap(createdMap);
+            setPaletteCount(createdMap.tileCount || 64);
+            setSelectedCell(null);
+            setIsDirty(false);
+            setShowNewMap(false);
+        } catch (createError) {
+            setError(createError instanceof Error ? createError.message : String(createError));
+        } finally {
+            setIsCreatingMap(false);
+        }
+    };
+
     const handleAddToScene = () => {
         setError('');
         if (!addTilemapLayer(mapPath)) {
@@ -177,7 +220,51 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                     <option value="">Choose a .map file</option>
                     {mapFiles.map((file) => <option key={file.id} value={file.id}>{file.id}</option>)}
                 </select>
+                <button
+                    type="button"
+                    aria-label="Create new tilemap"
+                    className="rounded border border-border px-2 py-1 text-xs disabled:opacity-50"
+                    disabled={!rootPath}
+                    onClick={() => setShowNewMap((visible) => !visible)}
+                >
+                    New Map
+                </button>
             </div>
+            {showNewMap && (
+                <div className="flex flex-wrap items-end gap-2 rounded border border-border bg-card/50 p-2" aria-label="New tilemap settings">
+                    <label className="flex flex-col gap-1 text-xs">
+                        Map filename
+                        <input
+                            aria-label="New tilemap filename"
+                            className="w-36 rounded border border-border bg-card px-2 py-1"
+                            value={newMapName}
+                            onChange={(event) => setNewMapName(event.target.value)}
+                            placeholder="level.map"
+                        />
+                    </label>
+                    <label className="flex flex-col gap-1 text-xs">
+                        Width
+                        <input aria-label="New tilemap width" className="w-16 rounded border border-border bg-card px-2 py-1" type="number" min="1" max="256" value={newMapWidth} onChange={(event) => setNewMapWidth(Number(event.target.value))} />
+                    </label>
+                    <label className="flex flex-col gap-1 text-xs">
+                        Height
+                        <input aria-label="New tilemap height" className="w-16 rounded border border-border bg-card px-2 py-1" type="number" min="1" max="256" value={newMapHeight} onChange={(event) => setNewMapHeight(Number(event.target.value))} />
+                    </label>
+                    <label className="flex flex-col gap-1 text-xs">
+                        Tileset
+                        <select aria-label="New tilemap tileset" className="max-w-40 rounded border border-border bg-card px-2 py-1" value={newMapTileset} onChange={(event) => setNewMapTileset(event.target.value)}>
+                            <option value="">No tileset yet</option>
+                            {tilesetFiles.map((file) => <option key={file.id} value={file.id}>{file.id}</option>)}
+                        </select>
+                    </label>
+                    <button type="button" className="rounded bg-primary px-3 py-1 text-xs text-primary-foreground disabled:opacity-50" disabled={isCreatingMap} onClick={() => void handleCreateMap()}>
+                        {isCreatingMap ? 'Creating…' : 'Create Map'}
+                    </button>
+                    <button type="button" className="rounded border border-border px-3 py-1 text-xs" onClick={() => setShowNewMap(false)}>
+                        Cancel
+                    </button>
+                </div>
+            )}
             {tilemap && (
                 <div className="flex items-center gap-2">
                     <label className="text-xs shrink-0" htmlFor="tilemap-tileset">Tileset</label>
