@@ -123,6 +123,15 @@ function createMainHarness() {
         stdin: { contents: fs.readFileSync(additionPath, "utf8"), loader: "ts", sourcefile: additionPath }
     }).outputFiles[0].text;
     const { appendHierarchyBranch, appendHierarchyEntity } = loadBundle(additionBundle, {});
+    const movementPath = path.resolve("triton/src/lib/hierarchyEntityMovement.ts");
+    const movementBundle = buildSync({
+        bundle: true,
+        format: "cjs",
+        platform: "node",
+        write: false,
+        stdin: { contents: fs.readFileSync(movementPath, "utf8"), loader: "ts", sourcefile: movementPath }
+    }).outputFiles[0].text;
+    const { moveHierarchyEntities } = loadBundle(movementBundle, {});
 
     const listen = (_eventName, handler) => {
         const listener = { active: true, handler };
@@ -194,7 +203,10 @@ function createMainHarness() {
                 addEntityBranchToHierarchy(branch, parentId) {
                     game.entities = appendHierarchyBranch(game.entities || {}, branch, parentId);
                 },
-                moveEntities() {},
+                moveEntities(ids, targetParentId, index) {
+                    game.entities = moveHierarchyEntities(game.entities || {}, ids, targetParentId, index);
+                    notifications.push({ type: "editor:move-entities", payload: { ids, targetParentId, index } });
+                },
                 notifyGame(type, payload) {
                     notifications.push({ type, payload });
                 },
@@ -283,8 +295,20 @@ function createMainHarness() {
             ? children.some(child => clickRenameEntity(child, id, name))
             : clickRenameEntity(children, id, name);
     };
+    const clickMoveEntity = (node, ids, targetParentId, index) => {
+        if (Array.isArray(node)) return node.some(child => clickMoveEntity(child, ids, targetParentId, index));
+        if (!node || typeof node !== "object") return false;
+        if (node.type === "HierarchyItem" && ids.includes(node.props?.entity?.id)) {
+            node.props.onMove(ids, targetParentId, index);
+            return true;
+        }
+        const children = node.props?.children;
+        return Array.isArray(children)
+            ? children.some(child => clickMoveEntity(child, ids, targetParentId, index))
+            : clickMoveEntity(children, ids, targetParentId, index);
+    };
 
-    return { game, runner: runner.EditorGameRunner, files, writes, listeners, notifications, render, renderHierarchy, clickDuplicate, clickCreateEntity, clickRenameEntity, dispatchMenuEvent };
+    return { game, runner: runner.EditorGameRunner, files, writes, listeners, notifications, render, renderHierarchy, clickDuplicate, clickCreateEntity, clickRenameEntity, clickMoveEntity, dispatchMenuEvent };
 }
 
 function loadBundle(bundle, context) {
@@ -652,6 +676,42 @@ describe("Triton persistence bridge", () => {
         harness.runner.closeScene();
         harness.runner.openScene(JSON.parse(harness.files.get("scenes/main.scene")), "scenes/main.scene");
         expect(harness.runner.currentScene.entities[0].name).toBe("After");
+    });
+
+    it("reparents a Hierarchy entity immediately and persists the new parent after reopen", () => {
+        const harness = createMainHarness();
+        harness.render();
+        const scene = {
+            type: "scene", version: "1.0.0", schemaVersion: 1,
+            id: "scene-hierarchy-move", name: "Main Scene",
+            entities: [
+                { id: "parent", name: "Parent", type: "group", parentId: null, components: [], children: [
+                    { id: "child", name: "Child", type: "empty", parentId: "parent", components: [], children: [] }
+                ] },
+                { id: "target", name: "Target", type: "group", parentId: null, components: [], children: [] }
+            ]
+        };
+        harness.runner.openScene(scene, "scenes/main.scene");
+        harness.game.entities = {
+            root: { id: "root", parentId: null, name: "Main Scene", type: "group", children: ["parent", "target"], active: true, locked: false, expanded: true },
+            parent: { id: "parent", parentId: "root", name: "Parent", type: "group", children: ["child"], active: true, locked: false, expanded: true },
+            child: { id: "child", parentId: "parent", name: "Child", type: "empty", children: [], active: true, locked: false, expanded: false },
+            target: { id: "target", parentId: "root", name: "Target", type: "group", children: [], active: true, locked: false, expanded: true }
+        };
+
+        expect(harness.clickMoveEntity(harness.renderHierarchy(), ["child"], "target", 0)).toBe(true);
+        expect(harness.game.entities.parent.children).toEqual([]);
+        expect(harness.game.entities.target.children).toEqual(["child"]);
+        expect(harness.game.entities.child.parentId).toBe("target");
+        expect(harness.runner.currentScene.entities[0].children).toEqual([]);
+        expect(harness.runner.currentScene.entities[1].children[0].id).toBe("child");
+        expect(harness.notifications.filter(message => message.type === "editor:move-entities")).toHaveLength(1);
+
+        harness.dispatchMenuEvent("save");
+        harness.runner.closeScene();
+        harness.runner.openScene(JSON.parse(harness.files.get("scenes/main.scene")), "scenes/main.scene");
+        expect(harness.runner.currentScene.entities[0].children).toEqual([]);
+        expect(harness.runner.currentScene.entities[1].children[0].id).toBe("child");
     });
 
     it("persists a generic Inspector component edit through save, reopen, and runtime load", async () => {

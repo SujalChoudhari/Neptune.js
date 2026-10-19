@@ -5,6 +5,7 @@ import type { SceneEntity, EntityData } from "../types/engine";
 import type { VersionedScenePayload } from "./FileSystemContext";
 import { applyInspectorFieldUpdate } from "../lib/inspectorEntityData";
 import { appendHierarchyBranch, appendHierarchyEntity } from "../lib/hierarchyEntityAddition";
+import { moveHierarchyEntities } from "../lib/hierarchyEntityMovement";
 import { removeEntityBranch } from "../lib/hierarchyEntityRemoval";
 
 interface GameContextType {
@@ -427,7 +428,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
 
     const moveEntities = (ids: string[], targetParentId: string, index?: number) => {
-        // Optimistic update could happen here, but for now lets trust the game
+        setEntities(previous => moveHierarchyEntities(previous, ids, targetParentId, index));
         notifyGame('editor:move-entities', { ids, targetParentId, index });
     };
 
