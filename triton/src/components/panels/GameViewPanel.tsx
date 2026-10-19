@@ -51,7 +51,17 @@ export function GameViewPanel() {
                     const { type, payload } = e.data;
                     const game = window.game;
 
-                    if (type === 'editor:load-scene' && game.loadScene) {
+                    if (type === 'editor:play' && game.start) {
+                         game.start();
+                    }
+                    else if (type === 'editor:pause' && game.pause && game.resume) {
+                         if (payload?.paused) game.pause();
+                         else game.resume();
+                    }
+                    else if (type === 'editor:stop' && game.stop) {
+                         game.stop();
+                    }
+                    else if (type === 'editor:load-scene' && game.loadScene) {
                          game.loadScene(payload.data || payload.path).catch(console.error);
                     }
                     else if (type === 'editor:rename') {

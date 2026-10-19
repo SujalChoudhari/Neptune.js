@@ -173,6 +173,16 @@ export function SceneViewPanel() {
                      editorCamera.position.y = payload.y;
                      editorCamera.setZoom(payload.zoom);
                  }
+                 else if (type === 'editor:play' && game.resume) {
+                     game.resume();
+                 }
+                 else if (type === 'editor:pause' && game.pause && game.resume) {
+                     if (payload?.paused) game.pause();
+                     else game.resume();
+                 }
+                 else if (type === 'editor:stop' && game.pause) {
+                     game.pause();
+                 }
                  else if (type === 'editor:load-scene' && game.loadScene) {
                      game.loadScene(payload.data || payload.path)
                          .then(() => {

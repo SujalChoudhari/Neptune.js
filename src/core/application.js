@@ -30,6 +30,8 @@ export class Application {
     #clearColor;
     #fps;
     #initialCanvasSize = { width: 0, height: 0 };
+    #isRunning = false;
+    #isInitialized = false;
 
     /**
      *  @private
@@ -94,6 +96,10 @@ export class Application {
         return this._deltaTime;
     }
 
+    get isRunning() {
+        return this.#isRunning;
+    }
+
 
 
     #init() {
@@ -129,6 +135,7 @@ export class Application {
      * Start the application (public method)
      */
     start() {
+        if (this.#isRunning) return;
         if (this.#playBtn) this.#playBtn.remove();
         document.getElementById("neptune-gamepage")?.remove();
 
@@ -140,7 +147,11 @@ export class Application {
         this.#height = window.innerHeight;
         this.#initialCanvasSize = { width: window.outerWidth, height: window.outerHeight };
 
-        this.#init();
+        if (!this.#isInitialized) {
+            this.#init();
+            this.#isInitialized = true;
+        }
+        this.#isRunning = true;
         this.#gameloop(0);
     }
 
@@ -156,6 +167,12 @@ export class Application {
      */
     resume() {
         this.isPaused = false;
+    }
+
+    /** Stop the game loop. Calling start() later resumes the existing instance. */
+    stop() {
+        this.isPaused = false;
+        this.#isRunning = false;
     }
 
 
@@ -203,6 +220,7 @@ export class Application {
     }
 
     #gameloop(timeStamp) {
+        if (!this.#isRunning) return;
         // Calculate the time passed since the last frame
         this._deltaTime = (timeStamp - this.#currentTimeStamp) / 1000;  //in seconds
         // console.log("DT:", this._deltaTime);
@@ -230,7 +248,7 @@ export class Application {
         DestroyQueue.destroy();
 
         // Call the next frame
-        requestAnimationFrame(this.#gameloop.bind(this));
+        if (this.#isRunning) requestAnimationFrame(this.#gameloop.bind(this));
     }
 
     #pageSetup() {
