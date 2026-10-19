@@ -563,6 +563,14 @@ describe("Triton persistence bridge", () => {
         expect(runRuntimeControl(game, "editor:unknown", {}, () => {})).toBe(false);
     });
 
+    it("boots Game View from the Neptune engine entry instead of the debug sample", () => {
+        const gameView = fs.readFileSync(path.join(root, "src", "components", "panels", "GameViewPanel.tsx"), "utf8");
+        expect(gameView.includes('"../../../../src/neptune.js?url"')).toBe(true);
+        expect(gameView.includes("debug_project/main.js?url")).toBe(false);
+        expect(gameView.includes('window.parent.postMessage({ type: \'game:ready\' }, \'*\')')).toBe(true);
+        expect(gameView.includes("runRuntimeControl(game, type, payload")).toBe(true);
+    });
+
     it("ignores malformed runtime playback-state messages", () => {
         expect(readRuntimeState({ isPlaying: true, isPaused: false })).toEqual({ isPlaying: true, isPaused: false });
         expect(readRuntimeState({ isPlaying: false, isPaused: true })).toEqual({ isPlaying: false, isPaused: true });
