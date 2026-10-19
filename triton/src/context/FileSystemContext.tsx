@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback } from "react";
 import type { ReactNode } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { SCENE_DATA_VERSION, SCENE_SCHEMA_VERSION } from "../lib/editorGameRunner";
 
 export type AssetType = 'folder' | 'image' | 'script' | 'scene' | 'material' | 'audio' | 'prefab' | 'model' | 'file';
 
@@ -224,7 +225,16 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
             // Default content based on type
             let content = "";
             if (type === 'script') content = "export class NewScript {}";
-            if (type === 'scene') content = "{}";
+            if (type === 'scene') {
+                content = JSON.stringify({
+                    type: "scene",
+                    version: SCENE_DATA_VERSION,
+                    schemaVersion: SCENE_SCHEMA_VERSION,
+                    name: name.replace(/\.scene$/i, ""),
+                    entities: [],
+                    layers: []
+                }, null, 2);
+            }
 
             const newPath = await invoke<string>("create_asset", { path, content });
             await refresh();

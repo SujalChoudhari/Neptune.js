@@ -4,6 +4,7 @@ import fs from "node:fs";
 import vm from "node:vm";
 import path from "node:path";
 import { buildSync } from "esbuild";
+import { SceneLoader } from "../../src/core/sceneLoader.js";
 
 function createFileSystemHarness() {
     const sourcefile = path.resolve("triton/src/context/FileSystemContext.tsx");
@@ -16,13 +17,15 @@ function createFileSystemHarness() {
         stdin: {
             contents: fs.readFileSync(sourcefile, "utf8"),
             loader: "tsx",
-            sourcefile
+            sourcefile,
+            resolveDir: path.dirname(sourcefile)
         }
     }).outputFiles[0].text;
 
     const state = [];
     let hookIndex = 0;
     let shouldFailScan = false;
+    const createdAssets = [];
     const context = { Provider: "Provider" };
     const react = {
         createElement: (type, props) => ({ type, props: props || {} }),
@@ -43,7 +46,11 @@ function createFileSystemHarness() {
         react,
         "react/jsx-runtime": { jsx, jsxs: jsx },
         "@tauri-apps/api/core": {
-            invoke: async command => {
+            invoke: async (command, args) => {
+                if (command === "create_asset") {
+                    createdAssets.push(args);
+                    return args.path;
+                }
                 assert.equal(command, "scan_project");
                 if (shouldFailScan) throw new Error("selected project is unavailable");
                 return { root: { id: "root", parentId: null, name: "One", type: "folder", children: ["src"] } };
@@ -65,7 +72,7 @@ function createFileSystemHarness() {
         hookIndex = 0;
         return module.exports.FileSystemProvider({ children: null }).props.value;
     };
-    return { render, failNextScan: () => { shouldFailScan = true; } };
+    return { render, createdAssets, failNextScan: () => { shouldFailScan = true; } };
 }
 
 test("failed project filesystem scan clears the previous project's tree and navigation", async () => {
@@ -81,4 +88,22 @@ test("failed project filesystem scan clears the previous project's tree and navi
     assert.deepEqual(JSON.parse(JSON.stringify(context.nodes)), {});
     assert.equal(context.rootPath, null);
     assert.deepEqual(JSON.parse(JSON.stringify(context.currentPath)), ["root"]);
+});
+
+test("new scene assets use the versioned editor schema and load in the runtime", async () => {
+    const harness = createFileSystemHarness();
+    await harness.render().loadProject("/project-one");
+    const context = harness.render();
+
+    await context.createAsset("root", "New Scene.scene", "scene");
+
+    assert.equal(harness.createdAssets.length, 1);
+    const scene = JSON.parse(harness.createdAssets[0].content);
+    assert.equal(scene.type, "scene");
+    assert.equal(scene.version, "1.0.0");
+    assert.equal(scene.schemaVersion, 1);
+    assert.equal(scene.name, "New Scene");
+    assert.deepEqual(scene.entities, []);
+    assert.deepEqual(scene.layers, []);
+    assert.equal(SceneLoader.parse(scene).name, "New Scene");
 });
