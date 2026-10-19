@@ -409,15 +409,52 @@ describe("Triton persistence bridge", () => {
     it("uses live EntityData in the production Inspector without mock entity casts", () => {
         const inspector = fs.readFileSync(path.join(root, "src", "components", "panels", "InspectorPanel.tsx"), "utf8");
         const registry = fs.readFileSync(path.join(root, "src", "components", "panels", "inspector", "InspectorRegistry.tsx"), "utf8");
+        const updateHelper = fs.readFileSync(path.join(root, "src", "lib", "inspectorComponentUpdate.ts"), "utf8");
 
         expect(inspector.includes('import type { EntityData } from "@/types/engine"')).toBe(true);
         expect(inspector.includes("const entity: EntityData = selectedEntityData")).toBe(true);
         expect(inspector.includes("MockEntity")).toBe(false);
         expect(inspector.includes("as any as")).toBe(false);
+        expect(inspector.includes("applyInspectorComponentUpdate({")).toBe(true);
+        expect(updateHelper.includes("component.toLowerCase() === 'tilemap' && currentScenePath")).toBe(true);
+        expect(updateHelper.includes("notifyGame('editor:load-scene'")).toBe(true);
         expect(registry.includes('import type { EntityData } from "@/types/engine"')).toBe(true);
         expect(registry.includes("entity: EntityData")).toBe(true);
         expect(registry.includes("entity.components[compId]")).toBe(true);
         expect(registry.includes("MockEntity")).toBe(false);
+    });
+
+    it("reloads runtime views after the Inspector changes a tilemap layer", () => {
+        const bundle = bundleSource(path.join(root, "src", "lib", "inspectorComponentUpdate.ts"), []);
+        const { applyInspectorComponentUpdate } = loadBundle(bundle, {});
+        const editorGameRunner = {
+            currentScene: { layers: [{ id: "map-layer", src: "maps/old.map" }] },
+            updateEntity(id, component, data) {
+                if (id !== "map-layer" || component.toLowerCase() !== "tilemap") return false;
+                this.currentScene.layers[0].src = data.src;
+                return true;
+            }
+        };
+        const updates = [];
+        const notifications = [];
+
+        expect(applyInspectorComponentUpdate({
+            id: "map-layer",
+            component: "Tilemap",
+            key: "src",
+            value: "maps/edited.map",
+            updateComponent: (...args) => updates.push(args),
+            editorGameRunner,
+            currentScenePath: "scenes/main.scene",
+            notifyGame: (type, payload) => notifications.push({ type, payload })
+        })).toBe(true);
+
+        expect(updates[0][0]).toBe("map-layer");
+        expect(editorGameRunner.currentScene.layers[0].src).toBe("maps/edited.map");
+        expect(notifications).toHaveLength(1);
+        expect(notifications[0].type).toBe("editor:load-scene");
+        expect(notifications[0].payload.path).toBe("scenes/main.scene");
+        expect(notifications[0].payload.data.layers[0].src).toBe("maps/edited.map");
     });
 
     it("saves the opened versioned scene through File > Save", () => {
