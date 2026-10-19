@@ -57,6 +57,7 @@ function createMainHarness() {
 
     const listeners = [];
     const writes = [];
+    const invokedCommands = [];
     const files = new Map();
     const runner = loadBundle(runnerBundle, {});
     runner.EditorGameRunner.currentScene = null;
@@ -126,10 +127,11 @@ function createMainHarness() {
     };
 
     const invoke = (command, args) => {
+        invokedCommands.push(command);
         if (command === "write_scene") {
             writes.push(args);
         }
-        return Promise.resolve(command === "get_startup_config" ? null : undefined);
+        return Promise.resolve(undefined);
     };
 
     const writeScene = async (scenePath, scene) => {
@@ -213,7 +215,7 @@ function createMainHarness() {
     const HierarchyPanel = hierarchyModule.exports.HierarchyPanel;
     const render = () => {
         mainHookIndex = 0;
-        Main();
+        return Main();
     };
     const renderHierarchy = () => {
         hierarchyHookIndex = 0;
@@ -233,7 +235,7 @@ function createMainHarness() {
         return Array.isArray(children) ? children.some(clickDuplicate) : clickDuplicate(children);
     };
 
-    return { game, runner: runner.EditorGameRunner, files, writes, listeners, render, renderHierarchy, clickDuplicate, dispatchMenuEvent, writeScene };
+    return { game, runner: runner.EditorGameRunner, files, writes, listeners, invokedCommands, render, renderHierarchy, clickDuplicate, dispatchMenuEvent, writeScene };
 }
 
 function loadBundle(bundle, context) {
@@ -251,6 +253,14 @@ function loadBundle(bundle, context) {
 }
 
 describe("Triton persistence bridge", () => {
+    it("starts with project selection instead of auto-loading the debug sample", () => {
+        const harness = createMainHarness();
+        const welcome = harness.render();
+
+        expect(welcome.type.name).toBe("WelcomeScreen");
+        expect(harness.invokedCommands).toEqual([]);
+    });
+
     it("uses selected-project commands for versioned project and scene payloads", () => {
         const rust = fs.readFileSync(path.join(root, "src-tauri", "src", "lib.rs"), "utf8");
         const fileSystem = fs.readFileSync(path.join(root, "src", "context", "FileSystemContext.tsx"), "utf8");

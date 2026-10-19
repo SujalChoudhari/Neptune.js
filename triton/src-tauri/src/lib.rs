@@ -271,23 +271,6 @@ fn read_image_asset_impl(raw_path: &str, state: &SelectedProjectRoot) -> Result<
     image_data_uri(&path, &bytes)
 }
 
-#[tauri::command]
-fn get_startup_config() -> Option<String> {
-    if cfg!(debug_assertions) {
-        // In debug mode, check for a "debug_project" in the workspace root
-        // Assuming we are running from project root or similar. 
-        // Let's look for it relative to current dir.
-        let debug_path = PathBuf::from("../debug_project");
-        if debug_path.exists() {
-             // Return absolute path if possible, or just the relative one if frontend handles it
-             // Let's canonicalize to be safe
-             if let Ok(abs_path) = fs::canonicalize(&debug_path) {
-                 return Some(abs_path.to_string_lossy().to_string());
-             }
-        }
-    }
-    None
-}
 
 #[tauri::command]
 async fn create_project(app: tauri::AppHandle) -> Result<String, String> {
@@ -1100,7 +1083,6 @@ pub fn run() {
     .manage(SelectedProjectRoot::default())
     .invoke_handler(tauri::generate_handler![
         initialize_project, 
-        get_startup_config, 
         scan_project, 
         move_fs_node,
         create_directory,
