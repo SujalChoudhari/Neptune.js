@@ -3,6 +3,7 @@ import path from "path";
 import vm from "node:vm";
 import { execFileSync } from "node:child_process";
 import { buildSync } from "esbuild";
+import { chromium } from "playwright";
 import { SceneLoader } from "../../src/core/sceneLoader.js";
 import { ComponentRegistry } from "../../src/core/componentRegistry.js";
 import { Transform } from "../../src/components/transform.js";
@@ -565,6 +566,56 @@ describe("Triton persistence bridge", () => {
             const runtimeScene = await SceneLoader.parse(reopened);
             expect(runtimeScene.children).toHaveLength(1);
             expect(runtimeScene.children[0].name).toBe("Tile_0");
+
+            const runtimeBundle = buildSync({
+                bundle: true,
+                format: "iife",
+                globalName: "EditorRuntimeSmoke",
+                platform: "browser",
+                write: false,
+                stdin: {
+                    contents: `
+                        import { SceneLoader } from "./src/core/sceneLoader.js";
+                        import { ComponentRegistry } from "./src/core/componentRegistry.js";
+                        import { Transform } from "./src/components/transform.js";
+                        import { Sprite } from "./src/rendering/sprite.js";
+                        import { BoxCollider } from "./src/components/boxCollider.js";
+                        ComponentRegistry.register("Transform", Transform);
+                        ComponentRegistry.register("Sprite", Sprite);
+                        ComponentRegistry.register("BoxCollider", BoxCollider);
+                        export { Sprite };
+                        export const loadEditorScene = payload => SceneLoader.parse(payload);
+                    `,
+                    resolveDir: process.cwd(),
+                    sourcefile: "editor-runtime-smoke.js"
+                }
+            }).outputFiles[0].text;
+            const browser = await chromium.launch({ headless: true });
+            try {
+                const page = await browser.newPage();
+                await page.setContent("<!doctype html><html><body></body></html>");
+                await page.evaluate(() => {
+                    window.fetch = async () => ({
+                        ok: true,
+                        json: async () => ({ width: 1, height: 1, data: [1], tileset: "tiles.png" })
+                    });
+                });
+                await page.addScriptTag({ content: runtimeBundle });
+                const browserRuntime = await page.evaluate(async payload => {
+                    const scene = await EditorRuntimeSmoke.loadEditorScene(payload);
+                    const tile = scene.children[0];
+                    return {
+                        count: scene.children.length,
+                        name: tile.name,
+                        spritePath: tile.GetComponent(EditorRuntimeSmoke.Sprite).path
+                    };
+                }, reopened);
+                expect(browserRuntime.count).toBe(1);
+                expect(browserRuntime.name).toBe("Tile_0");
+                expect(browserRuntime.spritePath).toBe("tiles.png");
+            } finally {
+                await browser.close();
+            }
         } finally {
             global.fetch = originalFetch;
             global.Image = originalImage;
