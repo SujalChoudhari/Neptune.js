@@ -1,5 +1,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import gameMainUrl from "../../../../debug_project/main.js?url";
+import { invoke } from "@tauri-apps/api/core";
+import neptuneEntryUrl from "../../../../src/neptune.js?url";
+import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
 import cameraUrl from "../../../../src/thalassa/camera.js?url";
 import { ThemedIconButton } from "@/components/library";
 import { Maximize, ZoomIn, ZoomOut } from "lucide-react";
@@ -15,7 +17,23 @@ export function SceneViewPanel() {
     useEffect(() => {
         const handleBridgeMessage = (event: MessageEvent) => {
             const { type, payload } = event.data || {};
-            if (type === 'editor:scene-loaded' && payload?.data) {
+            if (type === 'editor:project-resource-request' && typeof payload?.id === 'string') {
+                if (event.source !== iframeRef.current?.contentWindow) return;
+                const command = payload.kind === 'image' ? 'read_image_asset' : payload.kind === 'audio' ? 'read_audio_asset' : payload.kind === 'text' ? 'read_file' : null;
+                const reply = (content: string | null, error: string | null) => {
+                    (event.source as WindowProxy).postMessage({
+                        type: 'editor:project-resource-response',
+                        payload: { id: payload.id, content, error }
+                    }, '*');
+                };
+                if (!command || typeof payload.path !== 'string') {
+                    reply(null, 'Invalid project resource request');
+                    return;
+                }
+                void invoke<string>(command, { path: payload.path })
+                    .then(content => reply(content, null))
+                    .catch(error => reply(null, String(error)));
+            } else if (type === 'editor:scene-loaded' && payload?.data) {
                 try {
                     EditorGameRunner.openScene(payload.data, payload.path);
                 } catch {
@@ -36,7 +54,7 @@ export function SceneViewPanel() {
     const [isPanning, setIsPanning] = useState(false);
     const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
 
-    const baseUrl = gameMainUrl.substring(0, gameMainUrl.lastIndexOf('/') + 1);
+    const baseUrl = neptuneEntryUrl.substring(0, neptuneEntryUrl.lastIndexOf('/') + 1);
 
     const handleWheel = useCallback((e: React.WheelEvent) => {
         const rect = containerRef.current?.getBoundingClientRect();
@@ -123,7 +141,9 @@ export function SceneViewPanel() {
     
     <script type="module">
         import { Camera } from "${cameraUrl}";
-        import "${gameMainUrl}";
+        import { installProjectResourceBridge } from "${projectResourceBridgeUrl}";
+        installProjectResourceBridge();
+        await import("${neptuneEntryUrl}");
         ${runtimeSelectionBridgeScript}
         
         const findEntity = (root, id) => {
