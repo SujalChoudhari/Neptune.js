@@ -10,11 +10,13 @@ import { Transform } from "../../src/components/transform.js";
 import { Sprite } from "../../src/rendering/sprite.js";
 import { BoxCollider } from "../../src/components/boxCollider.js";
 import { SceneTransition } from "../../src/components/sceneTransition.js";
+import { SpawnPoint } from "../../src/components/spawnPoint.js";
 import { TriggerCollider } from "../../src/nereid/collider.js";
 import { createEmptyTilemap, paintTileCell } from "../src/lib/tilemapAuthoring.mjs";
 import { describe, it, expect } from "../../tests/tester.js";
 
 ComponentRegistry.register("SceneTransition", SceneTransition);
+ComponentRegistry.register("SpawnPoint", SpawnPoint);
 ComponentRegistry.register("TriggerCollider", TriggerCollider);
 ComponentRegistry.register("Transform", Transform);
 ComponentRegistry.register("Sprite", Sprite);
@@ -311,10 +313,13 @@ describe("Triton persistence bridge", () => {
         const toolbar = fs.readFileSync(path.join(root, "src", "components", "panels", "hierarchy", "HierarchyToolbar.tsx"), "utf8");
         const hierarchy = fs.readFileSync(path.join(root, "src", "components", "panels", "HierarchyPanel.tsx"), "utf8");
         const loader = fs.readFileSync(path.resolve("src", "core", "sceneLoader.js"), "utf8");
+        const runtime = fs.readFileSync(path.resolve("src", "neptune.js"), "utf8");
 
         expect(toolbar.includes("Create Spawn Point")).toBe(true);
         expect(toolbar.includes("onAddEntity('spawn-point')")).toBe(true);
         expect(hierarchy.includes("type === 'spawn-point' ? 'Spawn Point' : type === 'trigger-area' ? 'Trigger Area'")).toBe(true);
+        expect(hierarchy.includes("type: 'SpawnPoint', props: { spawnId: id, facing: 'right' }")).toBe(true);
+        expect(runtime.includes('ComponentRegistry.register("SpawnPoint", SpawnPoint)')).toBe(true);
         expect(hierarchy.includes("EditorGameRunner.createEntity(persistenceParentId, { id, name, type, components })")).toBe(true);
         expect(loader.includes('if (typeof entityData.type === "string") entity.type = entityData.type;')).toBe(true);
     });
@@ -499,6 +504,35 @@ describe("Triton persistence bridge", () => {
         const runtimeEntity = runtimeScene.children[0];
         expect(runtimeEntity.GetComponent(SceneTransition).properties).toEqual({ targetScene: "scenes/dungeon.scene", spawnPoint: "entrance", trigger: "interact" });
         expect(runtimeEntity.GetComponent(TriggerCollider).height).toBe(2);
+    });
+
+    it("saves and reloads a positioned editor-authored spawn point in the runtime", async () => {
+        const harness = createMainHarness();
+        harness.runner.openScene({ type: "scene", version: "1.0.0", schemaVersion: 1, id: "scene-spawn-point", name: "Spawn Point Scene", entities: [] }, "scenes/spawn-point.scene");
+        expect(harness.runner.createEntity("root", {
+            id: "spawn-dungeon-entrance",
+            name: "Dungeon Entrance",
+            type: "spawn-point",
+            components: [
+                { type: "SpawnPoint", props: { spawnId: "dungeon-entrance", facing: "left" } }
+            ]
+        })).toBe(true);
+        expect(harness.runner.updateEntity("spawn-dungeon-entrance", "transform", {
+            position: { x: 14, y: 28 }, rotation: 0, scale: { x: 1, y: 1 }
+        })).toBe(true);
+
+        await harness.writeScene("scenes/spawn-point.scene", harness.runner.currentScene);
+        const saved = harness.files.get("scenes/spawn-point.scene");
+        expect(saved).toBeDefined();
+        harness.runner.closeScene();
+        const reopened = harness.runner.openScene(JSON.parse(saved), "scenes/spawn-point.scene");
+        const runtimeScene = SceneLoader.parse(reopened);
+        const runtimeEntity = runtimeScene.children.find(entity => entity.name === "Dungeon Entrance");
+
+        expect(runtimeEntity).toBeDefined();
+        const position = runtimeEntity.GetComponent(Transform).position;
+        expect({ x: position.x, y: position.y }).toEqual({ x: 14, y: 28 });
+        expect(runtimeEntity.GetComponent(SpawnPoint).properties).toEqual({ spawnId: "dungeon-entrance", facing: "left" });
     });
 
     it("loads the saved editor-authored scene through the runtime SceneLoader", async () => {

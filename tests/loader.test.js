@@ -13,6 +13,7 @@ import { Dialogue } from "../src/components/dialogue.js";
 import { QuestDefinition } from "../src/components/questDefinition.js";
 import { EnemyConfig } from "../src/components/enemyConfig.js";
 import { SceneTransition } from "../src/components/sceneTransition.js";
+import { SpawnPoint } from "../src/components/spawnPoint.js";
 
 // Manually register components since we aren't loading neptune.js
 ComponentRegistry.register("Transform", Transform);
@@ -25,6 +26,7 @@ ComponentRegistry.register("Dialogue", Dialogue);
 ComponentRegistry.register("QuestDefinition", QuestDefinition);
 ComponentRegistry.register("EnemyConfig", EnemyConfig);
 ComponentRegistry.register("SceneTransition", SceneTransition);
+ComponentRegistry.register("SpawnPoint", SpawnPoint);
 
 describe("SceneLoader Integration", () => {
     it("should load a scene from JSON", async () => {
@@ -238,6 +240,31 @@ describe("SceneLoader Integration", () => {
         expect(transition.properties).toEqual({ targetScene: "scenes/dungeon.scene", spawnPoint: "entrance", trigger: "interact" });
         expect(trigger.width).toBe(1);
         expect(trigger.height).toBe(2);
+    });
+
+    it("loads a named editor-authored spawn point with its editable transform", () => {
+        const scene = SceneLoader.parse({
+            type: "scene",
+            schemaVersion: 1,
+            entities: [{
+                id: "spawn-entry",
+                name: "Dungeon Entrance",
+                type: "spawn-point",
+                transform: { pos: { x: 14, y: 28 }, rot: 0, scale: { x: 1, y: 1 } },
+                components: [
+                    { id: "spawn-config", type: "SpawnPoint", props: { spawnId: "dungeon-entrance", facing: "left" } }
+                ]
+            }]
+        });
+        const entity = scene.children[0];
+        const transform = entity.GetComponent(Transform);
+        const spawnPoint = entity.GetComponent(SpawnPoint);
+
+        expect(entity.type).toBe("spawn-point");
+        expect(transform.position.x).toBe(14);
+        expect(transform.position.y).toBe(28);
+        expect(spawnPoint.id).toBe("spawn-config");
+        expect(spawnPoint.properties).toEqual({ spawnId: "dungeon-entrance", facing: "left" });
     });
 
     it("rejects unsupported scene schema versions with an actionable error", () => {

@@ -82,6 +82,8 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
             ? [{ type: 'QuestDefinition', props: { name: 'New Quest', description: 'Describe the quest...', objectiveId: 'objective-1', objective: 'Describe the objective...', required: 1 } }]
             : type === 'dialogue'
             ? [{ type: 'Dialogue', props: { speaker: 'Speaker', text: 'Enter dialogue...', next: '' } }]
+            : type === 'spawn-point'
+            ? [{ type: 'SpawnPoint', props: { spawnId: id, facing: 'right' } }]
             : type === 'scene-transition'
             ? [{ type: 'SceneTransition', props: { targetScene: 'scenes/', spawnPoint: '', trigger: 'enter' } }, { type: 'TriggerCollider', props: { width: 1, height: 1, offsetX: 0, offsetY: 0 } }]
             : type === 'entity'
