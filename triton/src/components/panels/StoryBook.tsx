@@ -26,9 +26,6 @@ import {
 import { Play, Pause, Square, Plus, Minus, Search, Home, Save, Settings, Trash2 } from "lucide-react"
 import { useState } from "react"
 
-import { renderInspectorComponent } from "./inspector/InspectorRegistry"
-import type { EntityData } from "@/types/engine"
-
 /**
  * ATLAS PANEL
  * A Component Library panel that displays Triton's themed UI components.
@@ -46,41 +43,6 @@ export const StoryBook = (_props: IDockviewPanelProps) => {
     const [vectorValue, setVectorValue] = useState({ x: 0, y: 1.5, z: 0 })
     const [colorValue, setColorValue] = useState("#6b8cff")
     const [textAreaValue, setTextAreaValue] = useState("Multi-line text\neditor example")
-
-    // PREVIEW ENTITY for Inspector Components
-    const previewEntity: EntityData = {
-        id: 'storybook-entity',
-        name: "Preview_Entity",
-        active: true,
-        transform: {
-            position: { x: 128, y: 256 },
-            rotation: 0,
-            scale: { x: 1, y: 1 },
-            z: 0
-        },
-        sprite: { path: "player.png", width: 64, height: 64, blendMode: "Normal", color: "#ffffff" },
-        collider: { width: 48, height: 56, offsetX: 8, offsetY: 4, isTrigger: false },
-        body: { velocityX: 0, velocityY: 0, gravity: 980, maxFallSpeed: 800, friction: 90, drag: 98, grounded: true },
-        sound: { name: "Jump", src: "jump.wav", volume: 80, loop: false, playing: false },
-        stats: { health: 85, maxHealth: 100, stamina: 60, maxStamina: 100, attack: 15, defense: 8, speed: 120 },
-        animator: { currentAnimation: "idle", speed: 100, playing: true, animations: ["idle", "walk", "run"] },
-        scripts: [
-            { path: "/scripts/player_controller.js", enabled: true },
-            { path: "/scripts/camera_follow.js", enabled: true }
-        ],
-        components: {
-            transform: { position: { x: 128, y: 256 }, rotation: 0, scale: { x: 1, y: 1 }, z: 0 },
-            sprite: { path: "player.png", width: 64, height: 64, blendMode: "Normal", color: "#ffffff" },
-            collider: { width: 48, height: 56, offsetX: 8, offsetY: 4, isTrigger: false },
-            body: { velocityX: 0, velocityY: 0, gravity: 980, maxFallSpeed: 800, friction: 90, drag: 98, grounded: true },
-            sound: { name: "Jump", src: "jump.wav", volume: 80, loop: false, playing: false },
-            stats: { health: 85, maxHealth: 100, stamina: 60, maxStamina: 100, attack: 15, defense: 8, speed: 120 },
-            animator: { currentAnimation: "idle", speed: 100, playing: true, animations: ["idle", "walk", "run"] },
-            scripts: [{ path: "/scripts/player_controller.js", enabled: true }, { path: "/scripts/camera_follow.js", enabled: true }]
-        }
-    }
-
-    const componentList = ["transform", "sprite", "collider", "body", "sound", "stats", "animator", "scripts"]
 
     return (
         <ThemedScrollArea maxHeight="100%" className="h-full w-full bg-card p-4">
@@ -303,32 +265,6 @@ export const StoryBook = (_props: IDockviewPanelProps) => {
                     </div>
                 </ThemedCollapsible>
 
-                {/* REAL INSPECTOR COMPONENTS */}
-                <ThemedCollapsible title="Live Inspector Modules" defaultOpen>
-                    <div className="flex flex-col border border-border rounded overflow-hidden">
-                        {componentList.map((compId, index) => renderInspectorComponent({
-                            compId,
-                            index,
-                            entity: previewEntity,
-                            isActive: true,
-                            onToggleActive: () => { },
-                            updateHelpers: {
-                                updateTransform: () => { },
-                                updateSprite: () => { },
-                                updateCollider: () => { },
-                                updateBody: () => { },
-                                updateSound: () => { },
-                                updateStats: () => { },
-                                updateAnimator: () => { },
-                                updateScript: () => { }
-                            },
-                            moveHelpers: {
-                                onMoveUp: () => { },
-                                onMoveDown: () => { }
-                            }
-                        }))}
-                    </div>
-                </ThemedCollapsible>
 
                 {/* COLOR PALETTE */}
                 <ThemedCollapsible title="Theme Colors" defaultOpen={false}>
