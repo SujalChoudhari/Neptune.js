@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback } from "react";
 import type { ReactNode } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { createEmptySceneAssetContent } from "@/lib/projectAssetContent.mjs";
 
 export type AssetType = 'folder' | 'image' | 'script' | 'scene' | 'material' | 'audio' | 'prefab' | 'model' | 'file';
 
@@ -230,7 +231,7 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
             // Default content based on type
             let content = "";
             if (type === 'script') content = "export class NewScript {}";
-            if (type === 'scene') content = "{}";
+            if (type === 'scene') content = createEmptySceneAssetContent(name);
 
             const newPath = await invoke<string>("create_asset", { path, content });
             await refresh();

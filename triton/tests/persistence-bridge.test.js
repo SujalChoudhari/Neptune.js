@@ -12,6 +12,7 @@ import { pickRuntimeEntityAt, runtimeSelectionBridgeScript } from "../src/lib/ru
 import { runtimeConsoleBridgeScript } from "../src/lib/runtimeConsoleBridge.mjs";
 import { runtimeControlBridgeScript, runRuntimeControl } from "../src/lib/runtimeControlBridge.mjs";
 import { getSceneNavigationPath } from "../src/lib/projectNavigation.mjs";
+import { createEmptySceneAssetContent } from "../src/lib/projectAssetContent.mjs";
 
 const root = path.resolve("triton");
 
@@ -348,6 +349,21 @@ describe("Triton persistence bridge", () => {
         expect(getSceneNavigationPath({ id: "legacy/intro.scn", name: "INTRO.SCN", type: "file" })).toBe("legacy/intro.scn");
         expect(getSceneNavigationPath({ id: "project.npt", name: "project.npt", type: "file" })).toBeNull();
         expect(getSceneNavigationPath({ id: "folder.scene", name: "folder.scene", type: "folder" })).toBeNull();
+    });
+
+    it("creates versioned empty scenes that the runtime SceneLoader accepts", () => {
+        const payload = JSON.parse(createEmptySceneAssetContent("maps/New Scene.scene"));
+        expect(payload).toEqual({
+            type: "scene",
+            version: "1.0.0",
+            schemaVersion: 1,
+            name: "New Scene",
+            entities: []
+        });
+
+        const runtimeScene = SceneLoader.parse(payload);
+        expect(runtimeScene.name).toBe("New Scene");
+        expect(runtimeScene.children).toEqual([]);
     });
 
     it("uses selected-project commands for versioned project and scene payloads", () => {
