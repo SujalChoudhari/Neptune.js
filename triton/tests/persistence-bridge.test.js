@@ -10,6 +10,7 @@ import { Transform } from "../../src/components/transform.js";
 import { Sprite } from "../../src/rendering/sprite.js";
 import { pickRuntimeEntityAt, runtimeSelectionBridgeScript } from "../src/lib/runtimeSelectionBridge.mjs";
 import { runtimeConsoleBridgeScript } from "../src/lib/runtimeConsoleBridge.mjs";
+import { runtimeControlBridgeScript, runRuntimeControl } from "../src/lib/runtimeControlBridge.mjs";
 
 const root = path.resolve("triton");
 
@@ -183,6 +184,10 @@ function createMainHarness() {
                 entities: game.entities || {},
                 selectedIds: [],
                 selectEntity() {},
+                renameEntityInHierarchy(id, name) {
+                    const entity = game.entities?.[id];
+                    if (entity) game.entities = { ...game.entities, [id]: { ...entity, name } };
+                },
                 addEntityToHierarchy(entity) {
                     game.entities = appendHierarchyEntity(game.entities || {}, entity);
                 },
@@ -266,8 +271,20 @@ function createMainHarness() {
             ? children.some(child => clickCreateEntity(child, type))
             : clickCreateEntity(children, type);
     };
+    const clickRenameEntity = (node, id, name) => {
+        if (Array.isArray(node)) return node.some(child => clickRenameEntity(child, id, name));
+        if (!node || typeof node !== "object") return false;
+        if (node.type === "HierarchyItem" && node.props?.entity?.id === id) {
+            node.props.onRename(id, name);
+            return true;
+        }
+        const children = node.props?.children;
+        return Array.isArray(children)
+            ? children.some(child => clickRenameEntity(child, id, name))
+            : clickRenameEntity(children, id, name);
+    };
 
-    return { game, runner: runner.EditorGameRunner, files, writes, listeners, notifications, render, renderHierarchy, clickDuplicate, clickCreateEntity, dispatchMenuEvent };
+    return { game, runner: runner.EditorGameRunner, files, writes, listeners, notifications, render, renderHierarchy, clickDuplicate, clickCreateEntity, clickRenameEntity, dispatchMenuEvent };
 }
 
 function loadBundle(bundle, context) {
@@ -360,6 +377,37 @@ describe("Triton persistence bridge", () => {
         expect(messages[0].detail.message).toBe('boot {"scene":"main"}');
         expect(messages[1].detail.message).toBe("asset missing");
         expect(messages[2].detail.message).toBe("runtime failed");
+    });
+
+    it("reports play, pause, resume, and stop state from the live runtime controls", () => {
+        const gameView = fs.readFileSync(path.join(root, "src", "components", "panels", "GameViewPanel.tsx"), "utf8");
+        expect(gameView.includes("${runtimeControlBridgeScript}")).toBe(true);
+        expect(gameView.includes("type: 'game:state-update'")).toBe(true);
+
+        const calls = [];
+        const states = [];
+        const game = {
+            isRunning: false,
+            isPaused: false,
+            start() { calls.push("play"); this.isRunning = true; },
+            pause() { calls.push("pause"); this.isPaused = true; },
+            resume() { calls.push("resume"); this.isPaused = false; },
+            stop() { calls.push("stop"); this.isRunning = false; this.isPaused = false; }
+        };
+        const send = (type, payload) => expect(runRuntimeControl(game, type, payload, state => states.push(state))).toBe(true);
+        send("editor:play");
+        send("editor:pause", { paused: true });
+        send("editor:pause", { paused: false });
+        send("editor:stop");
+
+        expect(calls).toEqual(["play", "pause", "resume", "stop"]);
+        expect(states).toEqual([
+            { isPlaying: true, isPaused: false },
+            { isPlaying: true, isPaused: true },
+            { isPlaying: true, isPaused: false },
+            { isPlaying: false, isPaused: false }
+        ]);
+        expect(runRuntimeControl(game, "editor:unknown", {}, () => {})).toBe(false);
     });
 
     it("opens existing projects without initializing them and keeps creation explicit", async () => {
@@ -577,6 +625,32 @@ describe("Triton persistence bridge", () => {
         harness.runner.closeScene();
         harness.runner.openScene(JSON.parse(harness.files.get("scenes/main.scene")), "scenes/main.scene");
 
+        expect(harness.runner.currentScene.entities[0].name).toBe("After");
+    });
+
+    it("renames Hierarchy entities in editor state and preserves the name after save and reopen", () => {
+        const harness = createMainHarness();
+        harness.render();
+        const scene = {
+            type: "scene", version: "1.0.0", schemaVersion: 1,
+            id: "scene-hierarchy-rename", name: "Main Scene",
+            entities: [{ id: "entity-rename", name: "Before", type: "empty", components: [], children: [] }]
+        };
+        harness.runner.openScene(scene, "scenes/main.scene");
+        harness.game.entities = {
+            root: { id: "root", parentId: null, name: "Main Scene", type: "group", children: ["entity-rename"], active: true, locked: false, expanded: true },
+            "entity-rename": { id: "entity-rename", parentId: "root", name: "Before", type: "empty", children: [], active: true, locked: false, expanded: false }
+        };
+
+        expect(harness.clickRenameEntity(harness.renderHierarchy(), "entity-rename", "After")).toBe(true);
+        expect(harness.game.entities["entity-rename"].name).toBe("After");
+        expect(harness.runner.currentScene.entities[0].name).toBe("After");
+        const renameMessage = harness.notifications.filter(message => message.type === "editor:rename").pop();
+        expect(renameMessage.payload).toEqual({ id: "entity-rename", name: "After" });
+
+        harness.dispatchMenuEvent("save");
+        harness.runner.closeScene();
+        harness.runner.openScene(JSON.parse(harness.files.get("scenes/main.scene")), "scenes/main.scene");
         expect(harness.runner.currentScene.entities[0].name).toBe("After");
     });
 

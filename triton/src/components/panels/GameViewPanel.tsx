@@ -5,6 +5,7 @@ import { useRef } from 'react';
 import gameMainUrl from "../../../../debug_project/main.js?url";
 import { runtimeSelectionBridgeScript } from "@/lib/runtimeSelectionBridge.mjs";
 import { runtimeConsoleBridgeScript } from "@/lib/runtimeConsoleBridge.mjs";
+import { runtimeControlBridgeScript } from "@/lib/runtimeControlBridge.mjs";
 
 export function GameViewPanel() {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -28,6 +29,7 @@ export function GameViewPanel() {
     <script type="module">
         ${runtimeSelectionBridgeScript}
         ${runtimeConsoleBridgeScript}
+        ${runtimeControlBridgeScript}
 
         const reportRuntimeError = (code, message, source) => {
             window.parent.postMessage({
@@ -75,17 +77,12 @@ export function GameViewPanel() {
                     const { type, payload } = e.data;
                     const game = window.game;
 
-                    if (type === 'editor:play' && game.start) {
-                         game.start();
-                    }
-                    else if (type === 'editor:pause' && game.pause && game.resume) {
-                         if (payload?.paused) game.pause();
-                         else game.resume();
-                    }
-                    else if (type === 'editor:stop' && game.stop) {
-                         game.stop();
-                    }
-                    else if (type === 'editor:load-scene' && game.loadScene) {
+                    const controlHandled = runRuntimeControl(game, type, payload, state => {
+                        window.parent.postMessage({ type: 'game:state-update', payload: state }, '*');
+                    });
+                    if (controlHandled) return;
+
+                    if (type === 'editor:load-scene' && game.loadScene) {
                          game.loadScene(payload.data || payload.path)
                              .then(() => window.dispatchEvent(new Event('neptune:editor-selection-ready')))
                              .catch(console.error);

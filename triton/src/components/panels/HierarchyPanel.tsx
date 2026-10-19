@@ -20,6 +20,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         entities,
         selectedIds,
         selectEntity,
+        renameEntityInHierarchy,
         addEntityToHierarchy,
         addEntityBranchToHierarchy,
         removeEntityFromHierarchy,
@@ -61,7 +62,8 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     }
 
     const renameEntity = (id: string, newName: string) => {
-        EditorGameRunner.updateEntity(id, 'name', { value: newName })
+        if (!EditorGameRunner.updateEntity(id, 'name', { value: newName })) return
+        renameEntityInHierarchy(id, newName)
         notifyGame('editor:rename', { id, name: newName });
         setRenamingId(null)
     }

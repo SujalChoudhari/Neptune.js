@@ -1,0 +1,21 @@
+export function runRuntimeControl(game, type, payload, reportState) {
+    if (!game || typeof reportState !== "function") return false;
+
+    if (type === "editor:play" && typeof game.start === "function") {
+        game.start();
+    } else if (type === "editor:pause" && typeof game.pause === "function" && typeof game.resume === "function") {
+        if (payload?.paused) game.pause();
+        else game.resume();
+    } else if (type === "editor:stop" && typeof game.stop === "function") {
+        game.stop();
+    } else {
+        return false;
+    }
+
+    reportState({ isPlaying: Boolean(game.isRunning), isPaused: Boolean(game.isPaused) });
+    return true;
+}
+
+export const runtimeControlBridgeScript = `
+const runRuntimeControl = ${runRuntimeControl.toString()};
+`;

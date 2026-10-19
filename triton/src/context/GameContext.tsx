@@ -21,6 +21,7 @@ interface GameContextType {
     pause: () => void;
     stop: () => void;
     selectEntity: (id: string, multi: boolean) => void;
+    renameEntityInHierarchy: (id: string, name: string) => void;
     addEntityToHierarchy: (entity: SceneEntity) => void;
     addEntityBranchToHierarchy: (branch: Record<string, any>, parentId: string) => void;
     removeEntityFromHierarchy: (id: string) => void;
@@ -434,6 +435,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
         setEntities(previous => appendHierarchyEntity(previous, entity));
     }, []);
 
+    const renameEntityInHierarchy = useCallback((id: string, name: string) => {
+        setEntities(previous => {
+            const entity = previous[id];
+            if (!entity || entity.name === name) return previous;
+            return { ...previous, [id]: { ...entity, name } };
+        });
+    }, []);
+
     const addEntityBranchToHierarchy = useCallback((branch: Record<string, any>, parentId: string) => {
         setEntities(previous => appendHierarchyBranch(previous, branch, parentId));
     }, []);
@@ -535,6 +544,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             pause,
             stop,
             selectEntity,
+            renameEntityInHierarchy,
             addEntityToHierarchy,
             addEntityBranchToHierarchy,
             removeEntityFromHierarchy,
