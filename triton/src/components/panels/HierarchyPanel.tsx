@@ -76,7 +76,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         const duplicate = EditorGameRunner.duplicateEntity(id)
         if (!duplicate) return
         addEntityBranchToHierarchy(duplicate, entities[id]?.parentId || "root")
-        notifyGame('editor:duplicate', { id, data: duplicate })
+        notifyGame('editor:load-scene', { data: EditorGameRunner.currentScene })
     }
 
     const addEntity = (parentId: string, name: string, type: string) => {
@@ -93,7 +93,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
             locked: false,
             expanded: false
         })
-        notifyGame('editor:create-entity', { id, parentId, name, type });
+        notifyGame('editor:load-scene', { data: EditorGameRunner.currentScene });
     }
 
     // Simple search filtering

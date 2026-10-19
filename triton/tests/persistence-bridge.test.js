@@ -60,6 +60,7 @@ function createMainHarness() {
     const listeners = [];
     const writes = [];
     const files = new Map();
+    const notifications = [];
     const runner = loadBundle(runnerBundle, {});
     runner.EditorGameRunner.currentScene = null;
     runner.EditorGameRunner.currentScenePath = null;
@@ -189,7 +190,9 @@ function createMainHarness() {
                     game.entities = appendHierarchyBranch(game.entities || {}, branch, parentId);
                 },
                 moveEntities() {},
-                notifyGame() {},
+                notifyGame(type, payload) {
+                    notifications.push({ type, payload });
+                },
                 saveScene: async () => writeScene("scenes/main.scene", game.staleScene || game.openedScene)
             })
         },
@@ -264,7 +267,7 @@ function createMainHarness() {
             : clickCreateEntity(children, type);
     };
 
-    return { game, runner: runner.EditorGameRunner, files, writes, listeners, render, renderHierarchy, clickDuplicate, clickCreateEntity, dispatchMenuEvent };
+    return { game, runner: runner.EditorGameRunner, files, writes, listeners, notifications, render, renderHierarchy, clickDuplicate, clickCreateEntity, dispatchMenuEvent };
 }
 
 function loadBundle(bundle, context) {
@@ -736,6 +739,8 @@ describe("Triton persistence bridge", () => {
         const createdId = harness.runner.currentScene.entities[0].id;
         expect(harness.game.entities.root.children).toEqual([createdId]);
         expect(harness.game.entities[createdId].name).toBe("New empty");
+        const runtimeSceneLoad = harness.notifications.filter(message => message.type === "editor:load-scene").pop();
+        expect(runtimeSceneLoad.payload.data.entities[0].id).toBe(createdId);
 
         harness.dispatchMenuEvent("save");
         harness.runner.closeScene();
@@ -784,6 +789,9 @@ describe("Triton persistence bridge", () => {
         expect(harness.game.entities[duplicate.id].children).toEqual([duplicate.children[0].id]);
         expect(harness.game.entities[duplicate.children[0].id].parentId).toBe(duplicate.id);
         expect(harness.game.entities[duplicate.children[0].id].name).toBe("Nested Source");
+        const runtimeSceneLoad = harness.notifications.filter(message => message.type === "editor:load-scene").pop();
+        expect(runtimeSceneLoad.payload.data.entities[1].id).toBe(duplicate.id);
+        expect(runtimeSceneLoad.payload.data.entities[1].children[0].id).toBe(duplicate.children[0].id);
 
         harness.dispatchMenuEvent("save");
         harness.runner.closeScene();
