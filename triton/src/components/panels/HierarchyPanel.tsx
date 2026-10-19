@@ -21,6 +21,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         selectedIds,
         selectEntity,
         addEntityToHierarchy,
+        addEntityBranchToHierarchy,
         removeEntityFromHierarchy,
         moveEntities,
         notifyGame
@@ -72,8 +73,10 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     }, [removeEntityFromHierarchy, notifyGame])
 
     const duplicateEntity = (id: string) => {
-        EditorGameRunner.duplicateEntity(id)
-        notifyGame('editor:duplicate', { id })
+        const duplicate = EditorGameRunner.duplicateEntity(id)
+        if (!duplicate) return
+        addEntityBranchToHierarchy(duplicate, entities[id]?.parentId || "root")
+        notifyGame('editor:duplicate', { id, data: duplicate })
     }
 
     const addEntity = (parentId: string, name: string, type: string) => {

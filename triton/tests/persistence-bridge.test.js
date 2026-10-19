@@ -119,7 +119,7 @@ function createMainHarness() {
         write: false,
         stdin: { contents: fs.readFileSync(additionPath, "utf8"), loader: "ts", sourcefile: additionPath }
     }).outputFiles[0].text;
-    const { appendHierarchyEntity } = loadBundle(additionBundle, {});
+    const { appendHierarchyBranch, appendHierarchyEntity } = loadBundle(additionBundle, {});
 
     const listen = (_eventName, handler) => {
         const listener = { active: true, handler };
@@ -183,6 +183,9 @@ function createMainHarness() {
                 selectEntity() {},
                 addEntityToHierarchy(entity) {
                     game.entities = appendHierarchyEntity(game.entities || {}, entity);
+                },
+                addEntityBranchToHierarchy(branch, parentId) {
+                    game.entities = appendHierarchyBranch(game.entities || {}, branch, parentId);
                 },
                 moveEntities() {},
                 notifyGame() {},
@@ -755,6 +758,10 @@ describe("Triton persistence bridge", () => {
         expect(harness.clickDuplicate(harness.renderHierarchy())).toBe(true);
         const duplicate = harness.runner.currentScene.entities[1];
         expect(duplicate.id).toContain("entity-");
+        expect(harness.game.entities.root.children).toEqual(["source", duplicate.id]);
+        expect(harness.game.entities[duplicate.id].children).toEqual([duplicate.children[0].id]);
+        expect(harness.game.entities[duplicate.children[0].id].parentId).toBe(duplicate.id);
+        expect(harness.game.entities[duplicate.children[0].id].name).toBe("Nested Source");
 
         harness.dispatchMenuEvent("save");
         harness.runner.closeScene();

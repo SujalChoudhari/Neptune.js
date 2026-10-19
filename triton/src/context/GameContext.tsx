@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import type { SceneEntity, EntityData } from "../types/engine";
 import type { VersionedScenePayload } from "./FileSystemContext";
 import { applyInspectorFieldUpdate } from "../lib/inspectorEntityData";
-import { appendHierarchyEntity } from "../lib/hierarchyEntityAddition";
+import { appendHierarchyBranch, appendHierarchyEntity } from "../lib/hierarchyEntityAddition";
 import { removeEntityBranch } from "../lib/hierarchyEntityRemoval";
 
 interface GameContextType {
@@ -22,6 +22,7 @@ interface GameContextType {
     stop: () => void;
     selectEntity: (id: string, multi: boolean) => void;
     addEntityToHierarchy: (entity: SceneEntity) => void;
+    addEntityBranchToHierarchy: (branch: Record<string, any>, parentId: string) => void;
     removeEntityFromHierarchy: (id: string) => void;
     moveEntities: (ids: string[], targetParentId: string, index?: number) => void;
     updateComponent: (id: string, component: string, field: string, value: any) => void;
@@ -433,6 +434,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
         setEntities(previous => appendHierarchyEntity(previous, entity));
     }, []);
 
+    const addEntityBranchToHierarchy = useCallback((branch: Record<string, any>, parentId: string) => {
+        setEntities(previous => appendHierarchyBranch(previous, branch, parentId));
+    }, []);
+
     const removeEntityFromHierarchy = useCallback((id: string) => {
         const result = removeEntityBranch(entities, id);
         if (result.removedIds.length === 0) return;
@@ -531,6 +536,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             stop,
             selectEntity,
             addEntityToHierarchy,
+            addEntityBranchToHierarchy,
             removeEntityFromHierarchy,
             moveEntities,
             updateComponent,
