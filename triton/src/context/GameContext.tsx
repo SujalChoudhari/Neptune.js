@@ -105,7 +105,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
         // 2. Read File directly (Data)
         try {
-            const data = await readScene(path);
+            const data = EditorGameRunner.validateScene(await readScene(path)) as unknown as VersionedScenePayload;
             // A failed read must never turn an untrusted file path into the
             // current save target. Commit the scene identity only after the
             // versioned payload has been accepted by the native bridge.
@@ -287,9 +287,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
             } else if (data.entities && Array.isArray(data.entities)) {
                 // Flat or simple root entities
                 parseEntityList(data.entities, 'root');
-            } else if (data.entities && typeof data.entities === 'object') {
-                // Already in map format
-                Object.assign(newEntities, data.entities);
             }
 
             console.log("Parsed Entities:", newEntities);

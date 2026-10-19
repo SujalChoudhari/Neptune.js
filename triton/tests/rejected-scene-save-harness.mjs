@@ -23,6 +23,8 @@ const slots = [];
 let hookIndex = 0;
 let currentContext;
 const writes = [];
+let scenePayload = null;
+let sceneReadError = true;
 const react = {
     createContext() {
         const Provider = Symbol("GameContext.Provider");
@@ -63,7 +65,8 @@ vm.runInNewContext(bundle.outputFiles[0].text, {
                 useFileSystem: () => ({
                     rootPath: null,
                     readScene: async () => {
-                        throw new Error("Could not load scene 'scenes/bad.scene'. Invalid scene payload: invalid JSON");
+                        if (sceneReadError) throw new Error("Could not load scene 'scenes/bad.scene'. Invalid scene payload: invalid JSON");
+                        return scenePayload;
                     },
                     readProject: async () => ({}),
                     writeProject: async () => true,
@@ -100,4 +103,22 @@ if (!saveError?.message.includes("no scene is open")) {
 }
 if (writes.length !== 0) {
     throw new Error("Save after a rejected scene read must not write the rejected source.");
+}
+
+sceneReadError = false;
+scenePayload = {
+    type: "scene",
+    version: "1.0.0",
+    schemaVersion: 1,
+    name: "Map-shaped entities",
+    entities: { fake: { id: "fake", name: "Fake Runtime Entity", type: "entity" } }
+};
+await currentContext.loadScene("scenes/map-shaped.scene");
+render();
+
+if (currentContext.currentScenePath !== null) {
+    throw new Error("A scene shape unsupported by SceneLoader must not become the current save target.");
+}
+if (Object.keys(currentContext.entities).length !== 0) {
+    throw new Error("A scene shape unsupported by SceneLoader must not populate the editor hierarchy.");
 }
