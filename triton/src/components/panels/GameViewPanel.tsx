@@ -24,8 +24,35 @@ export function GameViewPanel() {
 <body>
     <canvas id="neptune-canvas"></canvas>
     <script type="module">
-        // Basic Game Loader
-        import "${gameMainUrl}";
+        const reportRuntimeError = (code, message, source) => {
+            window.parent.postMessage({
+                type: 'editor:diagnostic',
+                payload: {
+                    code,
+                    severity: 'error',
+                    message,
+                    source,
+                    action: 'Fix the game runtime error and retry.'
+                }
+            }, '*');
+        };
+
+        window.addEventListener('error', (event) => {
+            reportRuntimeError('GAME_RUNTIME_ERROR', event.message || String(event.error), event.filename || undefined);
+        });
+        window.addEventListener('unhandledrejection', (event) => {
+            const reason = event.reason;
+            reportRuntimeError('GAME_UNHANDLED_REJECTION', reason instanceof Error ? reason.message : String(reason));
+        });
+
+        const originalConsoleError = console.error.bind(console);
+        console.error = (...args) => {
+            originalConsoleError(...args);
+            window.parent.postMessage({
+                type: 'editor:log',
+                detail: { type: 'error', message: args.map(value => value instanceof Error ? value.message : String(value)).join(' ') }
+            }, '*');
+        };
         
         // Helper to find deep entities
         const findEntity = (root, id) => {
@@ -95,7 +122,9 @@ export function GameViewPanel() {
                 requestAnimationFrame(wait);
             }
         };
-        wait();
+        import("${gameMainUrl}").then(wait).catch((error) => {
+            reportRuntimeError('GAME_BOOT_ERROR', error instanceof Error ? error.message : String(error));
+        });
     </script>
 </body>
 </html>

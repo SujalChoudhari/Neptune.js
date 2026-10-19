@@ -290,6 +290,16 @@ describe("Triton persistence bridge", () => {
         expect(inspector.includes("as any as MockEntity")).toBe(false);
     });
 
+    it("forwards Game View console errors and uncaught runtime failures to Triton Console", () => {
+        const gameView = fs.readFileSync(path.join(root, "src", "components", "panels", "GameViewPanel.tsx"), "utf8");
+
+        expect(gameView.includes("window.addEventListener('error'")).toBe(true);
+        expect(gameView.includes("window.addEventListener('unhandledrejection'")).toBe(true);
+        expect(gameView.includes("type: 'editor:diagnostic'")).toBe(true);
+        expect(gameView.includes("type: 'editor:log'")).toBe(true);
+        expect(gameView.includes("GAME_BOOT_ERROR")).toBe(true);
+    });
+
     it("applies inspector renames to both game views and persists them across reopen", async () => {
         const sceneView = fs.readFileSync(path.join(root, "src", "components", "panels", "SceneViewPanel.tsx"), "utf8");
         const gameView = fs.readFileSync(path.join(root, "src", "components", "panels", "GameViewPanel.tsx"), "utf8");
