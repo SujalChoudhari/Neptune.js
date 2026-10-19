@@ -49,6 +49,8 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
     const [newMapName, setNewMapName] = useState('new-map.map');
     const [newMapWidth, setNewMapWidth] = useState(16);
     const [newMapHeight, setNewMapHeight] = useState(16);
+    const [newMapColumns, setNewMapColumns] = useState(8);
+    const [newMapTileSize, setNewMapTileSize] = useState(32);
     const [newMapTileset, setNewMapTileset] = useState('');
     const [isCreatingMap, setIsCreatingMap] = useState(false);
 
@@ -82,7 +84,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                 setTilemap(parsed);
                 setPaletteCount(typeof parsed.tileCount === 'number' && Number.isInteger(parsed.tileCount) && parsed.tileCount > 0
                     ? Math.min(parsed.tileCount, 4096)
-                    : Math.min(Math.max(1, parsed.columns || 5) ** 2, 4096));
+                    : Math.min(Math.max(1, parsed.columns || 10) ** 2, 4096));
             } catch (loadError) {
                 setTilemap(null);
                 setError(loadError instanceof Error ? loadError.message : String(loadError));
@@ -147,6 +149,8 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                 name: filename,
                 width: newMapWidth,
                 height: newMapHeight,
+                columns: newMapColumns,
+                tileSize: newMapTileSize,
                 tileset: newMapTileset || undefined
             });
             if (!await writeFile(filename, JSON.stringify(createdMap, null, 2))) {
@@ -210,6 +214,8 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
     };
 
     const activeMetadata = tilemap?.metadata?.[String(tileId)] || {};
+    const atlasColumns = tilemap?.columns ?? 10;
+    const atlasTileSize = tilemap?.tileSize ?? 64;
 
     return (
         <section className="h-full flex flex-col gap-2 bg-background p-3 text-foreground">
@@ -256,6 +262,14 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                         <input aria-label="New tilemap height" className="w-16 rounded border border-border bg-card px-2 py-1" type="number" min="1" max="256" value={newMapHeight} onChange={(event) => setNewMapHeight(Number(event.target.value))} />
                     </label>
                     <label className="flex flex-col gap-1 text-xs">
+                        Atlas columns
+                        <input aria-label="New tilemap atlas columns" className="w-16 rounded border border-border bg-card px-2 py-1" type="number" min="1" max="64" value={newMapColumns} onChange={(event) => setNewMapColumns(Number(event.target.value))} />
+                    </label>
+                    <label className="flex flex-col gap-1 text-xs">
+                        Tile size (px)
+                        <input aria-label="New tilemap tile size" className="w-16 rounded border border-border bg-card px-2 py-1" type="number" min="1" max="256" value={newMapTileSize} onChange={(event) => setNewMapTileSize(Number(event.target.value))} />
+                    </label>
+                    <label className="flex flex-col gap-1 text-xs">
                         Tileset
                         <select aria-label="New tilemap tileset" className="max-w-40 rounded border border-border bg-card px-2 py-1" value={newMapTileset} onChange={(event) => setNewMapTileset(event.target.value)}>
                             <option value="">No tileset yet</option>
@@ -286,6 +300,46 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                         <option value="">Choose an image asset</option>
                         {tilesetFiles.map((file) => <option key={file.id} value={file.id}>{file.id}</option>)}
                     </select>
+                </div>
+            )}
+            {tilemap && (
+                <div className="flex flex-wrap items-center gap-3 rounded border border-border bg-card/50 px-2 py-1">
+                    <label className="flex items-center gap-2 text-xs" htmlFor="tilemap-atlas-columns">
+                        Atlas columns
+                        <input
+                            id="tilemap-atlas-columns"
+                            aria-label="Atlas columns"
+                            className="w-16 rounded border border-border bg-card px-2 py-1"
+                            type="number"
+                            min="1"
+                            max="64"
+                            value={tilemap.columns ?? 10}
+                            onChange={(event) => {
+                                const columns = Number(event.target.value);
+                                if (!Number.isInteger(columns) || columns < 1 || columns > 64) return;
+                                setTilemap({ ...tilemap, columns });
+                                setIsDirty(true);
+                            }}
+                        />
+                    </label>
+                    <label className="flex items-center gap-2 text-xs" htmlFor="tilemap-tile-size">
+                        Tile size (px)
+                        <input
+                            id="tilemap-tile-size"
+                            aria-label="Tile size in pixels"
+                            className="w-16 rounded border border-border bg-card px-2 py-1"
+                            type="number"
+                            min="1"
+                            max="256"
+                            value={tilemap.tileSize ?? 64}
+                            onChange={(event) => {
+                                const tileSize = Number(event.target.value);
+                                if (!Number.isInteger(tileSize) || tileSize < 1 || tileSize > 256) return;
+                                setTilemap({ ...tilemap, tileSize });
+                                setIsDirty(true);
+                            }}
+                        />
+                    </label>
                 </div>
             )}
             <div className="flex items-center gap-2">
@@ -352,8 +406,8 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                             }}
                         />
                     </div>
-                    <div className="grid w-max gap-1" style={{ gridTemplateColumns: `repeat(${Math.max(1, tilemap.columns || 5)}, 28px)` }}>
-                        {getTilesetPaletteIds(Math.max(1, tilemap.columns || 5), paletteCount).map((id) => (
+                    <div className="grid w-max gap-1" style={{ gridTemplateColumns: `repeat(${atlasColumns}, 28px)` }}>
+                        {getTilesetPaletteIds(atlasColumns, paletteCount).map((id) => (
                             <button
                                 key={id}
                                 type="button"
@@ -361,8 +415,8 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                                 aria-pressed={tileId === id}
                                 className={`h-7 w-7 rounded border text-[9px] ${tileId === id ? 'border-primary ring-1 ring-primary' : 'border-border'} ${tilesetPreview && atlasSize ? 'text-transparent' : 'bg-card'}`}
                                 style={tilesetPreview && atlasSize ? (() => {
-                                    const tileSize = tilemap.tileSize || 32;
-                                    const offset = getTilesetTileOffset(id, Math.max(1, tilemap.columns || 5), tileSize);
+                                    const tileSize = atlasTileSize;
+                                    const offset = getTilesetTileOffset(id, atlasColumns, tileSize);
                                     const scale = 28 / tileSize;
                                     return {
                                         backgroundImage: `url("${tilesetPreview}")`,

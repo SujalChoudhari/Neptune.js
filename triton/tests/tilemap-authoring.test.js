@@ -146,6 +146,10 @@ test('TilemapPanel creates and rescans a new asset before editing it', () => {
     assert.match(panel, /await refresh\(\)/);
     assert.match(panel, /setMapPath\(filename\)/);
     assert.match(panel, /aria-label="Create new tilemap"/);
+    assert.match(panel, /columns: newMapColumns/);
+    assert.match(panel, /tileSize: newMapTileSize/);
+    assert.match(panel, /aria-label="New tilemap atlas columns"/);
+    assert.match(panel, /aria-label="New tilemap tile size"/);
 });
 
 test('TilemapPanel prevents attaching maps that the runtime cannot render yet', () => {
