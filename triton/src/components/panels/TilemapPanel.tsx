@@ -27,7 +27,7 @@ interface TilemapDocument {
 
 export function TilemapPanel(_props: IDockviewPanelProps) {
     const { nodes, readFile, writeFile } = useFileSystem();
-    const { currentScenePath, loadScene } = useGameContext();
+    const { currentScenePath, loadScene, addTilemapLayer } = useGameContext();
     const mapFiles = useMemo(() => Object.values(nodes)
         .filter((node) => node.type === 'file' && node.name.toLowerCase().endsWith('.map'))
         .sort((a, b) => a.id.localeCompare(b.id)), [nodes]);
@@ -123,6 +123,13 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
         }
     };
 
+    const handleAddToScene = () => {
+        setError('');
+        if (!addTilemapLayer(mapPath)) {
+            setError('Could not add this map to the active scene. Open a scene and select a saved .map file.');
+        }
+    };
+
     const paint = (x: number, y: number) => {
         if (!tilemap) return;
         try {
@@ -208,6 +215,16 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                     onClick={() => void handleSave()}
                 >
                     {isSaving ? 'Saving…' : isDirty ? 'Save Map' : 'Saved'}
+                </button>
+                <button
+                    type="button"
+                    className="rounded border border-border px-3 py-1 text-xs disabled:opacity-50"
+                    aria-label="Add tilemap to active scene"
+                    title={isDirty ? 'Save the map before adding it to the scene' : undefined}
+                    disabled={!tilemap || !mapPath || isDirty || !currentScenePath}
+                    onClick={handleAddToScene}
+                >
+                    Add to Scene
                 </button>
             </div>
             {tilemap && (

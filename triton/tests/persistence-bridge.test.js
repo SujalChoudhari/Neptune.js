@@ -5,12 +5,18 @@ import { execFileSync } from "node:child_process";
 import { buildSync } from "esbuild";
 import { SceneLoader } from "../../src/core/sceneLoader.js";
 import { ComponentRegistry } from "../../src/core/componentRegistry.js";
+import { Transform } from "../../src/components/transform.js";
+import { Sprite } from "../../src/rendering/sprite.js";
+import { BoxCollider } from "../../src/components/boxCollider.js";
 import { SceneTransition } from "../../src/components/sceneTransition.js";
 import { TriggerCollider } from "../../src/nereid/collider.js";
 import { describe, it, expect } from "../../tests/tester.js";
 
 ComponentRegistry.register("SceneTransition", SceneTransition);
 ComponentRegistry.register("TriggerCollider", TriggerCollider);
+ComponentRegistry.register("Transform", Transform);
+ComponentRegistry.register("Sprite", Sprite);
+ComponentRegistry.register("BoxCollider", BoxCollider);
 
 const root = path.resolve("triton");
 
@@ -487,6 +493,45 @@ describe("Triton persistence bridge", () => {
         expect(runtimeEntity).toBeDefined();
         expect(runtimeEntity.GetComponent(SceneTransition).properties).toEqual({ targetScene: "scenes/dungeon.scene", spawnPoint: "entrance", trigger: "interact" });
         expect(runtimeEntity.GetComponent(TriggerCollider).height).toBe(2);
+    });
+
+    it("saves and loads a TilemapPanel map attached to an editor-authored scene", async () => {
+        const harness = createMainHarness();
+        harness.runner.openScene({ type: "scene", version: "1.0.0", schemaVersion: 1, id: "scene-tilemap", name: "Tilemap Scene", entities: [], layers: [] }, "scenes/tilemap.scene");
+        const layer = harness.runner.createTilemapLayer("maps/level.map");
+        expect(layer).not.toBe(null);
+        expect(layer.name).toBe("level");
+        expect(layer.src).toBe("maps/level.map");
+        expect(harness.runner.createTilemapLayer("../outside.map")).toBe(null);
+        expect(harness.runner.createTilemapLayer("maps/invalid.json")).toBe(null);
+        expect(harness.runner.updateEntity(layer.id, "Tilemap", { src: "maps/edited.map" })).toBe(true);
+        expect(harness.runner.updateEntity(layer.id, "Tilemap", { src: "../outside.map" })).toBe(false);
+        expect(harness.runner.updateEntity(layer.id, "name", { value: "Edited Level" })).toBe(true);
+        const editedLayer = { ...layer, name: "Edited Level", src: "maps/edited.map" };
+
+        await harness.writeScene("scenes/tilemap.scene", harness.runner.currentScene);
+        harness.runner.closeScene();
+        const reopened = harness.runner.openScene(JSON.parse(harness.files.get("scenes/tilemap.scene")), "scenes/tilemap.scene");
+        expect(reopened.layers).toEqual([editedLayer]);
+
+        const originalFetch = global.fetch;
+        const originalImage = global.Image;
+        global.Image = class { set src(_value) {} };
+        global.fetch = async source => {
+            expect(source).toBe("maps/edited.map");
+            return {
+                ok: true,
+                json: async () => ({ width: 1, height: 1, data: [1], tileset: "tiles.png" })
+            };
+        };
+        try {
+            const runtimeScene = await SceneLoader.parse(reopened);
+            expect(runtimeScene.children).toHaveLength(1);
+            expect(runtimeScene.children[0].name).toBe("Tile_0");
+        } finally {
+            global.fetch = originalFetch;
+            global.Image = originalImage;
+        }
     });
 
     it("keeps a HierarchyPanel duplicate after File > Save, close, and reopen", () => {

@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useMemo } 
 import type { ReactNode } from "react";
 import type { SceneEntity, EntityData } from "../types/engine";
 import type { VersionedScenePayload } from "./FileSystemContext";
+import { EditorGameRunner } from "../lib/editorGameRunner";
 
 interface GameContextType {
     isPlaying: boolean;
@@ -25,6 +26,7 @@ interface GameContextType {
     // Internal Bridge
     notifyGame: (type: string, payload?: any) => void;
     loadScene: (path: string) => Promise<void>;
+    addTilemapLayer: (path: string) => boolean;
     loadMainScene: () => Promise<void>;
     saveScene: (scene?: VersionedScenePayload) => Promise<boolean>;
 
@@ -299,6 +301,46 @@ export function GameProvider({ children }: { children: ReactNode }) {
         } // HMR Trigger
     }, [readScene, notifyGame]);
 
+    const addTilemapLayer = useCallback((path: string) => {
+        if (!currentScenePath) return false;
+        const layer = EditorGameRunner.createTilemapLayer(path);
+        if (!layer) return false;
+
+        setEntities(previous => {
+            const root = previous.root;
+            if (!root) return previous;
+            return {
+                ...previous,
+                root: { ...root, children: [...root.children, layer.id] },
+                [layer.id]: {
+                    id: layer.id,
+                    parentId: "root",
+                    name: layer.name,
+                    type: "tilemap" as const,
+                    children: [],
+                    active: true,
+                    locked: false,
+                    expanded: false
+                }
+            };
+        });
+        setEntityDataCache(previous => ({
+            ...previous,
+            [layer.id]: {
+                id: layer.id,
+                name: layer.name,
+                active: true,
+                transform: { position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 }, z: 0 },
+                components: { Tilemap: { src: layer.src } }
+            }
+        }));
+
+        const scene = EditorGameRunner.currentScene as VersionedScenePayload;
+        setCurrentScenePayload(JSON.parse(JSON.stringify(scene)) as VersionedScenePayload);
+        notifyGame("editor:load-scene", { path: currentScenePath, data: scene });
+        return true;
+    }, [currentScenePath, notifyGame]);
+
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
             // Validate origin if needed, but for local tool it's okay
@@ -511,6 +553,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             markAsMainScene,
             notifyGame,
             loadScene,
+            addTilemapLayer,
             loadMainScene,
             saveScene,
             mainScenePath,
