@@ -431,6 +431,26 @@ mod tests {
     }
 
     #[test]
+    fn opening_existing_project_requires_marker_and_never_creates_it() {
+        let (state, root, outside) = test_root();
+        let project = root.join("existing");
+        fs::create_dir_all(&project).unwrap();
+        let before = selected_root(&state).unwrap();
+        let error = open_existing_project_impl(project.to_str().unwrap(), &state).unwrap_err();
+        assert!(error.contains("does not contain project.npt"));
+        assert!(!project.join("project.npt").exists());
+        assert_eq!(selected_root(&state).unwrap(), before);
+
+        let marker = serde_json::json!({
+            "type": "project", "schemaVersion": PROJECT_SCHEMA_VERSION, "scenes": []
+        });
+        fs::write(project.join("project.npt"), marker.to_string()).unwrap();
+        assert!(open_existing_project_impl(project.to_str().unwrap(), &state).unwrap());
+        assert_eq!(selected_root(&state).unwrap(), fs::canonicalize(&project).unwrap());
+        cleanup(&root, &outside);
+    }
+
+    #[test]
     fn rejects_absolute_and_traversal_paths() {
         let (state, root, outside) = test_root();
         assert!(resolve_scoped_path(&state, "/tmp", false).is_err());
@@ -774,6 +794,36 @@ async fn initialize_project(
     Ok(true)
 }
 
+fn open_existing_project_impl(path: &str, state: &SelectedProjectRoot) -> Result<bool, String> {
+    let project_path = fs::canonicalize(path)
+        .map_err(|error| format!("Could not open existing project folder: {error}"))?;
+    if !project_path.is_dir() {
+        return Err("Could not open existing project: selected path is not a folder".to_string());
+    }
+    let marker_file = project_path.join("project.npt");
+    if !marker_file.is_file() {
+        return Err(format!(
+            "Could not open existing project: '{}' does not contain project.npt",
+            project_path.display()
+        ));
+    }
+    let content = fs::read_to_string(&marker_file)
+        .map_err(|error| format!("Could not read project.npt: {error}"))?;
+    let payload = parse_json_payload(&content, "project")?;
+    normalize_project_payload(payload)
+        .map_err(|error| format!("Could not open project: {error}"))?;
+    set_selected_root(state, project_path)?;
+    Ok(true)
+}
+
+#[tauri::command]
+async fn open_existing_project(
+    path: String,
+    state: tauri::State<'_, SelectedProjectRoot>,
+) -> Result<bool, String> {
+    open_existing_project_impl(&path, state.inner())
+}
+
 #[tauri::command]
 async fn read_file(
     path: String,
@@ -1034,6 +1084,7 @@ pub fn run() {
     .manage(SelectedProjectRoot::default())
     .invoke_handler(tauri::generate_handler![
         initialize_project, 
+        open_existing_project,
         get_startup_config, 
         scan_project, 
         move_fs_node,

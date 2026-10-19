@@ -301,6 +301,79 @@ describe("Triton persistence bridge", () => {
         expect(gameView.includes("GAME_BOOT_ERROR")).toBe(true);
     });
 
+    it("opens existing projects without initializing them and keeps creation explicit", async () => {
+        const sourcefile = path.resolve("triton/src/pages/WelcomeScreen.tsx");
+        const bundle = buildSync({
+            bundle: true,
+            external: ["react", "react/jsx-runtime", "@tauri-apps/plugin-dialog", "@tauri-apps/api/core", "lucide-react", "@/lib/utils", "@/utils/dateUtils", "@/components/library"],
+            format: "cjs",
+            platform: "node",
+            write: false,
+            stdin: { contents: fs.readFileSync(sourcefile, "utf8"), loader: "tsx", sourcefile, resolveDir: path.dirname(sourcefile) }
+        }).outputFiles[0].text;
+        const state = [];
+        let hookIndex = 0;
+        const calls = [];
+        const loaded = [];
+        const react = {
+            createElement: (type, props, ...children) => ({
+                type,
+                props: { ...(props || {}), children: children.length > 1 ? children : children[0] }
+            }),
+            useState(initial) {
+                const index = hookIndex++;
+                if (!(index in state)) state[index] = initial;
+                return [state[index], value => { state[index] = typeof value === "function" ? value(state[index]) : value; }];
+            },
+            useEffect() {}
+        };
+        const jsx = (type, props) => ({ type, props: props || {} });
+        const modules = {
+            react,
+            "react/jsx-runtime": { jsx, jsxs: jsx },
+            "@tauri-apps/plugin-dialog": { open: async () => "/selected/folder" },
+            "@tauri-apps/api/core": { invoke: async (command, args) => { calls.push({ command, args }); } },
+            "lucide-react": new Proxy({}, { get: (_target, name) => String(name) }),
+            "@/lib/utils": { cn: (...values) => values.filter(Boolean).join(" ") },
+            "@/utils/dateUtils": { timeAgo: () => "now" },
+            "@/components/library": { ThemedScrollArea: "ScrollArea", ThemedInput: "Input", themedButtonBase: "button" }
+        };
+        const componentModule = { exports: {} };
+        vm.runInNewContext(bundle, {
+            module: componentModule,
+            exports: componentModule.exports,
+            React: react,
+            localStorage: { setItem() {}, getItem: () => null },
+            require: specifier => {
+                if (!(specifier in modules)) throw new Error(`Unexpected import: ${specifier}`);
+                return modules[specifier];
+            }
+        });
+        const tree = componentModule.exports.WelcomeScreen({ onProjectLoaded: async value => { loaded.push(value); } });
+        const findButton = (node, label) => {
+            if (!node || typeof node !== "object") return null;
+            if (node.type?.name === "SidebarButton" && node.props?.label === label) return node;
+            const children = node.props?.children;
+            for (const child of Array.isArray(children) ? children : [children]) {
+                const found = findButton(child, label);
+                if (found) return found;
+            }
+            return null;
+        };
+
+        const importButton = findButton(tree, "Import");
+        const newProjectButton = findButton(tree, "New Project");
+        expect(importButton !== null).toBe(true);
+        expect(newProjectButton !== null).toBe(true);
+        await importButton.props.onClick();
+        await newProjectButton.props.onClick();
+
+        expect(calls.map(call => call.command)).toEqual(["open_existing_project", "initialize_project"]);
+        expect(loaded).toEqual(["/selected/folder", "/selected/folder"]);
+        const mainSource = fs.readFileSync(path.resolve("triton/src/pages/Main.tsx"), "utf8");
+        expect(mainSource.includes("get_startup_config")).toBe(false);
+    });
+
     it("synchronizes editor selection into the live game and runtime selection back to the editor", () => {
         const gameView = fs.readFileSync(path.join(root, "src", "components", "panels", "GameViewPanel.tsx"), "utf8");
         expect(gameView.includes("${runtimeSelectionBridgeScript}")).toBe(true);
