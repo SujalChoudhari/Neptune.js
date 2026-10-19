@@ -682,6 +682,48 @@ mod tests {
 
         cleanup(&root, &outside);
     }
+
+    #[test]
+    fn image_asset_reader_returns_data_uri_and_rejects_project_escape() {
+        let (state, root, outside) = test_root();
+        fs::create_dir_all(root.join("assets")).unwrap();
+        fs::write(root.join("assets/hero.png"), b"\x89PNG\r\n\x1a\n").unwrap();
+        fs::write(outside.join("escape.png"), b"\x89PNG\r\n\x1a\n").unwrap();
+        assert_eq!(read_image_asset_impl("assets/hero.png", &state).unwrap(), "data:image/png;base64,iVBORw0KGgo=");
+        let escape_path = format!("../{}/escape.png", outside.file_name().unwrap().to_string_lossy());
+        assert!(read_image_asset_impl(&escape_path, &state).is_err());
+        cleanup(&root, &outside);
+    }
+}
+
+fn image_data_uri(path: &Path, bytes: &[u8]) -> Result<String, String> {
+    if bytes.len() > 16 * 1024 * 1024 { return Err("Image asset exceeds the 16 MiB runtime resource limit".to_string()); }
+    let extension = path.extension().and_then(|value| value.to_str()).unwrap_or_default().to_ascii_lowercase();
+    let (mime, valid) = match extension.as_str() {
+        "png" => ("image/png", bytes.starts_with(b"\x89PNG\r\n\x1a\n")),
+        "jpg" | "jpeg" => ("image/jpeg", bytes.starts_with(&[0xff, 0xd8, 0xff])),
+        "webp" => ("image/webp", bytes.len() >= 12 && &bytes[..4] == b"RIFF" && &bytes[8..12] == b"WEBP"),
+        _ => return Err("Runtime images support PNG, JPEG, and WebP assets only".to_string()),
+    };
+    if !valid { return Err("Image content does not match its file extension".to_string()); }
+    const BASE64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut encoded = String::with_capacity(bytes.len().div_ceil(3) * 4);
+    for chunk in bytes.chunks(3) {
+        let first = chunk[0] as usize;
+        let second = chunk.get(1).copied().unwrap_or_default() as usize;
+        let third = chunk.get(2).copied().unwrap_or_default() as usize;
+        encoded.push(BASE64[first >> 2] as char);
+        encoded.push(BASE64[((first & 3) << 4) | (second >> 4)] as char);
+        encoded.push(if chunk.len() > 1 { BASE64[((second & 15) << 2) | (third >> 6)] as char } else { '=' });
+        encoded.push(if chunk.len() > 2 { BASE64[third & 63] as char } else { '=' });
+    }
+    Ok(format!("data:{mime};base64,{encoded}"))
+}
+
+fn read_image_asset_impl(raw_path: &str, state: &SelectedProjectRoot) -> Result<String, String> {
+    let path = resolve_existing_path(state, raw_path)?;
+    let bytes = fs::read(&path).map_err(|error| error.to_string())?;
+    image_data_uri(&path, &bytes)
 }
 
 #[tauri::command]
@@ -831,6 +873,14 @@ async fn read_file(
 ) -> Result<String, String> {
     let path_buf = resolve_existing_path(&state, &path)?;
     fs::read_to_string(path_buf).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn read_image_asset(
+    path: String,
+    state: tauri::State<'_, SelectedProjectRoot>,
+) -> Result<String, String> {
+    read_image_asset_impl(&path, state.inner())
 }
 
 #[tauri::command]
@@ -1095,6 +1145,7 @@ pub fn run() {
         duplicate_fs_node,
         sync_neptune_lib,
         read_file,
+        read_image_asset,
         write_file,
         read_project,
         write_project,

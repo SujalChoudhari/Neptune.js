@@ -1,14 +1,41 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
+import { invoke } from "@tauri-apps/api/core";
 // We use the ?url suffix to get the URL of the module script
 // This requires Vite to solve the path.
 // Path: src/components/panels/GameViewPanel.tsx -> ../../../.. -> root
 import neptuneEntryUrl from "../../../../src/neptune.js?url";
+import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
 import { runtimeSelectionBridgeScript } from "@/lib/runtimeSelectionBridge.mjs";
 import { runtimeConsoleBridgeScript } from "@/lib/runtimeConsoleBridge.mjs";
 import { runtimeControlBridgeScript } from "@/lib/runtimeControlBridge.mjs";
 
 export function GameViewPanel() {
     const containerRef = useRef<HTMLDivElement>(null);
+    const iframeRef = useRef<HTMLIFrameElement>(null);
+
+    useEffect(() => {
+        const handleResourceRequest = (event: MessageEvent) => {
+            const { type, payload } = event.data || {};
+            if (type !== 'editor:project-resource-request' || typeof payload?.id !== 'string') return;
+            if (event.source !== iframeRef.current?.contentWindow) return;
+            const command = payload.kind === 'image' ? 'read_image_asset' : payload.kind === 'text' ? 'read_file' : null;
+            const reply = (content: string | null, error: string | null) => {
+                (event.source as WindowProxy).postMessage({
+                    type: 'editor:project-resource-response',
+                    payload: { id: payload.id, content, error }
+                }, '*');
+            };
+            if (!command || typeof payload.path !== 'string') {
+                reply(null, 'Invalid project resource request');
+                return;
+            }
+            void invoke<string>(command, { path: payload.path })
+                .then(content => reply(content, null))
+                .catch(error => reply(null, String(error)));
+        };
+        window.addEventListener('message', handleResourceRequest);
+        return () => window.removeEventListener('message', handleResourceRequest);
+    }, []);
 
     const baseUrl = neptuneEntryUrl.substring(0, neptuneEntryUrl.lastIndexOf('/') + 1);
 
@@ -27,6 +54,8 @@ export function GameViewPanel() {
 <body>
     <canvas id="neptune-canvas"></canvas>
     <script type="module">
+        import { installProjectResourceBridge } from "${projectResourceBridgeUrl}";
+        installProjectResourceBridge();
         ${runtimeSelectionBridgeScript}
         ${runtimeConsoleBridgeScript}
         ${runtimeControlBridgeScript}
@@ -129,6 +158,7 @@ export function GameViewPanel() {
     return (
         <div ref={containerRef} className="w-full h-full bg-[#111] relative overflow-hidden flex items-center justify-center border-t border-black">
             <iframe
+                ref={iframeRef}
                 className="w-full h-full border-0 block"
                 srcDoc={iframeContent}
                 title="Game View"
