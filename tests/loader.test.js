@@ -291,6 +291,66 @@ describe("SceneLoader Integration", () => {
         expect(scene.children[0].GetComponent(Sprite).path).toBe("assets/player.png");
     });
 
+    it("preserves collision and navigation metadata on visually empty tilemap cells", async () => {
+        const originalFetch = global.fetch;
+        global.fetch = async () => ({
+            ok: true,
+            json: async () => ({
+                width: 2,
+                height: 1,
+                data: [0, 0],
+                cellMetadata: {
+                    0: { collision: true, walkable: false, terrain: "wall" },
+                    1: { collision: false, walkable: true, terrain: "path" }
+                },
+                tileset: "tiles.png"
+            })
+        });
+
+        try {
+            const scene = await SceneLoader.parse({
+                type: "scene",
+                schemaVersion: 1,
+                layers: [{ type: "tilemap", src: "maps/navigation.map" }]
+            });
+            expect(scene.children.length).toBe(2);
+            expect(scene.children[0].name).toBe("TileCell_0");
+            expect(scene.children[0].tileId).toBe(0);
+            expect(scene.children[0].tileMetadata).toEqual({ collision: true, walkable: false, terrain: "wall" });
+            expect(scene.children[0].GetComponent(Sprite)).toBe(undefined);
+            expect(scene.children[0].GetComponent(BoxCollider)).not.toBe(undefined);
+            expect(scene.children[1].tileMetadata).toEqual({ collision: false, walkable: true, terrain: "path" });
+            expect(scene.children[1].GetComponent(BoxCollider)).toBe(undefined);
+            expect(scene.children[1].GetComponent(Sprite)).toBe(undefined);
+        } finally {
+            global.fetch = originalFetch;
+        }
+    });
+
+    it("rejects malformed cell metadata on an empty tilemap cell", async () => {
+        const originalFetch = global.fetch;
+        global.fetch = async () => ({
+            ok: true,
+            json: async () => ({ width: 1, height: 1, data: [0], cellMetadata: { 0: [] }, tileset: "tiles.png" })
+        });
+        try {
+            let loadError;
+            try {
+                await SceneLoader.parse({
+                    type: "scene",
+                    schemaVersion: 1,
+                    layers: [{ type: "tilemap", src: "maps/invalid.map" }]
+                });
+            } catch (error) {
+                loadError = error;
+            }
+            expect(loadError instanceof Error).toBe(true);
+            expect(loadError.message.includes("cell metadata must be an object")).toBe(true);
+        } finally {
+            global.fetch = originalFetch;
+        }
+    });
+
     it("loads a valid tilemap layer and creates its tile entity", async () => {
         const originalFetch = global.fetch;
         global.fetch = async path => {

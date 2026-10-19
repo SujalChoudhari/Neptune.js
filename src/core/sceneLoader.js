@@ -179,9 +179,29 @@ export class SceneLoader {
 
             for (let i = 0; i < data.length; i++) {
                 const tileId = data[i];
-                if (tileId === 0) continue; // 0 == empty
                 if (!Number.isInteger(tileId) || tileId < 0) {
                     throw new ResourceReferenceError("tileset", tileset, `${path}.data[${i}]`, "tile id must be a non-negative integer", "a tileset tile id");
+                }
+                if (tileId === 0) {
+                    const cellMetadata = map.cellMetadata?.[i];
+                    if (cellMetadata === undefined) continue;
+                    if (!cellMetadata || typeof cellMetadata !== "object" || Array.isArray(cellMetadata)) {
+                        throw new ResourceReferenceError("tilemap", sourceReference, `${path}.cellMetadata[${i}]`, "cell metadata must be an object", "an object of cell metadata");
+                    }
+
+                    const emptyCell = new Entity("TileCell_" + i);
+                    emptyCell.tileId = 0;
+                    emptyCell.tileMetadata = structuredClone(cellMetadata);
+                    const emptyCellTransform = ComponentRegistry.create("Transform");
+                    emptyCellTransform.position = new Vector2((i % cols) + 0.5, Math.floor(i / cols) + 0.5);
+                    emptyCell.AddComponent(emptyCellTransform);
+                    if (cellMetadata.collision === true) {
+                        const collider = ComponentRegistry.create("BoxCollider");
+                        collider.size = new Vector2(1, 1);
+                        emptyCell.AddComponent(collider);
+                    }
+                    scene.AddChild(emptyCell);
+                    continue;
                 }
 
                 // Calculate Grid Position
