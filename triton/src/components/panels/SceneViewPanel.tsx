@@ -14,11 +14,13 @@ export function SceneViewPanel() {
     const { notifyGame, selectedEntityData, selectedIds } = useGameContext();
     const [gizmoPosition, setGizmoPosition] = useState<{ x: number; y: number } | null>(null);
     const gizmoDragRef = useRef<{
-        axis: 'x' | 'y';
+        operation: 'translate-x' | 'translate-y' | 'rotate' | 'scale';
         id: string;
         startX: number;
         startY: number;
         position: { x: number; y: number };
+        rotation: number;
+        scale: { x: number; y: number };
     } | null>(null);
     const suppressClickRef = useRef(false);
 
@@ -76,15 +78,17 @@ export function SceneViewPanel() {
         notifyGame('editor:camera-update', { zoom: newZoom, x: newPanX, y: newPanY });
     }, [zoom, pan, notifyGame]);
 
-    const beginGizmoDrag = (axis: 'x' | 'y', event: React.MouseEvent<SVGCircleElement>) => {
+    const beginGizmoDrag = (operation: 'translate-x' | 'translate-y' | 'rotate' | 'scale', event: React.MouseEvent<SVGCircleElement>) => {
         if (event.button !== 0 || selectedIds.length !== 1 || !selectedEntityData) return;
         const position = gizmoPosition || selectedEntityData.transform.position;
         gizmoDragRef.current = {
-            axis,
+            operation,
             id: selectedIds[0],
             startX: event.clientX,
             startY: event.clientY,
-            position: { x: position.x, y: position.y }
+            position: { x: position.x, y: position.y },
+            rotation: selectedEntityData.transform.rotation,
+            scale: { ...selectedEntityData.transform.scale }
         };
         event.preventDefault();
         event.stopPropagation();
@@ -114,13 +118,26 @@ export function SceneViewPanel() {
     const handleMouseMove = useCallback((e: React.MouseEvent) => {
         const drag = gizmoDragRef.current;
         if (drag) {
-            const nextPosition = translateOnAxis(
-                drag.position,
-                e.clientX - drag.startX,
-                e.clientY - drag.startY,
-                zoom,
-                drag.axis
-            );
+            const deltaX = e.clientX - drag.startX;
+            const deltaY = e.clientY - drag.startY;
+            if (drag.operation === 'rotate') {
+                notifyGame('editor:update-component', {
+                    id: drag.id,
+                    component: 'transform',
+                    data: { rotation: drag.rotation + deltaX * 0.01 }
+                });
+                return;
+            }
+            if (drag.operation === 'scale') {
+                const factor = Math.max(0.01, 1 + (deltaX - deltaY) / 100);
+                notifyGame('editor:update-component', {
+                    id: drag.id,
+                    component: 'transform',
+                    data: { scale: { x: drag.scale.x * factor, y: drag.scale.y * factor } }
+                });
+                return;
+            }
+            const nextPosition = translateOnAxis(drag.position, deltaX, deltaY, zoom, drag.operation === 'translate-x' ? 'x' : 'y');
             setGizmoPosition(nextPosition);
             notifyGame('editor:update-component', {
                 id: drag.id,
@@ -361,7 +378,8 @@ export function SceneViewPanel() {
                             r="7"
                             fill="#ff5b5b"
                             className="pointer-events-auto cursor-ew-resize"
-                            onMouseDown={(event) => beginGizmoDrag('x', event)}
+                            aria-label="Translate on X axis"
+                            onMouseDown={(event) => beginGizmoDrag('translate-x', event)}
                         />
                         <circle
                             cx={gizmoX}
@@ -369,7 +387,28 @@ export function SceneViewPanel() {
                             r="7"
                             fill="#55c878"
                             className="pointer-events-auto cursor-ns-resize"
-                            onMouseDown={(event) => beginGizmoDrag('y', event)}
+                            aria-label="Translate on Y axis"
+                            onMouseDown={(event) => beginGizmoDrag('translate-y', event)}
+                        />
+                        <circle
+                            cx={gizmoX}
+                            cy={gizmoY}
+                            r="34"
+                            fill="none"
+                            stroke="#6e8bff"
+                            strokeWidth="3"
+                            className="pointer-events-auto cursor-grab"
+                            aria-label="Rotate selected entity"
+                            onMouseDown={(event) => beginGizmoDrag('rotate', event)}
+                        />
+                        <circle
+                            cx={gizmoX + 48}
+                            cy={gizmoY + 48}
+                            r="7"
+                            fill="#6e8bff"
+                            className="pointer-events-auto cursor-nwse-resize"
+                            aria-label="Scale selected entity"
+                            onMouseDown={(event) => beginGizmoDrag('scale', event)}
                         />
                     </svg>
                 )}

@@ -47,7 +47,7 @@ function createSceneViewHarness() {
         '@/components/library': { ThemedIconButton: 'ThemedIconButton' },
         '@/context/GameContext': { useGameContext: () => ({
             notifyGame: (type, payload) => notifications.push({ type, payload }),
-            selectedEntityData: { transform: { position: { x: 2, y: 3 } } },
+            selectedEntityData: { transform: { position: { x: 2, y: 3 }, rotation: 0.5, scale: { x: 1, y: 2 } } },
             selectedIds: ['entity-1']
         }) },
         '@/lib/editorGameRunner': { EditorGameRunner: {} },
@@ -145,6 +145,30 @@ test('Scene View UI pans the camera and moves a selected entity on its gizmo axi
         { type: 'editor:camera-update', payload: { zoom: 1, x: -20, y: -30 } },
         { type: 'editor:update-component', payload: {
             id: 'entity-1', component: 'transform', data: { position: { x: 22, y: 3 } }
+        } }
+    ]);
+});
+
+test('Scene View UI rotation and scale gizmos update the selected runtime Transform', () => {
+    const harness = createSceneViewHarness();
+    let tree = harness.render();
+    const rotationHandle = findNode(tree, node => node.props?.['aria-label'] === 'Rotate selected entity');
+    assert.ok(rotationHandle, 'rotation ring is available for the selected entity');
+    rotationHandle.props.onMouseDown({ button: 0, clientX: 10, clientY: 10, preventDefault() {}, stopPropagation() {} });
+    tree.props.onMouseMove({ clientX: 35, clientY: 10 });
+
+    tree = harness.render();
+    const scaleHandle = findNode(tree, node => node.props?.['aria-label'] === 'Scale selected entity');
+    assert.ok(scaleHandle, 'scale handle is available for the selected entity');
+    scaleHandle.props.onMouseDown({ button: 0, clientX: 10, clientY: 10, preventDefault() {}, stopPropagation() {} });
+    tree.props.onMouseMove({ clientX: 35, clientY: 10 });
+
+    assert.deepEqual(JSON.parse(JSON.stringify(harness.notifications)), [
+        { type: 'editor:update-component', payload: {
+            id: 'entity-1', component: 'transform', data: { rotation: 0.75 }
+        } },
+        { type: 'editor:update-component', payload: {
+            id: 'entity-1', component: 'transform', data: { scale: { x: 1.25, y: 2.5 } }
         } }
     ]);
 });
