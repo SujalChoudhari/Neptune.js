@@ -4,9 +4,16 @@ import vm from "node:vm";
 import { execFileSync } from "node:child_process";
 import { buildSync } from "esbuild";
 import { describe, it, expect } from "../../tests/tester.js";
+import { SceneLoader } from "../../src/core/sceneLoader.js";
+import { ComponentRegistry } from "../../src/core/componentRegistry.js";
+import { Transform } from "../../src/components/transform.js";
+import { Sprite } from "../../src/rendering/sprite.js";
 import { runtimeSelectionBridgeScript } from "../src/lib/runtimeSelectionBridge.mjs";
 
 const root = path.resolve("triton");
+
+ComponentRegistry.register("Transform", Transform);
+ComponentRegistry.register("Sprite", Sprite);
 
 function bundleSource(sourcefile, external) {
     return buildSync({
@@ -479,6 +486,126 @@ describe("Triton persistence bridge", () => {
         harness.runner.openScene(JSON.parse(harness.files.get("scenes/main.scene")), "scenes/main.scene");
 
         expect(harness.runner.currentScene.entities[0].name).toBe("After");
+    });
+
+    it("persists a generic Inspector component edit through save, reopen, and runtime load", async () => {
+        const harness = createMainHarness();
+        const source = {
+            type: "scene", version: "1.0.0", schemaVersion: 1,
+            id: "scene-inspector-edit", name: "Inspector Edit",
+            entities: [{
+                id: "hero", name: "Hero", type: "empty",
+                transform: { pos: { x: 0, y: 0 }, rot: 0, scale: { x: 1, y: 1 } },
+                components: [{ type: "Sprite", props: { path: "hero.png", width: 16, height: 16 } }],
+                children: []
+            }]
+        };
+        harness.runner.openScene(source, "scenes/inspector-edit.scene");
+        const entitySource = {
+            id: "hero", name: "Hero", active: true,
+            transform: { position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 }, z: 0 },
+            components: { Sprite: { path: "hero.png", width: 16, height: 16 } },
+            sprite: { path: "hero.png", width: 16, height: 16, blendMode: "normal", color: "#fff" }
+        };
+        const helperPath = path.resolve("triton/src/lib/inspectorEntityData.ts");
+        const helperBundle = buildSync({
+            bundle: true, format: "cjs", platform: "node", write: false,
+            stdin: { contents: fs.readFileSync(helperPath, "utf8"), loader: "ts", sourcefile: helperPath }
+        }).outputFiles[0].text;
+        const { applyInspectorFieldUpdate } = loadBundle(helperBundle, {});
+        const inspectorPath = path.resolve("triton/src/components/panels/InspectorPanel.tsx");
+        const inspectorBundle = buildSync({
+            bundle: true,
+            external: ["react", "react/jsx-runtime", "@/lib/utils", "lucide-react", "@/components/library", "@/context/GameContext", "./inspector/InspectorRegistry", "@/context/FileSystemContext", "@/lib/editorGameRunner"],
+            format: "cjs",
+            platform: "node",
+            write: false,
+            stdin: { contents: fs.readFileSync(inspectorPath, "utf8"), loader: "tsx", sourcefile: inspectorPath, resolveDir: path.dirname(inspectorPath) }
+        }).outputFiles[0].text;
+        let selectedEntityData = entitySource;
+        let savedPath = null;
+        const renderedComponents = [];
+        const react = {
+            createElement: (type, props, ...children) => ({
+                type,
+                props: { ...(props || {}), children: children.length > 1 ? children : children[0] }
+            }),
+            useState: initial => [initial, () => {}],
+            useMemo: callback => callback(),
+            useEffect() {},
+            useCallback: callback => callback
+        };
+        const jsx = (type, props) => ({ type, props: props || {} });
+        const modules = {
+            react,
+            "react/jsx-runtime": { jsx, jsxs: jsx },
+            "@/lib/utils": { cn: (...values) => values.filter(Boolean).join(" ") },
+            "lucide-react": new Proxy({}, { get: (_target, name) => String(name) }),
+            "@/components/library": { ThemedInput: "ThemedInput" },
+            "@/context/GameContext": { useGameContext: () => ({
+                selectedEntityData, selectedIds: ["hero"], currentScenePath: "scenes/inspector-edit.scene",
+                updateComponent: (id, component, field, value) => {
+                    if (id === "hero") selectedEntityData = applyInspectorFieldUpdate(selectedEntityData, component, field, value);
+                },
+                notifyGame() {}
+            }) },
+            "./inspector/InspectorRegistry": { renderInspectorComponent: props => {
+                renderedComponents.push(props);
+                return { type: "InspectorComponent", props };
+            } },
+            "@/context/FileSystemContext": { useFileSystem: () => ({
+                writeScene: async (filePath, scene) => {
+                    savedPath = filePath;
+                    harness.files.set(filePath, JSON.stringify(scene));
+                    return true;
+                }
+            }) },
+            "@/lib/editorGameRunner": { EditorGameRunner: harness.runner }
+        };
+        const componentModule = { exports: {} };
+        vm.runInNewContext(inspectorBundle, {
+            module: componentModule,
+            exports: componentModule.exports,
+            React: react,
+            require: specifier => {
+                if (!(specifier in modules)) throw new Error(`Unexpected InspectorPanel import: ${specifier}`);
+                return modules[specifier];
+            },
+            window: { addEventListener() {}, removeEventListener() {} }
+        });
+        const tree = componentModule.exports.InspectorPanel({});
+        const spriteEditor = renderedComponents.find(component => component.compId === "Sprite");
+        expect(spriteEditor !== undefined).toBe(true);
+        spriteEditor.updateHelpers.updateGeneric("Sprite", "width", 32);
+        expect(selectedEntityData.components.Sprite.width).toBe(32);
+        expect(harness.runner.currentScene.entities[0].components[0].props.width).toBe(32);
+
+        const findSaveButton = node => {
+            if (!node || typeof node !== "object") return null;
+            if (node.type === "button" && node.props?.["aria-label"] === "Save scene") return node;
+            const children = node.props?.children;
+            for (const child of Array.isArray(children) ? children : [children]) {
+                const found = findSaveButton(child);
+                if (found) return found;
+            }
+            return null;
+        };
+        const saveButton = findSaveButton(tree);
+        expect(saveButton !== null).toBe(true);
+        saveButton.props.onClick();
+        await new Promise(resolve => setTimeout(resolve, 0));
+        expect(savedPath).toBe("scenes/inspector-edit.scene");
+
+        harness.runner.closeScene();
+        const reopened = harness.runner.openScene(JSON.parse(harness.files.get(savedPath)), savedPath);
+        const originalImage = global.Image;
+        global.Image = class { set src(_value) {} };
+        try {
+            const runtimeScene = await SceneLoader.parse(reopened);
+            expect(runtimeScene.children[0].GetComponent(Sprite).width).toBe(32);
+        } finally {
+            global.Image = originalImage;
+        }
     });
 
     it("saves the opened versioned scene through File > Save", () => {
