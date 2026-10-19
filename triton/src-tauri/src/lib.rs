@@ -482,6 +482,29 @@ mod tests {
     }
 
     #[test]
+    fn opening_existing_project_does_not_create_missing_marker_or_change_selection() {
+        let (state, root, outside) = test_root();
+        let project = root.join("existing");
+        fs::create_dir_all(&project).unwrap();
+        let selected_before = selected_root(&state).unwrap();
+
+        let error = open_existing_project_impl(project.to_str().unwrap(), &state).unwrap_err();
+        assert!(error.contains("does not contain project.npt"));
+        assert!(!project.join("project.npt").exists());
+        assert_eq!(selected_root(&state).unwrap(), selected_before);
+
+        let valid_project = serde_json::json!({
+            "type": "project",
+            "schemaVersion": PROJECT_SCHEMA_VERSION,
+            "scenes": []
+        });
+        fs::write(project.join("project.npt"), valid_project.to_string()).unwrap();
+        assert!(open_existing_project_impl(project.to_str().unwrap(), &state).unwrap());
+        assert_eq!(selected_root(&state).unwrap(), fs::canonicalize(&project).unwrap());
+        cleanup(&root, &outside);
+    }
+
+    #[test]
     fn rejects_absolute_and_traversal_paths() {
         let (state, root, outside) = test_root();
         assert!(resolve_scoped_path(&state, "/tmp", false).is_err());
@@ -864,6 +887,46 @@ async fn initialize_project(
     Ok(true)
 }
 
+fn open_existing_project_impl(path: &str, state: &SelectedProjectRoot) -> Result<bool, String> {
+    let mut project_path = PathBuf::from(path);
+    if project_path.extension().map_or(false, |ext| ext == "npt") {
+        project_path = project_path
+            .parent()
+            .ok_or_else(|| "Could not determine the project folder from the selected file".to_string())?
+            .to_path_buf();
+    }
+
+    let project_path = fs::canonicalize(&project_path)
+        .map_err(|error| format!("Could not open existing project folder: {error}"))?;
+    if !project_path.is_dir() {
+        return Err("Could not open existing project: selected path is not a folder".to_string());
+    }
+
+    let marker_file = project_path.join("project.npt");
+    if !marker_file.is_file() {
+        return Err(format!(
+            "Could not open existing project: '{}' does not contain project.npt",
+            project_path.display()
+        ));
+    }
+    let content = fs::read_to_string(&marker_file)
+        .map_err(|error| format!("Could not read project.npt: {error}"))?;
+    let payload = parse_json_payload(&content, "project")?;
+    normalize_project_payload(payload)
+        .map_err(|error| format!("Could not open project: {error}"))?;
+
+    set_selected_root(state, project_path)?;
+    Ok(true)
+}
+
+#[tauri::command]
+async fn open_existing_project(
+    path: String,
+    state: tauri::State<'_, SelectedProjectRoot>,
+) -> Result<bool, String> {
+    open_existing_project_impl(&path, state.inner())
+}
+
 #[tauri::command]
 async fn read_file(
     path: String,
@@ -1140,6 +1203,7 @@ pub fn run() {
     .manage(SelectedProjectRoot::default())
     .invoke_handler(tauri::generate_handler![
         initialize_project, 
+        open_existing_project,
         scan_project, 
         move_fs_node,
         create_directory,
