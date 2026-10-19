@@ -11,6 +11,7 @@ import { Sprite } from "../../src/rendering/sprite.js";
 import { pickRuntimeEntityAt, runtimeSelectionBridgeScript } from "../src/lib/runtimeSelectionBridge.mjs";
 import { runtimeConsoleBridgeScript } from "../src/lib/runtimeConsoleBridge.mjs";
 import { runtimeControlBridgeScript, runRuntimeControl } from "../src/lib/runtimeControlBridge.mjs";
+import { getSceneNavigationPath } from "../src/lib/projectNavigation.mjs";
 
 const root = path.resolve("triton");
 
@@ -342,6 +343,13 @@ function loadBundle(bundle, context) {
 }
 
 describe("Triton persistence bridge", () => {
+    it("opens only scene assets from the project navigator using canonical node IDs", () => {
+        expect(getSceneNavigationPath({ id: "scenes/main.scene", name: "main.scene", type: "file" })).toBe("scenes/main.scene");
+        expect(getSceneNavigationPath({ id: "legacy/intro.scn", name: "INTRO.SCN", type: "file" })).toBe("legacy/intro.scn");
+        expect(getSceneNavigationPath({ id: "project.npt", name: "project.npt", type: "file" })).toBeNull();
+        expect(getSceneNavigationPath({ id: "folder.scene", name: "folder.scene", type: "folder" })).toBeNull();
+    });
+
     it("uses selected-project commands for versioned project and scene payloads", () => {
         const rust = fs.readFileSync(path.join(root, "src-tauri", "src", "lib.rs"), "utf8");
         const fileSystem = fs.readFileSync(path.join(root, "src", "context", "FileSystemContext.tsx"), "utf8");
