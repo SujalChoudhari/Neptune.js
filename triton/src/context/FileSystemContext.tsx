@@ -149,6 +149,9 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
             }
         } catch (e) {
             console.error("Failed to load project file system:", e);
+            setNodes({});
+            setRootPath(null);
+            setCurrentPath(["root"]);
         } finally {
             setIsLoading(false);
         }

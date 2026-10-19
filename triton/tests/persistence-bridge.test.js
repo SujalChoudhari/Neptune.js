@@ -366,6 +366,83 @@ describe("Triton persistence bridge", () => {
         expect(runtimeScene.children).toEqual([]);
     });
 
+    it("clears stale project navigation when a selected project's native scan fails", async () => {
+        const bundle = bundleSource(path.join(root, "src", "context", "FileSystemContext.tsx"), [
+            "react",
+            "react/jsx-runtime",
+            "@tauri-apps/api/core",
+            "@/lib/projectAssetContent.mjs"
+        ]);
+        const hookState = [];
+        let hookIndex = 0;
+        let failScan = false;
+        const react = {
+            createElement: (type, props) => ({ type, props }),
+            createContext: () => ({ Provider: "FileSystemProvider" }),
+            useContext: () => null,
+            useCallback: callback => callback,
+            useState(initialValue) {
+                const index = hookIndex++;
+                if (!(index in hookState)) hookState[index] = initialValue;
+                return [hookState[index], value => {
+                    hookState[index] = typeof value === "function" ? value(hookState[index]) : value;
+                }];
+            }
+        };
+        const jsxRuntime = {
+            jsx: (type, props) => ({ type, props }),
+            jsxs: (type, props) => ({ type, props })
+        };
+        const modules = {
+            react,
+            "react/jsx-runtime": jsxRuntime,
+            "@tauri-apps/api/core": {
+                invoke: async command => {
+                    if (command !== "scan_project") throw new Error(`Unexpected command: ${command}`);
+                    if (failScan) throw new Error("selected project is unavailable");
+                    return {
+                        root: { id: "root", parentId: null, name: "Project A", type: "folder", children: ["assets"] },
+                        assets: { id: "assets", parentId: "root", name: "Assets", type: "folder", children: [] }
+                    };
+                }
+            },
+            "@/lib/projectAssetContent.mjs": { createEmptySceneAssetContent: () => "{}" }
+        };
+        const fileSystemModule = { exports: {} };
+        vm.runInNewContext(bundle, {
+            React: react,
+            console,
+            Promise,
+            CustomEvent,
+            module: fileSystemModule,
+            exports: fileSystemModule.exports,
+            require: specifier => {
+                if (!(specifier in modules)) throw new Error(`Unexpected import: ${specifier}`);
+                return modules[specifier];
+            }
+        });
+        const fileSystem = fileSystemModule.exports;
+        const renderProvider = () => {
+            hookIndex = 0;
+            return fileSystem.FileSystemProvider({ children: null }).props.value;
+        };
+
+        let context = renderProvider();
+        await context.loadProject("/projects/a");
+        context = renderProvider();
+        context.navigateTo("assets");
+        context = renderProvider();
+        expect(context.rootPath).toBe("/projects/a");
+        expect(context.currentPath).toEqual(["root", "assets"]);
+
+        failScan = true;
+        await context.loadProject("/projects/b");
+        context = renderProvider();
+        expect(context.nodes).toEqual({});
+        expect(context.rootPath).toBeNull();
+        expect(context.currentPath).toEqual(["root"]);
+    });
+
     it("uses selected-project commands for versioned project and scene payloads", () => {
         const rust = fs.readFileSync(path.join(root, "src-tauri", "src", "lib.rs"), "utf8");
         const fileSystem = fs.readFileSync(path.join(root, "src", "context", "FileSystemContext.tsx"), "utf8");
