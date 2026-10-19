@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import gameMainUrl from "../../../../debug_project/main.js?url";
+import neptuneEntryUrl from "../../../../src/neptune.js?url";
 import cameraUrl from "../../../../src/thalassa/camera.js?url";
 import scenePickingUrl from "@/lib/scenePicking.mjs?url";
 import { translateOnAxis } from "@/lib/scenePicking.mjs";
@@ -53,7 +53,7 @@ export function SceneViewPanel() {
     const [isPanning, setIsPanning] = useState(false);
     const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
 
-    const baseUrl = gameMainUrl.substring(0, gameMainUrl.lastIndexOf('/') + 1);
+    const baseUrl = neptuneEntryUrl.substring(0, neptuneEntryUrl.lastIndexOf('/') + 1);
 
     const handleWheel = useCallback((e: React.WheelEvent) => {
         const rect = containerRef.current?.getBoundingClientRect();
@@ -204,7 +204,7 @@ export function SceneViewPanel() {
     <script type="module">
         import { Camera } from "${cameraUrl}";
         import { pickEntityAt } from "${scenePickingUrl}";
-        import "${gameMainUrl}";
+        import "${neptuneEntryUrl}";
         
         const findEntity = (root, id) => {
              if (!root) return null;

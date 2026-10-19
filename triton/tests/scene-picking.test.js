@@ -16,7 +16,7 @@ function createSceneViewHarness() {
     const sourcefile = path.resolve('triton/src/components/panels/SceneViewPanel.tsx');
     const external = [
         'react', 'react/jsx-runtime', 'lucide-react', '@/components/library', '@/context/GameContext',
-        '@/lib/editorGameRunner', '@/lib/scenePicking.mjs', '../../../../debug_project/main.js?url',
+        '@/lib/editorGameRunner', '@/lib/scenePicking.mjs', '../../../../src/neptune.js?url',
         '../../../../src/thalassa/camera.js?url', '@/lib/scenePicking.mjs?url'
     ];
     const bundle = buildSync({
@@ -52,7 +52,7 @@ function createSceneViewHarness() {
         }) },
         '@/lib/editorGameRunner': { EditorGameRunner: {} },
         '@/lib/scenePicking.mjs': { translateOnAxis },
-        '../../../../debug_project/main.js?url': '/main.js',
+        '../../../../src/neptune.js?url': '/neptune.js',
         '../../../../src/thalassa/camera.js?url': '/camera.js',
         '@/lib/scenePicking.mjs?url': '/scenePicking.js'
     };
@@ -171,4 +171,12 @@ test('Scene View UI rotation and scale gizmos update the selected runtime Transf
             id: 'entity-1', component: 'transform', data: { scale: { x: 1.25, y: 2.5 } }
         } }
     ]);
+});
+
+test('Scene View boots the engine runtime without loading the debug sample project', () => {
+    const harness = createSceneViewHarness();
+    const iframe = findNode(harness.render(), node => node.type === 'iframe' && node.props?.title === 'Scene View');
+    assert.ok(iframe);
+    assert.match(iframe.props.srcDoc, /import "\/neptune\.js";/);
+    assert.doesNotMatch(iframe.props.srcDoc, /debug_project|scenes\/demo\.scn/);
 });

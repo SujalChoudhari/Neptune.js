@@ -2,12 +2,12 @@ import { useRef } from 'react';
 // We use the ?url suffix to get the URL of the module script
 // This requires Vite to solve the path.
 // Path: src/components/panels/GameViewPanel.tsx -> ../../../.. -> root
-import gameMainUrl from "../../../../debug_project/main.js?url";
+import neptuneEntryUrl from "../../../../src/neptune.js?url";
 
 export function GameViewPanel() {
     const containerRef = useRef<HTMLDivElement>(null);
 
-    const baseUrl = gameMainUrl.substring(0, gameMainUrl.lastIndexOf('/') + 1);
+    const baseUrl = neptuneEntryUrl.substring(0, neptuneEntryUrl.lastIndexOf('/') + 1);
 
     const iframeContent = `
 <!DOCTYPE html>
@@ -25,7 +25,7 @@ export function GameViewPanel() {
     <canvas id="neptune-canvas"></canvas>
     <script type="module">
         // Basic Game Loader
-        import "${gameMainUrl}";
+        import "${neptuneEntryUrl}";
         
         // Helper to find deep entities
         const findEntity = (root, id) => {
@@ -43,6 +43,7 @@ export function GameViewPanel() {
         const wait = () => {
             if (window.game) {
                 console.log("[GameView] Game Loaded");
+                window.game.start();
                 // Notify parent we are ready to receive scene load commands
                 window.parent.postMessage({ type: 'game:ready' }, '*');
                 
