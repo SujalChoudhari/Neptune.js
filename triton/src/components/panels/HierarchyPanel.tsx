@@ -20,6 +20,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         entities,
         selectedIds,
         selectEntity,
+        setEntityActiveInHierarchy,
         renameEntityInHierarchy,
         addEntityToHierarchy,
         addEntityBranchToHierarchy,
@@ -45,11 +46,11 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     // Actions Wrapper
     const toggleActive = (id: string) => {
         const ent = entities[id];
-        if (ent) {
-            EditorGameRunner.updateEntity(id, 'active', { value: !ent.active })
-            notifyGame('editor:update-component', { id, component: 'active', data: !ent.active });
-            notifyGame('editor:set-active', { id, active: !ent.active });
-        }
+        if (!ent) return
+        const active = !ent.active
+        if (!EditorGameRunner.updateEntity(id, 'active', { value: active })) return
+        setEntityActiveInHierarchy(id, active)
+        notifyGame('editor:set-active', { id, active });
     }
 
     const toggleLock = (id: string) => {

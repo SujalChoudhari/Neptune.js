@@ -5,6 +5,7 @@ import { ThemedIconButton } from "@/components/library";
 import { Maximize, ZoomIn, ZoomOut } from "lucide-react";
 import { useGameContext } from '@/context/GameContext';
 import { EditorGameRunner } from '@/lib/editorGameRunner';
+import { runtimeSelectionBridgeScript } from '@/lib/runtimeSelectionBridge.mjs';
 
 export function SceneViewPanel() {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -123,6 +124,7 @@ export function SceneViewPanel() {
     <script type="module">
         import { Camera } from "${cameraUrl}";
         import "${gameMainUrl}";
+        ${runtimeSelectionBridgeScript}
         
         const findEntity = (root, id) => {
              if (!root) return null;

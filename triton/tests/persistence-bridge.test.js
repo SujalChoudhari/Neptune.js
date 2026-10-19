@@ -193,6 +193,10 @@ function createMainHarness() {
                 entities: game.entities || {},
                 selectedIds: [],
                 selectEntity() {},
+                setEntityActiveInHierarchy(id, active) {
+                    const entity = game.entities?.[id];
+                    if (entity) game.entities = { ...game.entities, [id]: { ...entity, active } };
+                },
                 renameEntityInHierarchy(id, name) {
                     const entity = game.entities?.[id];
                     if (entity) game.entities = { ...game.entities, [id]: { ...entity, name } };
@@ -307,8 +311,20 @@ function createMainHarness() {
             ? children.some(child => clickMoveEntity(child, ids, targetParentId, index))
             : clickMoveEntity(children, ids, targetParentId, index);
     };
+    const clickToggleActive = (node, id) => {
+        if (Array.isArray(node)) return node.some(child => clickToggleActive(child, id));
+        if (!node || typeof node !== "object") return false;
+        if (node.type === "HierarchyItem" && node.props?.entity?.id === id) {
+            node.props.onToggleActive(id);
+            return true;
+        }
+        const children = node.props?.children;
+        return Array.isArray(children)
+            ? children.some(child => clickToggleActive(child, id))
+            : clickToggleActive(children, id);
+    };
 
-    return { game, runner: runner.EditorGameRunner, files, writes, listeners, notifications, render, renderHierarchy, clickDuplicate, clickCreateEntity, clickRenameEntity, clickMoveEntity, dispatchMenuEvent };
+    return { game, runner: runner.EditorGameRunner, files, writes, listeners, notifications, render, renderHierarchy, clickDuplicate, clickCreateEntity, clickRenameEntity, clickMoveEntity, clickToggleActive, dispatchMenuEvent };
 }
 
 function loadBundle(bundle, context) {
@@ -624,6 +640,89 @@ describe("Triton persistence bridge", () => {
         listeners.get("message")({ source: runtimeWindow.parent, data: { type: "editor:delete", payload: { id: "parent" } } });
         expect(scene.children).toEqual([]);
         expect(runtimeGame.editorSelection).toEqual([]);
+    });
+
+    it("reparents runtime entities in both views and rejects moves that would create a cycle", () => {
+        const sceneView = fs.readFileSync(path.resolve("triton/src/components/panels/SceneViewPanel.tsx"), "utf8");
+        expect(sceneView.includes("${runtimeSelectionBridgeScript}")).toBe(true);
+        const scene = SceneLoader.parse({
+            type: "scene", version: "1.0.0", schemaVersion: 1,
+            id: "scene-runtime-reparent", name: "Runtime Reparent",
+            entities: [
+                { id: "parent", name: "Parent", components: [], children: [
+                    { id: "child", name: "Child", components: [], children: [] }
+                ] },
+                { id: "target", name: "Target", components: [], children: [] }
+            ]
+        });
+        const listeners = new Map();
+        const parent = {};
+        const runtimeWindow = {
+            parent,
+            game: { scene },
+            addEventListener: (name, handler) => listeners.set(name, handler),
+            dispatchEvent() {}
+        };
+        vm.runInNewContext(runtimeSelectionBridgeScript, {
+            window: runtimeWindow,
+            CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } }
+        });
+
+        const sendMove = (ids, targetParentId, index) => listeners.get("message")({
+            source: parent,
+            data: { type: "editor:move-entities", payload: { ids, targetParentId, index } }
+        });
+        const child = scene.children[0].children[0];
+        const target = scene.children[1];
+        sendMove(["child"], "target", 0);
+        expect(scene.children[0].children).toEqual([]);
+        expect(target.children[0]).toBe(child);
+        expect(child.parent).toBe(target);
+
+        sendMove(["target"], "child", 0);
+        expect(scene.children[1]).toBe(target);
+        expect(target.children[0]).toBe(child);
+    });
+
+    it("synchronizes Hierarchy active toggles to the runtime and persists them", () => {
+        const harness = createMainHarness();
+        harness.render();
+        const source = {
+            type: "scene", version: "1.0.0", schemaVersion: 1,
+            id: "scene-active-toggle", name: "Active Toggle",
+            entities: [{ id: "toggle-me", name: "Toggle Me", type: "empty", active: true, components: [], children: [] }]
+        };
+        harness.runner.openScene(source, "scenes/active-toggle.scene");
+        harness.game.entities = {
+            root: { id: "root", parentId: null, name: "Active Toggle", type: "group", children: ["toggle-me"], active: true, locked: false, expanded: true },
+            "toggle-me": { id: "toggle-me", parentId: "root", name: "Toggle Me", type: "empty", children: [], active: true, locked: false, expanded: false }
+        };
+
+        expect(harness.clickToggleActive(harness.renderHierarchy(), "toggle-me")).toBe(true);
+        expect(harness.game.entities["toggle-me"].active).toBe(false);
+        expect(harness.runner.currentScene.entities[0].active).toBe(false);
+        const activeMessage = harness.notifications.filter(message => message.type === "editor:set-active").pop();
+        expect(activeMessage.payload).toEqual({ id: "toggle-me", active: false });
+
+        const runtimeScene = SceneLoader.parse(source);
+        const runtimeListeners = new Map();
+        const runtimeWindow = {
+            parent: {},
+            game: { scene: runtimeScene },
+            addEventListener: (name, handler) => runtimeListeners.set(name, handler),
+            dispatchEvent() {}
+        };
+        vm.runInNewContext(runtimeSelectionBridgeScript, {
+            window: runtimeWindow,
+            CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } }
+        });
+        runtimeListeners.get("message")({ source: runtimeWindow.parent, data: { type: "editor:set-active", payload: activeMessage.payload } });
+        expect(runtimeScene.children[0].active).toBe(false);
+
+        harness.dispatchMenuEvent("save");
+        harness.runner.closeScene();
+        harness.runner.openScene(JSON.parse(harness.files.get("scenes/active-toggle.scene")), "scenes/active-toggle.scene");
+        expect(harness.runner.currentScene.entities[0].active).toBe(false);
     });
 
     it("applies inspector renames to both game views and persists them across reopen", async () => {

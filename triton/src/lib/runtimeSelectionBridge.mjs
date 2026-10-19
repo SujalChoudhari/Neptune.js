@@ -67,6 +67,36 @@ export const runtimeSelectionBridgeScript = `
         return removedIds;
     };
 
+    const containsEntityId = (root, targetId, visited = new Set()) => {
+        if (!root || visited.has(root)) return false;
+        if (root.id === targetId) return true;
+        visited.add(root);
+        return Array.isArray(root.children) && root.children.some(child => containsEntityId(child, targetId, visited));
+    };
+
+    const moveRuntimeEntities = (scene, ids, targetParentId, targetIndex) => {
+        if (!scene || !Array.isArray(ids) || ids.length === 0 || !Array.isArray(scene.children)) return false;
+        const entities = ids.map(id => findEntity(scene, id));
+        if (entities.some(entity => !entity)) return false;
+        const moving = entities.filter(entity => !entities.some(other => other !== entity && containsEntityId(other, entity.id)));
+        if (moving.length === 0) return false;
+        const target = targetParentId === "root" ? scene : findEntity(scene, targetParentId);
+        if (!target || !Array.isArray(target.children) || moving.some(entity => containsEntityId(entity, target.id))) return false;
+
+        const sourceLists = moving.map(entity => entity.parent?.children || scene.children);
+        if (moving.some((entity, index) => sourceLists[index].indexOf(entity) < 0)) return false;
+        moving.forEach((entity, index) => {
+            sourceLists[index].splice(sourceLists[index].indexOf(entity), 1);
+        });
+
+        const insertionIndex = typeof targetIndex === "number"
+            ? Math.max(0, Math.min(targetIndex, target.children.length))
+            : target.children.length;
+        target.children.splice(insertionIndex, 0, ...moving);
+        moving.forEach(entity => { entity.parent = target; });
+        return true;
+    };
+
     const normalizeIds = (ids) => Array.isArray(ids)
         ? [...new Set(ids.filter(id => typeof id === "string" && id.trim()))]
         : [];
@@ -103,6 +133,18 @@ export const runtimeSelectionBridgeScript = `
             window.dispatchEvent(new CustomEvent("neptune:editor-selection-changed", {
                 detail: { ids: remainingSelection, entities: remainingSelection.map(selectedId => findEntity(game.scene, selectedId)) }
             }));
+            return;
+        }
+        if (event.data?.type === "editor:move-entities") {
+            const payload = event.data.payload || {};
+            moveRuntimeEntities(window.game?.scene, normalizeIds(payload.ids), payload.targetParentId, payload.index);
+            return;
+        }
+        if (event.data?.type === "editor:set-active") {
+            const { id, active } = event.data.payload || {};
+            if (typeof id !== "string" || typeof active !== "boolean") return;
+            const entity = findEntity(window.game?.scene, id);
+            if (entity) entity.active = active;
         }
     });
 
