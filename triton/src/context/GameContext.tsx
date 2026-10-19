@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useMemo } 
 import type { ReactNode } from "react";
 import type { SceneEntity, EntityData } from "../types/engine";
 import type { VersionedScenePayload } from "./FileSystemContext";
+import { applyInspectorFieldUpdate } from "../lib/inspectorEntityData";
 
 interface GameContextType {
     isPlaying: boolean;
@@ -424,19 +425,19 @@ export function GameProvider({ children }: { children: ReactNode }) {
         notifyGame('editor:move-entities', { ids, targetParentId, index });
     };
 
-    const updateComponent = (id: string, component: string, data: any) => {
-        // Optimistic update
-        if (selectedEntitiesData[id]) {
-            setSelectedEntitiesData(prev => ({
-                ...prev,
-                [id]: {
-                    ...prev[id],
-                    // We need to merge component data
-                    [component]: { ...(prev[id][component as keyof EntityData] as object || {}), ...data }
-                } as EntityData
-            }));
-        }
-        notifyGame('editor:update-component', { id, component, data });
+    const updateComponent = (id: string, component: string, field: string, value: any) => {
+        const update = (entity: EntityData | undefined) => (
+            entity ? applyInspectorFieldUpdate(entity, component, field, value) : undefined
+        );
+        setEntityDataCache(prev => {
+            const updated = update(prev[id]);
+            return updated ? { ...prev, [id]: updated } : prev;
+        });
+        setSelectedEntitiesData(prev => {
+            const updated = update(prev[id] || entityDataCache[id]);
+            return updated ? { ...prev, [id]: updated } : prev;
+        });
+        notifyGame('editor:update-component', { id, component, data: { [field]: value } });
     };
 
     const markAsMainScene = useCallback(async () => {
