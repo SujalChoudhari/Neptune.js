@@ -78,6 +78,13 @@ test("Scene View boots the engine after installing project resources and relays 
     const engineIndex = iframe.props.srcDoc.indexOf('await import("/neptune.js")');
     assert.ok(bridgeIndex >= 0 && bridgeIndex < engineIndex);
     assert.equal(iframe.props.srcDoc.includes("debug_project/main.js?url"), false);
+    const startIndex = iframe.props.srcDoc.indexOf("// Start Game");
+    const cameraIndex = iframe.props.srcDoc.indexOf("// Editor Camera", startIndex);
+    const startup = iframe.props.srcDoc.slice(startIndex, cameraIndex);
+    const lifecycle = [];
+    vm.runInNewContext(startup, { game: { pause: () => lifecycle.push("pause"), start: () => lifecycle.push("start") } });
+    assert.deepEqual(lifecycle, ["pause", "start"]);
+    assert.equal(startup.includes("setTimeout"), false);
 
     const childWindow = { postMessage() {} };
     iframe.props.ref.current = { contentWindow: childWindow };
