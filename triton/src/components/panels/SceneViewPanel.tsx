@@ -206,8 +206,19 @@ export function SceneViewPanel() {
                     if (!game.scene || typeof payload?.name !== 'string') return;
                     const entity = findEntity(game.scene, payload.id);
                     if (entity) entity.name = payload.name;
-                }
-                else if (type === 'editor:update-component') {
+                 }
+                 else if (type === 'editor:delete') {
+                     if (!game.scene || typeof payload?.id !== 'string') return;
+                     const entity = findEntity(game.scene, payload.id);
+                     if (!entity) return;
+                     const siblings = Array.isArray(entity.parent?.children) ? entity.parent.children : game.scene.children;
+                     if (!Array.isArray(siblings)) return;
+                     const index = siblings.indexOf(entity);
+                     if (index < 0) return;
+                     siblings.splice(index, 1);
+                     if (entity.parent) entity.parent = null;
+                 }
+                 else if (type === 'editor:update-component') {
                      if (!game.scene) return;
                      const ent = findEntity(game.scene, payload.id);
                      if (ent) {

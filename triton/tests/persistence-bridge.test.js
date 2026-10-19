@@ -407,6 +407,54 @@ describe("Triton persistence bridge", () => {
         expect(parentMessages).toEqual([{ type: "game:selection-changed", payload: { ids: ["npc"] } }]);
     });
 
+    it("removes deleted entities from the live runtime and nested editor hierarchy", () => {
+        const sourcePath = path.resolve("triton/src/lib/hierarchyEntityRemoval.ts");
+        const bundle = buildSync({
+            bundle: true,
+            format: "cjs",
+            platform: "node",
+            write: false,
+            stdin: { contents: fs.readFileSync(sourcePath, "utf8"), loader: "ts", sourcefile: sourcePath }
+        }).outputFiles[0].text;
+        const { removeEntityBranch } = loadBundle(bundle, {});
+        const hierarchy = {
+            root: { id: "root", parentId: null, children: ["parent"] },
+            parent: { id: "parent", parentId: "root", children: ["child", "sibling"] },
+            child: { id: "child", parentId: "parent", children: ["grandchild"] },
+            grandchild: { id: "grandchild", parentId: "child", children: [] },
+            sibling: { id: "sibling", parentId: "parent", children: [] }
+        };
+        const removal = removeEntityBranch(hierarchy, "child");
+        expect(removal.removedIds).toEqual(["child", "grandchild"]);
+        expect(removal.entities.parent.children).toEqual(["sibling"]);
+        expect(removal.entities.child === undefined && removal.entities.grandchild === undefined).toBe(true);
+
+        const gameView = fs.readFileSync(path.resolve("triton/src/components/panels/GameViewPanel.tsx"), "utf8");
+        const sceneView = fs.readFileSync(path.resolve("triton/src/components/panels/SceneViewPanel.tsx"), "utf8");
+        expect(gameView.includes("${runtimeSelectionBridgeScript}")).toBe(true);
+        expect(sceneView.includes("type === 'editor:delete'")).toBe(true);
+
+        const listeners = new Map();
+        const scene = {
+            id: "root",
+            children: [{ id: "parent", children: [{ id: "child", parent: null, children: [] }] }]
+        };
+        const runtimeGame = { scene, editorSelection: ["child"] };
+        const runtimeWindow = {
+            parent: {},
+            game: runtimeGame,
+            addEventListener: (name, handler) => listeners.set(name, handler),
+            dispatchEvent() {}
+        };
+        vm.runInNewContext(runtimeSelectionBridgeScript, {
+            window: runtimeWindow,
+            CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } }
+        });
+        listeners.get("message")({ source: runtimeWindow.parent, data: { type: "editor:delete", payload: { id: "parent" } } });
+        expect(scene.children).toEqual([]);
+        expect(runtimeGame.editorSelection).toEqual([]);
+    });
+
     it("applies inspector renames to both game views and persists them across reopen", async () => {
         const sceneView = fs.readFileSync(path.join(root, "src", "components", "panels", "SceneViewPanel.tsx"), "utf8");
         const gameView = fs.readFileSync(path.join(root, "src", "components", "panels", "GameViewPanel.tsx"), "utf8");
@@ -505,6 +553,45 @@ describe("Triton persistence bridge", () => {
         expect(copy.components[0].id !== original.components[0].id).toBe(true);
         expect(copy.children[0].id !== original.children[0].id).toBe(true);
         expect(copy.children[0].components[0].id !== original.children[0].components[0].id).toBe(true);
+    });
+
+    it("persists deletion of a nested entity after File > Save, close, and reopen", () => {
+        const harness = createMainHarness();
+        const source = {
+            type: "scene",
+            version: "1.0.0",
+            schemaVersion: 1,
+            id: "scene-main",
+            name: "Main Scene",
+            entities: [{
+                id: "parent",
+                name: "Parent",
+                type: "group",
+                parentId: null,
+                components: [],
+                children: [{
+                    id: "nested-delete-target",
+                    name: "Delete Me",
+                    type: "empty",
+                    parentId: "parent",
+                    components: [],
+                    children: []
+                }]
+            }]
+        };
+        harness.runner.openScene(source, "scenes/main.scene");
+        harness.render();
+
+        expect(harness.runner.deleteEntity("nested-delete-target")).toBe(true);
+        expect(harness.runner.isDirty).toBe(true);
+        harness.dispatchMenuEvent("save");
+        harness.runner.closeScene();
+        harness.runner.openScene(JSON.parse(harness.files.get("scenes/main.scene")), "scenes/main.scene");
+
+        const reopened = harness.runner.currentScene;
+        expect(reopened.entities[0].id).toBe("parent");
+        expect(reopened.entities[0].children).toEqual([]);
+        expect(harness.runner.isDirty).toBe(false);
     });
 
     it("does not make a rejected scene read available to File > Save", () => {

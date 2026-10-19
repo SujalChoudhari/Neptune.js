@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import type { SceneEntity, EntityData } from "../types/engine";
 import type { VersionedScenePayload } from "./FileSystemContext";
 import { applyInspectorFieldUpdate } from "../lib/inspectorEntityData";
+import { removeEntityBranch } from "../lib/hierarchyEntityRemoval";
 
 interface GameContextType {
     isPlaying: boolean;
@@ -19,6 +20,7 @@ interface GameContextType {
     pause: () => void;
     stop: () => void;
     selectEntity: (id: string, multi: boolean) => void;
+    removeEntityFromHierarchy: (id: string) => void;
     moveEntities: (ids: string[], targetParentId: string, index?: number) => void;
     updateComponent: (id: string, component: string, field: string, value: any) => void;
     markAsMainScene: () => void;
@@ -425,6 +427,21 @@ export function GameProvider({ children }: { children: ReactNode }) {
         notifyGame('editor:move-entities', { ids, targetParentId, index });
     };
 
+    const removeEntityFromHierarchy = useCallback((id: string) => {
+        const result = removeEntityBranch(entities, id);
+        if (result.removedIds.length === 0) return;
+
+        const removedIds = new Set(result.removedIds);
+        setEntities(result.entities);
+        setSelectedIds(previous => previous.filter(selectedId => !removedIds.has(selectedId)));
+        setSelectedEntitiesData(previous => Object.fromEntries(
+            Object.entries(previous).filter(([entityId]) => !removedIds.has(entityId))
+        ));
+        setEntityDataCache(previous => Object.fromEntries(
+            Object.entries(previous).filter(([entityId]) => !removedIds.has(entityId))
+        ));
+    }, [entities]);
+
     const updateComponent = (id: string, component: string, field: string, value: any) => {
         const update = (entity: EntityData | undefined) => (
             entity ? applyInspectorFieldUpdate(entity, component, field, value) : undefined
@@ -507,6 +524,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             pause,
             stop,
             selectEntity,
+            removeEntityFromHierarchy,
             moveEntities,
             updateComponent,
             markAsMainScene,

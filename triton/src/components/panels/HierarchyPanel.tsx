@@ -20,6 +20,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         entities,
         selectedIds,
         selectEntity,
+        removeEntityFromHierarchy,
         moveEntities,
         notifyGame
     } = useGameContext()
@@ -64,9 +65,10 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     }
 
     const removeEntity = useCallback((id: string) => {
-        EditorGameRunner.deleteEntity(id)
+        if (!EditorGameRunner.deleteEntity(id)) return
+        removeEntityFromHierarchy(id)
         notifyGame('editor:delete', { id });
-    }, [notifyGame])
+    }, [removeEntityFromHierarchy, notifyGame])
 
     const duplicateEntity = (id: string) => {
         EditorGameRunner.duplicateEntity(id)
