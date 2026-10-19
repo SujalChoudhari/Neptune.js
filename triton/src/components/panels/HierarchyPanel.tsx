@@ -85,7 +85,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
             : type === 'spawn-point'
             ? [{ type: 'SpawnPoint', props: { spawnId: id, facing: 'right' } }]
             : type === 'scene-transition'
-            ? [{ type: 'SceneTransition', props: { targetScene: 'scenes/', spawnPoint: '', trigger: 'enter' } }, { type: 'TriggerCollider', props: { width: 1, height: 1, offsetX: 0, offsetY: 0 } }]
+            ? [{ type: 'SceneTransition', props: { targetScene: '', spawnPoint: '', trigger: 'enter' } }, { type: 'TriggerCollider', props: { width: 1, height: 1, offsetX: 0, offsetY: 0 } }]
             : type === 'entity'
             ? [{ type: 'Transform', props: { position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 } } }]
             : type === 'trigger-area'

@@ -13,6 +13,7 @@ import { SceneTransition } from "../../src/components/sceneTransition.js";
 import { SpawnPoint } from "../../src/components/spawnPoint.js";
 import { TriggerCollider } from "../../src/nereid/collider.js";
 import { createEmptyTilemap, paintTileCell } from "../src/lib/tilemapAuthoring.mjs";
+import { isSafeSceneAssetPath } from "../src/lib/sceneTransitionAuthoring.mjs";
 import { describe, it, expect } from "../../tests/tester.js";
 
 ComponentRegistry.register("SceneTransition", SceneTransition);
@@ -266,6 +267,7 @@ function loadBundle(bundle, context) {
         Promise,
         CustomEvent,
         window: { dispatchEvent() {} },
+        React: context.React,
         module,
         exports: module.exports,
         require: context.require || (() => { throw new Error("Unexpected import"); })
@@ -274,6 +276,97 @@ function loadBundle(bundle, context) {
 }
 
 describe("Triton persistence bridge", () => {
+    it("keeps Atlas modal examples out of the fake entity authoring path", () => {
+        let modalConfig;
+        const react = {
+            createElement: (type, props, ...children) => ({ type, props: { ...(props || {}), children } }),
+            useState: value => [value, () => {}]
+        };
+        const jsxRuntime = {
+            jsx: (type, props) => ({ type, props: props || {} }),
+            jsxs: (type, props) => ({ type, props: props || {} }),
+            Fragment: Symbol("Fragment")
+        };
+        const library = new Proxy({
+            useModal: () => ({ showModal: config => { modalConfig = config; } })
+        }, { get: (target, key) => target[key] ?? String(key) });
+        const icons = new Proxy({}, { get: (_target, key) => String(key) });
+        const bundle = bundleSource(path.join(root, "src", "components", "panels", "StoryBook.tsx"), [
+            "react", "react/jsx-runtime", "lucide-react", "@/components/library"
+        ]);
+        const component = loadBundle(bundle, {
+            React: react,
+            require: id => id === "react" ? react : id === "react/jsx-runtime" ? jsxRuntime : id === "lucide-react" ? icons : library
+        }).StoryBook;
+        const tree = component({});
+        const visit = node => Array.isArray(node) ? node.flatMap(visit) : node && typeof node === "object"
+            ? [node, ...visit(node.props?.children)]
+            : [];
+        const text = node => Array.isArray(node) ? node.map(text).join(" ")
+            : node && typeof node === "object" ? text(node.props?.children)
+                : String(node ?? "");
+        const controls = visit(tree).filter(node => node.type === "ThemedMenuButton");
+        const inputExample = controls.find(node => text(node.props.children).includes("Show Input Modal"));
+        const confirmExample = controls.find(node => text(node.props.children).includes("Show Confirmation"));
+
+        expect(Boolean(inputExample && confirmExample)).toBe(true);
+        inputExample.props.onClick();
+        expect(modalConfig.title).toBe("Input Modal");
+        const inputText = text(modalConfig.content);
+        expect(inputText.includes("Example Input")).toBe(true);
+        expect(inputText.includes("Entity")).toBe(false);
+        expect(modalConfig.confirmText).toBe("Done");
+        confirmExample.props.onClick();
+        expect(modalConfig.content.includes("deleting an entity")).toBe(false);
+        expect(modalConfig.confirmText).toBe("Confirm");
+    });
+
+    it("opens scenes using the project-relative IDs returned by the filesystem scan", () => {
+        let openedPath = null;
+        const nodes = {
+            root: { id: "root", parentId: null, name: "Project", type: "folder", children: ["scenes"] },
+            scenes: { id: "scenes", parentId: "root", name: "scenes", type: "folder", children: ["scenes/main.scene"] },
+            "scenes/main.scene": { id: "scenes/main.scene", parentId: "scenes", name: "main.scene", type: "scene", children: [], path: "/outside/fake.scene" }
+        };
+        const filesystem = {
+            nodes,
+            currentPath: ["root"],
+            currentFolderId: "root",
+            getChildren: id => (nodes[id]?.children || []).map(childId => nodes[childId]),
+            navigateTo() {}, moveNode() {}, moveNodes() {}, createFolder() {}, createAsset() {},
+            deleteNode() {}, renameNode() {}, duplicateNode() {}
+        };
+        const react = {
+            createElement: (type, props, ...children) => ({ type, props: { ...(props || {}), children } }),
+            useState: value => [value, () => {}],
+            useEffect() {}
+        };
+        const library = new Proxy({}, { get: (_target, key) => String(key) });
+        const icons = new Proxy({}, { get: (_target, key) => String(key) });
+        const bundle = bundleSource(path.join(root, "src", "components", "panels", "ProjectPanel.tsx"), [
+            "react", "react/jsx-runtime", "dockview", "lucide-react", "@/components/library",
+            "@/context/FileSystemContext", "@/context/GameContext", "../project/ProjectSidebar", "../project/ProjectGrid"
+        ]);
+        const component = loadBundle(bundle, {
+            React: react,
+            require: id => id === "react" ? react
+                : id === "react/jsx-runtime" ? { jsx: (type, props) => ({ type, props }), jsxs: (type, props) => ({ type, props }), Fragment: Symbol("Fragment") }
+                    : id === "lucide-react" ? icons
+                        : id === "@/context/FileSystemContext" ? { useFileSystem: () => filesystem }
+                            : id === "@/context/GameContext" ? { useGameContext: () => ({ loadScene: scenePath => { openedPath = scenePath; } }) }
+                                : library
+        }).ProjectPanel;
+        const tree = component({});
+        const visit = node => Array.isArray(node) ? node.flatMap(visit) : node && typeof node === "object"
+            ? [node, ...visit(node.props?.children)]
+            : [];
+        const grid = visit(tree).find(node => node.type === "ProjectGrid");
+
+        expect(Boolean(grid)).toBe(true);
+        grid.props.onNavigate("scenes/main.scene");
+        expect(openedPath).toBe("scenes/main.scene");
+    });
+
     it("starts with project selection instead of auto-loading the debug sample", () => {
         const harness = createMainHarness();
         const welcome = harness.render();
@@ -383,14 +476,96 @@ describe("Triton persistence bridge", () => {
     it("authors scene transitions with destination data and a runtime trigger", () => {
         const toolbar = fs.readFileSync(path.join(root, "src", "components", "panels", "hierarchy", "HierarchyToolbar.tsx"), "utf8");
         const hierarchy = fs.readFileSync(path.join(root, "src", "components", "panels", "HierarchyPanel.tsx"), "utf8");
+        const inspector = fs.readFileSync(path.join(root, "src", "components", "panels", "inspector", "components", "GenericComponentSection.tsx"), "utf8");
         const runtime = fs.readFileSync(path.resolve("src", "neptune.js"), "utf8");
         const component = fs.readFileSync(path.resolve("src", "components", "sceneTransition.js"), "utf8");
 
         expect(toolbar.includes("Create Scene Transition")).toBe(true);
-        expect(hierarchy.includes("type: 'SceneTransition', props: { targetScene: 'scenes/', spawnPoint: '', trigger: 'enter' }")).toBe(true);
+        expect(hierarchy.includes("type: 'SceneTransition', props: { targetScene: '', spawnPoint: '', trigger: 'enter' }")).toBe(true);
         expect(hierarchy.includes("{ type: 'TriggerCollider', props: { width: 1, height: 1, offsetX: 0, offsetY: 0 } }")).toBe(true);
-        expect(component.includes('targetScene: "scenes/"')).toBe(true);
+        expect(component.includes('targetScene: ""')).toBe(true);
+        expect(inspector.includes("const isSceneReference = lowerLabel === 'targetscene'")).toBe(true);
+        expect(inspector.includes("isSafeSceneAssetPath(path)")).toBe(true);
+        expect(inspector.includes("Drag a .scene file here...")).toBe(true);
         expect(runtime.includes('ComponentRegistry.register("SceneTransition", SceneTransition)')).toBe(true);
+    });
+
+    it("accepts only safe relative scene assets for transition drag-and-drop", () => {
+        expect(isSafeSceneAssetPath("scenes/dungeon.scene")).toBe(true);
+        expect(isSafeSceneAssetPath("dungeon.scene")).toBe(true);
+        for (const path of ["", "scenes/", "../outside.scene", "scenes/../outside.scene", "/tmp/outside.scene", "scenes\\outside.scene", "scenes/data.json"]) {
+            expect(isSafeSceneAssetPath(path)).toBe(false);
+        }
+    });
+
+    it("keeps unsafe typed scene-transition paths out of persisted Inspector updates", () => {
+        const updates = [];
+        const hookSlots = [];
+        let hookIndex = 0;
+        const react = {
+            createElement: (type, props, ...children) => ({ type, props: { ...(props || {}), children } }),
+            useState(initialValue) {
+                const index = hookIndex++;
+                if (!(index in hookSlots)) hookSlots[index] = initialValue;
+                return [hookSlots[index], value => { hookSlots[index] = typeof value === "function" ? value(hookSlots[index]) : value; }];
+            },
+            useEffect(effect, dependencies) {
+                const index = hookIndex++;
+                const previous = hookSlots[index];
+                if (!previous || dependencies.some((value, i) => value !== previous.dependencies?.[i])) {
+                    hookSlots[index] = { dependencies };
+                    effect();
+                }
+            }
+        };
+        const jsxRuntime = {
+            jsx: (type, props) => ({ type, props: props || {} }),
+            jsxs: (type, props) => ({ type, props: props || {} }),
+            Fragment: Symbol("Fragment")
+        };
+        const library = new Proxy({}, { get: (_target, key) => String(key) });
+        const icons = new Proxy({}, { get: (_target, key) => String(key) });
+        const bundle = bundleSource(path.join(root, "src", "components", "panels", "inspector", "components", "GenericComponentSection.tsx"), [
+            "react", "react/jsx-runtime", "lucide-react", "../shared/ComponentSection", "../shared/PropertyRow",
+            "@/components/library", "@/utils/colorUtils", "@/lib/sceneTransitionAuthoring.mjs"
+        ]);
+        const component = loadBundle(bundle, {
+            React: react,
+            require: id => id === "react" ? react
+                : id === "react/jsx-runtime" ? jsxRuntime
+                    : id === "lucide-react" ? icons
+                        : id === "@/lib/sceneTransitionAuthoring.mjs" ? { isSafeSceneAssetPath }
+                            : library
+        }).GenericComponentSection;
+        const tree = component({
+            type: "SceneTransition",
+            data: { targetScene: "scenes/start.scene" },
+            entity: {},
+            isActive: true,
+            onToggleActive() {},
+            onUpdate: (key, value) => updates.push([key, value])
+        });
+        const visit = node => Array.isArray(node) ? node.flatMap(visit) : node && typeof node === "object"
+            ? [node, ...visit(node.props?.children)]
+            : [];
+        const property = visit(tree).find(node => typeof node.type === "function" && node.type.name === "PropertyField");
+        const renderField = () => {
+            hookIndex = 0;
+            return visit(property.type(property.props)).find(node => node.type === "ThemedInput");
+        };
+        const input = renderField();
+
+        input.props.onChange({ target: { value: "../outside.scene" } });
+        const invalidDraft = renderField();
+        expect(updates.length).toBe(0);
+        expect(invalidDraft.props["aria-invalid"]).toBe(true);
+        invalidDraft.props.onDrop({
+            preventDefault() {},
+            dataTransfer: { getData: () => "/outside.scene" }
+        });
+        expect(updates.length).toBe(0);
+        invalidDraft.props.onChange({ target: { value: "scenes/next.scene" } });
+        expect(updates[0]).toEqual(["targetScene", "scenes/next.scene"]);
     });
 
     it("offers trigger-area creation as a typed scene entity that survives runtime loading", () => {

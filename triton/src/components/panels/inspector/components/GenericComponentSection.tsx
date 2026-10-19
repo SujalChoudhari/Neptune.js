@@ -12,6 +12,7 @@ import {
     ThemedTextArea
 } from "@/components/library"
 import { rgbaToHex, hexToRgba, type RGBA } from "@/utils/colorUtils"
+import { isSafeSceneAssetPath } from "@/lib/sceneTransitionAuthoring.mjs"
 
 // Recursive Property Renderer
 const PropertyField: React.FC<{
@@ -22,6 +23,10 @@ const PropertyField: React.FC<{
 }> = ({ label, value, onChange, depth = 0 }) => {
     const valueType = typeof value
     const [isExpanded, setIsExpanded] = useState(true)
+    const [scenePathDraft, setScenePathDraft] = useState(typeof value === 'string' ? value : '')
+    React.useEffect(() => {
+        setScenePathDraft(typeof value === 'string' ? value : '')
+    }, [value])
 
     // Helper for indentation style
     // We only indent the CONTAINER, but for PropertyRow we want the label to align if depth=0
@@ -129,26 +134,40 @@ const PropertyField: React.FC<{
     // 4. Asset / Reference Input (Drag & Drop)
     if (valueType === 'string') {
         const lowerLabel = label.toLowerCase();
-        const isPath = lowerLabel.includes('src') || lowerLabel.includes('path') || lowerLabel.includes('source') || lowerLabel.includes('map') || lowerLabel.includes('texture');
+        const isSceneReference = lowerLabel === 'targetscene';
+        const isPath = lowerLabel.includes('src') || lowerLabel.includes('path') || lowerLabel.includes('source') || lowerLabel.includes('map') || lowerLabel.includes('texture') || isSceneReference;
         const isFileValue = typeof value === 'string' && (value.match(/\.[0-9a-z]+$/i) !== null); // Simple extension check
 
         if (isPath || isFileValue) {
+            const displayedValue = isSceneReference ? scenePathDraft : value;
+            const invalidSceneReference = isSceneReference && !!scenePathDraft && !isSafeSceneAssetPath(scenePathDraft);
             return (
                 <div style={indentStyle}>
                     <PropertyRow label={label}>
                         <ThemedInput
-                            value={value}
-                            onChange={(e: any) => onChange(e.target.value)}
+                            value={displayedValue}
+                            onChange={(e: any) => {
+                                const nextValue = e.target.value;
+                                if (!isSceneReference) {
+                                    onChange(nextValue);
+                                    return;
+                                }
+                                setScenePathDraft(nextValue);
+                                if (!nextValue || isSafeSceneAssetPath(nextValue)) onChange(nextValue);
+                            }}
                             // Allow dragging file paths from Project Panel
                             onDragOver={(e: any) => e.preventDefault()}
                             onDrop={(e: any) => {
                                 e.preventDefault();
                                 const path = e.dataTransfer.getData('text/plain');
-                                if (path) onChange(path);
+                                if (!path || (isSceneReference && !isSafeSceneAssetPath(path))) return;
+                                if (isSceneReference) setScenePathDraft(path);
+                                onChange(path);
                             }}
                             className="font-mono text-[10px] text-blue-400"
-                            placeholder="Drag file here..."
-                            title="Drag asset from Project Panel"
+                            placeholder={isSceneReference ? "Drag a .scene file here..." : "Drag file here..."}
+                            title={invalidSceneReference ? "Use a safe project-relative .scene path" : isSceneReference ? "Drag a scene from the Project Panel" : "Drag asset from Project Panel"}
+                            aria-invalid={invalidSceneReference}
                         />
                     </PropertyRow>
                 </div>

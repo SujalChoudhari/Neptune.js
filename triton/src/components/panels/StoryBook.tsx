@@ -240,9 +240,9 @@ export const StoryBook = (_props: IDockviewPanelProps) => {
                         <div className="flex flex-wrap gap-2">
                             <ThemedMenuButton onClick={() => showModal({
                                 title: "Confirmation Modal",
-                                content: "Are you sure you want to perform this action? This can be used for destructive operations like deleting an entity.",
-                                confirmText: "Delete",
-                                onConfirm: () => console.log("Confirmed delete")
+                                content: "Are you sure you want to continue? This is a confirmation-dialog example.",
+                                confirmText: "Confirm",
+                                onConfirm: () => console.log("Confirmed example dialog")
                             })}>
                                 Show Confirmation
                             </ThemedMenuButton>
@@ -251,13 +251,13 @@ export const StoryBook = (_props: IDockviewPanelProps) => {
                                 title: "Input Modal",
                                 content: (
                                     <div className="space-y-4">
-                                        <p className="text-[11px] text-muted-foreground uppercase tracking-widest font-bold">New Entity Name</p>
-                                        <ThemedInput placeholder="Enter gameobject name..." className="w-full" autoFocus />
-                                        <p className="text-[10px] text-muted-foreground italic">Try entering a unique name for your gameobject.</p>
+                                        <p className="text-[11px] text-muted-foreground uppercase tracking-widest font-bold">Example Input</p>
+                                        <ThemedInput placeholder="Enter a label..." className="w-full" autoFocus />
+                                        <p className="text-[10px] text-muted-foreground italic">This input demonstrates the modal component.</p>
                                     </div>
                                 ),
-                                confirmText: "Create Entity",
-                                onConfirm: () => console.log("Created entity")
+                                confirmText: "Done",
+                                onConfirm: () => console.log("Input dialog example confirmed")
                             })}>
                                 Show Input Modal
                             </ThemedMenuButton>
