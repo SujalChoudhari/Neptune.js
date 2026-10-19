@@ -20,6 +20,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         entities,
         selectedIds,
         selectEntity,
+        addEntityToHierarchy,
         removeEntityFromHierarchy,
         moveEntities,
         notifyGame
@@ -79,6 +80,16 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         const id = globalThis.crypto?.randomUUID?.() || `entity-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
         const persistenceParentId = EditorGameRunner.resolveHierarchyParentId(parentId, entities)
         if (!persistenceParentId || !EditorGameRunner.createEntity(persistenceParentId, { id, name, type })) return
+        addEntityToHierarchy({
+            id,
+            parentId,
+            name,
+            type: type as SceneEntity["type"],
+            children: [],
+            active: true,
+            locked: false,
+            expanded: false
+        })
         notifyGame('editor:create-entity', { id, parentId, name, type });
     }
 

@@ -111,6 +111,16 @@ function createMainHarness() {
         Fragment: Symbol("Fragment")
     };
 
+    const additionPath = path.resolve("triton/src/lib/hierarchyEntityAddition.ts");
+    const additionBundle = buildSync({
+        bundle: true,
+        format: "cjs",
+        platform: "node",
+        write: false,
+        stdin: { contents: fs.readFileSync(additionPath, "utf8"), loader: "ts", sourcefile: additionPath }
+    }).outputFiles[0].text;
+    const { appendHierarchyEntity } = loadBundle(additionBundle, {});
+
     const listen = (_eventName, handler) => {
         const listener = { active: true, handler };
         listeners.push(listener);
@@ -171,6 +181,9 @@ function createMainHarness() {
                 entities: game.entities || {},
                 selectedIds: [],
                 selectEntity() {},
+                addEntityToHierarchy(entity) {
+                    game.entities = appendHierarchyEntity(game.entities || {}, entity);
+                },
                 moveEntities() {},
                 notifyGame() {},
                 saveScene: async () => writeScene("scenes/main.scene", game.staleScene || game.openedScene)
@@ -189,6 +202,7 @@ function createMainHarness() {
     vm.runInNewContext(bundle, sandbox);
 
     const hierarchyModule = { exports: {} };
+    const hierarchyToolbarComponent = () => null;
     const hierarchyModules = {
         ...modules,
         "@/components/library": {
@@ -201,7 +215,7 @@ function createMainHarness() {
             ThemedContextMenuLabel: "ThemedContextMenuLabel"
         },
         "./hierarchy/HierarchyItem": { HierarchyItem: "HierarchyItem" },
-        "./hierarchy/HierarchyToolbar": { HierarchyToolbar: "HierarchyToolbar" }
+        "./hierarchy/HierarchyToolbar": { HierarchyToolbar: hierarchyToolbarComponent }
     };
     const hierarchyRequire = (specifier) => {
         if (!(specifier in hierarchyModules)) throw new Error(`Unexpected hierarchy external import: ${specifier}`);
@@ -233,8 +247,20 @@ function createMainHarness() {
         const children = node.props?.children;
         return Array.isArray(children) ? children.some(clickDuplicate) : clickDuplicate(children);
     };
+    const clickCreateEntity = (node, type) => {
+        if (Array.isArray(node)) return node.some(child => clickCreateEntity(child, type));
+        if (!node || typeof node !== "object") return false;
+        if (node.type === hierarchyToolbarComponent) {
+            node.props.onAddEntity(type);
+            return true;
+        }
+        const children = node.props?.children;
+        return Array.isArray(children)
+            ? children.some(child => clickCreateEntity(child, type))
+            : clickCreateEntity(children, type);
+    };
 
-    return { game, runner: runner.EditorGameRunner, files, writes, listeners, render, renderHierarchy, clickDuplicate, dispatchMenuEvent };
+    return { game, runner: runner.EditorGameRunner, files, writes, listeners, render, renderHierarchy, clickDuplicate, clickCreateEntity, dispatchMenuEvent };
 }
 
 function loadBundle(bundle, context) {
@@ -666,6 +692,31 @@ describe("Triton persistence bridge", () => {
         expect(harness.writes).toHaveLength(1);
         expect(harness.writes[0].path).toBe("scenes/main.scene");
         expect(JSON.parse(harness.writes[0].content)).toEqual(harness.game.openedScene);
+    });
+
+    it("creates a HierarchyToolbar entity in the hierarchy and persists it through save and reopen", () => {
+        const harness = createMainHarness();
+        const source = {
+            type: "scene", version: "1.0.0", schemaVersion: 1,
+            id: "scene-main", name: "Main Scene", entities: []
+        };
+        harness.game.staleScene = JSON.parse(JSON.stringify(source));
+        harness.game.entities = {
+            root: { id: "root", parentId: null, name: "Main Scene", type: "group", children: [], active: true, locked: false, expanded: true }
+        };
+        harness.runner.openScene(source, "scenes/main.scene");
+        harness.render();
+
+        expect(harness.clickCreateEntity(harness.renderHierarchy(), "empty")).toBe(true);
+        const createdId = harness.runner.currentScene.entities[0].id;
+        expect(harness.game.entities.root.children).toEqual([createdId]);
+        expect(harness.game.entities[createdId].name).toBe("New empty");
+
+        harness.dispatchMenuEvent("save");
+        harness.runner.closeScene();
+        harness.runner.openScene(JSON.parse(harness.files.get("scenes/main.scene")), "scenes/main.scene");
+        expect(harness.runner.currentScene.entities[0].id).toBe(createdId);
+        expect(harness.runner.currentScene.entities[0].name).toBe("New empty");
     });
 
     it("keeps a HierarchyPanel duplicate after File > Save, close, and reopen", () => {

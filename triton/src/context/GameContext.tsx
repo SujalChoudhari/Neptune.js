@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import type { SceneEntity, EntityData } from "../types/engine";
 import type { VersionedScenePayload } from "./FileSystemContext";
 import { applyInspectorFieldUpdate } from "../lib/inspectorEntityData";
+import { appendHierarchyEntity } from "../lib/hierarchyEntityAddition";
 import { removeEntityBranch } from "../lib/hierarchyEntityRemoval";
 
 interface GameContextType {
@@ -20,6 +21,7 @@ interface GameContextType {
     pause: () => void;
     stop: () => void;
     selectEntity: (id: string, multi: boolean) => void;
+    addEntityToHierarchy: (entity: SceneEntity) => void;
     removeEntityFromHierarchy: (id: string) => void;
     moveEntities: (ids: string[], targetParentId: string, index?: number) => void;
     updateComponent: (id: string, component: string, field: string, value: any) => void;
@@ -427,6 +429,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
         notifyGame('editor:move-entities', { ids, targetParentId, index });
     };
 
+    const addEntityToHierarchy = useCallback((entity: SceneEntity) => {
+        setEntities(previous => appendHierarchyEntity(previous, entity));
+    }, []);
+
     const removeEntityFromHierarchy = useCallback((id: string) => {
         const result = removeEntityBranch(entities, id);
         if (result.removedIds.length === 0) return;
@@ -524,6 +530,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             pause,
             stop,
             selectEntity,
+            addEntityToHierarchy,
             removeEntityFromHierarchy,
             moveEntities,
             updateComponent,
