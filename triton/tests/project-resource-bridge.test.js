@@ -9,8 +9,15 @@ function harness() {
         set src(value) { this.value = value; }
         get src() { return this.value; }
     }
+    class Media {
+        set src(value) { this.value = value; }
+        get src() { return this.value; }
+    }
+    class Audio extends Media {}
     const frame = {
         HTMLImageElement: Image,
+        HTMLMediaElement: Media,
+        Audio,
         Response,
         console,
         parent: { postMessage: message => requests.push(message) },
@@ -48,4 +55,18 @@ test("runtime fetch and images resolve from the selected project", async () => {
     await new Promise(resolve => setImmediate(resolve));
     assert.equal(image.src, "data:image/png;base64,AAAA");
     dispose();
+});
+
+test("Audio constructor sources resolve from project files and restore on disposal", async () => {
+    const h = harness();
+    const nativeAudio = h.frame.Audio;
+    const dispose = installProjectResourceBridge(h.frame);
+    const audio = new h.frame.Audio("sounds/hit.ogg");
+    const request = h.requests[0];
+    assert.deepEqual([request.payload.path, request.payload.kind], ["sounds/hit.ogg", "audio"]);
+    h.respond(request.payload.id, "data:audio/ogg;base64,T2dnUw==");
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(audio.src, "data:audio/ogg;base64,T2dnUw==");
+    dispose();
+    assert.equal(h.frame.Audio, nativeAudio);
 });

@@ -18,7 +18,7 @@ export function GameViewPanel() {
             const { type, payload } = event.data || {};
             if (type !== 'editor:project-resource-request' || typeof payload?.id !== 'string') return;
             if (event.source !== iframeRef.current?.contentWindow) return;
-            const command = payload.kind === 'image' ? 'read_image_asset' : payload.kind === 'text' ? 'read_file' : null;
+            const command = payload.kind === 'image' ? 'read_image_asset' : payload.kind === 'audio' ? 'read_audio_asset' : payload.kind === 'text' ? 'read_file' : null;
             const reply = (content: string | null, error: string | null) => {
                 (event.source as WindowProxy).postMessage({
                     type: 'editor:project-resource-response',

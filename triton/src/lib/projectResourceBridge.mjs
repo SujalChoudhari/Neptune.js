@@ -22,6 +22,9 @@ export function installProjectResourceBridge(frameWindow = window) {
     const originalFetch = frameWindow.fetch?.bind(frameWindow);
     const imagePrototype = frameWindow.HTMLImageElement?.prototype;
     const imageDescriptor = imagePrototype && Object.getOwnPropertyDescriptor(imagePrototype, "src");
+    const mediaPrototype = frameWindow.HTMLMediaElement?.prototype;
+    const mediaDescriptor = mediaPrototype && Object.getOwnPropertyDescriptor(mediaPrototype, "src");
+    const originalAudio = frameWindow.Audio;
 
     const request = (reference, kind) => new Promise((resolve, reject) => {
         let path;
@@ -74,10 +77,38 @@ export function installProjectResourceBridge(frameWindow = window) {
         });
     }
 
+    if (mediaPrototype && mediaDescriptor?.set && mediaDescriptor.get) {
+        Object.defineProperty(mediaPrototype, "src", {
+            ...mediaDescriptor,
+            set(reference) {
+                if (typeof reference !== "string" || /^(data:|blob:|https?:|\/)/i.test(reference)) {
+                    mediaDescriptor.set.call(this, reference);
+                    return;
+                }
+                request(reference, "audio")
+                    .then(dataUri => mediaDescriptor.set.call(this, dataUri))
+                    .catch(error => frameWindow.console.error(`Could not load selected-project audio: ${reference}`, error));
+            }
+        });
+    }
+
+    if (originalAudio) {
+        const ProjectAudio = function (source) {
+            const audio = new originalAudio();
+            if (source !== undefined) audio.src = source;
+            return audio;
+        };
+        Object.setPrototypeOf(ProjectAudio, originalAudio);
+        ProjectAudio.prototype = originalAudio.prototype;
+        frameWindow.Audio = ProjectAudio;
+    }
+
     return () => {
         frameWindow.removeEventListener("message", handleResponse);
         if (originalFetch) frameWindow.fetch = originalFetch;
         if (imagePrototype && imageDescriptor) Object.defineProperty(imagePrototype, "src", imageDescriptor);
+        if (mediaPrototype && mediaDescriptor) Object.defineProperty(mediaPrototype, "src", mediaDescriptor);
+        if (originalAudio) frameWindow.Audio = originalAudio;
         for (const task of pending.values()) task.reject(new Error("Project resource bridge closed"));
         pending.clear();
     };
