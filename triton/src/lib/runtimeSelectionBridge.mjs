@@ -10,6 +10,7 @@ export function pickRuntimeEntityAt(scene, screenX, screenY, pixelsPerMeter = 64
     let picked = null;
     const visit = entity => {
         if (!entity || typeof entity !== "object") return;
+        if (entity.active === false) return;
         const components = Array.isArray(entity.components) ? entity.components : [];
         const sprite = components.find(component => component?.constructor?.name?.toLowerCase() === "sprite");
         const transform = components.find(component => component?.constructor?.name?.toLowerCase() === "transform") || entity.transform;

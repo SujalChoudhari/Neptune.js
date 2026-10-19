@@ -260,6 +260,7 @@ export class SceneLoader {
         }
         const entity = new Entity(entityData.name || "Entity");
         if (entityData.id) entity.id = entityData.id;
+        if (entityData.active === false) entity.active = false;
 
         const transformType = ComponentRegistry.get("Transform");
         let hasTransform = false;

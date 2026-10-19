@@ -577,6 +577,9 @@ describe("Triton persistence bridge", () => {
         };
         const scene = { children: [entity], activeCamera: { screenToWorld: (x, y) => ({ x, y }) } };
         expect(pickRuntimeEntityAt(scene, 64, 64)).toBe("hero");
+        entity.active = false;
+        expect(pickRuntimeEntityAt(scene, 64, 64)).toBe(null);
+        entity.active = true;
         expect(pickRuntimeEntityAt(scene, 300, 300)).toBe(null);
 
         const listeners = new Map();

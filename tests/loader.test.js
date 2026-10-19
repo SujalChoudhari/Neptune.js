@@ -7,6 +7,7 @@ import { Vector2 } from "../src/math/vec2.js";
 import { ComponentRegistry } from "../src/core/componentRegistry.js";
 import { Transform } from "../src/components/transform.js";
 import { Sprite } from "../src/rendering/sprite.js";
+import { collectRenderableRoots } from "../src/rendering/renderable.js";
 import { BoxCollider } from "../src/components/boxCollider.js";
 
 // Manually register components since we aren't loading neptune.js
@@ -82,6 +83,48 @@ describe("SceneLoader Integration", () => {
         expect(player.components[0].id).toBe("component-stable");
         expect(player.GetComponent(Transform).position.x).toBe(4);
         expect(player.GetComponent(Transform).scale.y).toBe(3);
+    });
+
+    it("preserves inactive entities and omits their renderables and descendant renderables", () => {
+        const scene = SceneLoader.parse({
+            type: "scene",
+            schemaVersion: 1,
+            entities: [
+                {
+                    id: "inactive-parent",
+                    name: "Inactive Parent",
+                    active: false,
+                    components: [{ type: "Sprite", props: { path: "assets/parent.png", width: 1, height: 1 } }],
+                    children: [{
+                        id: "hidden-child",
+                        name: "Hidden Child",
+                        components: [{ type: "Sprite", props: { path: "assets/hidden.png", width: 1, height: 1 } }],
+                        children: []
+                    }]
+                },
+                {
+                    id: "visible",
+                    name: "Visible",
+                    components: [{ type: "Sprite", props: { path: "assets/visible.png", width: 1, height: 1 } }],
+                    children: []
+                }
+            ]
+        });
+        const savedScene = scene.serialize();
+        const reloadedScene = SceneLoader.parse(savedScene);
+        const inactiveParent = reloadedScene.children[0];
+        const visible = reloadedScene.children[1];
+
+        expect(savedScene.layers[0].entities[0].active).toBe(false);
+        expect(inactiveParent.active).toBe(false);
+        expect(collectRenderableRoots(reloadedScene)).toEqual([visible.GetComponent(Sprite)]);
+
+        const draws = [];
+        inactiveParent.GetComponent(Sprite).draw = () => draws.push("inactive-parent");
+        inactiveParent.children[0].GetComponent(Sprite).draw = () => draws.push("inactive-child");
+        visible.GetComponent(Sprite).draw = () => draws.push("visible");
+        reloadedScene.draw({ save() {}, restore() {} });
+        expect(draws).toEqual(["visible"]);
     });
 
     it("rejects unsupported scene schema versions with an actionable error", () => {

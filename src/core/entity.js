@@ -263,6 +263,7 @@ export class Entity {
         return {
             id: this.id,
             name: this.name,
+            ...(this.active === false ? { active: false } : {}),
             components: this._components.map(component => ({
                 id: component.id,
                 type: ComponentRegistry.nameOf(component),
