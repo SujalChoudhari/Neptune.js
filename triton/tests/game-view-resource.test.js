@@ -81,7 +81,8 @@ test("Game View installs the selected-project resource bridge before booting Nep
     const iframe = findNode(harness.tree, node => node.type === "iframe" && node.props?.title === "Game View");
     assert.ok(iframe);
     assert.ok(iframe.props.ref);
-    assert.match(iframe.props.srcDoc, /installProjectResourceBridge\(\);[\s\S]*await import\("\/neptune\.js"\)/);
+    assert.match(iframe.props.srcDoc, /const projectResourceBridge = installProjectResourceBridge\(\);[\s\S]*await import\("\/neptune\.js"\)/);
+    assert.match(iframe.props.srcDoc, /projectResourceBridge\.setScenePath\(payload\.path\)/);
     assert.match(iframe.props.srcDoc, /\/projectResourceBridge\.js/);
 });
 

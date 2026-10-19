@@ -1,12 +1,31 @@
-export function resolveProjectResourcePath(reference) {
+export function resolveProjectResourcePath(reference, scenePath = "") {
     if (typeof reference !== "string" || !reference.trim()) {
         throw new TypeError("Project resource path must be a non-empty string");
     }
-    const path = reference.trim().replaceAll("\\", "/").replace(/^\.\//, "").replace(/^\/+/, "");
-    if (path.split("/").some(part => part === "..") || !path) {
+    const normalize = (value, initial = []) => {
+        const parts = [...initial];
+        for (const part of value.replaceAll("\\", "/").split("/")) {
+            if (!part || part === ".") continue;
+            if (part === "..") {
+                if (parts.length === 0) throw new TypeError("Project resource path must stay inside the selected project");
+                parts.pop();
+            } else {
+                parts.push(part);
+            }
+        }
+        if (parts.length === 0) throw new TypeError("Project resource path must be a non-empty project path");
+        return parts.join("/");
+    };
+    const sceneDirectory = scenePath
+        ? normalize(scenePath).split("/").slice(0, -1)
+        : [];
+    const initial = reference.trim().startsWith("/") ? [] : sceneDirectory;
+    try {
+        return normalize(reference.trim(), initial);
+    } catch (error) {
+        if (error instanceof TypeError) throw error;
         throw new TypeError("Project resource path must stay inside the selected project");
     }
-    return path;
 }
 
 export function installProjectResourceBridge(frameWindow = window) {
@@ -18,11 +37,12 @@ export function installProjectResourceBridge(frameWindow = window) {
     const mediaPrototype = frameWindow.HTMLMediaElement?.prototype;
     const mediaSrcDescriptor = mediaPrototype && Object.getOwnPropertyDescriptor(mediaPrototype, "src");
     const originalAudio = frameWindow.Audio;
+    let currentScenePath = "";
 
     const request = (reference, kind) => new Promise((resolve, reject) => {
         let path;
         try {
-            path = resolveProjectResourcePath(reference);
+            path = resolveProjectResourcePath(reference, currentScenePath);
         } catch (error) {
             reject(error);
             return;
@@ -95,7 +115,7 @@ export function installProjectResourceBridge(frameWindow = window) {
         frameWindow.Audio = ProjectAudio;
     }
 
-    return () => {
+    const dispose = () => {
         frameWindow.removeEventListener("message", handleResponse);
         if (originalFetch) frameWindow.fetch = originalFetch;
         if (imagePrototype && imageSrcDescriptor) Object.defineProperty(imagePrototype, "src", imageSrcDescriptor);
@@ -104,4 +124,6 @@ export function installProjectResourceBridge(frameWindow = window) {
         for (const task of pending.values()) task.reject(new Error("Project resource bridge closed"));
         pending.clear();
     };
+    dispose.setScenePath = path => { currentScenePath = resolveProjectResourcePath(path); };
+    return dispose;
 }

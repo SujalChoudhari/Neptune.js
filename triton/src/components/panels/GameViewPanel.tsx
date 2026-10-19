@@ -54,7 +54,7 @@ export function GameViewPanel() {
     <script type="module">
         // Basic Game Loader
         import { installProjectResourceBridge } from "${projectResourceBridgeUrl}";
-        installProjectResourceBridge();
+        const projectResourceBridge = installProjectResourceBridge();
         await import("${neptuneEntryUrl}");
         
         // Helper to find deep entities
@@ -83,6 +83,7 @@ export function GameViewPanel() {
                     const game = window.game;
 
                     if (type === 'editor:load-scene' && game.loadScene) {
+                         if (typeof payload.path === 'string') projectResourceBridge.setScenePath(payload.path);
                          game.loadScene(payload.data || payload.path).catch(console.error);
                     }
                     else if (type === 'editor:update-component') {

@@ -223,7 +223,7 @@ export function SceneViewPanel() {
         import { Camera } from "${cameraUrl}";
         import { pickEntityAt } from "${scenePickingUrl}";
         import { installProjectResourceBridge } from "${projectResourceBridgeUrl}";
-        installProjectResourceBridge();
+        const projectResourceBridge = installProjectResourceBridge();
         await import("${neptuneEntryUrl}");
         
         const findEntity = (root, id) => {
@@ -284,6 +284,7 @@ export function SceneViewPanel() {
                      }, '*');
                  }
                  else if (type === 'editor:load-scene' && game.loadScene) {
+                     if (typeof payload.path === 'string') projectResourceBridge.setScenePath(payload.path);
                      game.loadScene(payload.data || payload.path)
                          .then(() => {
                              window.parent.postMessage({ type: 'editor:scene-loaded', payload }, '*');

@@ -37,7 +37,9 @@ function createFrameWindow() {
 
 test("selected-project paths are normalized and cannot escape the project root", () => {
     assert.equal(resolveProjectResourcePath("./assets\\hero.png"), "assets/hero.png");
+    assert.equal(resolveProjectResourcePath("../assets/hero.png", "scenes/main.scene"), "assets/hero.png");
     assert.throws(() => resolveProjectResourcePath("../outside.json"), /inside the selected project/);
+    assert.throws(() => resolveProjectResourcePath("../../outside.json", "scenes/main.scene"), /inside the selected project/);
 });
 
 test("relative runtime fetch is fulfilled from the selected-project bridge", async () => {
@@ -49,6 +51,19 @@ test("relative runtime fetch is fulfilled from the selected-project bridge", asy
         type: "editor:project-resource-request",
         payload: { id: "project-resource-1", path: "maps/level.json", kind: "text" }
     });
+    harness.respond(request.payload.id, '{"width":12}');
+    const response = await responsePromise;
+    assert.equal(await response.text(), '{"width":12}');
+    dispose();
+});
+
+test("runtime fetch resolves scene-relative parent paths inside the selected project", async () => {
+    const harness = createFrameWindow();
+    const dispose = installProjectResourceBridge(harness.frame);
+    dispose.setScenePath("scenes/main.scene");
+    const responsePromise = harness.frame.fetch("../assets/level.map");
+    const request = harness.requests[0];
+    assert.equal(request.payload.path, "assets/level.map");
     harness.respond(request.payload.id, '{"width":12}');
     const response = await responsePromise;
     assert.equal(await response.text(), '{"width":12}');

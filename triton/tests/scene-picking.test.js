@@ -180,7 +180,8 @@ test('Scene View boots the engine runtime without loading the debug sample proje
     const harness = createSceneViewHarness();
     const iframe = findNode(harness.render(), node => node.type === 'iframe' && node.props?.title === 'Scene View');
     assert.ok(iframe);
-    assert.match(iframe.props.srcDoc, /installProjectResourceBridge\(\);[\s\S]*await import\("\/neptune\.js"\)/);
+    assert.match(iframe.props.srcDoc, /const projectResourceBridge = installProjectResourceBridge\(\);[\s\S]*await import\("\/neptune\.js"\)/);
     assert.match(iframe.props.srcDoc, /\/projectResourceBridge\.js/);
+    assert.match(iframe.props.srcDoc, /projectResourceBridge\.setScenePath\(payload\.path\)/);
     assert.doesNotMatch(iframe.props.srcDoc, /debug_project|scenes\/demo\.scn/);
 });
