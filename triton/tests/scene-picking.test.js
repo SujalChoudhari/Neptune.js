@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import path from 'node:path';
 import { buildSync } from 'esbuild';
-import { pickEntityAt, translateOnAxis } from '../src/lib/scenePicking.mjs';
+import { pickEntityAt, translateOnAxis, getColliderOverlayBounds } from '../src/lib/scenePicking.mjs';
 
 const entity = (id, x, y, children = []) => ({
     id,
@@ -48,11 +48,18 @@ function createSceneViewHarness() {
         '@/components/library': { ThemedIconButton: 'ThemedIconButton' },
         '@/context/GameContext': { useGameContext: () => ({
             notifyGame: (type, payload) => notifications.push({ type, payload }),
-            selectedEntityData: { transform: { position: { x: 2, y: 3 }, rotation: 0.5, scale: { x: 1, y: 2 } } },
+            selectedEntityData: {
+                transform: { position: { x: 2, y: 3 }, rotation: 0.5, scale: { x: 1, y: 2 } },
+                components: {
+                    Hitbox: { width: 2, height: 1, offsetX: -1, offsetY: 0.5 },
+                    Hurtbox: { width: 1, height: 2, offsetX: 0.25, offsetY: -1 },
+                    TriggerCollider: { width: 3, height: 1, offsetX: -2, offsetY: 2 }
+                }
+            },
             selectedIds: ['entity-1']
         }) },
         '@/lib/editorGameRunner': { EditorGameRunner: {} },
-        '@/lib/scenePicking.mjs': { translateOnAxis },
+        '@/lib/scenePicking.mjs': { translateOnAxis, getColliderOverlayBounds },
         '@tauri-apps/api/core': { invoke: async () => '' },
         '../../../../src/neptune.js?url': '/neptune.js',
         '../../../../src/thalassa/camera.js?url': '/camera.js',
@@ -80,6 +87,13 @@ function createSceneViewHarness() {
 
 function findNode(node, predicate) {
     if (!node || typeof node !== 'object') return null;
+    if (Array.isArray(node)) {
+        for (const child of node) {
+            const found = findNode(child, predicate);
+            if (found) return found;
+        }
+        return null;
+    }
     if (predicate(node)) return node;
     const children = node.props?.children;
     for (const child of Array.isArray(children) ? children : [children]) {
@@ -117,6 +131,38 @@ test('viewport picking uses configured tolerance for entities without visual bou
     }] };
     assert.equal(pickEntityAt(root, 50, 50, 12)?.id, 'point');
     assert.equal(pickEntityAt(root, 53, 50, 12), null);
+});
+
+test('combat collider overlay bounds include the selected transform and authored offsets', () => {
+    const selected = {
+        transform: { position: { x: 4, y: -2 } },
+        components: {
+            Hitbox: { width: 2, height: 1, offsetX: -1, offsetY: 0.5 },
+            Hurtbox: { width: 1, height: 3 },
+            TriggerCollider: { width: 4, height: 2, offsetX: 2, offsetY: -3 },
+            BoxCollider: { width: 100, height: 100 }
+        }
+    };
+    assert.deepEqual(getColliderOverlayBounds(selected), [
+        { type: 'Hitbox', color: '#fb7185', x: 3, y: -1.5, width: 2, height: 1 },
+        { type: 'Hurtbox', color: '#38bdf8', x: 4, y: -2, width: 1, height: 3 },
+        { type: 'TriggerCollider', color: '#facc15', x: 6, y: -5, width: 4, height: 2 }
+    ]);
+    assert.deepEqual(getColliderOverlayBounds({ transform: { position: { x: 0, y: 0 } }, components: { Hitbox: { width: 0, height: 1 } } }), []);
+});
+
+test('Scene View renders selected hitbox, hurtbox, and trigger bounds over the viewport', () => {
+    const harness = createSceneViewHarness();
+    const tree = harness.render();
+    const hitbox = findNode(tree, node => node.props?.['aria-label'] === 'Selected Hitbox bounds');
+    const hurtbox = findNode(tree, node => node.props?.['aria-label'] === 'Selected Hurtbox bounds');
+    const trigger = findNode(tree, node => node.props?.['aria-label'] === 'Selected TriggerCollider bounds');
+    assert.ok(hitbox, 'selected Hitbox overlay is rendered');
+    assert.ok(hurtbox, 'selected Hurtbox overlay is rendered');
+    assert.ok(trigger, 'selected TriggerCollider overlay is rendered');
+    assert.deepEqual([hitbox.props.x, hitbox.props.y, hitbox.props.width, hitbox.props.height], [1, 3.5, 2, 1]);
+    assert.deepEqual([hurtbox.props.x, hurtbox.props.y, hurtbox.props.width, hurtbox.props.height], [2.25, 2, 1, 2]);
+    assert.equal(trigger.props.strokeDasharray, '5 3');
 });
 
 test('Scene View UI emits viewport selection and cursor-anchored zoom updates', () => {

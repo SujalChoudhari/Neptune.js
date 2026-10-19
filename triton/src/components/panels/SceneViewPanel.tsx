@@ -3,7 +3,7 @@ import neptuneEntryUrl from "../../../../src/neptune.js?url";
 import cameraUrl from "../../../../src/thalassa/camera.js?url";
 import scenePickingUrl from "@/lib/scenePicking.mjs?url";
 import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
-import { translateOnAxis } from "@/lib/scenePicking.mjs";
+import { translateOnAxis, getColliderOverlayBounds } from "@/lib/scenePicking.mjs";
 import { invoke } from "@tauri-apps/api/core";
 import { ThemedIconButton } from "@/components/library";
 import { Maximize, ZoomIn, ZoomOut } from "lucide-react";
@@ -337,6 +337,7 @@ export function SceneViewPanel() {
 </html>
     `;
 
+    const colliderOverlays = getColliderOverlayBounds(selectedEntityData);
     const activeGizmoPosition = gizmoPosition || selectedEntityData?.transform.position;
     const gizmoX = activeGizmoPosition ? (activeGizmoPosition.x - pan.x) * zoom : 0;
     const gizmoY = activeGizmoPosition ? (activeGizmoPosition.y - pan.y) * zoom : 0;
@@ -391,6 +392,24 @@ export function SceneViewPanel() {
                         aria-label="Move selected entity"
                         className="absolute inset-0 w-full h-full overflow-visible pointer-events-none"
                     >
+                        {colliderOverlays.map((bounds) => (
+                            <rect
+                                key={bounds.type}
+                                aria-label={`Selected ${bounds.type} bounds`}
+                                data-collider-role={bounds.type}
+                                x={(bounds.x - pan.x) * zoom}
+                                y={(bounds.y - pan.y) * zoom}
+                                width={bounds.width * zoom}
+                                height={bounds.height * zoom}
+                                fill={bounds.color}
+                                fillOpacity={0.12}
+                                stroke={bounds.color}
+                                strokeWidth={1.5}
+                                strokeDasharray={bounds.type === 'TriggerCollider' ? '5 3' : undefined}
+                            >
+                                <title>{bounds.type} bounds</title>
+                            </rect>
+                        ))}
                         <line x1={gizmoX} y1={gizmoY} x2={gizmoX + 56} y2={gizmoY} stroke="#ff5b5b" strokeWidth="3" />
                         <line x1={gizmoX} y1={gizmoY} x2={gizmoX} y2={gizmoY + 56} stroke="#55c878" strokeWidth="3" />
                         <circle
