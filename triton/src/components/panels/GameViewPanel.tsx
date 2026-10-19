@@ -4,6 +4,7 @@ import { useRef } from 'react';
 // Path: src/components/panels/GameViewPanel.tsx -> ../../../.. -> root
 import gameMainUrl from "../../../../debug_project/main.js?url";
 import { runtimeSelectionBridgeScript } from "@/lib/runtimeSelectionBridge.mjs";
+import { runtimeConsoleBridgeScript } from "@/lib/runtimeConsoleBridge.mjs";
 
 export function GameViewPanel() {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -26,6 +27,7 @@ export function GameViewPanel() {
     <canvas id="neptune-canvas"></canvas>
     <script type="module">
         ${runtimeSelectionBridgeScript}
+        ${runtimeConsoleBridgeScript}
 
         const reportRuntimeError = (code, message, source) => {
             window.parent.postMessage({
@@ -48,15 +50,6 @@ export function GameViewPanel() {
             reportRuntimeError('GAME_UNHANDLED_REJECTION', reason instanceof Error ? reason.message : String(reason));
         });
 
-        const originalConsoleError = console.error.bind(console);
-        console.error = (...args) => {
-            originalConsoleError(...args);
-            window.parent.postMessage({
-                type: 'editor:log',
-                detail: { type: 'error', message: args.map(value => value instanceof Error ? value.message : String(value)).join(' ') }
-            }, '*');
-        };
-        
         // Helper to find deep entities
         const findEntity = (root, id) => {
             if (!root) return null;

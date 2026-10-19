@@ -9,6 +9,7 @@ import { ComponentRegistry } from "../../src/core/componentRegistry.js";
 import { Transform } from "../../src/components/transform.js";
 import { Sprite } from "../../src/rendering/sprite.js";
 import { pickRuntimeEntityAt, runtimeSelectionBridgeScript } from "../src/lib/runtimeSelectionBridge.mjs";
+import { runtimeConsoleBridgeScript } from "../src/lib/runtimeConsoleBridge.mjs";
 
 const root = path.resolve("triton");
 
@@ -327,14 +328,35 @@ describe("Triton persistence bridge", () => {
         expect(inspector.includes("as any as MockEntity")).toBe(false);
     });
 
-    it("forwards Game View console errors and uncaught runtime failures to Triton Console", () => {
+    it("forwards runtime log, warning, and error entries while preserving native console output", () => {
         const gameView = fs.readFileSync(path.join(root, "src", "components", "panels", "GameViewPanel.tsx"), "utf8");
 
         expect(gameView.includes("window.addEventListener('error'")).toBe(true);
         expect(gameView.includes("window.addEventListener('unhandledrejection'")).toBe(true);
         expect(gameView.includes("type: 'editor:diagnostic'")).toBe(true);
-        expect(gameView.includes("type: 'editor:log'")).toBe(true);
+        expect(gameView.includes("${runtimeConsoleBridgeScript}")).toBe(true);
         expect(gameView.includes("GAME_BOOT_ERROR")).toBe(true);
+
+        const nativeCalls = [];
+        const messages = [];
+        const runtimeConsole = Object.fromEntries(["log", "info", "warn", "error"].map(method => [
+            method,
+            (...args) => nativeCalls.push({ method, args })
+        ]));
+        const context = {
+            console: runtimeConsole,
+            window: { parent: { postMessage: message => messages.push(message) } }
+        };
+        vm.runInNewContext(runtimeConsoleBridgeScript, context);
+        runtimeConsole.log("boot", { scene: "main" });
+        runtimeConsole.warn("asset missing");
+        runtimeConsole.error("runtime failed");
+
+        expect(nativeCalls.map(call => call.method)).toEqual(["log", "warn", "error"]);
+        expect(messages.map(message => message.detail.type)).toEqual(["info", "warn", "error"]);
+        expect(messages[0].detail.message).toBe('boot {"scene":"main"}');
+        expect(messages[1].detail.message).toBe("asset missing");
+        expect(messages[2].detail.message).toBe("runtime failed");
     });
 
     it("opens existing projects without initializing them and keeps creation explicit", async () => {
