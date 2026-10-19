@@ -85,23 +85,28 @@ test("Game View installs the selected-project resource bridge before booting Nep
     assert.match(iframe.props.srcDoc, /\/projectResourceBridge\.js/);
 });
 
-test("Game View serves iframe resources through the selected-project native reader", async () => {
+test("Game View serves text and audio iframe resources through selected-project native readers", async () => {
     const harness = createGameView();
     const iframe = findNode(harness.tree, node => node.type === "iframe" && node.props?.title === "Game View");
     const replies = [];
     const childWindow = { postMessage: message => replies.push(message) };
     iframe.props.ref.current = { contentWindow: childWindow };
-    harness.dispatch({
-        source: childWindow,
-        data: {
-            type: "editor:project-resource-request",
-            payload: { id: "resource-1", path: "maps/level.json", kind: "text" }
-        }
-    });
+    for (const payload of [
+        { id: "resource-1", path: "maps/level.json", kind: "text" },
+        { id: "resource-2", path: "sounds/hit.ogg", kind: "audio" }
+    ]) {
+        harness.dispatch({
+            source: childWindow,
+            data: { type: "editor:project-resource-request", payload }
+        });
+    }
     await new Promise(resolve => setImmediate(resolve));
-    assert.deepEqual(JSON.parse(JSON.stringify(harness.invocations)), [{ command: "read_file", args: { path: "maps/level.json" } }]);
-    assert.deepEqual(JSON.parse(JSON.stringify(replies)), [{
-        type: "editor:project-resource-response",
-        payload: { id: "resource-1", content: "asset contents", error: null }
-    }]);
+    assert.deepEqual(JSON.parse(JSON.stringify(harness.invocations)), [
+        { command: "read_file", args: { path: "maps/level.json" } },
+        { command: "read_audio_asset", args: { path: "sounds/hit.ogg" } }
+    ]);
+    assert.deepEqual(JSON.parse(JSON.stringify(replies)), [
+        { type: "editor:project-resource-response", payload: { id: "resource-1", content: "asset contents", error: null } },
+        { type: "editor:project-resource-response", payload: { id: "resource-2", content: "asset contents", error: null } }
+    ]);
 });

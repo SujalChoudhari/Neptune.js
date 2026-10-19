@@ -15,6 +15,9 @@ export function installProjectResourceBridge(frameWindow = window) {
     const originalFetch = frameWindow.fetch?.bind(frameWindow);
     const imagePrototype = frameWindow.HTMLImageElement?.prototype;
     const imageSrcDescriptor = imagePrototype && Object.getOwnPropertyDescriptor(imagePrototype, "src");
+    const mediaPrototype = frameWindow.HTMLMediaElement?.prototype;
+    const mediaSrcDescriptor = mediaPrototype && Object.getOwnPropertyDescriptor(mediaPrototype, "src");
+    const originalAudio = frameWindow.Audio;
 
     const request = (reference, kind) => new Promise((resolve, reject) => {
         let path;
@@ -63,25 +66,41 @@ export function installProjectResourceBridge(frameWindow = window) {
         };
     }
 
-    if (imagePrototype && imageSrcDescriptor?.set && imageSrcDescriptor.get) {
-        Object.defineProperty(imagePrototype, "src", {
-            ...imageSrcDescriptor,
-            set(reference) {
+    const bridgeSource = (prototype, descriptor, kind) => {
+        if (prototype && descriptor?.set && descriptor.get) {
+            Object.defineProperty(prototype, "src", {
+                ...descriptor,
+                set(reference) {
                 if (typeof reference !== "string" || /^(data:|blob:|https?:)/i.test(reference)) {
-                    imageSrcDescriptor.set.call(this, reference);
+                    descriptor.set.call(this, reference);
                     return;
                 }
-                request(reference, "image")
-                    .then(dataUri => imageSrcDescriptor.set.call(this, dataUri))
-                    .catch(error => frameWindow.console.error("Could not load selected-project image:", reference, error));
-            }
-        });
+                    request(reference, kind)
+                        .then(dataUri => descriptor.set.call(this, dataUri))
+                        .catch(error => frameWindow.console.error(`Could not load selected-project ${kind}:`, reference, error));
+                }
+            });
+        }
+    };
+    bridgeSource(imagePrototype, imageSrcDescriptor, "image");
+    bridgeSource(mediaPrototype, mediaSrcDescriptor, "audio");
+    if (originalAudio) {
+        const ProjectAudio = function (source) {
+            const audio = new originalAudio();
+            if (source !== undefined) audio.src = source;
+            return audio;
+        };
+        Object.setPrototypeOf(ProjectAudio, originalAudio);
+        ProjectAudio.prototype = originalAudio.prototype;
+        frameWindow.Audio = ProjectAudio;
     }
 
     return () => {
         frameWindow.removeEventListener("message", handleResponse);
         if (originalFetch) frameWindow.fetch = originalFetch;
         if (imagePrototype && imageSrcDescriptor) Object.defineProperty(imagePrototype, "src", imageSrcDescriptor);
+        if (mediaPrototype && mediaSrcDescriptor) Object.defineProperty(mediaPrototype, "src", mediaSrcDescriptor);
+        if (originalAudio) frameWindow.Audio = originalAudio;
         for (const task of pending.values()) task.reject(new Error("Project resource bridge closed"));
         pending.clear();
     };

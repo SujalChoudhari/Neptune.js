@@ -9,8 +9,15 @@ function createFrameWindow() {
         set src(value) { this.value = value; }
         get src() { return this.value; }
     }
+    class FakeMedia {
+        set src(value) { this.value = value; }
+        get src() { return this.value; }
+    }
+    class FakeAudio extends FakeMedia {}
     const frame = {
         HTMLImageElement: FakeImage,
+        HTMLMediaElement: FakeMedia,
+        Audio: FakeAudio,
         Response,
         console,
         parent: { postMessage: message => requests.push(message) },
@@ -59,6 +66,19 @@ test("relative image sources use the selected-project image reader", async () =>
     harness.respond(request.payload.id, "data:image/png;base64,AAAA");
     await new Promise(resolve => setImmediate(resolve));
     assert.equal(image.src, "data:image/png;base64,AAAA");
+    dispose();
+});
+
+test("Audio constructor sources use the selected-project audio reader", async () => {
+    const harness = createFrameWindow();
+    const dispose = installProjectResourceBridge(harness.frame);
+    const audio = new harness.frame.Audio("sounds/hit.ogg");
+    const request = harness.requests[0];
+    assert.equal(request.payload.kind, "audio");
+    assert.equal(request.payload.path, "sounds/hit.ogg");
+    harness.respond(request.payload.id, "data:audio/ogg;base64,T2dnUw==");
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(audio.src, "data:audio/ogg;base64,T2dnUw==");
     dispose();
 });
 

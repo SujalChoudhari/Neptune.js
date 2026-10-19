@@ -271,6 +271,40 @@ fn read_image_asset_impl(raw_path: &str, state: &SelectedProjectRoot) -> Result<
     image_data_uri(&path, &bytes)
 }
 
+fn audio_data_uri(path: &Path, bytes: &[u8]) -> Result<String, String> {
+    if bytes.len() > 16 * 1024 * 1024 {
+        return Err("Audio asset exceeds the 16 MiB runtime resource limit".to_string());
+    }
+    let extension = path.extension().and_then(|value| value.to_str()).unwrap_or_default().to_ascii_lowercase();
+    let (mime, valid) = match extension.as_str() {
+        "mp3" => ("audio/mpeg", bytes.starts_with(b"ID3") || (bytes.len() >= 2 && bytes[0] == 0xff && bytes[1] & 0xe0 == 0xe0)),
+        "wav" => ("audio/wav", bytes.len() >= 12 && &bytes[..4] == b"RIFF" && &bytes[8..12] == b"WAVE"),
+        "ogg" => ("audio/ogg", bytes.starts_with(b"OggS")),
+        _ => return Err("Runtime audio supports MP3, WAV, and OGG assets only".to_string()),
+    };
+    if !valid {
+        return Err("Audio content does not match its file extension".to_string());
+    }
+    const BASE64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut encoded = String::with_capacity(bytes.len().div_ceil(3) * 4);
+    for chunk in bytes.chunks(3) {
+        let first = chunk[0] as usize;
+        let second = chunk.get(1).copied().unwrap_or_default() as usize;
+        let third = chunk.get(2).copied().unwrap_or_default() as usize;
+        encoded.push(BASE64[first >> 2] as char);
+        encoded.push(BASE64[((first & 3) << 4) | (second >> 4)] as char);
+        encoded.push(if chunk.len() > 1 { BASE64[((second & 15) << 2) | (third >> 6)] as char } else { '=' });
+        encoded.push(if chunk.len() > 2 { BASE64[third & 63] as char } else { '=' });
+    }
+    Ok(format!("data:{mime};base64,{encoded}"))
+}
+
+fn read_audio_asset_impl(raw_path: &str, state: &SelectedProjectRoot) -> Result<String, String> {
+    let path = resolve_existing_path(state, raw_path)?;
+    let bytes = fs::read(&path).map_err(|error| error.to_string())?;
+    audio_data_uri(&path, &bytes)
+}
+
 
 #[tauri::command]
 async fn create_project(app: tauri::AppHandle) -> Result<String, String> {
@@ -514,6 +548,21 @@ mod tests {
         assert_eq!(read_image_asset_impl("assets/tiles.png", &state).unwrap(), "data:image/png;base64,iVBORw0KGgo=");
         assert!(read_image_asset_impl("assets/notes.txt", &state).unwrap_err().contains("PNG, JPEG, and WebP"));
         assert!(read_image_asset_impl("../triton-containment-outside/escape.png", &state).is_err());
+        cleanup(&root, &outside);
+    }
+
+    #[test]
+    fn audio_assets_encode_supported_formats_and_remain_project_scoped() {
+        let (state, root, outside) = test_root();
+        fs::create_dir_all(root.join("assets")).unwrap();
+        fs::write(root.join("assets/theme.ogg"), b"OggSaudio").unwrap();
+        fs::write(root.join("assets/notes.txt"), b"not audio").unwrap();
+        fs::write(outside.join("escape.ogg"), b"OggSoutside").unwrap();
+
+        assert_eq!(read_audio_asset_impl("assets/theme.ogg", &state).unwrap(), "data:audio/ogg;base64,T2dnU2F1ZGlv");
+        assert!(read_audio_asset_impl("assets/notes.txt", &state).unwrap_err().contains("MP3, WAV, and OGG"));
+        assert!(read_audio_asset_impl("../triton-containment-outside/escape.ogg", &state).is_err());
+        assert!(audio_data_uri(Path::new("bad.ogg"), b"not ogg").unwrap_err().contains("does not match"));
         cleanup(&root, &outside);
     }
 
@@ -833,6 +882,14 @@ async fn read_image_asset(
 }
 
 #[tauri::command]
+async fn read_audio_asset(
+    path: String,
+    state: tauri::State<'_, SelectedProjectRoot>,
+) -> Result<String, String> {
+    read_audio_asset_impl(&path, state.inner())
+}
+
+#[tauri::command]
 async fn write_file(
     path: String,
     content: String,
@@ -1093,6 +1150,7 @@ pub fn run() {
         sync_neptune_lib,
         read_file,
         read_image_asset,
+        read_audio_asset,
         write_file,
         read_project,
         write_project,
