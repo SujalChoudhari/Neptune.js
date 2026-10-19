@@ -1,5 +1,41 @@
+export function pickRuntimeEntityAt(scene, screenX, screenY, pixelsPerMeter = 64) {
+    if (!scene || !Number.isFinite(screenX) || !Number.isFinite(screenY)) return null;
+    const camera = scene.activeCamera;
+    const point = camera?.screenToWorld
+        ? camera.screenToWorld(screenX, screenY)
+        : {
+            x: screenX + (scene.cameraSettings?.bounds?.x || 0) * pixelsPerMeter,
+            y: screenY + (scene.cameraSettings?.bounds?.y || 0) * pixelsPerMeter
+        };
+    let picked = null;
+    const visit = entity => {
+        if (!entity || typeof entity !== "object") return;
+        const components = Array.isArray(entity.components) ? entity.components : [];
+        const sprite = components.find(component => component?.constructor?.name?.toLowerCase() === "sprite");
+        const transform = components.find(component => component?.constructor?.name?.toLowerCase() === "transform") || entity.transform;
+        if (sprite && transform && typeof entity.id === "string") {
+            const position = transform.position || { x: 0, y: 0 };
+            const scale = transform.scale || { x: 1, y: 1 };
+            const dx = point.x - position.x * pixelsPerMeter;
+            const dy = point.y - position.y * pixelsPerMeter;
+            const rotation = Number(transform.rotation) || 0;
+            const localX = dx * Math.cos(rotation) + dy * Math.sin(rotation);
+            const localY = -dx * Math.sin(rotation) + dy * Math.cos(rotation);
+            const scaleX = Math.abs(scale.x * pixelsPerMeter) || 1;
+            const scaleY = Math.abs(scale.y * pixelsPerMeter) || 1;
+            const width = Number(sprite.width ?? sprite._properties?.width) || 0;
+            const height = Number(sprite.height ?? sprite._properties?.height) || 0;
+            if (Math.abs(localX / scaleX) <= width / 2 && Math.abs(localY / scaleY) <= height / 2) picked = entity.id;
+        }
+        entity.children?.forEach(visit);
+    };
+    scene.children?.forEach(visit);
+    return picked;
+}
+
 export const runtimeSelectionBridgeScript = `
 (() => {
+    const pickRuntimeEntityAt = ${pickRuntimeEntityAt.toString()};
     const findEntity = (root, id) => {
         if (!root || typeof root !== "object") return null;
         if (root.id === id) return root;
@@ -82,6 +118,17 @@ export const runtimeSelectionBridgeScript = `
             type: "game:selection-changed",
             payload: { ids: validIds }
         }, "*");
+    });
+
+    window.addEventListener("pointerdown", event => {
+        const canvas = window.document?.getElementById("neptune-canvas");
+        if (!canvas || event.target !== canvas || event.button !== 0) return;
+        const rect = canvas.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        const x = (event.clientX - rect.left) * ((canvas.width || rect.width) / rect.width);
+        const y = (event.clientY - rect.top) * ((canvas.height || rect.height) / rect.height);
+        const id = pickRuntimeEntityAt(window.game?.scene, x, y);
+        window.dispatchEvent(new CustomEvent("neptune:selection-changed", { detail: { ids: id ? [id] : [] } }));
     });
 })();
 `;

@@ -8,7 +8,7 @@ import { SceneLoader } from "../../src/core/sceneLoader.js";
 import { ComponentRegistry } from "../../src/core/componentRegistry.js";
 import { Transform } from "../../src/components/transform.js";
 import { Sprite } from "../../src/rendering/sprite.js";
-import { runtimeSelectionBridgeScript } from "../src/lib/runtimeSelectionBridge.mjs";
+import { pickRuntimeEntityAt, runtimeSelectionBridgeScript } from "../src/lib/runtimeSelectionBridge.mjs";
 
 const root = path.resolve("triton");
 
@@ -412,6 +412,44 @@ describe("Triton persistence bridge", () => {
 
         handlers.get("neptune:selection-changed")({ detail: { ids: ["npc", "missing", "npc"] } });
         expect(parentMessages).toEqual([{ type: "game:selection-changed", payload: { ids: ["npc"] } }]);
+    });
+
+    it("selects the runtime Sprite under a Game View pointer and clears selection on empty space", () => {
+        const transform = new Transform();
+        transform.position.x = 1;
+        transform.position.y = 1;
+        const sprite = Object.create(Sprite.prototype);
+        sprite._properties = { width: 2, height: 2 };
+        const entity = {
+            id: "hero",
+            components: [transform, sprite],
+            children: []
+        };
+        const scene = { children: [entity], activeCamera: { screenToWorld: (x, y) => ({ x, y }) } };
+        expect(pickRuntimeEntityAt(scene, 64, 64)).toBe("hero");
+        expect(pickRuntimeEntityAt(scene, 300, 300)).toBe(null);
+
+        const listeners = new Map();
+        const posted = [];
+        const canvas = { width: 200, height: 100, getBoundingClientRect: () => ({ left: 10, top: 20, width: 100, height: 50 }) };
+        const parent = { postMessage: message => posted.push(message) };
+        const runtimeWindow = {
+            parent, game: { scene },
+            document: { getElementById: () => canvas },
+            addEventListener: (name, handler) => listeners.set(name, handler),
+            dispatchEvent: event => listeners.get("neptune:selection-changed")?.({ detail: event.detail })
+        };
+        vm.runInNewContext(runtimeSelectionBridgeScript, {
+            window: runtimeWindow,
+            CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } }
+        });
+        const pointerdown = listeners.get("pointerdown");
+        pointerdown({ target: canvas, button: 0, clientX: 42, clientY: 52 });
+        pointerdown({ target: canvas, button: 0, clientX: 160, clientY: 80 });
+        expect(posted).toEqual([
+            { type: "game:selection-changed", payload: { ids: ["hero"] } },
+            { type: "game:selection-changed", payload: { ids: [] } }
+        ]);
     });
 
     it("removes deleted entities from the live runtime and nested editor hierarchy", () => {
