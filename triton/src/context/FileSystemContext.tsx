@@ -40,7 +40,6 @@ interface FileSystemContextType {
     refresh: () => Promise<void>;
     navigateTo: (folderId: string) => void;
     navigateUp: () => void;
-    // Mock-compatible wrappers (will implement real logic later)
     getChildren: (id: string) => FileSystemNode[];
     moveNodes: (nodeIds: string[], targetFolderId: string) => Promise<void>;
     moveNode: (nodeId: string, targetFolderId: string) => void;
@@ -133,14 +132,10 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
     const loadProject = useCallback(async (path: string, preserveNavigation?: boolean) => {
         setIsLoading(true);
         try {
-            console.log("Loading project fs from:", path);
             // The native side owns the selected absolute root. Filesystem
             // commands use project-relative paths so renderer input cannot
             // escape that capability.
             const data = await invoke<Record<string, FileSystemNode>>("scan_project", { path: "." });
-            console.log("Scanned nodes:", Object.keys(data).length);
-
-            // Normalize data if needed, or just set it
             setNodes(data);
             setRootPath(path);
             if (!preserveNavigation) {
@@ -148,6 +143,10 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
             }
         } catch (e) {
             console.error("Failed to load project file system:", e);
+            setNodes({});
+            setRootPath(null);
+            setCurrentPath(["root"]);
+            throw e instanceof Error ? e : new Error(String(e));
         } finally {
             setIsLoading(false);
         }
@@ -202,11 +201,6 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
                 return a.name.localeCompare(b.name);
             });
     }, [nodes]);
-
-    // --- Placeholder / Mock-ish Implementations for Mutating Actions ---
-    // These need backend implementations next. For now we just log or do nothing 
-    // to prevent crashing, or maybe do local updates if we want to be fancy.
-    // Ideally, we implement corresponding Tauri commands.
 
     const createFolder = useCallback(async (parentId: string, name: string) => {
         try {
