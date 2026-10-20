@@ -1071,6 +1071,9 @@ describe("Triton persistence bridge", () => {
                 setEntityActiveInHierarchy: (id, active) => {
                     if (id === "hero") selectedEntityData = { ...selectedEntityData, active };
                 },
+                renameEntityInHierarchy: (id, name) => {
+                    if (id === "hero") selectedEntityData = { ...selectedEntityData, name };
+                },
                 notifyGame: (type, payload) => inspectorNotifications.push({ type, payload })
             }) },
             "./inspector/InspectorRegistry": { renderInspectorComponent: props => {
@@ -1100,6 +1103,21 @@ describe("Triton persistence bridge", () => {
         const tree = componentModule.exports.InspectorPanel({});
         const spriteEditor = renderedComponents.find(component => component.compId === "Sprite");
         expect(spriteEditor !== undefined).toBe(true);
+        const findInput = node => {
+            if (!node || typeof node !== "object") return null;
+            if (node.type === "ThemedInput") return node;
+            const children = node.props?.children;
+            for (const child of Array.isArray(children) ? children : [children]) {
+                const found = findInput(child);
+                if (found) return found;
+            }
+            return null;
+        };
+        const nameInput = findInput(tree);
+        expect(nameInput !== null).toBe(true);
+        nameInput.props.onChange({ target: { value: "Inspector Hero" } });
+        expect(selectedEntityData.name).toBe("Inspector Hero");
+        expect(harness.runner.currentScene.entities[0].name).toBe("Inspector Hero");
         spriteEditor.updateHelpers.updateGeneric("Sprite", "width", 32);
         expect(selectedEntityData.components.Sprite.width).toBe(32);
         expect(harness.runner.currentScene.entities[0].components[0].props.width).toBe(32);
@@ -1149,6 +1167,7 @@ describe("Triton persistence bridge", () => {
         global.Image = class { set src(_value) {} };
         try {
             const runtimeScene = await SceneLoader.parse(reopened);
+            expect(runtimeScene.children[0].name).toBe("Inspector Hero");
             expect(runtimeScene.children[0].GetComponent(Sprite).width).toBe(32);
             expect(runtimeScene.children[0].GetComponent(Sprite).properties.enabled).toBe(false);
             expect(runtimeScene.children[0].active).toBe(false);

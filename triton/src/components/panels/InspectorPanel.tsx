@@ -15,7 +15,7 @@ import { EditorGameRunner } from "@/lib/editorGameRunner"
  * Refactored to use GameContext for real data.
  */
 export const InspectorPanel = (_props: IDockviewPanelProps) => {
-    const { selectedEntityData, selectedIds, updateComponent, setEntityActiveInHierarchy, notifyGame, currentScenePath } = useGameContext()
+    const { selectedEntityData, selectedIds, updateComponent, setEntityActiveInHierarchy, renameEntityInHierarchy, notifyGame, currentScenePath } = useGameContext()
     const { writeScene } = useFileSystem()
     const [isSaving, setIsSaving] = useState(false)
 
@@ -125,6 +125,7 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
         // UNLESS we explicitly want multi-rename.
         // Let's stick to Primary Rename to avoid accidents.
         EditorGameRunner.updateEntity(entity.id, 'name', { value: name })
+        renameEntityInHierarchy(entity.id, name)
         notifyGame('editor:rename', { id: entity.id, name });
     };
 

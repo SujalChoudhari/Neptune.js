@@ -432,6 +432,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
             if (!entity || entity.name === name) return previous;
             return { ...previous, [id]: { ...entity, name } };
         });
+        setEntityDataCache(previous => {
+            const entity = previous[id];
+            return entity && entity.name !== name ? { ...previous, [id]: { ...entity, name } } : previous;
+        });
+        setSelectedEntitiesData(previous => {
+            const entity = previous[id];
+            return entity && entity.name !== name ? { ...previous, [id]: { ...entity, name } } : previous;
+        });
     }, []);
 
     const setEntityActiveInHierarchy = useCallback((id: string, active: boolean) => {
