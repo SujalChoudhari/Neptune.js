@@ -109,7 +109,7 @@ test("saved editor-authored scene loads through the Application runtime", async 
                 { type: "SpawnPoint", props: { spawnId: "dungeon-entry", facing: "left" } },
                 { type: "SceneTransition", props: { targetScene: "scenes/dungeon.scene", spawnPoint: "dungeon-entry", trigger: "interact" } },
                 { type: "TriggerCollider", props: { width: 2, height: 3, offsetX: 0.5, offsetY: -1 } },
-                { type: "BoxCollider", props: { width: 7, height: 9, offsetX: 1.5, offsetY: -2.5 } },
+                { type: "BoxCollider", props: { width: 7, height: 9, offset: { x: 0, y: 0 }, offsetX: 1.5, offsetY: -2.5 } },
                 { type: "Hitbox", props: { width: 4, height: 5, offsetX: 1, offsetY: 0 } },
                 { type: "Hurtbox", props: { width: 6, height: 7, offsetX: -1, offsetY: 0 } },
                 { type: "Dialogue", props: { dialogueId: "gatekeeper", startNode: "greeting" } },
