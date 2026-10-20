@@ -9,6 +9,7 @@ import { moveHierarchyEntities } from "../lib/hierarchyEntityMovement";
 import { removeEntityBranch } from "../lib/hierarchyEntityRemoval";
 import { readRuntimeState } from "../lib/runtimeControlBridge.mjs";
 import { readRuntimeSelection } from "../lib/runtimeSelectionBridge.mjs";
+import { createSceneHierarchyEntity } from "../lib/sceneHierarchy.mjs";
 
 interface GameContextType {
     isPlaying: boolean;
@@ -151,17 +152,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
             const parseEntityList = (list: any[], parentId: string) => {
                 list.forEach((entData: any) => {
-                    const id = entData.id || generateId();
-                    const entity: SceneEntity = {
-                        id: id,
-                        parentId: parentId,
-                        name: entData.name || 'Entity',
-                        type: entData.type || 'entity',
-                        children: [],
-                        active: true,
-                        locked: false,
-                        expanded: false
-                    };
+                    const entity: SceneEntity = createSceneHierarchyEntity(entData, parentId, generateId());
+                    const id = entity.id;
 
                     newEntities[id] = entity;
                     if (newEntities[parentId]) {

@@ -13,6 +13,7 @@ import { runtimeConsoleBridgeScript } from "../src/lib/runtimeConsoleBridge.mjs"
 import { readRuntimeState, runtimeControlBridgeScript, runRuntimeControl } from "../src/lib/runtimeControlBridge.mjs";
 import { getSceneNavigationPath } from "../src/lib/projectNavigation.mjs";
 import { createEmptySceneAssetContent } from "../src/lib/projectAssetContent.mjs";
+import { createSceneHierarchyEntity } from "../src/lib/sceneHierarchy.mjs";
 
 const root = path.resolve("triton");
 
@@ -499,6 +500,24 @@ describe("Triton persistence bridge", () => {
         expect(inspector.includes('import type { EntityData } from "@/types/engine"')).toBe(true);
         expect(inspector.includes("const entity: EntityData = selectedEntityData")).toBe(true);
         expect(inspector.includes("as any as MockEntity")).toBe(false);
+    });
+
+    it("hydrates saved inactive state into the hierarchy model and runtime scene", async () => {
+        const hierarchyEntity = createSceneHierarchyEntity({
+            id: "disabled", name: "Disabled", type: "empty", active: false
+        }, "root", "fallback-id");
+        expect(hierarchyEntity).toEqual({
+            id: "disabled", parentId: "root", name: "Disabled", type: "empty",
+            children: [], active: false, locked: false, expanded: false
+        });
+        expect(createSceneHierarchyEntity({ active: true }, "root", "generated-id").active).toBe(true);
+
+        const runtimeScene = await SceneLoader.parse({
+            type: "scene", version: "1.0.0", schemaVersion: 1,
+            id: "scene-disabled-entity", name: "Disabled Entity",
+            entities: [{ id: "disabled", name: "Disabled", type: "empty", active: false, children: [] }]
+        });
+        expect(runtimeScene.children[0].active).toBe(false);
     });
 
     it("forwards runtime log, warning, and error entries while preserving native console output", () => {
