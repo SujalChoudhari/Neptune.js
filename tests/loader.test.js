@@ -349,6 +349,15 @@ describe("SceneLoader Integration", () => {
             expect(scene.children[1].tileMetadata).toEqual({ collision: false, walkable: true, terrain: "path" });
             expect(scene.children[1].GetComponent(BoxCollider)).toBe(undefined);
             expect(scene.children[1].GetComponent(Sprite)).toBe(undefined);
+
+            const navigationMap = scene.getNavigationTilemap("maps/navigation.map");
+            expect(navigationMap.data).toEqual([-1, -1]);
+            expect(navigationMap.getCellMetadata(0, 0)).toEqual({ collision: true, walkable: false, terrain: "wall" });
+            expect(navigationMap.getCellMetadata(1, 0)).toEqual({ collision: false, walkable: true, terrain: "path" });
+            expect(navigationMap.isSolid(0, 0)).toBe(true);
+            expect(navigationMap.isSolid(1, 0)).toBe(false);
+            expect(navigationMap.isWalkable(0, 0)).toBe(false);
+            expect(navigationMap.findPath(0, 0, 1, 0)).toBe(null);
         } finally {
             global.fetch = originalFetch;
         }

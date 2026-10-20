@@ -11,6 +11,8 @@ import { SceneManager } from "./sceneManager.js";
 import { ComponentRegistry } from "./componentRegistry.js";
 import { Vector2 } from "../math/vec2.js";
 import { Sprite } from "../rendering/sprite.js";
+import { Tileset } from "../thalassa/tileset.js";
+import { Tilemap } from "../thalassa/tilemap.js";
 
 export {
     SCENE_SCHEMA_VERSION,
@@ -177,6 +179,41 @@ export class SceneLoader {
                 (!Number.isInteger(map.height) || map.height <= 0 || data.length !== cols * map.height)) {
                 throw new ResourceReferenceError("tilemap", sourceReference, `${path}.data`, "tilemap data length does not match its dimensions", "a tilemap data array sized to width and height");
             }
+
+            const height = map.height ?? Math.ceil(data.length / cols);
+            const navigationMap = new Tilemap(new Tileset(tileset, tileSize, tileSize), cols, height);
+            navigationMap.data = Array.from({ length: cols * height }, (_, index) => {
+                const tileId = data[index] ?? 0;
+                return tileId === 0 ? -1 : tileId - 1;
+            });
+            if (map.metadata !== undefined) {
+                if (!map.metadata || typeof map.metadata !== "object" || Array.isArray(map.metadata)) {
+                    throw new ResourceReferenceError("tilemap", sourceReference, `${path}.metadata`, "tile metadata must be an object", "an object keyed by editor tile ID");
+                }
+                for (const [editorId, metadata] of Object.entries(map.metadata)) {
+                    const numericId = Number(editorId);
+                    if (!Number.isInteger(numericId) || numericId < 1) {
+                        throw new ResourceReferenceError("tilemap", sourceReference, `${path}.metadata.${editorId}`, "tile metadata key must be a positive editor tile ID", "a positive integer tile ID");
+                    }
+                    navigationMap.setTileMetadata(numericId - 1, metadata);
+                }
+            }
+            if (map.cellMetadata !== undefined) {
+                if (!map.cellMetadata || typeof map.cellMetadata !== "object" || Array.isArray(map.cellMetadata)) {
+                    throw new ResourceReferenceError("tilemap", sourceReference, `${path}.cellMetadata`, "cell metadata must be an object", "an object keyed by row-major cell index");
+                }
+                for (const [cellIndex, metadata] of Object.entries(map.cellMetadata)) {
+                    const numericIndex = Number(cellIndex);
+                    if (!Number.isInteger(numericIndex) || numericIndex < 0 || numericIndex >= cols * height) {
+                        throw new ResourceReferenceError("tilemap", sourceReference, `${path}.cellMetadata.${cellIndex}`, "cell metadata key is outside the map", "a valid row-major cell index");
+                    }
+                    if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+                        throw new ResourceReferenceError("tilemap", sourceReference, `${path}.cellMetadata[${numericIndex}]`, "cell metadata must be an object", "an object of cell metadata");
+                    }
+                    navigationMap.setCellMetadata(numericIndex % cols, Math.floor(numericIndex / cols), metadata);
+                }
+            }
+            scene.navigationTilemaps.set(path, navigationMap);
 
             for (let i = 0; i < data.length; i++) {
                 const tileId = data[i];

@@ -1197,6 +1197,16 @@ describe("Triton persistence bridge", () => {
             expect(runtimeTile.tileMetadata).toEqual({ collision: false, walkable: true, terrain: "moss" });
             expect(runtimeTile.GetComponent(BoxCollider)).toBeUndefined();
             expect(runtimeTile.GetComponent(Sprite).path).toBe("assets/tiles.png");
+
+            const navigationMap = runtimeScene.getNavigationTilemap(mapPath);
+            expect(navigationMap.data).toEqual([-1, 2]);
+            expect(navigationMap.getTileMetadata(2)).toEqual({ collision: true, walkable: false, terrain: "stone" });
+            expect(navigationMap.getResolvedMetadata(1, 0)).toEqual({ collision: false, walkable: true, terrain: "moss" });
+            expect(navigationMap.isWalkable(1, 0)).toBe(true);
+            expect(navigationMap.findPath(0, 0, 1, 0)).toEqual([{ x: 1, y: 0 }]);
+            navigationMap.setCellMetadata(1, 0, { walkable: false });
+            expect(navigationMap.isWalkable(1, 0)).toBe(false);
+            expect(navigationMap.findPath(0, 0, 1, 0)).toBe(null);
         } finally {
             global.fetch = originalFetch;
             if (originalImage === undefined) delete global.Image;

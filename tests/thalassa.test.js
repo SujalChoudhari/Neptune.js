@@ -100,6 +100,31 @@ describe('Tilemap', () => {
         expect(tilemap.getTileMetadata(99)).toBe(null);
     });
 
+    it('resolves per-cell metadata over tile defaults for navigation and collision', () => {
+        tilemap.loadFromArray([[7, 7]]);
+        tilemap.setTileMetadata(7, { walkable: false, collision: true, terrain: "wall" });
+        const authoredCell = { walkable: true, collision: false, terrain: "bridge" };
+        tilemap.setCellMetadata(0, 0, authoredCell);
+        authoredCell.terrain = "mutated";
+
+        expect(tilemap.getResolvedMetadata(0, 0)).toEqual({ walkable: true, collision: false, terrain: "bridge" });
+        expect(tilemap.getCellMetadata(0, 0)).toEqual({ walkable: true, collision: false, terrain: "bridge" });
+        expect(tilemap.isWalkable(0, 0)).toBe(true);
+        expect(tilemap.isSolid(0, 0)).toBe(false);
+        expect(tilemap.isWalkable(1, 0)).toBe(false);
+        expect(tilemap.isSolid(1, 0)).toBe(true);
+
+        tilemap.setCellMetadata(1, 0, { walkable: true, collision: false });
+        expect(tilemap.findPath(0, 0, 1, 0)).toEqual([{ x: 1, y: 0 }]);
+    });
+
+    it('validates cell metadata coordinates and values without mutating stored data', () => {
+        expect(() => tilemap.setCellMetadata(-1, 0, { walkable: true })).toThrow("outside the tilemap");
+        expect(() => tilemap.setCellMetadata(0, 0, { walkable: "yes" })).toThrow("Cell metadata walkable must be a boolean");
+        expect(() => tilemap.setCellMetadata(0, 0, { unknown: true })).toThrow("Unknown cell metadata field");
+        expect(tilemap.getCellMetadata(0, 0)).toBe(null);
+    });
+
     it('rejects malformed or unsupported tile metadata without storing it', () => {
         expect(() => tilemap.setTileMetadata(-1, { walkable: true })).toThrow("non-negative integer");
         expect(() => tilemap.setTileMetadata(1, { walkable: "yes" })).toThrow("walkable must be a boolean");

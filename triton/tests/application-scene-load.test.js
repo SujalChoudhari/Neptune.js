@@ -174,6 +174,19 @@ test("saved editor-authored scene loads through the Application runtime", async 
         assert.deepEqual(blockedEmptyCell.tileMetadata, { collision: true, walkable: false, terrain: "wall" });
         assert.ok(blockedEmptyCell.GetComponent(BoxCollider), "authored blocked empty cell becomes a runtime collider");
 
+        const navigationMap = runtimeScene.getNavigationTilemap("maps/dungeon.map");
+        assert.ok(navigationMap, "Application.loadScene exposes the loaded map as a runtime navigation grid");
+        assert.deepEqual(navigationMap.data, [0, -1], "editor tile IDs become zero-based runtime IDs and empty cells stay empty");
+        assert.deepEqual(navigationMap.getTileMetadata(0), { collision: true, walkable: false, terrain: "lava" });
+        assert.deepEqual(navigationMap.getResolvedMetadata(0, 0), { collision: false, walkable: true, terrain: "lava" });
+        assert.equal(navigationMap.isWalkable(0, 0), true, "cell metadata overrides the tile's blocked default");
+        assert.equal(navigationMap.isSolid(0, 0), false, "cell metadata overrides the tile's collision default");
+        assert.equal(navigationMap.isWalkable(1, 0), false, "authored blocked empty cells remain unavailable to pathfinding");
+        assert.equal(navigationMap.isSolid(1, 0), true, "authored collision on an empty cell remains solid");
+        assert.equal(navigationMap.findPath(0, 0, 1, 0), null, "a blocked authored empty cell prevents a route");
+        navigationMap.setCellMetadata(1, 0, { collision: false, walkable: true, terrain: "safe-path" });
+        assert.deepEqual(navigationMap.findPath(0, 0, 1, 0), [{ x: 1, y: 0 }], "opening the cell enables the runtime route");
+
         const liveHitbox = createRuntimeEntity(application, runtimeEntry, {
             id: "live-hitbox-child",
             parentId: "spawn-authored-1",
