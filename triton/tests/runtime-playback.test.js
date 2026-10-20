@@ -4,6 +4,12 @@ import path from "node:path"
 import { test } from "node:test"
 import vm from "node:vm"
 import { buildSync } from "esbuild"
+import { Entity } from "../../src/core/entity.js"
+import { Scene } from "../../src/core/scene.js"
+import { SceneManager } from "../../src/core/sceneManager.js"
+import { Sprite } from "../../src/rendering/sprite.js"
+import { Transform } from "../../src/components/transform.js"
+import { Vector2 } from "../../src/math/vec2.js"
 import { runRuntimeControl, runtimeControlBridgeScript } from "../src/lib/runtimeControlBridge.mjs"
 import { runtimeSelectionBridgeScript } from "../src/lib/runtimeSelectionBridge.mjs"
 import { runtimeConsoleBridgeScript } from "../src/lib/runtimeConsoleBridge.mjs"
@@ -12,7 +18,11 @@ const context = {
     clearRect() {},
     fillRect() {},
     save() {},
-    restore() {}
+    restore() {},
+    translate() {},
+    rotate() {},
+    scale() {},
+    drawImage() {}
 }
 
 function createElement(tag) {
@@ -104,7 +114,8 @@ test("Game View message bridge controls the real Application and forwards consol
     const previous = {
         document: globalThis.document,
         window: globalThis.window,
-        requestAnimationFrame: globalThis.requestAnimationFrame
+        requestAnimationFrame: globalThis.requestAnimationFrame,
+        Image: globalThis.Image
     }
     const elements = new Map()
     const document = {
@@ -130,7 +141,9 @@ test("Game View message bridge controls the real Application and forwards consol
             listeners.set(type, handlers)
         },
         removeEventListener() {},
-        dispatchEvent() {}
+        dispatchEvent(event) {
+            for (const handler of listeners.get(event.type) || []) handler(event)
+        }
     }
     const runtimeConsole = { log() {}, info() {}, warn() {}, error() {} }
     globalThis.document = document
@@ -139,6 +152,7 @@ test("Game View message bridge controls the real Application and forwards consol
         frameQueue.push(callback)
         return frameQueue.length
     }
+    globalThis.Image = class {}
 
     try {
         const sourcefile = path.resolve("triton/src/components/panels/GameViewPanel.tsx")
@@ -200,6 +214,19 @@ test("Game View message bridge controls the real Application and forwards consol
         const { Application } = await import("../../src/core/application.js")
         const app = new Application()
         fakeWindow.game = app
+        elements.set("neptune-canvas", {
+            width: 640,
+            height: 480,
+            getBoundingClientRect: () => ({ left: 10, top: 20, width: 640, height: 480 })
+        })
+        SceneManager.removeAllScenes()
+        const scene = new Scene("Pointer selection smoke")
+        scene.activeCamera = { screenToWorld: (x, y) => ({ x, y }), apply() {} }
+        const hero = new Entity("Hero")
+        hero.AddComponent(new Transform(new Vector2(1, 1)))
+        hero.AddComponent(new Sprite("hero.png", 1, 1))
+        scene.AddChild(hero)
+        SceneManager.LoadScene(scene.id)
         vm.runInNewContext(script, {
             window: fakeWindow,
             document,
@@ -212,6 +239,18 @@ test("Game View message bridge controls the real Application and forwards consol
         const send = (type, payload) => {
             for (const handler of listeners.get("message") || []) handler({ source: parent, data: { type, payload } })
         }
+        const pointerDown = (clientX, clientY) => {
+            for (const handler of listeners.get("pointerdown") || []) handler({
+                target: elements.get("neptune-canvas"),
+                button: 0,
+                clientX,
+                clientY
+            })
+        }
+        pointerDown(74, 84)
+        pointerDown(200, 200)
+        const selections = parentMessages.filter(message => message.type === "game:selection-changed")
+        assert.deepEqual(selections.map(message => Array.from(message.payload.ids)), [[hero.id], []])
         assert.equal(app.isRunning, false)
         send("editor:play")
         assert.equal(app.isRunning, true)
@@ -260,5 +299,6 @@ test("Game View message bridge controls the real Application and forwards consol
         globalThis.document = previous.document
         globalThis.window = previous.window
         globalThis.requestAnimationFrame = previous.requestAnimationFrame
+        globalThis.Image = previous.Image
     }
 })
