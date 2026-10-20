@@ -1276,6 +1276,12 @@ describe("Triton persistence bridge", () => {
         expect(JSON.parse(harness.writes[0].content)).toEqual(harness.game.openedScene);
     });
 
+    it("uses canonical engine entity types instead of the mock hierarchy type", () => {
+        const toolbarSource = fs.readFileSync(path.join(root, "src", "components", "panels", "hierarchy", "HierarchyToolbar.tsx"), "utf8");
+        expect(toolbarSource.includes('import type { EntityType } from "@/types/engine"')).toBe(true);
+        expect(toolbarSource.includes("@/lib/mockHierarchy")).toBe(false);
+    });
+
     it("creates a HierarchyToolbar entity in the hierarchy and persists it through save and reopen", () => {
         const harness = createMainHarness();
         const source = {

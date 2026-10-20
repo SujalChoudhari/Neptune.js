@@ -1,7 +1,7 @@
 import { Plus, Search, ChevronDown, ChevronUp } from "lucide-react"
 import { ThemedIconButton, ThemedInput } from "@/components/library"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import type { EntityType } from "@/lib/mockHierarchy"
+import type { EntityType } from "@/types/engine"
 
 interface HierarchyToolbarProps {
     searchQuery: string
