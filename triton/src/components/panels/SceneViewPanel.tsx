@@ -13,7 +13,7 @@ import { EditorGameRunner } from '@/lib/editorGameRunner';
 export function SceneViewPanel() {
     const containerRef = useRef<HTMLDivElement>(null);
     const iframeRef = useRef<HTMLIFrameElement>(null);
-    const { notifyGame, selectedEntityData, selectedIds } = useGameContext();
+    const { notifyGame, updateComponent, selectedEntityData, selectedIds } = useGameContext();
     const [gizmoPosition, setGizmoPosition] = useState<{ x: number; y: number } | null>(null);
     const gizmoDragRef = useRef<{
         operation: 'translate-x' | 'translate-y' | 'rotate' | 'scale';
@@ -72,6 +72,11 @@ export function SceneViewPanel() {
     const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
 
     const baseUrl = neptuneEntryUrl.substring(0, neptuneEntryUrl.lastIndexOf('/') + 1);
+
+    const applyTransformEdit = useCallback((id: string, data: Record<string, unknown>) => {
+        Object.entries(data).forEach(([field, value]) => updateComponent(id, 'transform', field, value));
+        EditorGameRunner.updateEntity(id, 'transform', data);
+    }, [updateComponent]);
 
     const handleWheel = useCallback((e: React.WheelEvent) => {
         const rect = containerRef.current?.getBoundingClientRect();
@@ -139,29 +144,17 @@ export function SceneViewPanel() {
             const deltaX = e.clientX - drag.startX;
             const deltaY = e.clientY - drag.startY;
             if (drag.operation === 'rotate') {
-                notifyGame('editor:update-component', {
-                    id: drag.id,
-                    component: 'transform',
-                    data: { rotation: drag.rotation + deltaX * 0.01 }
-                });
+                applyTransformEdit(drag.id, { rotation: drag.rotation + deltaX * 0.01 });
                 return;
             }
             if (drag.operation === 'scale') {
                 const factor = Math.max(0.01, 1 + (deltaX - deltaY) / 100);
-                notifyGame('editor:update-component', {
-                    id: drag.id,
-                    component: 'transform',
-                    data: { scale: { x: drag.scale.x * factor, y: drag.scale.y * factor } }
-                });
+                applyTransformEdit(drag.id, { scale: { x: drag.scale.x * factor, y: drag.scale.y * factor } });
                 return;
             }
             const nextPosition = translateOnAxis(drag.position, deltaX, deltaY, zoom, drag.operation === 'translate-x' ? 'x' : 'y');
             setGizmoPosition(nextPosition);
-            notifyGame('editor:update-component', {
-                id: drag.id,
-                component: 'transform',
-                data: { position: nextPosition }
-            });
+            applyTransformEdit(drag.id, { position: nextPosition });
             return;
         }
         if (isPanning) {
@@ -178,7 +171,7 @@ export function SceneViewPanel() {
 
             notifyGame('editor:camera-update', { zoom, x: newPan.x, y: newPan.y });
         }
-    }, [isPanning, lastMousePos, pan, zoom, notifyGame]);
+    }, [isPanning, lastMousePos, pan, zoom, notifyGame, applyTransformEdit]);
 
     const handleMouseUp = useCallback(() => {
         if (gizmoDragRef.current) {

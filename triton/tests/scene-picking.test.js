@@ -27,6 +27,8 @@ function createSceneViewHarness() {
     const slots = [];
     let hookIndex = 0;
     const notifications = [];
+    const canonicalEdits = [];
+    const componentEdits = [];
     const react = {
         createElement: (type, props, ...children) => ({ type, props: { ...(props || {}), children: children.length > 1 ? children : children[0] } }),
         useRef(initial) { const index = hookIndex++; return slots[index] ||= { current: initial }; },
@@ -48,6 +50,10 @@ function createSceneViewHarness() {
         '@/components/library': { ThemedIconButton: 'ThemedIconButton' },
         '@/context/GameContext': { useGameContext: () => ({
             notifyGame: (type, payload) => notifications.push({ type, payload }),
+            updateComponent: (id, component, field, value) => {
+                componentEdits.push({ id, component, field, value });
+                notifications.push({ type: 'editor:update-component', payload: { id, component, data: { [field]: value } } });
+            },
             selectedEntityData: {
                 transform: { position: { x: 2, y: 3 }, rotation: 0.5, scale: { x: 1, y: 2 } },
                 components: {
@@ -58,7 +64,9 @@ function createSceneViewHarness() {
             },
             selectedIds: ['entity-1']
         }) },
-        '@/lib/editorGameRunner': { EditorGameRunner: {} },
+        '@/lib/editorGameRunner': { EditorGameRunner: {
+            updateEntity: (id, component, data) => canonicalEdits.push({ id, component, data })
+        } },
         '@/lib/scenePicking.mjs': { translateOnAxis, getColliderOverlayBounds },
         '@tauri-apps/api/core': { invoke: async () => '' },
         '../../../../src/neptune.js?url': '/neptune.js',
@@ -82,7 +90,7 @@ function createSceneViewHarness() {
         tree.props.ref.current = { getBoundingClientRect: () => ({ left: 10, top: 20 }) };
         return tree;
     };
-    return { render, notifications };
+    return { render, notifications, canonicalEdits, componentEdits };
 }
 
 function findNode(node, predicate) {
@@ -214,6 +222,12 @@ test('Scene View UI pans the camera and moves a selected entity on its gizmo axi
             id: 'entity-1', component: 'transform', data: { position: { x: 22, y: 3 } }
         } }
     ]);
+    assert.deepEqual(JSON.parse(JSON.stringify(harness.canonicalEdits)), [
+        { id: 'entity-1', component: 'transform', data: { position: { x: 22, y: 3 } } }
+    ]);
+    assert.deepEqual(JSON.parse(JSON.stringify(harness.componentEdits)), [
+        { id: 'entity-1', component: 'transform', field: 'position', value: { x: 22, y: 3 } }
+    ]);
 });
 
 test('Scene View UI rotation and scale gizmos update the selected runtime Transform', () => {
@@ -237,6 +251,14 @@ test('Scene View UI rotation and scale gizmos update the selected runtime Transf
         { type: 'editor:update-component', payload: {
             id: 'entity-1', component: 'transform', data: { scale: { x: 1.25, y: 2.5 } }
         } }
+    ]);
+    assert.deepEqual(JSON.parse(JSON.stringify(harness.canonicalEdits)), [
+        { id: 'entity-1', component: 'transform', data: { rotation: 0.75 } },
+        { id: 'entity-1', component: 'transform', data: { scale: { x: 1.25, y: 2.5 } } }
+    ]);
+    assert.deepEqual(JSON.parse(JSON.stringify(harness.componentEdits)), [
+        { id: 'entity-1', component: 'transform', field: 'rotation', value: 0.75 },
+        { id: 'entity-1', component: 'transform', field: 'scale', value: { x: 1.25, y: 2.5 } }
     ]);
 });
 
