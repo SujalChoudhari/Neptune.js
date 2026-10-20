@@ -119,7 +119,12 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
         invoke<string>('read_image_asset', { path: tilemap.tileset })
             .then((dataUrl) => { if (!cancelled) setTilesetPreview(dataUrl); })
             .catch((previewError) => {
-                if (!cancelled) setError(previewError instanceof Error ? previewError.message : String(previewError));
+                if (!cancelled) {
+                    setAvailableTileCount(0);
+                    setAvailableAtlasColumns(0);
+                    setAtlasRows(0);
+                    setError(previewError instanceof Error ? previewError.message : String(previewError));
+                }
             });
         return () => { cancelled = true; };
     }, [tilemap?.tileset]);
@@ -193,6 +198,12 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
 
     const paint = (x: number, y: number) => {
         if (!tilemap) return;
+        if (tilemap.tileset?.trim() && (availableTileCount === null || availableTileCount === 0)) {
+            setError(availableTileCount === null
+                ? 'Wait for the tileset image to load before painting.'
+                : 'The tileset image has no usable tiles; painting is disabled.');
+            return;
+        }
         try {
             setTilemap(paintTileCells(tilemap, [{ x, y }], tileId));
             setSelectedCell({ x, y });
@@ -225,6 +236,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
     const activeMetadata = tilemap?.metadata?.[String(tileId)] || {};
     const atlasColumns = tilemap?.columns ?? 10;
     const atlasTileSize = tilemap?.tileSize ?? 64;
+    const paintingBlocked = Boolean(tilemap?.tileset?.trim()) && !(availableTileCount && availableTileCount > 0);
 
     return (
         <section className="h-full flex flex-col gap-2 bg-background p-3 text-foreground">
@@ -302,6 +314,11 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                         className="min-w-0 flex-1 rounded border border-border bg-card px-2 py-1 text-xs"
                         value={tilemap.tileset || ''}
                         onChange={(event) => {
+                            setAvailableTileCount(null);
+                            setAvailableAtlasColumns(null);
+                            setAtlasRows(null);
+                            setAtlasSize(null);
+                            setTilesetPreview('');
                             setTilemap({ ...tilemap, tileset: event.target.value });
                             setIsDirty(true);
                         }}
@@ -387,6 +404,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                     aria-label="Tile ID to paint"
                     className="w-20 rounded border border-border bg-card px-2 py-1 text-xs"
                     type="number"
+                    disabled={paintingBlocked}
                     min="0"
                     max={Math.max(0, Math.min(paletteCount, availableTileCount ?? 4096) - 1)}
                     step="1"
@@ -427,6 +445,9 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
             )}
             {tilemap && (
                 <div className="flex min-h-0 max-h-40 flex-col gap-1 overflow-auto rounded border border-border bg-card/50 p-2" aria-label="Tileset tile palette">
+                    {tilemap.tileset?.trim() && availableTileCount === null && (
+                        <p className="text-xs text-muted-foreground" role="status">Loading tileset dimensions; painting is paused.</p>
+                    )}
                     {tilesetPreview && <img src={tilesetPreview} alt="Tileset atlas" className="hidden" onLoad={(event) => {
                         const width = event.currentTarget.naturalWidth;
                         const height = event.currentTarget.naturalHeight;
@@ -439,6 +460,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                             setAtlasRows(atlas.rows);
                             setPaletteCount(tileCount);
                             setTileId((current) => Math.min(current, tileCount - 1));
+                            setError('');
                             if (tilemap.columns !== atlas.columns || tilemap.tileCount !== tileCount) {
                                 setTilemap({ ...tilemap, columns: atlas.columns, tileCount });
                                 setIsDirty(true);
@@ -449,6 +471,11 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                             setAtlasRows(0);
                             setError(atlasError instanceof Error ? atlasError.message : String(atlasError));
                         }
+                    }} onError={() => {
+                        setAvailableTileCount(0);
+                        setAvailableAtlasColumns(0);
+                        setAtlasRows(0);
+                        setError('Could not decode the tileset image; painting is disabled.');
                     }} />}
                     <div className="flex items-center gap-2">
                         <span className="text-xs">Tileset tile palette</span>
@@ -601,6 +628,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                                     aria-label={`Paint cell ${x}, ${y}; tile ${value}`}
                                     title={`(${x}, ${y}) = ${value}`}
                                     className="h-6 w-6 bg-card text-[9px] hover:bg-primary/30 focus-visible:outline focus-visible:outline-1 focus-visible:outline-primary"
+                                    disabled={paintingBlocked}
                                     onMouseDown={(event) => {
                                         event.preventDefault();
                                         setIsPainting(true);
