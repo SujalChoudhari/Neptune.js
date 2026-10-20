@@ -981,6 +981,19 @@ describe("Triton persistence bridge", () => {
         byLabel(tree, "Tileset palette tile count").props.onChange({ target: { value: "64" } });
         tree = render();
         expect(byLabel(tree, "Tileset palette tile count").props.value).toBe(8);
+        expect(byLabel(tree, "Atlas columns").props.max).toBe(4);
+        byLabel(tree, "Atlas columns").props.onChange({ target: { value: "5" } });
+        tree = render();
+        expect(byLabel(tree, "Atlas columns").props.value).toBe(4);
+        byLabel(tree, "Atlas columns").props.onChange({ target: { value: "2" } });
+        tree = render();
+        expect(byLabel(tree, "Tileset palette tile count").props.value).toBe(4);
+        expect(byLabel(tree, "Tile ID to paint").props.value).toBe(3);
+        byLabel(tree, "Atlas columns").props.onChange({ target: { value: "4" } });
+        tree = render();
+        byLabel(tree, "Tileset palette tile count").props.onChange({ target: { value: "64" } });
+        tree = render();
+        expect(byLabel(tree, "Tileset palette tile count").props.value).toBe(8);
         expect(byLabel(tree, "Paint cell 1, 0; tile 0")).toBeDefined();
 
         byLabel(tree, "Tile ID to paint").props.onChange({ target: { value: "3" } });
