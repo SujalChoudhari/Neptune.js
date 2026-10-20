@@ -12,6 +12,7 @@ import { readRuntimeSelection } from "../lib/runtimeSelectionBridge.mjs";
 import { createSceneHierarchyEntity } from "../lib/sceneHierarchy.mjs";
 import { createHierarchyEntityData, createHierarchyEntityDataBranch } from "../lib/hierarchyEntityData.mjs";
 import { setAllHierarchyEntitiesExpanded, setHierarchyEntityExpanded } from "../lib/hierarchyEntityExpansion";
+import { getEditorSelectionAfterClick } from "../lib/editorSelectionState";
 import { EditorGameRunner } from "../lib/editorGameRunner";
 
 interface GameContextType {
@@ -402,7 +403,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
 
     const selectEntity = (id: string, multi: boolean) => {
-        const newSelection = multi ? [...selectedIds, id] : [id];
+        const newSelection = getEditorSelectionAfterClick(selectedIds, id, multi);
         setSelectedIds(newSelection);
         notifyGame('editor:select', { ids: newSelection });
 

@@ -453,6 +453,18 @@ describe("Triton persistence bridge", () => {
         expect(setAllHierarchyEntitiesExpanded(collapsed, true).child.expanded).toBe(true);
     });
 
+    it("clears empty hierarchy selections and deduplicates multi-selection IDs", () => {
+        const helperPath = path.resolve("triton/src/lib/editorSelectionState.ts");
+        const helperBundle = buildSync({
+            bundle: true, format: "cjs", platform: "node", write: false,
+            stdin: { contents: fs.readFileSync(helperPath, "utf8"), loader: "ts", sourcefile: helperPath }
+        }).outputFiles[0].text;
+        const { getEditorSelectionAfterClick } = loadBundle(helperBundle, {});
+        expect(getEditorSelectionAfterClick(["hero"], "", false)).toEqual([]);
+        expect(getEditorSelectionAfterClick(["hero", "hero", ""], "enemy", true)).toEqual(["hero", "enemy"]);
+        expect(getEditorSelectionAfterClick(["hero"], "enemy", false)).toEqual(["enemy"]);
+    });
+
     it("clears stale project navigation when a selected project's native scan fails", async () => {
         const bundle = bundleSource(path.join(root, "src", "context", "FileSystemContext.tsx"), [
             "react",
