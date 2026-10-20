@@ -1032,6 +1032,35 @@ describe("Triton persistence bridge", () => {
         expect(savedMap.cellMetadata["1"]).toEqual({ collision: false, walkable: true, terrain: "moss" });
         expect(loadCalls).toEqual(["scenes/main.scene"]);
 
+        const runtimeHarness = createMainHarness();
+        runtimeHarness.runner.openScene({
+            type: "scene", version: "1.0.0", schemaVersion: 1, id: "scene-tilemap-panel-runtime",
+            name: "Tilemap Panel Runtime", entities: [], layers: []
+        }, "scenes/main.scene");
+        const runtimeLayer = runtimeHarness.runner.createTilemapLayer(mapPath);
+        expect(runtimeLayer.src).toBe(mapPath);
+        await runtimeHarness.writeScene("scenes/main.scene", runtimeHarness.runner.currentScene);
+        const savedScene = JSON.parse(runtimeHarness.files.get("scenes/main.scene"));
+        const originalFetch = global.fetch;
+        const originalImage = global.Image;
+        global.Image = class { set src(_value) {} };
+        global.fetch = async source => {
+            expect(source).toBe(mapPath);
+            return { ok: true, json: async () => JSON.parse(JSON.stringify(savedMap)) };
+        };
+        try {
+            const runtimeScene = await SceneLoader.parse(savedScene);
+            const runtimeTile = runtimeScene.children.find(entity => entity.name === "Tile_1");
+            expect(runtimeTile.tileId).toBe(3);
+            expect(runtimeTile.tileMetadata).toEqual({ collision: false, walkable: true, terrain: "moss" });
+            expect(runtimeTile.GetComponent(BoxCollider)).toBeUndefined();
+            expect(runtimeTile.GetComponent(Sprite).path).toBe("assets/tiles.png");
+        } finally {
+            global.fetch = originalFetch;
+            if (originalImage === undefined) delete global.Image;
+            else global.Image = originalImage;
+        }
+
         tree = render();
         byLabel(tree, "Tile size in pixels").props.onChange({ target: { value: "32" } });
         tree = render();

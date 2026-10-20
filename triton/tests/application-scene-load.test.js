@@ -14,6 +14,7 @@ import { EnemyConfig } from "../../src/components/enemyConfig.js";
 import { BoxCollider } from "../../src/components/boxCollider.js";
 import { Hitbox, Hurtbox, TriggerCollider } from "../../src/nereid/collider.js";
 import { Sprite } from "../../src/rendering/sprite.js";
+import { createEmptyTilemap, paintTileCell, setCellMetadata, setTileMetadata } from "../src/lib/tilemapAuthoring.mjs";
 
 function createEditorRunner() {
     const sourcefile = path.resolve("triton/src/lib/editorGameRunner.ts");
@@ -72,25 +73,33 @@ test("saved editor-authored scene loads through the Application runtime", async 
     globalThis.Image = class Image {
         set src(value) { this.source = value; }
     };
-    globalThis.fetch = async path => {
-        assert.equal(path, "maps/dungeon.map");
-        return {
-            ok: true,
-            async json() {
-                return {
+    const authoredMap = setCellMetadata(
+        setCellMetadata(
+            setTileMetadata(
+                paintTileCell(createEmptyTilemap({
+                    name: "dungeon.map",
                     width: 2,
                     height: 1,
                     columns: 8,
                     tileSize: 16,
-                    tileset: "assets/dungeon.png",
-                    data: [1, 0],
-                    metadata: { "1": { collision: true, walkable: false, terrain: "lava" } },
-                    cellMetadata: {
-                        "0": { collision: false, walkable: true },
-                        "1": { collision: true, walkable: false, terrain: "wall" }
-                    }
-                };
-            }
+                    tileset: "assets/dungeon.png"
+                }), 0, 0, 1),
+                1,
+                { collision: true, walkable: false, terrain: "lava" }
+            ),
+            0,
+            0,
+            { collision: false, walkable: true }
+        ),
+        1,
+        0,
+        { collision: true, walkable: false, terrain: "wall" }
+    );
+    globalThis.fetch = async path => {
+        assert.equal(path, "maps/dungeon.map");
+        return {
+            ok: true,
+            async json() { return JSON.parse(JSON.stringify(authoredMap)); }
         };
     };
 
