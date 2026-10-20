@@ -431,6 +431,28 @@ describe("Triton persistence bridge", () => {
         expect(branchData["copy-child"].active).toBe(false);
     });
 
+    it("expands and collapses nested hierarchy state without mutating prior snapshots", () => {
+        const helperPath = path.resolve("triton/src/lib/hierarchyEntityExpansion.ts");
+        const helperBundle = buildSync({
+            bundle: true, format: "cjs", platform: "node", write: false,
+            stdin: { contents: fs.readFileSync(helperPath, "utf8"), loader: "ts", sourcefile: helperPath }
+        }).outputFiles[0].text;
+        const { setAllHierarchyEntitiesExpanded, setHierarchyEntityExpanded } = loadBundle(helperBundle, {});
+        const entities = {
+            root: { id: "root", parentId: null, name: "Scene", type: "group", children: ["folder"], active: true, locked: false, expanded: true },
+            folder: { id: "folder", parentId: "root", name: "Folder", type: "folder", children: ["child"], active: true, locked: false, expanded: false },
+            child: { id: "child", parentId: "folder", name: "Child", type: "empty", children: [], active: true, locked: false, expanded: false }
+        };
+        const opened = setHierarchyEntityExpanded(entities, "folder", true);
+        expect(opened.folder.expanded).toBe(true);
+        expect(entities.folder.expanded).toBe(false);
+        const collapsed = setAllHierarchyEntitiesExpanded(opened, false);
+        expect(collapsed.folder.expanded).toBe(false);
+        expect(collapsed.child.expanded).toBe(false);
+        expect(collapsed.root.expanded).toBe(true);
+        expect(setAllHierarchyEntitiesExpanded(collapsed, true).child.expanded).toBe(true);
+    });
+
     it("clears stale project navigation when a selected project's native scan fails", async () => {
         const bundle = bundleSource(path.join(root, "src", "context", "FileSystemContext.tsx"), [
             "react",

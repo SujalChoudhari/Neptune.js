@@ -11,6 +11,7 @@ import { readRuntimeState } from "../lib/runtimeControlBridge.mjs";
 import { readRuntimeSelection } from "../lib/runtimeSelectionBridge.mjs";
 import { createSceneHierarchyEntity } from "../lib/sceneHierarchy.mjs";
 import { createHierarchyEntityData, createHierarchyEntityDataBranch } from "../lib/hierarchyEntityData.mjs";
+import { setAllHierarchyEntitiesExpanded, setHierarchyEntityExpanded } from "../lib/hierarchyEntityExpansion";
 import { EditorGameRunner } from "../lib/editorGameRunner";
 
 interface GameContextType {
@@ -28,6 +29,8 @@ interface GameContextType {
     stop: () => void;
     selectEntity: (id: string, multi: boolean) => void;
     setEntityActiveInHierarchy: (id: string, active: boolean) => void;
+    setEntityExpanded: (id: string, expanded: boolean) => void;
+    setAllEntitiesExpanded: (expanded: boolean) => void;
     renameEntityInHierarchy: (id: string, name: string) => void;
     addEntityToHierarchy: (entity: SceneEntity) => void;
     addEntityBranchToHierarchy: (branch: Record<string, any>, parentId: string) => void;
@@ -461,6 +464,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
         });
     }, []);
 
+    const setEntityExpanded = useCallback((id: string, expanded: boolean) => {
+        setEntities(previous => setHierarchyEntityExpanded(previous, id, expanded));
+    }, []);
+
+    const setAllEntitiesExpanded = useCallback((expanded: boolean) => {
+        setEntities(previous => setAllHierarchyEntitiesExpanded(previous, expanded));
+    }, []);
+
     const addEntityBranchToHierarchy = useCallback((branch: Record<string, any>, parentId: string) => {
         setEntities(previous => appendHierarchyBranch(previous, branch, parentId));
         const branchData = createHierarchyEntityDataBranch(branch);
@@ -565,6 +576,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
             stop,
             selectEntity,
             setEntityActiveInHierarchy,
+            setEntityExpanded,
+            setAllEntitiesExpanded,
             renameEntityInHierarchy,
             addEntityToHierarchy,
             addEntityBranchToHierarchy,
