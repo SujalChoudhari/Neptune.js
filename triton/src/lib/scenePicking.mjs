@@ -57,14 +57,16 @@ export function getColliderOverlayBounds(entity) {
     const colliderTypes = [
         { type: 'Hitbox', color: '#fb7185' },
         { type: 'Hurtbox', color: '#38bdf8' },
-        { type: 'TriggerCollider', color: '#facc15' }
+        { type: 'TriggerCollider', color: '#facc15' },
+        { type: 'BoxCollider', color: '#a78bfa' }
     ];
     return colliderTypes.flatMap(({ type, color }) => {
         const collider = components[type];
         if (!collider || typeof collider !== 'object') return [];
-        const { width, height } = collider;
-        const offsetX = collider.offsetX ?? 0;
-        const offsetY = collider.offsetY ?? 0;
+        const width = collider.width ?? collider.size?.x;
+        const height = collider.height ?? collider.size?.y;
+        const offsetX = collider.offsetX ?? collider.offset?.x ?? 0;
+        const offsetY = collider.offsetY ?? collider.offset?.y ?? 0;
         if (![width, height, offsetX, offsetY].every(Number.isFinite) || width <= 0 || height <= 0) return [];
         return [{ type, color, x: position.x + offsetX, y: position.y + offsetY, width, height }];
     });

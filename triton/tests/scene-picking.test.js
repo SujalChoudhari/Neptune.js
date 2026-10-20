@@ -174,13 +174,14 @@ test('combat collider overlay bounds include the selected transform and authored
             Hitbox: { width: 2, height: 1, offsetX: -1, offsetY: 0.5 },
             Hurtbox: { width: 1, height: 3 },
             TriggerCollider: { width: 4, height: 2, offsetX: 2, offsetY: -3 },
-            BoxCollider: { width: 100, height: 100 }
+            BoxCollider: { size: { x: 100, y: 100 }, offset: { x: 1, y: 2 } }
         }
     };
     assert.deepEqual(getColliderOverlayBounds(selected), [
         { type: 'Hitbox', color: '#fb7185', x: 3, y: -1.5, width: 2, height: 1 },
         { type: 'Hurtbox', color: '#38bdf8', x: 4, y: -2, width: 1, height: 3 },
-        { type: 'TriggerCollider', color: '#facc15', x: 6, y: -5, width: 4, height: 2 }
+        { type: 'TriggerCollider', color: '#facc15', x: 6, y: -5, width: 4, height: 2 },
+        { type: 'BoxCollider', color: '#a78bfa', x: 5, y: 0, width: 100, height: 100 }
     ]);
     assert.deepEqual(getColliderOverlayBounds({ transform: { position: { x: 0, y: 0 } }, components: { Hitbox: { width: 0, height: 1 } } }), []);
 });
