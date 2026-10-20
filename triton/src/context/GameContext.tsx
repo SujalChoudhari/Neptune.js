@@ -139,6 +139,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
             setEntities({});
             setEntityDataCache({});
             setSelectedIds([]);
+            setSelectedEntitiesData({});
+            notifyGame('editor:select', { ids: [] });
 
             const newEntities: Record<string, SceneEntity> = {};
             const newDataCache: Record<string, EntityData> = {};
