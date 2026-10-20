@@ -15,7 +15,7 @@ import { Dialogue } from "../../src/components/dialogue.js";
 import { QuestDefinition } from "../../src/components/questDefinition.js";
 import { EnemyConfig } from "../../src/components/enemyConfig.js";
 import { TriggerCollider } from "../../src/nereid/collider.js";
-import { createEmptyTilemap, paintTileCell } from "../src/lib/tilemapAuthoring.mjs";
+import { createEmptyTilemap, paintTileCell, paintTileCells, setCellMetadata, setTileMetadata, getTilesetPaletteIds, getTilesetTileOffset, getTilemapAttachError } from "../src/lib/tilemapAuthoring.mjs";
 import { isSafeSceneAssetPath } from "../src/lib/sceneTransitionAuthoring.mjs";
 import { describe, it, expect } from "../../tests/tester.js";
 
@@ -792,6 +792,144 @@ describe("Triton persistence bridge", () => {
         expect(runtimeEntity).toBeDefined();
         expect(runtimeEntity.GetComponent(SceneTransition).properties).toEqual({ targetScene: "scenes/dungeon.scene", spawnPoint: "entrance", trigger: "interact" });
         expect(runtimeEntity.GetComponent(TriggerCollider).height).toBe(2);
+    });
+
+    it("paints a tile and persists TilemapPanel collision and navigation metadata from its UI controls", async () => {
+        const source = path.join(root, "src", "components", "panels", "TilemapPanel.tsx");
+        const bundle = bundleSource(source, [
+            "react", "react/jsx-runtime", "@tauri-apps/api/core", "@/context/FileSystemContext",
+            "@/context/GameContext", "@/lib/tilemapAuthoring.mjs"
+        ]);
+        const hookSlots = [];
+        let hookIndex = 0;
+        const react = {
+            createElement: (type, props, ...children) => ({
+                type,
+                props: { ...(props || {}), ...(children.length ? { children: children.length === 1 ? children[0] : children } : {}) }
+            }),
+            useMemo(callback) {
+                hookIndex++;
+                return callback();
+            },
+            useState(initialValue) {
+                const index = hookIndex++;
+                if (!(index in hookSlots)) hookSlots[index] = initialValue;
+                return [hookSlots[index], value => {
+                    hookSlots[index] = typeof value === "function" ? value(hookSlots[index]) : value;
+                }];
+            },
+            useEffect(effect, dependencies) {
+                const index = hookIndex++;
+                const previous = hookSlots[index];
+                if (previous && dependencies?.every((value, i) => value === previous.dependencies?.[i])) return;
+                previous?.cleanup?.();
+                hookSlots[index] = { dependencies, cleanup: effect() };
+            }
+        };
+        const jsxRuntime = {
+            jsx: (type, props) => ({ type, props: props || {} }),
+            jsxs: (type, props) => ({ type, props: props || {} }),
+            Fragment: Symbol("Fragment")
+        };
+        const mapPath = "maps/level.map";
+        const initialMap = {
+            width: 2,
+            height: 1,
+            columns: 2,
+            tileCount: 4,
+            tileSize: 16,
+            tileset: "assets/tiles.png",
+            data: [0, 0]
+        };
+        const storedFiles = new Map([[mapPath, JSON.stringify(initialMap)]]);
+        const loadCalls = [];
+        const fileSystem = {
+            nodes: {
+                [mapPath]: { id: mapPath, name: "level.map", type: "file" },
+                "assets/tiles.png": { id: "assets/tiles.png", name: "tiles.png", type: "image" }
+            },
+            rootPath: "/project",
+            readFile: filePath => Promise.resolve(storedFiles.get(filePath) ?? null),
+            writeFile: (filePath, content) => {
+                storedFiles.set(filePath, content);
+                return Promise.resolve(true);
+            },
+            refresh: () => Promise.resolve()
+        };
+        const gameContext = {
+            currentScenePath: "scenes/main.scene",
+            loadScene: scenePath => { loadCalls.push(scenePath); return Promise.resolve(); },
+            addTilemapLayer: () => true
+        };
+        const modules = {
+            react,
+            "react/jsx-runtime": jsxRuntime,
+            "@tauri-apps/api/core": { invoke: () => Promise.resolve("data:image/png;base64,AA==") },
+            "@/context/FileSystemContext": { useFileSystem: () => fileSystem },
+            "@/context/GameContext": { useGameContext: () => gameContext },
+            "@/lib/tilemapAuthoring.mjs": {
+                createEmptyTilemap, paintTileCells, setCellMetadata, setTileMetadata,
+                getTilesetPaletteIds, getTilesetTileOffset, getTilemapAttachError
+            }
+        };
+        const component = loadBundle(bundle, {
+            React: react,
+            require: specifier => {
+                if (!(specifier in modules)) throw new Error(`Unexpected TilemapPanel import: ${specifier}`);
+                return modules[specifier];
+            }
+        }).TilemapPanel;
+        const render = () => {
+            hookIndex = 0;
+            return component({});
+        };
+        const find = (node, predicate) => {
+            if (Array.isArray(node)) {
+                for (const child of node) {
+                    const result = find(child, predicate);
+                    if (result) return result;
+                }
+                return null;
+            }
+            if (!node || typeof node !== "object") return null;
+            if (predicate(node)) return node;
+            return find(node.props?.children, predicate);
+        };
+        const byLabel = (tree, label) => find(tree, node => node.props?.["aria-label"] === label);
+
+        render();
+        await Promise.resolve();
+        render();
+        await Promise.resolve();
+        let tree = render();
+        expect(byLabel(tree, "Paint cell 1, 0; tile 0")).toBeDefined();
+
+        byLabel(tree, "Tile ID to paint").props.onChange({ target: { value: "3" } });
+        tree = render();
+        byLabel(tree, "Paint cell 1, 0; tile 0").props.onClick();
+        tree = render();
+        byLabel(tree, "Tile 3 collision").props.onChange({ target: { value: "true" } });
+        tree = render();
+        byLabel(tree, "Tile 3 walkability").props.onChange({ target: { value: "false" } });
+        tree = render();
+        byLabel(tree, "Tile 3 terrain").props.onChange({ target: { value: "stone" } });
+        tree = render();
+        byLabel(tree, "Cell 1, 0 collision").props.onChange({ target: { value: "false" } });
+        tree = render();
+        byLabel(tree, "Cell 1, 0 walkability").props.onChange({ target: { value: "true" } });
+        tree = render();
+        byLabel(tree, "Cell 1, 0 terrain").props.onChange({ target: { value: "moss" } });
+        tree = render();
+        const saveButton = find(tree, node => node.type === "button" && node.props?.children === "Save Map");
+        expect(saveButton).toBeDefined();
+        saveButton.props.onClick();
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        const savedMap = JSON.parse(storedFiles.get(mapPath));
+        expect(savedMap.data).toEqual([0, 3]);
+        expect(savedMap.metadata["3"]).toEqual({ collision: true, walkable: false, terrain: "stone" });
+        expect(savedMap.cellMetadata["1"]).toEqual({ collision: false, walkable: true, terrain: "moss" });
+        expect(loadCalls).toEqual(["scenes/main.scene"]);
     });
 
     it("saves and loads a TilemapPanel map attached to an editor-authored scene", async () => {
