@@ -10,9 +10,18 @@ import { SceneManager } from "../../src/core/sceneManager.js"
 import { Sprite } from "../../src/rendering/sprite.js"
 import { Transform } from "../../src/components/transform.js"
 import { Vector2 } from "../../src/math/vec2.js"
-import { runRuntimeControl, runtimeControlBridgeScript } from "../src/lib/runtimeControlBridge.mjs"
+import { getPlayAction, runRuntimeControl, runtimeControlBridgeScript } from "../src/lib/runtimeControlBridge.mjs"
 import { runtimeSelectionBridgeScript } from "../src/lib/runtimeSelectionBridge.mjs"
 import { runtimeConsoleBridgeScript } from "../src/lib/runtimeConsoleBridge.mjs"
+
+test("Play resumes paused playback without starting a new session", () => {
+    assert.deepEqual(getPlayAction(false, false), {
+        type: "editor:play", payload: null, startsNewSession: true
+    })
+    assert.deepEqual(getPlayAction(true, true), {
+        type: "editor:pause", payload: { paused: false }, startsNewSession: false
+    })
+})
 
 const context = {
     clearRect() {},
@@ -102,6 +111,117 @@ test("Application playback controls pause, stop, and restart one frame loop", as
             { isPlaying: false, isPaused: false },
             { isPlaying: true, isPaused: false },
             { isPlaying: false, isPaused: false }
+        ])
+    } finally {
+        globalThis.document = previous.document
+        globalThis.window = previous.window
+        globalThis.requestAnimationFrame = previous.requestAnimationFrame
+    }
+})
+
+test("EditorToolbar Play, Pause, and Stop buttons control the runtime Application", async () => {
+    const previous = {
+        document: globalThis.document,
+        window: globalThis.window,
+        requestAnimationFrame: globalThis.requestAnimationFrame
+    }
+    const elements = new Map()
+    globalThis.document = {
+        body: { appendChild(element) { elements.set(element.attributes.id, element) } },
+        head: { appendChild() {} },
+        getElementById(id) { return elements.get(id) || null },
+        createElement
+    }
+    globalThis.window = {
+        innerWidth: 640,
+        innerHeight: 480,
+        outerWidth: 640,
+        outerHeight: 480,
+        addEventListener() {},
+        removeEventListener() {}
+    }
+    globalThis.requestAnimationFrame = () => 1
+
+    try {
+        const { Application } = await import("../../src/core/application.js")
+        const app = new Application()
+        const runtimeState = { isPlaying: false, isPaused: false }
+        const controlMessages = []
+        const send = (type, payload) => {
+            controlMessages.push({ type, payload: payload ?? null })
+            return runRuntimeControl(app, type, payload, state => Object.assign(runtimeState, state))
+        }
+        const sourcefile = path.resolve("triton/src/components/layout/EditorToolbar.tsx")
+        const bundle = buildSync({
+            bundle: true,
+            external: ["react", "react/jsx-runtime", "@/components/library", "lucide-react", "@/components/dialogs/SettingsDialog", "@/context/GameContext", "@/lib/utils"],
+            format: "cjs",
+            platform: "node",
+            write: false,
+            stdin: { contents: fs.readFileSync(sourcefile, "utf8"), loader: "tsx", sourcefile, resolveDir: path.dirname(sourcefile) }
+        }).outputFiles[0].text
+        const react = { createElement: (type, props, ...children) => ({ type, props: { ...(props || {}), children: children.length > 1 ? children : children[0] } }) }
+        const modules = {
+            react,
+            "react/jsx-runtime": { jsx: react.createElement, jsxs: react.createElement },
+            "@/components/library": { ThemedIconButton: "ThemedIconButton", useModal: () => ({ showModal() {} }) },
+            "lucide-react": new Proxy({}, { get: (_target, name) => String(name) }),
+            "@/components/dialogs/SettingsDialog": { SettingsModalContent: "SettingsModalContent" },
+            "@/context/GameContext": { useGameContext: () => ({
+                play: () => {
+                    const action = getPlayAction(runtimeState.isPlaying, runtimeState.isPaused)
+                    return send(action.type, action.payload)
+                },
+                pause: () => send("editor:pause", { paused: !runtimeState.isPaused }),
+                stop: () => send("editor:stop"),
+                ...runtimeState,
+                currentSceneName: "Main",
+                markAsMainScene() {},
+                mainScenePath: "scenes/main.scene",
+                currentScenePath: "scenes/main.scene"
+            }) },
+            "@/lib/utils": { cn: (...values) => values.filter(Boolean).join(" ") }
+        }
+        const componentModule = { exports: {} }
+        vm.runInNewContext(bundle, {
+            module: componentModule,
+            exports: componentModule.exports,
+            React: react,
+            require: specifier => {
+                if (!(specifier in modules)) throw new Error(`Unexpected EditorToolbar import: ${specifier}`)
+                return modules[specifier]
+            }
+        })
+        const render = () => componentModule.exports.EditorToolbar()
+        const findButton = (tree, title) => {
+            const visit = node => {
+                if (Array.isArray(node)) return node.map(visit).find(Boolean) || null
+                if (!node || typeof node !== "object") return null
+                if (node.type === "ThemedIconButton" && node.props?.title === title) return node
+                return visit(node.props?.children)
+            }
+            return visit(tree)
+        }
+
+        assert.equal(findButton(render(), "Pause").props.disabled, true)
+        assert.equal(findButton(render(), "Stop").props.disabled, true)
+        findButton(render(), "Play").props.onClick()
+        assert.equal(app.isRunning, true)
+        assert.equal(findButton(render(), "Play").props.disabled, true)
+        assert.equal(findButton(render(), "Pause").props.disabled, false)
+
+        findButton(render(), "Pause").props.onClick()
+        assert.equal(app.isPaused, true)
+        findButton(render(), "Play").props.onClick()
+        assert.equal(app.isPaused, false)
+        findButton(render(), "Stop").props.onClick()
+        assert.equal(app.isRunning, false)
+        assert.deepEqual(runtimeState, { isPlaying: false, isPaused: false })
+        assert.deepEqual(controlMessages, [
+            { type: "editor:play", payload: null },
+            { type: "editor:pause", payload: { paused: true } },
+            { type: "editor:pause", payload: { paused: false } },
+            { type: "editor:stop", payload: null }
         ])
     } finally {
         globalThis.document = previous.document

@@ -1,6 +1,6 @@
-import type { MockEntity } from "./types"
+import type { EntityData } from "@/types/engine"
 
-export const MOCK_ENTITY: MockEntity = {
+export const MOCK_ENTITY: EntityData = {
     id: 'mock-entity',
     name: "Player_Character",
     active: true,

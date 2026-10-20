@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import vm from "node:vm";
+import vm from "vm";
 import { execFileSync } from "node:child_process";
 import { buildSync } from "esbuild";
 import { describe, it, expect } from "../../tests/tester.js";
@@ -66,6 +66,9 @@ function createMainHarness() {
     const writes = [];
     const files = new Map();
     const notifications = [];
+    let writeSceneError = null;
+    const openedProjects = [];
+    const windowTitles = [];
     const runner = loadBundle(runnerBundle, {});
     runner.EditorGameRunner.currentScene = null;
     runner.EditorGameRunner.currentScenePath = null;
@@ -75,6 +78,8 @@ function createMainHarness() {
     const hierarchyHookSlots = [];
     let mainHookIndex = 0;
     let hierarchyHookIndex = 0;
+    let projectLoadError = null;
+    let projectReadHandler = () => Promise.resolve({});
 
     const react = {
         createElement(type, props, ...children) {
@@ -169,6 +174,7 @@ function createMainHarness() {
     };
 
     const writeScene = async (scenePath, scene) => {
+        if (writeSceneError) throw writeSceneError;
         const args = { path: scenePath, content: JSON.stringify(scene, null, 2) };
         writes.push(args);
         files.set(scenePath, args.content);
@@ -185,7 +191,7 @@ function createMainHarness() {
             document: { documentElement: { classList: { add() {} } } },
             addEventListener() {},
             removeEventListener() {},
-            dispatchEvent() {}
+            dispatchEvent(event) { notifications.push({ type: event.type, payload: event.detail }); }
         }
     };
 
@@ -194,13 +200,20 @@ function createMainHarness() {
         react,
         "react/jsx-runtime": jsxRuntime,
         "@tauri-apps/api/event": { listen },
-        "@tauri-apps/api/window": { getCurrentWindow: () => ({ setTitle: () => Promise.resolve() }) },
+        "@tauri-apps/api/window": { getCurrentWindow: () => ({ setTitle: title => { windowTitles.push(title); return Promise.resolve(); } }) },
         "@tauri-apps/api/core": { invoke },
         "@/components/layout/DockLayout": { DockLayout: () => null },
         "@/components/layout/EditorToolbar": { EditorToolbar: () => null },
         "@/components/layout/StatusBar": { StatusBar: () => null },
         "@/pages/WelcomeScreen": { WelcomeScreen: () => null },
-        "@/context/FileSystemContext": { useFileSystem: () => ({ loadProject: () => Promise.resolve(), readProject: () => Promise.resolve({}), writeScene }) },
+        "@/context/FileSystemContext": { useFileSystem: () => ({
+            loadProject: path => {
+                openedProjects.push(path);
+                return projectLoadError ? Promise.reject(projectLoadError) : Promise.resolve();
+            },
+            readProject: () => projectReadHandler(),
+            writeScene
+        }) },
         "@/context/GameContext": {
             useGameContext: () => ({
                 entities: game.entities || {},
@@ -272,7 +285,7 @@ function createMainHarness() {
     const HierarchyPanel = hierarchyModule.exports.HierarchyPanel;
     const render = () => {
         mainHookIndex = 0;
-        Main();
+        return Main();
     };
     const renderHierarchy = () => {
         hierarchyHookIndex = 0;
@@ -340,7 +353,27 @@ function createMainHarness() {
             : clickToggleActive(children, id);
     };
 
-    return { game, runner: runner.EditorGameRunner, files, writes, listeners, notifications, render, renderHierarchy, clickDuplicate, clickCreateEntity, clickRenameEntity, clickMoveEntity, clickToggleActive, dispatchMenuEvent };
+    return {
+        game,
+        runner: runner.EditorGameRunner,
+        openedProjects,
+        windowTitles,
+        files,
+        writes,
+        listeners,
+        notifications,
+        render,
+        renderHierarchy,
+        clickDuplicate,
+        clickCreateEntity,
+        clickRenameEntity,
+        clickMoveEntity,
+        clickToggleActive,
+        dispatchMenuEvent,
+        failProjectLoad: error => { projectLoadError = error; },
+        failSceneWrite: error => { writeSceneError = error; },
+        setProjectReadHandler: handler => { projectReadHandler = handler; }
+    };
 }
 
 function loadBundle(bundle, context) {
@@ -492,11 +525,18 @@ describe("Triton persistence bridge", () => {
         const hookState = [];
         let hookIndex = 0;
         let failScan = false;
+        let deferScans = false;
+        const pendingScans = [];
         const react = {
             createElement: (type, props) => ({ type, props }),
             createContext: () => ({ Provider: "FileSystemProvider" }),
             useContext: () => null,
             useCallback: callback => callback,
+            useRef(initialValue) {
+                const index = hookIndex++;
+                if (!(index in hookState)) hookState[index] = { current: initialValue };
+                return hookState[index];
+            },
             useState(initialValue) {
                 const index = hookIndex++;
                 if (!(index in hookState)) hookState[index] = initialValue;
@@ -513,8 +553,11 @@ describe("Triton persistence bridge", () => {
             react,
             "react/jsx-runtime": jsxRuntime,
             "@tauri-apps/api/core": {
-                invoke: async command => {
+                invoke: async (command, args) => {
                     if (command !== "scan_project") throw new Error(`Unexpected command: ${command}`);
+                    if (deferScans) {
+                        return await new Promise(resolve => pendingScans.push({ resolve, path: args.path }));
+                    }
                     if (failScan) throw new Error("selected project is unavailable");
                     return {
                         root: { id: "root", parentId: null, name: "Project A", type: "folder", children: ["assets"] },
@@ -552,11 +595,32 @@ describe("Triton persistence bridge", () => {
         expect(context.currentPath).toEqual(["root", "assets"]);
 
         failScan = true;
-        await context.loadProject("/projects/b");
+        let loadError;
+        try {
+            await context.loadProject("/projects/b");
+        } catch (error) {
+            loadError = error;
+        }
         context = renderProvider();
+        expect(loadError.message).toBe("Could not scan project '/projects/b'. selected project is unavailable");
         expect(context.nodes).toEqual({});
         expect(context.rootPath).toBeNull();
         expect(context.currentPath).toEqual(["root"]);
+
+        failScan = false;
+        deferScans = true;
+        const staleLoad = context.loadProject("/projects/slow");
+        const latestLoad = context.loadProject("/projects/latest");
+        expect(pendingScans.map(scan => scan.path)).toEqual([".", "."]);
+        pendingScans[1].resolve({ root: { id: "root", parentId: null, name: "Latest", type: "folder", children: [] } });
+        await latestLoad;
+        pendingScans[0].resolve({ root: { id: "root", parentId: null, name: "Stale", type: "folder", children: [] } });
+        await staleLoad;
+
+        context = renderProvider();
+        expect(context.rootPath).toBe("/projects/latest");
+        expect(context.nodes.root.name).toBe("Latest");
+        expect(context.isLoading).toBe(false);
     });
 
     it("uses selected-project commands for versioned project and scene payloads", () => {
@@ -572,6 +636,27 @@ describe("Triton persistence bridge", () => {
         expect(rust.includes("SCENE_SCHEMA_VERSION")).toBe(true);
         expect(rust.includes("RESOURCE_REFERENCE_INVALID")).toBe(true);
         expect(game.includes("setCurrentScenePayload")).toBe(true);
+    });
+
+    it("hydrates root scene entities independently from layer entities", () => {
+        const game = fs.readFileSync(path.join(root, "src", "context", "GameContext.tsx"), "utf8");
+        const layersIndex = game.indexOf("if (data.layers && Array.isArray(data.layers))");
+        const rootEntitiesIndex = game.indexOf("if (data.entities && Array.isArray(data.entities))");
+        expect(layersIndex >= 0).toBe(true);
+        expect(rootEntitiesIndex > layersIndex).toBe(true);
+        expect(game.slice(layersIndex, rootEntitiesIndex).includes("else if (data.entities")).toBe(false);
+        expect(game.includes("parseEntityList(data.entities, 'root')")).toBe(true);
+    });
+
+    it("starts the paused Scene View loop only after a scene loads", () => {
+        const sceneView = fs.readFileSync(path.join(root, "src", "components", "panels", "SceneViewPanel.tsx"), "utf8");
+        const loadSceneIndex = sceneView.indexOf("game.loadScene(payload.data || payload.path)");
+        const startIndex = sceneView.indexOf("game.start();", loadSceneIndex);
+        const loadedIndex = sceneView.indexOf("type: 'editor:scene-loaded'", startIndex);
+        expect(loadSceneIndex >= 0).toBe(true);
+        expect(startIndex > loadSceneIndex).toBe(true);
+        expect(loadedIndex > startIndex).toBe(true);
+        expect(sceneView.slice(0, loadSceneIndex).includes("game.start();")).toBe(false);
     });
 
     it("requires native filesystem round-trip coverage for IDs and schema fields", () => {
@@ -598,9 +683,17 @@ describe("Triton persistence bridge", () => {
     it("types inspector selections as runtime EntityData without a mock cast", () => {
         const types = fs.readFileSync(path.join(root, "src", "components", "panels", "inspector", "shared", "types.ts"), "utf8");
         const inspector = fs.readFileSync(path.join(root, "src", "components", "panels", "InspectorPanel.tsx"), "utf8");
+        const registry = fs.readFileSync(path.join(root, "src", "components", "panels", "inspector", "InspectorRegistry.tsx"), "utf8");
+        const sectionsDirectory = path.join(root, "src", "components", "panels", "inspector", "components");
+        const productionSections = ["TransformSection.tsx", "SpriteSection.tsx", "ColliderSection.tsx", "BodySection.tsx", "SoundSection.tsx", "StatsSection.tsx", "AnimatorSection.tsx", "ScriptsSection.tsx"]
+            .map(file => fs.readFileSync(path.join(sectionsDirectory, file), "utf8"));
 
-        expect(types.includes('export type MockEntity = EntityData')).toBe(true);
+        expect(types.includes('export type MockEntity')).toBe(false);
+        expect(fs.readFileSync(path.join(root, "src", "components", "panels", "StoryBook.tsx"), "utf8").includes('import type { EntityData } from "@/types/engine"')).toBe(true);
+        expect(fs.readFileSync(path.join(root, "src", "components", "panels", "inspector", "shared", "mockData.ts"), "utf8").includes('import type { EntityData } from "@/types/engine"')).toBe(true);
         expect(inspector.includes('import type { EntityData } from "@/types/engine"')).toBe(true);
+        expect(registry.includes('import type { EntityData } from "@/types/engine"')).toBe(true);
+        expect(productionSections.every(source => source.includes("EntityData") && !source.includes("MockEntity"))).toBe(true);
         expect(inspector.includes("const entity: EntityData = selectedEntityData")).toBe(true);
         expect(inspector.includes("as any as MockEntity")).toBe(false);
     });
@@ -774,6 +867,42 @@ describe("Triton persistence bridge", () => {
         expect(mainSource.includes("get_startup_config")).toBe(false);
     });
 
+    it("keeps the Welcome screen visible and reports the reason when a project filesystem scan fails", async () => {
+        const harness = createMainHarness();
+        harness.failProjectLoad(new Error("native scan failed"));
+        const welcome = harness.render();
+
+        let rejected = false;
+        try {
+            await welcome.props.onProjectLoaded("/projects/unavailable");
+        } catch {
+            rejected = true;
+        }
+        const rerendered = harness.render();
+
+        expect(rejected).toBe(true);
+        expect(typeof welcome.type).toBe("function");
+        expect(rerendered.type).toBe(welcome.type);
+        expect(rerendered.props.errorMessage).toBe("Project could not be opened. native scan failed");
+    });
+
+    it("keeps the latest overlapping project open as the selected editor project", async () => {
+        const harness = createMainHarness();
+        const readRequests = [];
+        harness.setProjectReadHandler(() => new Promise(resolve => readRequests.push(resolve)));
+        const welcome = harness.render();
+
+        const staleOpen = welcome.props.onProjectLoaded("/projects/old");
+        const latestOpen = welcome.props.onProjectLoaded("/projects/latest");
+        readRequests[1]({});
+        await latestOpen;
+        readRequests[0]({});
+        await staleOpen;
+
+        expect(harness.openedProjects).toEqual(["/projects/latest"]);
+        expect(harness.windowTitles).toEqual(["Neptune - latest - /projects/latest"]);
+    });
+
     it("synchronizes editor selection into the live game and runtime selection back to the editor", () => {
         const gameView = fs.readFileSync(path.join(root, "src", "components", "panels", "GameViewPanel.tsx"), "utf8");
         expect(gameView.includes("${runtimeSelectionBridgeScript}")).toBe(true);
@@ -913,6 +1042,40 @@ describe("Triton persistence bridge", () => {
         listeners.get("message")({ source: runtimeWindow.parent, data: { type: "editor:delete", payload: { id: "parent" } } });
         expect(scene.children).toEqual([]);
         expect(runtimeGame.editorSelection).toEqual([]);
+
+        expect(sceneView.includes("${runtimeSelectionBridgeScript}")).toBe(true);
+        expect(fs.readFileSync(path.resolve("triton/src/context/GameContext.tsx"), "utf8")
+            .includes('iframe[title="Game View"], iframe[title="Scene View"]')).toBe(true);
+
+        const viewListeners = new Map();
+        const viewParent = {};
+        const viewScene = { id: "root", children: [] };
+        const parent = { id: "parent", parent: viewScene, children: [] };
+        const child = { id: "child", parent, children: [] };
+        const grandchild = { id: "grandchild", parent: child, children: [] };
+        const sibling = { id: "sibling", parent, children: [] };
+        child.children.push(grandchild);
+        parent.children.push(child, sibling);
+        viewScene.children.push(parent);
+        const viewGame = { scene: viewScene, editorSelection: ["grandchild", "sibling"] };
+        const viewWindow = {
+            parent: viewParent,
+            game: viewGame,
+            addEventListener: (name, handler) => viewListeners.set(name, handler),
+            dispatchEvent() {}
+        };
+        vm.runInNewContext(runtimeSelectionBridgeScript, {
+            window: viewWindow,
+            CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } }
+        });
+        viewListeners.get("message")({
+            source: viewParent,
+            data: { type: "editor:delete", payload: { id: "child" } }
+        });
+
+        expect(viewScene.children[0].id).toBe("parent");
+        expect(viewScene.children[0].children.map(entity => entity.id)).toEqual(["sibling"]);
+        expect(viewGame.editorSelection).toEqual(["sibling"]);
     });
 
     it("reparents runtime entities in both views and rejects moves that would create a cycle", () => {
@@ -1469,5 +1632,25 @@ describe("Triton persistence bridge", () => {
             stdio: "pipe"
         });
         expect(true).toBe(true);
+    });
+
+    it("reports native scene-save failures as actionable editor diagnostics", async () => {
+        const harness = createMainHarness();
+        harness.runner.openScene({
+            type: "scene", version: "1.0.0", schemaVersion: 1,
+            id: "scene-save-error", name: "Save Error", entities: []
+        }, "scenes/save-error.scene");
+        harness.failSceneWrite(new Error("disk is read-only"));
+        harness.render();
+        harness.dispatchMenuEvent("save");
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        const diagnostic = harness.notifications.find(notification => notification.type === "editor:diagnostic");
+        expect(diagnostic && JSON.stringify(diagnostic.payload)).toBe(JSON.stringify({
+            code: "SCENE_SAVE_FAILED",
+            message: "disk is read-only",
+            source: "File > Save",
+            action: "Check project permissions and retry."
+        }));
     });
 });

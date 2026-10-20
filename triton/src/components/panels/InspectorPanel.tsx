@@ -62,8 +62,6 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
         )
     }
 
-    // Cast to MockEntity because our Inspector components are typed with it
-    // EntityData and MockEntity should be compatible enough for now
     const entity: EntityData = selectedEntityData
 
     const isComponentActive = (key: string) => {

@@ -177,13 +177,6 @@ export function SceneViewPanel() {
              };
              cleanup();
 
-             // Start Game
-             if (game.start) {
-                 // Keep editor previews from running behaviors before their first render.
-                 if (game.pause) game.pause();
-                 game.start();
-             }
-
              // Editor Camera
              const editorCamera = new Camera(window.innerWidth, window.innerHeight);
              editorCamera.zoom = 1;
@@ -209,6 +202,11 @@ export function SceneViewPanel() {
                  else if (type === 'editor:load-scene' && game.loadScene) {
                      game.loadScene(payload.data || payload.path)
                          .then(() => {
+                             if (!game.isRunning && game.start) {
+                                 // Keep editor previews paused, but start only after the scene exists.
+                                 if (game.pause) game.pause();
+                                 game.start();
+                             }
                              window.parent.postMessage({ type: 'editor:scene-loaded', payload }, '*');
                              if(game.scene) game.scene.activeCamera = editorCamera; 
                          })

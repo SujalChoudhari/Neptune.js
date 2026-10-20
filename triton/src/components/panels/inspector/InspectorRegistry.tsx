@@ -1,5 +1,6 @@
 import React from "react"
-import type { ComponentId, MockEntity } from "./shared/types"
+import type { EntityData } from "@/types/engine"
+import type { ComponentId } from "./shared/types"
 import { TransformSection } from "./components/TransformSection"
 import { SpriteSection } from "./components/SpriteSection"
 import { ColliderSection } from "./components/ColliderSection"
@@ -30,7 +31,7 @@ export const InspectorRegistry: Record<ComponentId, React.FC<any>> = {
 interface RenderComponentProps {
     compId: ComponentId
     index: number
-    entity: MockEntity
+    entity: EntityData
     isActive: boolean
     onToggleActive: () => void
     updateHelpers: any // Passing all update helpers in a single object
@@ -58,18 +59,10 @@ export const renderInspectorComponent = ({
 
     if (!Component) {
         // Fallback to Generic Renderer for any components
-        // We need to fetch the raw data from the new 'components' dictionary
-        // If the 'data' is not directly reachable via entity[compId], we try entity.components[compId]
-        // But for now, we rely on the caller to pass usage of `renderInspectorComponent` correctly.
-        // Actually, `entity` here is the MockEntity/EntityData.
-
-        // We need a generic onUpdate helper.
-        // We assume updateHelpers has a 'updateGeneric' provided by InspectorPanel.
-
         return <GenericComponentSection
             key={compId}
             type={compId}
-            data={entity.components?.[compId] || (entity as any)[compId]} // Try new dict first, then legacy prop
+            data={entity.components?.[compId] ?? entity[compId]}
             {...commonProps}
             onUpdate={(key, value) => updateHelpers.updateGeneric(compId, key, value)}
         />

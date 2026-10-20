@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from "react";
+import { createContext, useContext, useRef, useState, useCallback } from "react";
 import type { ReactNode } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { createEmptySceneAssetContent } from "@/lib/projectAssetContent.mjs";
@@ -65,6 +65,7 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
     const [rootPath, setRootPath] = useState<string | null>(null);
     const [currentPath, setCurrentPath] = useState<string[]>(["root"]);
     const [isLoading, setIsLoading] = useState(false);
+    const latestProjectLoad = useRef(0);
 
     const currentFolderId = currentPath[currentPath.length - 1] || "root";
 
@@ -132,6 +133,7 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const loadProject = useCallback(async (path: string, preserveNavigation?: boolean) => {
+        const requestId = ++latestProjectLoad.current;
         setIsLoading(true);
         try {
             console.log("Loading project fs from:", path);
@@ -139,6 +141,7 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
             // commands use project-relative paths so renderer input cannot
             // escape that capability.
             const data = await invoke<Record<string, FileSystemNode>>("scan_project", { path: "." });
+            if (requestId !== latestProjectLoad.current) return;
             console.log("Scanned nodes:", Object.keys(data).length);
 
             // Normalize data if needed, or just set it
@@ -148,12 +151,19 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
                 setCurrentPath(["root"]);
             }
         } catch (e) {
+            if (requestId !== latestProjectLoad.current) return;
             console.error("Failed to load project file system:", e);
             setNodes({});
             setRootPath(null);
             setCurrentPath(["root"]);
+            const message = e instanceof Error
+                ? e.message
+                : typeof e === "object" && e !== null && "message" in e
+                    ? String(e.message)
+                    : String(e);
+            throw new Error(`Could not scan project '${path}'. ${message}`);
         } finally {
-            setIsLoading(false);
+            if (requestId === latestProjectLoad.current) setIsLoading(false);
         }
     }, []);
 

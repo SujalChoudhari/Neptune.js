@@ -1,3 +1,17 @@
+export function isRuntimeViewMessageSource(source, frames) {
+    if (!source || !frames || typeof frames[Symbol.iterator] !== "function") return false;
+    for (const frame of frames) {
+        if (frame?.contentWindow === source) return true;
+    }
+    return false;
+}
+
+export function readRuntimeMessage(data) {
+    if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+    if (typeof data.type !== "string" || !data.type.startsWith("game:")) return null;
+    return { type: data.type, payload: data.payload };
+}
+
 export function readRuntimeSelection(payload) {
     if (!payload || typeof payload !== "object" || Array.isArray(payload) || !Array.isArray(payload.ids)) return null;
     const ids = [...new Set(payload.ids.filter(id => typeof id === "string" && id.trim()))];
@@ -27,29 +41,87 @@ export function pickRuntimeEntityAt(scene, screenX, screenY, pixelsPerMeter = 64
             y: screenY + (scene.cameraSettings?.bounds?.y || 0) * pixelsPerMeter
         };
     let picked = null;
-    const visit = entity => {
-        if (!entity || typeof entity !== "object") return;
-        if (entity.active === false) return;
+    let traversalOrder = 0;
+    let pickedTraversalOrder = -1;
+    const visitedRenderableEntities = new Set();
+    const identityMatrix = [1, 0, 0, 1, 0, 0];
+    const multiplyMatrices = (left, right) => [
+        left[0] * right[0] + left[2] * right[1],
+        left[1] * right[0] + left[3] * right[1],
+        left[0] * right[2] + left[2] * right[3],
+        left[1] * right[2] + left[3] * right[3],
+        left[0] * right[4] + left[2] * right[5] + left[4],
+        left[1] * right[4] + left[3] * right[5] + left[5]
+    ];
+    const getWorldMatrix = (entity, parentMatrix) => {
         const components = Array.isArray(entity.components) ? entity.components : [];
-        const sprite = components.find(component => component?.constructor?.name?.toLowerCase() === "sprite");
         const transform = components.find(component => component?.constructor?.name?.toLowerCase() === "transform") || entity.transform;
-        if (sprite && transform && typeof entity.id === "string") {
-            const position = transform.position || { x: 0, y: 0 };
-            const scale = transform.scale || { x: 1, y: 1 };
-            const dx = point.x - position.x * pixelsPerMeter;
-            const dy = point.y - position.y * pixelsPerMeter;
-            const rotation = Number(transform.rotation) || 0;
-            const localX = dx * Math.cos(rotation) + dy * Math.sin(rotation);
-            const localY = -dx * Math.sin(rotation) + dy * Math.cos(rotation);
-            const scaleX = Math.abs(scale.x * pixelsPerMeter) || 1;
-            const scaleY = Math.abs(scale.y * pixelsPerMeter) || 1;
-            const width = Number(sprite.width ?? sprite._properties?.width) || 0;
-            const height = Number(sprite.height ?? sprite._properties?.height) || 0;
-            if (Math.abs(localX / scaleX) <= width / 2 && Math.abs(localY / scaleY) <= height / 2) picked = entity.id;
-        }
-        entity.children?.forEach(visit);
+        const position = transform?.position || {};
+        const scale = transform?.scale || {};
+        const rotation = Number(transform?.rotation) || 0;
+        const scaleX = (Number.isFinite(scale.x) ? scale.x : 1) * pixelsPerMeter;
+        const scaleY = (Number.isFinite(scale.y) ? scale.y : 1) * pixelsPerMeter;
+        const cosine = Math.cos(rotation);
+        const sine = Math.sin(rotation);
+        return multiplyMatrices(parentMatrix, [
+            cosine * scaleX,
+            sine * scaleX,
+            -sine * scaleY,
+            cosine * scaleY,
+            (Number(position.x) || 0) * pixelsPerMeter,
+            (Number(position.y) || 0) * pixelsPerMeter
+        ]);
     };
-    scene.children?.forEach(visit);
+    const collectRenderableRoots = (container, containerMatrix = identityMatrix) => {
+        const roots = [];
+        const visited = new Set([container]);
+        const stack = [...(container?.children || [])].reverse()
+            .map(entity => ({ entity, parentMatrix: containerMatrix }));
+        while (stack.length > 0) {
+            const { entity, parentMatrix } = stack.pop();
+            if (!entity || visited.has(entity)) continue;
+            visited.add(entity);
+            if (entity.active === false) continue;
+            const worldMatrix = getWorldMatrix(entity, parentMatrix);
+            const components = Array.isArray(entity.components) ? entity.components : [];
+            const renderables = components.filter(component =>
+                component && Number.isFinite(component.renderOrder) && typeof component.draw === "function");
+            if (renderables.length > 0) {
+                renderables.forEach(component => roots.push({ entity, component, worldMatrix, insertionOrder: roots.length }));
+                continue;
+            }
+            for (const child of [...(entity.children || [])].reverse()) stack.push({ entity: child, parentMatrix: worldMatrix });
+        }
+        return roots.sort((a, b) => {
+            const orderA = Number.isFinite(a.component.renderOrder) ? a.component.renderOrder : 0;
+            const orderB = Number.isFinite(b.component.renderOrder) ? b.component.renderOrder : 0;
+            return orderA - orderB || a.insertionOrder - b.insertionOrder;
+        });
+    };
+    const visitRenderable = ({ entity, component, worldMatrix }) => {
+        const currentTraversalOrder = traversalOrder++;
+        if (component?.constructor?.name?.toLowerCase() === "sprite" && typeof entity.id === "string") {
+            const [a, b, c, d, e, f] = worldMatrix;
+            const determinant = a * d - b * c;
+            if (Number.isFinite(determinant) && Math.abs(determinant) > Number.EPSILON) {
+                const translatedX = point.x - e;
+                const translatedY = point.y - f;
+                const localX = (d * translatedX - c * translatedY) / determinant;
+                const localY = (-b * translatedX + a * translatedY) / determinant;
+                const width = Number(component.width ?? component._properties?.width) || 0;
+                const height = Number(component.height ?? component._properties?.height) || 0;
+                if (Math.abs(localX) <= width / 2 && Math.abs(localY) <= height / 2 &&
+                    currentTraversalOrder > pickedTraversalOrder) {
+                    picked = entity.id;
+                    pickedTraversalOrder = currentTraversalOrder;
+                }
+            }
+        }
+        if (visitedRenderableEntities.has(entity)) return;
+        visitedRenderableEntities.add(entity);
+        collectRenderableRoots(entity, worldMatrix).forEach(visitRenderable);
+    };
+    collectRenderableRoots(scene).forEach(visitRenderable);
     return picked;
 }
 

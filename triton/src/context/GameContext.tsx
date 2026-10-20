@@ -7,9 +7,9 @@ import { applyInspectorFieldUpdate } from "../lib/inspectorEntityData";
 import { appendHierarchyBranch, appendHierarchyEntity } from "../lib/hierarchyEntityAddition";
 import { moveHierarchyEntities } from "../lib/hierarchyEntityMovement";
 import { removeEntityBranch } from "../lib/hierarchyEntityRemoval";
-import { readRuntimeState } from "../lib/runtimeControlBridge.mjs";
-import { readRuntimeSelection } from "../lib/runtimeSelectionBridge.mjs";
-import { createSceneHierarchyEntity } from "../lib/sceneHierarchy.mjs";
+import { getPlayAction, readRuntimeState } from "../lib/runtimeControlBridge.mjs";
+import { isRuntimeViewMessageSource, readRuntimeMessage, readRuntimeSelection } from "../lib/runtimeSelectionBridge.mjs";
+import { createSceneHierarchyEntity, projectInspectorComponent } from "../lib/sceneHierarchy.mjs";
 import { createHierarchyEntityData, createHierarchyEntityDataBranch } from "../lib/hierarchyEntityData.mjs";
 import { setAllHierarchyEntitiesExpanded, setHierarchyEntityExpanded } from "../lib/hierarchyEntityExpansion";
 import { getEditorSelectionAfterClick } from "../lib/editorSelectionState";
@@ -192,34 +192,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
                         // We use the raw props as the data
                         fullData.components[comp.type] = comp.props || {};
 
-                        // 2. Populate legacy typed fields for specific known types (for now)
-                        if (comp.type === 'Sprite') {
-                            fullData.sprite = {
-                                path: comp.props.path || '',
-                                width: comp.props.width || 1,
-                                height: comp.props.height || 1,
-                                blendMode: comp.props.blendMode || 'normal',
-                                color: comp.props.color || '#ffffff'
-                            };
-                        } else if (comp.type === 'BoxCollider') {
-                            fullData.collider = {
-                                width: comp.props.width || 1,
-                                height: comp.props.height || 1,
-                                offsetX: comp.props.offsetX || 0,
-                                offsetY: comp.props.offsetY || 0,
-                                isTrigger: comp.props.isTrigger || false
-                            };
-                        } else if (comp.type === 'PlayerController' || comp.type === 'PlatformerBody') {
-                            fullData.body = {
-                                velocityX: 0,
-                                velocityY: 0,
-                                gravity: comp.props.gravity || 9.8,
-                                maxFallSpeed: comp.props.maxFallSpeed || 10,
-                                grounded: false,
-                                friction: comp.props.friction || 0,
-                                drag: comp.props.drag || 0
-                            };
-                        }
+                        // 2. Populate typed compatibility fields without losing serialized zero values.
+                        Object.assign(fullData, projectInspectorComponent(comp));
                     });
 
                     newDataCache[id] = fullData;
@@ -295,7 +269,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
                         parseEntityList(layer.entities, layerId);
                     }
                 });
-            } else if (data.entities && Array.isArray(data.entities)) {
+            }
+            if (data.entities && Array.isArray(data.entities)) {
                 // Flat or simple root entities
                 parseEntityList(data.entities, 'root');
             } else if (data.entities && typeof data.entities === 'object') {
@@ -314,10 +289,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
-            // Validate origin if needed, but for local tool it's okay
-            const { type, payload } = event.data;
-
-            if (!type || !type.startsWith('game:')) return;
+            if (!isRuntimeViewMessageSource(event.source, document.querySelectorAll<HTMLIFrameElement>(
+                'iframe[title="Game View"], iframe[title="Scene View"]'
+            ))) return;
+            const message = readRuntimeMessage(event.data);
+            if (!message) return;
+            const { type, payload } = message;
 
             // console.log("Bridge Message:", type, payload);
 
@@ -385,8 +362,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
     // --- Actions ---
 
     const play = () => {
+        const action = getPlayAction(isPlaying, isPaused);
+        if (!action.startsNewSession) {
+            setIsPaused(false);
+            notifyGame(action.type, action.payload);
+            return;
+        }
         setIsPlaying(true);
-        notifyGame('editor:play');
+        notifyGame(action.type);
         window.dispatchEvent(new Event('editor:play'));
     };
 

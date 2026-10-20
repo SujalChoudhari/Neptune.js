@@ -1,3 +1,10 @@
+export function getPlayAction(isPlaying, isPaused) {
+    if (isPlaying && isPaused) {
+        return { type: "editor:pause", payload: { paused: false }, startsNewSession: false };
+    }
+    return { type: "editor:play", payload: null, startsNewSession: true };
+}
+
 export function readRuntimeState(payload) {
     if (!payload || typeof payload !== "object"
         || typeof payload.isPlaying !== "boolean"

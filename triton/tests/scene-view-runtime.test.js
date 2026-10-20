@@ -78,13 +78,15 @@ test("Scene View boots the engine after installing project resources and relays 
     const engineIndex = iframe.props.srcDoc.indexOf('await import("/neptune.js")');
     assert.ok(bridgeIndex >= 0 && bridgeIndex < engineIndex);
     assert.equal(iframe.props.srcDoc.includes("debug_project/main.js?url"), false);
-    const startIndex = iframe.props.srcDoc.indexOf("// Start Game");
-    const cameraIndex = iframe.props.srcDoc.indexOf("// Editor Camera", startIndex);
-    const startup = iframe.props.srcDoc.slice(startIndex, cameraIndex);
-    const lifecycle = [];
-    vm.runInNewContext(startup, { game: { pause: () => lifecycle.push("pause"), start: () => lifecycle.push("start") } });
-    assert.deepEqual(lifecycle, ["pause", "start"]);
-    assert.equal(startup.includes("setTimeout"), false);
+    const loadSceneIndex = iframe.props.srcDoc.indexOf("game.loadScene(payload.data || payload.path)");
+    const pauseIndex = iframe.props.srcDoc.indexOf("if (game.pause) game.pause();", loadSceneIndex);
+    const startIndex = iframe.props.srcDoc.indexOf("game.start();", pauseIndex);
+    const loadedIndex = iframe.props.srcDoc.indexOf("type: 'editor:scene-loaded'", startIndex);
+    assert.ok(loadSceneIndex >= 0);
+    assert.ok(pauseIndex > loadSceneIndex);
+    assert.ok(startIndex > pauseIndex);
+    assert.ok(loadedIndex > startIndex);
+    assert.equal(iframe.props.srcDoc.slice(0, loadSceneIndex).includes("game.start();"), false);
 
     const childWindow = { postMessage() {} };
     iframe.props.ref.current = { contentWindow: childWindow };

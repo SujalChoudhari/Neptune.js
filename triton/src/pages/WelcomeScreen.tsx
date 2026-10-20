@@ -18,7 +18,10 @@ interface WelcomeScreenProps {
 }
 
 function actionableError(error: unknown, fallback: string) {
-    return error instanceof Error ? error.message : `${fallback}. ${String(error)}`;
+    if (typeof error === "object" && error !== null && "message" in error) {
+        return String(error.message);
+    }
+    return `${fallback}. ${String(error)}`;
 }
 
 export function WelcomeScreen({ onProjectLoaded, errorMessage }: WelcomeScreenProps) {

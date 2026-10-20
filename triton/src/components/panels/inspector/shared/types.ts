@@ -1,75 +1,7 @@
 import type { ReactNode } from "react"
 import type { EntityData } from "@/types/engine"
 
-export interface MockVector2 {
-    x: number
-    y: number
-}
-
-export interface MockTransform {
-    position: MockVector2
-    rotation: number
-    scale: MockVector2
-}
-
-export interface MockSprite {
-    path: string
-    width: number
-    height: number
-    blendMode: string
-}
-
-export interface MockCollider {
-    width: number
-    height: number
-    offsetX: number
-    offsetY: number
-    isTrigger: boolean
-}
-
-export interface MockBody {
-    velocityX: number
-    velocityY: number
-    gravity: number
-    maxFallSpeed: number
-    grounded: boolean
-    friction: number
-    drag: number
-}
-
-export interface MockSound {
-    name: string
-    src: string
-    volume: number
-    loop: boolean
-    playing: boolean
-}
-
-export interface MockStats {
-    maxHealth: number
-    health: number
-    maxStamina: number
-    stamina: number
-    attack: number
-    defense: number
-    speed: number
-}
-
-export interface MockAnimator {
-    currentAnimation: string
-    speed: number
-    playing: boolean
-    animations: string[]
-}
-
-export interface MockScript {
-    path: string
-    enabled: boolean
-}
-
-export type MockEntity = EntityData
-
-export type ComponentId = keyof Omit<MockEntity, 'name' | 'active' | 'transform' | 'id' | 'components'> | 'transform'
+export type ComponentId = keyof Omit<EntityData, 'name' | 'active' | 'transform' | 'id' | 'components'> | 'transform'
 
 export interface ComponentSectionProps {
     title: string

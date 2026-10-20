@@ -27,7 +27,8 @@ import { Play, Pause, Square, Plus, Minus, Search, Home, Save, Settings, Trash2 
 import { useState } from "react"
 
 import { renderInspectorComponent } from "./inspector/InspectorRegistry"
-import type { ComponentId, MockEntity } from "./inspector/shared/types"
+import type { EntityData } from "@/types/engine"
+import type { ComponentId } from "./inspector/shared/types"
 
 /**
  * ATLAS PANEL
@@ -48,7 +49,7 @@ export const StoryBook = (_props: IDockviewPanelProps) => {
     const [textAreaValue, setTextAreaValue] = useState("Multi-line text\neditor example")
 
     // PREVIEW ENTITY for Inspector Components
-    const previewEntity: MockEntity = {
+    const previewEntity: EntityData = {
         id: 'storybook-entity',
         name: "Preview_Entity",
         active: true,

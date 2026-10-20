@@ -1,5 +1,5 @@
 import type { IDockviewPanelProps } from "dockview"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
     ThemedInput,
     ThemedIconButton,
@@ -13,6 +13,8 @@ import {
     XCircle
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { readRuntimeConsoleMessage } from "@/lib/runtimeConsoleBridge.mjs"
+import { collapseConsoleLogs, isConsoleNearBottom } from "@/lib/consoleLogAggregation.mjs"
 
 interface LogEntry {
     id: string
@@ -24,6 +26,8 @@ interface LogEntry {
 
 export const ConsolePanel = (_props: IDockviewPanelProps) => {
     const [logs, setLogs] = useState<LogEntry[]>([])
+    const logListRef = useRef<HTMLDivElement>(null)
+    const followsLatestLog = useRef(true)
     const [searchQuery, setSearchQuery] = useState("")
     const [showInfo, setShowInfo] = useState(true)
     const [showWarn, setShowWarn] = useState(true)
@@ -55,9 +59,13 @@ export const ConsolePanel = (_props: IDockviewPanelProps) => {
         };
 
         const handleMessage = (event: MessageEvent) => {
-            if (event.data && event.data.type === 'editor:log') {
-                const { type, message } = event.data.detail;
-                addLog(type, message);
+            const message = readRuntimeConsoleMessage(
+                event,
+                document.querySelectorAll<HTMLIFrameElement>('iframe[title="Game View"], iframe[title="Scene View"]')
+            );
+            if (message?.kind === 'log') addLog(message.type, message.message);
+            if (message?.kind === 'diagnostic') {
+                handleDiagnostic({ detail: message.diagnostic } as CustomEvent);
             }
         };
 
@@ -68,10 +76,6 @@ export const ConsolePanel = (_props: IDockviewPanelProps) => {
             addLog('error', `[${diagnostic.code || 'EDITOR_DATA_INVALID'}] ${diagnostic.message || 'Invalid editor data.'}${source}.${action}`);
         };
 
-        const handleDiagnosticMessage = (event: MessageEvent) => {
-            if (event.data?.type !== 'editor:diagnostic') return;
-            handleDiagnostic({ detail: event.data.payload } as CustomEvent);
-        };
 
         const handleClear = () => {
             if (clearOnPlay) {
@@ -82,15 +86,13 @@ export const ConsolePanel = (_props: IDockviewPanelProps) => {
         window.addEventListener('editor:log', handleLog as EventListener);
         window.addEventListener('editor:diagnostic', handleDiagnostic as EventListener);
         window.addEventListener('message', handleMessage);
-        window.addEventListener('message', handleDiagnosticMessage);
         window.addEventListener('editor:play', handleClear as EventListener);
 
         return () => {
         window.removeEventListener('editor:log', handleLog as EventListener);
-            window.removeEventListener('editor:diagnostic', handleDiagnostic as EventListener);
-            window.removeEventListener('message', handleMessage);
-            window.removeEventListener('message', handleDiagnosticMessage);
-            window.removeEventListener('editor:play', handleClear as EventListener);
+        window.removeEventListener('editor:diagnostic', handleDiagnostic as EventListener);
+        window.removeEventListener('message', handleMessage);
+        window.removeEventListener('editor:play', handleClear as EventListener);
         };
     }, [clearOnPlay]);
 
@@ -101,6 +103,14 @@ export const ConsolePanel = (_props: IDockviewPanelProps) => {
         if (log.type === 'error' && !showError) return false
         return true
     })
+    const visibleLogs = collapse ? collapseConsoleLogs(filteredLogs) : filteredLogs
+
+    useEffect(() => {
+        const logList = logListRef.current
+        if (logList && followsLatestLog.current) {
+            logList.scrollTop = logList.scrollHeight
+        }
+    }, [logs.length, visibleLogs.length])
 
     const handleClear = () => setLogs([])
 
@@ -197,9 +207,16 @@ export const ConsolePanel = (_props: IDockviewPanelProps) => {
             </div>
 
             {/* LOG LIST */}
-            <div className="flex-1 bg-[#1a1a1a] overflow-auto">
+            <div
+                ref={logListRef}
+                className="flex-1 bg-[#1a1a1a] overflow-auto"
+                onScroll={(event) => {
+                    const { scrollHeight, scrollTop, clientHeight } = event.currentTarget
+                    followsLatestLog.current = isConsoleNearBottom(scrollHeight, scrollTop, clientHeight)
+                }}
+            >
                 <div className="flex flex-col min-w-max min-h-full">
-                    {filteredLogs.map((log) => (
+                    {visibleLogs.map((log) => (
                         <div
                             key={log.id}
                             className={cn(
@@ -234,7 +251,7 @@ export const ConsolePanel = (_props: IDockviewPanelProps) => {
                             )}
                         </div>
                     ))}
-                    {filteredLogs.length === 0 && (
+                    {visibleLogs.length === 0 && (
                         <div className="p-4 text-center text-muted-foreground italic">
                             No logs to display
                         </div>
