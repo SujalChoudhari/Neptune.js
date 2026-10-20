@@ -55,6 +55,25 @@ describe("SceneLoader Integration", () => {
         expect(transform.position.y).toBe(20);
     });
 
+    it("loads root entities alongside entities in object layers", () => {
+        const scene = SceneLoader.parse({
+            type: "scene",
+            schemaVersion: 1,
+            entities: [{ id: "root-hero", name: "Root Hero", children: [] }],
+            layers: [{
+                id: "main-layer",
+                name: "Main",
+                type: "object_layer",
+                entities: [{ id: "layer-enemy", name: "Layer Enemy", children: [] }]
+            }]
+        });
+
+        const rootHero = scene.children.find((entity) => entity.id === "root-hero");
+        const mainLayer = scene.children.find((entity) => entity.id === "main-layer");
+        expect(rootHero).toBeInstanceOf(Entity);
+        expect(mainLayer.children.map((entity) => entity.id)).toEqual(["layer-enemy"]);
+    });
+
     it("restores entity and component identifiers from a versioned scene", () => {
         const scene = SceneLoader.parse({
             type: "scene",
