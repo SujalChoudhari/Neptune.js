@@ -13,6 +13,7 @@ import { createSceneHierarchyEntity } from "../lib/sceneHierarchy.mjs";
 import { createHierarchyEntityData, createHierarchyEntityDataBranch } from "../lib/hierarchyEntityData.mjs";
 import { setAllHierarchyEntitiesExpanded, setHierarchyEntityExpanded } from "../lib/hierarchyEntityExpansion";
 import { getEditorSelectionAfterClick } from "../lib/editorSelectionState";
+import { setHierarchyEntityLocked } from "../lib/hierarchyEntityLock";
 import { EditorGameRunner } from "../lib/editorGameRunner";
 
 interface GameContextType {
@@ -32,6 +33,7 @@ interface GameContextType {
     setEntityActiveInHierarchy: (id: string, active: boolean) => void;
     setEntityExpanded: (id: string, expanded: boolean) => void;
     setAllEntitiesExpanded: (expanded: boolean) => void;
+    setEntityLocked: (id: string, locked: boolean) => void;
     renameEntityInHierarchy: (id: string, name: string) => void;
     addEntityToHierarchy: (entity: SceneEntity) => void;
     addEntityBranchToHierarchy: (branch: Record<string, any>, parentId: string) => void;
@@ -473,6 +475,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
         setEntities(previous => setAllHierarchyEntitiesExpanded(previous, expanded));
     }, []);
 
+    const setEntityLocked = useCallback((id: string, locked: boolean) => {
+        setEntities(previous => setHierarchyEntityLocked(previous, id, locked));
+    }, []);
+
     const addEntityBranchToHierarchy = useCallback((branch: Record<string, any>, parentId: string) => {
         setEntities(previous => appendHierarchyBranch(previous, branch, parentId));
         const branchData = createHierarchyEntityDataBranch(branch);
@@ -579,6 +585,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             setEntityActiveInHierarchy,
             setEntityExpanded,
             setAllEntitiesExpanded,
+            setEntityLocked,
             renameEntityInHierarchy,
             addEntityToHierarchy,
             addEntityBranchToHierarchy,

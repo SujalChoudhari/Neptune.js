@@ -465,6 +465,23 @@ describe("Triton persistence bridge", () => {
         expect(getEditorSelectionAfterClick(["hero"], "enemy", false)).toEqual(["enemy"]);
     });
 
+    it("updates editor-local hierarchy lock state immutably", () => {
+        const helperPath = path.resolve("triton/src/lib/hierarchyEntityLock.ts");
+        const helperBundle = buildSync({
+            bundle: true, format: "cjs", platform: "node", write: false,
+            stdin: { contents: fs.readFileSync(helperPath, "utf8"), loader: "ts", sourcefile: helperPath }
+        }).outputFiles[0].text;
+        const { setHierarchyEntityLocked } = loadBundle(helperBundle, {});
+        const entities = {
+            root: { id: "root", parentId: null, name: "Scene", type: "group", children: ["hero"], active: true, locked: false, expanded: true },
+            hero: { id: "hero", parentId: "root", name: "Hero", type: "empty", children: [], active: true, locked: false, expanded: false }
+        };
+        const locked = setHierarchyEntityLocked(entities, "hero", true);
+        expect(locked.hero.locked).toBe(true);
+        expect(entities.hero.locked).toBe(false);
+        expect(setHierarchyEntityLocked(locked, "hero", false).hero.locked).toBe(false);
+    });
+
     it("clears stale project navigation when a selected project's native scan fails", async () => {
         const bundle = bundleSource(path.join(root, "src", "context", "FileSystemContext.tsx"), [
             "react",

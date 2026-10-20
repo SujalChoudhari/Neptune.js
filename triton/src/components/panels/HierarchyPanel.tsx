@@ -23,6 +23,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         setEntityActiveInHierarchy,
         setEntityExpanded,
         setAllEntitiesExpanded,
+        setEntityLocked,
         renameEntityInHierarchy,
         addEntityToHierarchy,
         addEntityBranchToHierarchy,
@@ -56,8 +57,8 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     }
 
     const toggleLock = (id: string) => {
-        const ent = entities[id];
-        if (ent) notifyGame('editor:set-locked', { id, locked: !ent.locked });
+        const entity = entities[id];
+        if (entity) setEntityLocked(id, !entity.locked);
     }
 
     const toggleExpanded = (id: string) => {
