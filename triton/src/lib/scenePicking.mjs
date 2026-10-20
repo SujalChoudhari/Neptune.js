@@ -22,24 +22,55 @@ export function pickEntityAt(root, x, y, tolerance = 12) {
         ) || entity.transform;
         const position = transform?.position;
         if (entity.id && position && Number.isFinite(position.x) && Number.isFinite(position.y)) {
+            const isCollider = (component) => /collider|hitbox|hurtbox/i.test(
+                component?.constructor?.name || component?.type || ''
+            );
             const sprite = components.find((component) => {
+                if (isCollider(component)) return false;
                 const width = component?.width ?? component?._properties?.width;
                 const height = component?.height ?? component?._properties?.height;
-                return Number.isFinite(width) && Number.isFinite(height);
+                return Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0;
             });
-            const collider = components.find((component) => component?.constructor?.name?.toLowerCase().includes('collider'));
-            const width = sprite?.width ?? sprite?._properties?.width ?? collider?.width ?? collider?._properties?.width ?? 0;
-            const height = sprite?.height ?? sprite?._properties?.height ?? collider?.height ?? collider?._properties?.height ?? 0;
-            const halfWidth = Math.max(tolerance, width * Math.abs(transform.scale.x) / 2);
-            const halfHeight = Math.max(tolerance, height * Math.abs(transform.scale.y) / 2);
-            const dx = Math.abs(x - position.x);
-            const dy = Math.abs(y - position.y);
-            if (dx <= halfWidth && dy <= halfHeight) {
-                const distance = dx * dx + dy * dy;
-                if (distance <= bestDistance) {
-                    best = entity;
-                    bestDistance = distance;
+            let hitDistance = Infinity;
+            let hasBounds = false;
+
+            if (sprite) {
+                const width = sprite.width ?? sprite._properties?.width;
+                const height = sprite.height ?? sprite._properties?.height;
+                const halfWidth = width * Math.abs(transform.scale.x) / 2;
+                const halfHeight = height * Math.abs(transform.scale.y) / 2;
+                const dx = Math.abs(x - position.x);
+                const dy = Math.abs(y - position.y);
+                hasBounds = true;
+                if (dx <= halfWidth && dy <= halfHeight) hitDistance = dx * dx + dy * dy;
+            }
+
+            for (const collider of components.filter(isCollider)) {
+                const properties = collider?._properties || collider?.props || {};
+                const width = collider.width ?? properties.width ?? properties.size?.x;
+                const height = collider.height ?? properties.height ?? properties.size?.y;
+                if (![width, height].every(Number.isFinite) || width <= 0 || height <= 0) continue;
+                hasBounds = true;
+                const offsetX = collider.offsetX ?? properties.offsetX ?? properties.offset?.x ?? 0;
+                const offsetY = collider.offsetY ?? properties.offsetY ?? properties.offset?.y ?? 0;
+                const left = position.x + offsetX;
+                const top = position.y + offsetY;
+                if (x >= left && x <= left + width && y >= top && y <= top + height) {
+                    const dx = x - (left + width / 2);
+                    const dy = y - (top + height / 2);
+                    hitDistance = Math.min(hitDistance, dx * dx + dy * dy);
                 }
+            }
+
+            if (!hasBounds) {
+                const dx = Math.abs(x - position.x);
+                const dy = Math.abs(y - position.y);
+                if (dx <= tolerance && dy <= tolerance) hitDistance = dx * dx + dy * dy;
+            }
+
+            if (Number.isFinite(hitDistance) && hitDistance <= bestDistance) {
+                best = entity;
+                bestDistance = hitDistance;
             }
         }
         for (const child of entity.children || []) visit(child);

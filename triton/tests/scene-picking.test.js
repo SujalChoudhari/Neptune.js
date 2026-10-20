@@ -5,6 +5,7 @@ import vm from 'node:vm';
 import path from 'node:path';
 import { buildSync } from 'esbuild';
 import { pickEntityAt, translateOnAxis, getColliderOverlayBounds, isSceneViewBridgeMessageSource } from '../src/lib/scenePicking.mjs';
+import { BoxCollider } from '../../src/components/boxCollider.js';
 
 const entity = (id, x, y, children = []) => ({
     id,
@@ -165,6 +166,20 @@ test('viewport picking reads dimensions from runtime Sprite properties', () => {
     const hero = { id: 'runtime-hero', components: [new RuntimeTransform(), new RuntimeSprite()], children: [] };
     assert.equal(pickEntityAt({ children: [hero] }, 25, 30)?.id, 'runtime-hero');
     assert.equal(pickEntityAt({ children: [hero] }, 27, 30), null);
+});
+
+test('viewport picking uses runtime BoxCollider size and offset instead of point tolerance', () => {
+    class RuntimeTransform {
+        constructor() {
+            this.position = { x: 10, y: 20 };
+            this.scale = { x: 1, y: 1 };
+        }
+    }
+    const target = { id: 'collider-only', components: [new RuntimeTransform(), new BoxCollider(20, 10, 4, -2)], children: [] };
+    const root = { children: [target] };
+
+    assert.equal(pickEntityAt(root, 15, 22)?.id, 'collider-only');
+    assert.equal(pickEntityAt(root, 12, 20), null);
 });
 
 test('combat collider overlay bounds include the selected transform and authored offsets', () => {
