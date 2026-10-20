@@ -14,6 +14,7 @@ import { readRuntimeState, runtimeControlBridgeScript, runRuntimeControl } from 
 import { getSceneNavigationPath } from "../src/lib/projectNavigation.mjs";
 import { createEmptySceneAssetContent } from "../src/lib/projectAssetContent.mjs";
 import { createSceneHierarchyEntity } from "../src/lib/sceneHierarchy.mjs";
+import { createHierarchyEntityData } from "../src/lib/hierarchyEntityData.mjs";
 
 const root = path.resolve("triton");
 
@@ -402,6 +403,17 @@ describe("Triton persistence bridge", () => {
         const runtimeScene = SceneLoader.parse(payload);
         expect(runtimeScene.name).toBe("New Scene");
         expect(runtimeScene.children).toEqual([]);
+    });
+
+    it("seeds real Inspector data when a new entity enters the hierarchy", () => {
+        expect(createHierarchyEntityData({
+            id: "new-entity", parentId: "root", name: "New Entity", type: "empty",
+            children: [], active: true, locked: false, expanded: false
+        })).toEqual({
+            id: "new-entity", name: "New Entity", active: true,
+            transform: { position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 }, z: 0 },
+            components: {}
+        });
     });
 
     it("clears stale project navigation when a selected project's native scan fails", async () => {
