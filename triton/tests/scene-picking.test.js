@@ -178,6 +178,24 @@ test('Scene View UI emits viewport selection and cursor-anchored zoom updates', 
     ]);
 });
 
+test('Scene View pauses gameplay before starting the editor preview loop', () => {
+    const harness = createSceneViewHarness();
+    const iframe = findNode(harness.render(), node => node.props?.title === 'Scene View');
+    assert.ok(iframe);
+    const startIndex = iframe.props.srcDoc.indexOf('// Start Game');
+    const cameraIndex = iframe.props.srcDoc.indexOf('// Editor Camera', startIndex);
+    const startup = iframe.props.srcDoc.slice(startIndex, cameraIndex);
+    const lifecycle = [];
+    vm.runInNewContext(startup, {
+        game: {
+            pause: () => lifecycle.push('pause'),
+            start: () => lifecycle.push('start')
+        }
+    });
+    assert.deepEqual(lifecycle, ['pause', 'start']);
+    assert.equal(startup.includes('setTimeout'), false);
+});
+
 test('Scene View UI pans the camera and moves a selected entity on its gizmo axis', () => {
     const harness = createSceneViewHarness();
     let tree = harness.render();

@@ -259,8 +259,9 @@ export function SceneViewPanel() {
 
              // Start Game
              if (game.start) {
+                 // Render editor previews without running gameplay behaviors.
+                 if (game.pause) game.pause();
                  game.start();
-                 setTimeout(() => { if (game.pause) game.pause(); }, 50);
              }
 
              // Editor Camera
