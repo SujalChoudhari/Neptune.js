@@ -5,7 +5,6 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { buildSync } from "esbuild";
 import { Application } from "../../src/core/application.js";
-import { ComponentRegistry } from "../../src/core/componentRegistry.js";
 import { Transform } from "../../src/components/transform.js";
 import { SceneTransition } from "../../src/components/sceneTransition.js";
 import { SpawnPoint } from "../../src/components/spawnPoint.js";
@@ -15,10 +14,6 @@ import { EnemyConfig } from "../../src/components/enemyConfig.js";
 import { BoxCollider } from "../../src/components/boxCollider.js";
 import { Hitbox, Hurtbox, TriggerCollider } from "../../src/nereid/collider.js";
 import { Sprite } from "../../src/rendering/sprite.js";
-
-for (const [name, component] of Object.entries({ Transform, Sprite, BoxCollider, SceneTransition, SpawnPoint, Dialogue, QuestDefinition, EnemyConfig, TriggerCollider, Hitbox, Hurtbox })) {
-    ComponentRegistry.register(name, component);
-}
 
 function createEditorRunner() {
     const sourcefile = path.resolve("triton/src/lib/editorGameRunner.ts");
@@ -70,6 +65,10 @@ test("saved editor-authored scene loads through the Application runtime", async 
         head: makeElement("head")
     };
     globalThis.window = { innerWidth: 800, innerHeight: 600, outerWidth: 800, outerHeight: 600 };
+    const runtimeEntry = await import("../../src/neptune.js");
+    for (const name of ["BoxCollider", "SceneTransition", "SpawnPoint", "Dialogue", "QuestDefinition", "EnemyConfig", "TriggerCollider", "Hitbox", "Hurtbox"]) {
+        assert.equal(runtimeEntry.ComponentRegistry.has(name), true, `${name} is registered by the production runtime entry`);
+    }
     globalThis.Image = class Image {
         set src(value) { this.source = value; }
     };
@@ -110,6 +109,7 @@ test("saved editor-authored scene loads through the Application runtime", async 
                 { type: "SpawnPoint", props: { spawnId: "dungeon-entry", facing: "left" } },
                 { type: "SceneTransition", props: { targetScene: "scenes/dungeon.scene", spawnPoint: "dungeon-entry", trigger: "interact" } },
                 { type: "TriggerCollider", props: { width: 2, height: 3, offsetX: 0.5, offsetY: -1 } },
+                { type: "BoxCollider", props: { width: 7, height: 9 } },
                 { type: "Hitbox", props: { width: 4, height: 5, offsetX: 1, offsetY: 0 } },
                 { type: "Hurtbox", props: { width: 6, height: 7, offsetX: -1, offsetY: 0 } },
                 { type: "Dialogue", props: { dialogueId: "gatekeeper", startNode: "greeting" } },
@@ -143,6 +143,10 @@ test("saved editor-authored scene loads through the Application runtime", async 
             targetScene: "scenes/dungeon.scene", spawnPoint: "dungeon-entry", trigger: "interact"
         });
         assert.equal(runtimeEntity.GetComponent(TriggerCollider).height, 3);
+        assert.deepEqual(
+            { width: runtimeEntity.GetComponent(BoxCollider).size.x, height: runtimeEntity.GetComponent(BoxCollider).size.y },
+            { width: 7, height: 9 }
+        );
         assert.equal(runtimeEntity.GetComponent(Hitbox).width, 4);
         assert.equal(runtimeEntity.GetComponent(Hurtbox).height, 7);
         assert.equal(runtimeEntity.GetComponent(Dialogue).properties.dialogueId, "gatekeeper");

@@ -64,6 +64,7 @@ window.game = application;
 // Register Core Components
 ComponentRegistry.register("Transform", Transform);
 ComponentRegistry.register("Sprite", Sprite);
+ComponentRegistry.register("BoxCollider", BoxCollider);
 ComponentRegistry.register("Shape", Shape);
 ComponentRegistry.register("TriggerCollider", TriggerCollider);
 ComponentRegistry.register("Hitbox", Hitbox);
