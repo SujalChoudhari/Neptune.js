@@ -425,6 +425,16 @@ describe("Triton persistence bridge", () => {
         expect(harness.invokedCommands).toEqual([]);
     });
 
+    it("hydrates root scene entities independently when the scene also has layers", () => {
+        const game = fs.readFileSync(path.join(root, "src", "context", "GameContext.tsx"), "utf8");
+        const layersIndex = game.indexOf("if (data.layers && Array.isArray(data.layers))");
+        const rootEntitiesIndex = game.indexOf("if (data.entities && Array.isArray(data.entities))");
+        expect(layersIndex >= 0).toBe(true);
+        expect(rootEntitiesIndex > layersIndex).toBe(true);
+        expect(game.slice(layersIndex, rootEntitiesIndex).includes("else if (data.entities")).toBe(false);
+        expect(game.includes("parseEntityList(data.entities, 'root')")).toBe(true);
+    });
+
     it("uses selected-project commands for versioned project and scene payloads", () => {
         const rust = fs.readFileSync(path.join(root, "src-tauri", "src", "lib.rs"), "utf8");
         const fileSystem = fs.readFileSync(path.join(root, "src", "context", "FileSystemContext.tsx"), "utf8");

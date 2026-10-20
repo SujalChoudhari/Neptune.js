@@ -284,7 +284,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
                         parseEntityList(layer.entities, layerId);
                     }
                 });
-            } else if (data.entities && Array.isArray(data.entities)) {
+            }
+            if (data.entities && Array.isArray(data.entities)) {
                 // Flat or simple root entities
                 parseEntityList(data.entities, 'root');
             }
