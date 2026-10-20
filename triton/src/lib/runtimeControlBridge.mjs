@@ -9,7 +9,11 @@ export function runRuntimeControl(game, type, payload, reportState) {
     if (!game || typeof reportState !== "function") return false;
 
     if (type === "editor:play" && typeof game.start === "function") {
-        game.start();
+        if (game.isRunning) {
+            if (game.isPaused && typeof game.resume === "function") game.resume();
+        } else {
+            game.start();
+        }
     } else if (type === "editor:pause" && typeof game.pause === "function" && typeof game.resume === "function") {
         if (payload?.paused) game.pause();
         else game.resume();
