@@ -402,6 +402,21 @@ describe("Triton persistence bridge", () => {
         expect({ x: position.x, y: position.y }).toEqual({ x: 8, y: 13 });
     });
 
+    it("rejects duplicate scene entity IDs before accepting the scene", () => {
+        const { runner } = createMainHarness();
+        let rejected = false;
+        try {
+            runner.openScene({
+                type: "scene", version: "1.0.0", schemaVersion: 1, name: "Duplicate IDs",
+                entities: [{ id: "duplicate", name: "First", children: [] }, { id: "duplicate", name: "Second", children: [] }]
+            }, "scenes/duplicate-ids.scene");
+        } catch (error) {
+            rejected = String(error).includes("Duplicate scene entity ID 'duplicate'");
+        }
+        expect(rejected).toBe(true);
+        expect(runner.currentScene).toBe(null);
+    });
+
     it("starts with project selection instead of auto-loading the debug sample", () => {
         const harness = createMainHarness();
         const welcome = harness.render();

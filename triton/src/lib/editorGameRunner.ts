@@ -179,7 +179,12 @@ const ensureEntityIds = (scene: Record<string, any>) => {
     const usedIds = new Set<string>()
     const reserve = (entities: unknown[]) => entities.forEach(entity => {
         if (!isRecord(entity)) return
-        if (typeof entity.id === "string" && entity.id.trim()) usedIds.add(entity.id)
+        if (typeof entity.id === "string" && entity.id.trim()) {
+            if (usedIds.has(entity.id)) {
+                throw new Error(`Duplicate scene entity ID '${entity.id}'. Entity IDs must be unique across the scene.`)
+            }
+            usedIds.add(entity.id)
+        }
         if (Array.isArray(entity.children)) reserve(entity.children)
     })
     lists.forEach(reserve)
