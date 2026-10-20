@@ -411,10 +411,12 @@ test("Game View message bridge controls the real Application and forwards consol
         runtimeConsole.error("runtime failure")
         for (const handler of listeners.get("error") || []) handler({ message: "uncaught", filename: "game.js", error: new Error("uncaught") })
         for (const handler of listeners.get("unhandledrejection") || []) handler({ reason: "rejected promise" })
+        for (const handler of listeners.get("unhandledrejection") || []) handler({ reason: { message: "structured rejection failure" } })
         assert.ok(parentMessages.some(message => message.type === "editor:log" && message.detail.type === "warn" && message.detail.message === "runtime warning"))
         assert.ok(parentMessages.some(message => message.type === "editor:log" && message.detail.type === "error" && message.detail.message === "runtime failure"))
         assert.ok(parentMessages.some(message => message.type === "editor:diagnostic" && message.payload.code === "GAME_RUNTIME_ERROR"))
         assert.ok(parentMessages.some(message => message.type === "editor:diagnostic" && message.payload.code === "GAME_UNHANDLED_REJECTION"))
+        assert.ok(parentMessages.some(message => message.type === "editor:diagnostic" && message.payload.code === "GAME_UNHANDLED_REJECTION" && message.payload.message === "structured rejection failure"))
     } finally {
         globalThis.document = previous.document
         globalThis.window = previous.window

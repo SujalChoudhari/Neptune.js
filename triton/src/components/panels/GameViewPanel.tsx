@@ -72,13 +72,18 @@ export function GameViewPanel() {
                 }
             }, '*');
         };
+        const describeRuntimeFailure = (reason) => {
+            if (reason && typeof reason === 'object' && typeof reason.message === 'string' && reason.message.trim()) {
+                return reason.message;
+            }
+            return String(reason);
+        };
 
         window.addEventListener('error', (event) => {
-            reportRuntimeError('GAME_RUNTIME_ERROR', event.message || String(event.error), event.filename || undefined);
+            reportRuntimeError('GAME_RUNTIME_ERROR', event.message || describeRuntimeFailure(event.error), event.filename || undefined);
         });
         window.addEventListener('unhandledrejection', (event) => {
-            const reason = event.reason;
-            reportRuntimeError('GAME_UNHANDLED_REJECTION', reason instanceof Error ? reason.message : String(reason));
+            reportRuntimeError('GAME_UNHANDLED_REJECTION', describeRuntimeFailure(event.reason));
         });
 
         // Helper to find deep entities
