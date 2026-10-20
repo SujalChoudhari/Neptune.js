@@ -150,6 +150,23 @@ test('viewport picking uses configured tolerance for entities without visual bou
     assert.equal(pickEntityAt(root, 53, 50, 12), null);
 });
 
+test('viewport picking reads dimensions from runtime Sprite properties', () => {
+    class RuntimeTransform {
+        constructor() {
+            this.position = { x: 10, y: 20 };
+            this.scale = { x: 1, y: 1 };
+        }
+    }
+    class RuntimeSprite {
+        constructor() {
+            this._properties = { width: 32, height: 24 };
+        }
+    }
+    const hero = { id: 'runtime-hero', components: [new RuntimeTransform(), new RuntimeSprite()], children: [] };
+    assert.equal(pickEntityAt({ children: [hero] }, 25, 30)?.id, 'runtime-hero');
+    assert.equal(pickEntityAt({ children: [hero] }, 27, 30), null);
+});
+
 test('combat collider overlay bounds include the selected transform and authored offsets', () => {
     const selected = {
         transform: { position: { x: 4, y: -2 } },

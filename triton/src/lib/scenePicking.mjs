@@ -16,15 +16,22 @@ export function pickEntityAt(root, x, y, tolerance = 12) {
     let bestDistance = Infinity;
     const visit = (entity) => {
         if (!entity) return;
-        const transform = entity.components?.find((component) =>
+        const components = Array.isArray(entity.components) ? entity.components : [];
+        const transform = components.find((component) =>
             component && component.position && component.scale
-        );
+        ) || entity.transform;
         const position = transform?.position;
         if (entity.id && position && Number.isFinite(position.x) && Number.isFinite(position.y)) {
-            const sprite = entity.components.find((component) => component?.width && component?.height);
-            const collider = entity.components.find((component) => component?.constructor?.name?.toLowerCase().includes('collider'));
-            const halfWidth = Math.max(tolerance, (sprite?.width || collider?.width || 0) * Math.abs(transform.scale.x) / 2);
-            const halfHeight = Math.max(tolerance, (sprite?.height || collider?.height || 0) * Math.abs(transform.scale.y) / 2);
+            const sprite = components.find((component) => {
+                const width = component?.width ?? component?._properties?.width;
+                const height = component?.height ?? component?._properties?.height;
+                return Number.isFinite(width) && Number.isFinite(height);
+            });
+            const collider = components.find((component) => component?.constructor?.name?.toLowerCase().includes('collider'));
+            const width = sprite?.width ?? sprite?._properties?.width ?? collider?.width ?? collider?._properties?.width ?? 0;
+            const height = sprite?.height ?? sprite?._properties?.height ?? collider?.height ?? collider?._properties?.height ?? 0;
+            const halfWidth = Math.max(tolerance, width * Math.abs(transform.scale.x) / 2);
+            const halfHeight = Math.max(tolerance, height * Math.abs(transform.scale.y) / 2);
             const dx = Math.abs(x - position.x);
             const dy = Math.abs(y - position.y);
             if (dx <= halfWidth && dy <= halfHeight) {
