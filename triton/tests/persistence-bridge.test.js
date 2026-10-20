@@ -4,6 +4,7 @@ import vm from "node:vm";
 import { execFileSync } from "node:child_process";
 import { buildSync } from "esbuild";
 import { chromium } from "playwright";
+import { Application } from "../../src/core/application.js";
 import { SceneLoader } from "../../src/core/sceneLoader.js";
 import { ComponentRegistry } from "../../src/core/componentRegistry.js";
 import { Transform } from "../../src/components/transform.js";
@@ -1043,13 +1044,39 @@ describe("Triton persistence bridge", () => {
         const savedScene = JSON.parse(runtimeHarness.files.get("scenes/main.scene"));
         const originalFetch = global.fetch;
         const originalImage = global.Image;
+        const originalDocument = global.document;
+        const originalWindow = global.window;
+        const elements = new Map();
+        const makeElement = () => ({
+            style: {},
+            setAttribute(name, value) {
+                this[name] = value;
+                if (name === "id") this.id = value;
+            },
+            appendChild(child) {
+                if (child.id) elements.set(child.id, child);
+                return child;
+            },
+            focus() {},
+            remove() {},
+            getContext() { return {}; }
+        });
+        global.document = {
+            getElementById: id => elements.get(id) || null,
+            createElement: makeElement,
+            body: makeElement(),
+            head: makeElement()
+        };
+        global.window = { innerWidth: 800, innerHeight: 600, outerWidth: 800, outerHeight: 600 };
         global.Image = class { set src(_value) {} };
         global.fetch = async source => {
             expect(source).toBe(mapPath);
             return { ok: true, json: async () => JSON.parse(JSON.stringify(savedMap)) };
         };
         try {
-            const runtimeScene = await SceneLoader.parse(savedScene);
+            const application = new Application();
+            await application.loadScene(savedScene);
+            const runtimeScene = application.scene;
             const runtimeTile = runtimeScene.children.find(entity => entity.name === "Tile_1");
             expect(runtimeTile.tileId).toBe(3);
             expect(runtimeTile.tileMetadata).toEqual({ collision: false, walkable: true, terrain: "moss" });
@@ -1059,6 +1086,10 @@ describe("Triton persistence bridge", () => {
             global.fetch = originalFetch;
             if (originalImage === undefined) delete global.Image;
             else global.Image = originalImage;
+            if (originalDocument === undefined) delete global.document;
+            else global.document = originalDocument;
+            if (originalWindow === undefined) delete global.window;
+            else global.window = originalWindow;
         }
 
         tree = render();
