@@ -1001,6 +1001,7 @@ describe("Triton persistence bridge", () => {
         let selectedEntityData = entitySource;
         let savedPath = null;
         const renderedComponents = [];
+        const inspectorNotifications = [];
         const react = {
             createElement: (type, props, ...children) => ({
                 type,
@@ -1023,7 +1024,10 @@ describe("Triton persistence bridge", () => {
                 updateComponent: (id, component, field, value) => {
                     if (id === "hero") selectedEntityData = applyInspectorFieldUpdate(selectedEntityData, component, field, value);
                 },
-                notifyGame() {}
+                setEntityActiveInHierarchy: (id, active) => {
+                    if (id === "hero") selectedEntityData = { ...selectedEntityData, active };
+                },
+                notifyGame: (type, payload) => inspectorNotifications.push({ type, payload })
             }) },
             "./inspector/InspectorRegistry": { renderInspectorComponent: props => {
                 renderedComponents.push(props);
@@ -1056,6 +1060,25 @@ describe("Triton persistence bridge", () => {
         expect(selectedEntityData.components.Sprite.width).toBe(32);
         expect(harness.runner.currentScene.entities[0].components[0].props.width).toBe(32);
 
+        const findButton = (node, title) => {
+            if (!node || typeof node !== "object") return null;
+            if (node.type === "button" && node.props?.title === title) return node;
+            const children = node.props?.children;
+            for (const child of Array.isArray(children) ? children : [children]) {
+                const found = findButton(child, title);
+                if (found) return found;
+            }
+            return null;
+        };
+        const activeButton = findButton(tree, "Disable entity");
+        expect(activeButton !== null).toBe(true);
+        activeButton.props.onClick();
+        expect(selectedEntityData.active).toBe(false);
+        expect(harness.runner.currentScene.entities[0].active).toBe(false);
+        expect(inspectorNotifications.filter(message => message.type === "editor:set-active")).toEqual([
+            { type: "editor:set-active", payload: { id: "hero", active: false } }
+        ]);
+
         const findSaveButton = node => {
             if (!node || typeof node !== "object") return null;
             if (node.type === "button" && node.props?.["aria-label"] === "Save scene") return node;
@@ -1079,6 +1102,7 @@ describe("Triton persistence bridge", () => {
         try {
             const runtimeScene = await SceneLoader.parse(reopened);
             expect(runtimeScene.children[0].GetComponent(Sprite).width).toBe(32);
+            expect(runtimeScene.children[0].active).toBe(false);
         } finally {
             global.Image = originalImage;
         }

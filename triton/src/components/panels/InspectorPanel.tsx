@@ -15,7 +15,7 @@ import { EditorGameRunner } from "@/lib/editorGameRunner"
  * Refactored to use GameContext for real data.
  */
 export const InspectorPanel = (_props: IDockviewPanelProps) => {
-    const { selectedEntityData, selectedIds, updateComponent, notifyGame, currentScenePath } = useGameContext()
+    const { selectedEntityData, selectedIds, updateComponent, setEntityActiveInHierarchy, notifyGame, currentScenePath } = useGameContext()
     const { writeScene } = useFileSystem()
     const [isSaving, setIsSaving] = useState(false)
 
@@ -135,7 +135,8 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
         const nextState = !entity.active;
         selectedIds.forEach(id => {
             EditorGameRunner.updateEntity(id, 'active', { value: nextState })
-            notifyGame('editor:update-component', { id, component: 'active', data: nextState })
+            setEntityActiveInHierarchy(id, nextState)
+            notifyGame('editor:set-active', { id, active: nextState })
         });
     };
 

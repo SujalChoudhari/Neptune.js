@@ -447,6 +447,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
             if (!entity || entity.active === active) return previous;
             return { ...previous, [id]: { ...entity, active } };
         });
+        setEntityDataCache(previous => {
+            const entity = previous[id];
+            return entity ? { ...previous, [id]: { ...entity, active } } : previous;
+        });
+        setSelectedEntitiesData(previous => {
+            const entity = previous[id];
+            return entity ? { ...previous, [id]: { ...entity, active } } : previous;
+        });
     }, []);
 
     const addEntityBranchToHierarchy = useCallback((branch: Record<string, any>, parentId: string) => {
