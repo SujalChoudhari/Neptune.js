@@ -968,6 +968,9 @@ describe("Triton persistence bridge", () => {
         atlasImage.props.onLoad({ currentTarget: { naturalWidth: 64, naturalHeight: 32 } });
         tree = render();
         expect(byLabel(tree, "Tileset palette tile count").props.value).toBe(8);
+        byLabel(tree, "Tileset palette tile count").props.onChange({ target: { value: "64" } });
+        tree = render();
+        expect(byLabel(tree, "Tileset palette tile count").props.value).toBe(8);
         expect(byLabel(tree, "Paint cell 1, 0; tile 0")).toBeDefined();
 
         byLabel(tree, "Tile ID to paint").props.onChange({ target: { value: "3" } });

@@ -38,6 +38,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
     const [tilemap, setTilemap] = useState<TilemapDocument | null>(null);
     const [tileId, setTileId] = useState(1);
     const [paletteCount, setPaletteCount] = useState(25);
+    const [availableTileCount, setAvailableTileCount] = useState<number | null>(null);
     const [tilesetPreview, setTilesetPreview] = useState('');
     const [atlasSize, setAtlasSize] = useState<{ width: number; height: number } | null>(null);
     const [selectedCell, setSelectedCell] = useState<{ x: number; y: number } | null>(null);
@@ -102,11 +103,13 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
         if (!tilemap?.tileset) {
             setTilesetPreview('');
             setAtlasSize(null);
+            setAvailableTileCount(null);
             return;
         }
         let cancelled = false;
         setTilesetPreview('');
         setAtlasSize(null);
+        setAvailableTileCount(null);
         invoke<string>('read_image_asset', { path: tilemap.tileset })
             .then((dataUrl) => { if (!cancelled) setTilesetPreview(dataUrl); })
             .catch((previewError) => {
@@ -391,12 +394,14 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                         try {
                             const atlas = getTilesetGridSize(width, height, atlasTileSize);
                             const tileCount = Math.min(tilemap.tileCount ?? atlas.tileCount, atlas.tileCount);
+                            setAvailableTileCount(atlas.tileCount);
                             setPaletteCount(tileCount);
                             if (tilemap.columns !== atlas.columns || tilemap.tileCount !== tileCount) {
                                 setTilemap({ ...tilemap, columns: atlas.columns, tileCount });
                                 setIsDirty(true);
                             }
                         } catch (atlasError) {
+                            setAvailableTileCount(0);
                             setError(atlasError instanceof Error ? atlasError.message : String(atlasError));
                         }
                     }} />}
@@ -409,10 +414,11 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                             className="w-16 rounded border border-border bg-card px-2 py-1 text-xs"
                             type="number"
                             min="1"
-                            max="4096"
+                            max={availableTileCount ?? 4096}
+                            disabled={availableTileCount === 0}
                             value={paletteCount}
                             onChange={(event) => {
-                                const count = Math.max(1, Math.min(4096, Math.floor(Number(event.target.value) || 1)));
+                                const count = Math.max(1, Math.min(availableTileCount ?? 4096, 4096, Math.floor(Number(event.target.value) || 1)));
                                 setPaletteCount(count);
                                 setTilemap({ ...tilemap, tileCount: count });
                                 setIsDirty(true);
