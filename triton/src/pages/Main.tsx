@@ -1,5 +1,5 @@
 import { DockLayout } from "@/components/layout/DockLayout"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import type { NeptuneDockApi } from "@/components/layout/DockLayout"
 import { EditorToolbar } from "@/components/layout/EditorToolbar"
 
@@ -13,51 +13,49 @@ import { EditorGameRunner } from "@/lib/editorGameRunner";
 
 export function Main() {
     const dockApiRef = useRef<NeptuneDockApi | null>(null)
+    const projectOpenRequest = useRef(0)
     const [isProjectLoaded, setIsProjectLoaded] = useState(false);
     const [projectError, setProjectError] = useState<string | null>(null);
     const { loadProject, readProject, writeScene } = useFileSystem();
 
-    const handleProjectLoaded = async (path: string) => {
+    const handleProjectLoaded = useCallback(async (path: string) => {
+        const requestId = ++projectOpenRequest.current;
         try {
             setProjectError(null);
             // Validate and normalize the versioned payload before the editor is
             // shown. The native adapter remains the selected-project boundary.
             await readProject();
+            if (requestId !== projectOpenRequest.current) return;
             console.log("Syncing Neptune Lib...");
             await invoke("sync_neptune_lib");
             console.log("Lib Synced.");
+            if (requestId !== projectOpenRequest.current) return;
 
             await loadProject(path); // Load file system
-            setIsProjectLoaded(true);
+            if (requestId !== projectOpenRequest.current) return;
 
             const projectPath = path.replaceAll('\\', '/');
             // Extract folder name or use a default
             const projectName = projectPath.split('/').pop() || "Project";
             const newTitle = `Neptune - ${projectName} - ${path}`;
-            await getCurrentWindow().setTitle(newTitle);
+            try {
+                await getCurrentWindow().setTitle(newTitle);
+            } catch (titleError) {
+                console.warn("Failed to update project window title", titleError);
+            }
+            if (requestId === projectOpenRequest.current) setIsProjectLoaded(true);
         } catch (e) {
-            console.error("Failed to set window title", e);
-            const message = e instanceof Error ? e.message : String(e);
+            if (requestId !== projectOpenRequest.current) return;
+            console.error("Failed to open project", e);
+            const message = typeof e === "object" && e !== null && "message" in e
+                ? String(e.message)
+                : String(e);
             setProjectError(`Project could not be opened. ${message}`);
             setIsProjectLoaded(false);
             throw e;
         }
-    };
+    }, [readProject, loadProject]);
 
-    useEffect(() => {
-        // Check for startup config (debug mode autoload)
-        invoke<string | null>("get_startup_config").then((path: string | null) => {
-            if (path) {
-                console.log("Autoloading Debug Project:", path);
-                // Initialize just in case
-                invoke("initialize_project", { path }).then(() => {
-                    void handleProjectLoaded(path).catch(() => undefined);
-                });
-            }
-        }).catch((err: any) => {
-            console.error("Failed to check startup config", err);
-        });
-    }, []);
 
     useEffect(() => {
         const root = window.document.documentElement
@@ -83,8 +81,18 @@ export function Main() {
                     break;
                 case 'save':
                     void EditorGameRunner.saveScene(async (path, content) => writeScene(path, JSON.parse(content))).catch((error: unknown) => {
-                        const message = error instanceof Error ? error.message : String(error);
+                        const message = typeof error === "object" && error !== null && "message" in error
+                            ? String(error.message)
+                            : String(error);
                         setProjectError(`Scene could not be saved. ${message}`);
+                        window.dispatchEvent(new CustomEvent("editor:diagnostic", {
+                            detail: {
+                                code: "SCENE_SAVE_FAILED",
+                                message,
+                                source: "File > Save",
+                                action: "Check project permissions and retry."
+                            }
+                        }));
                     });
                     break;
 

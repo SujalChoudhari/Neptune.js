@@ -18,7 +18,10 @@ interface WelcomeScreenProps {
 }
 
 function actionableError(error: unknown, fallback: string) {
-    return error instanceof Error ? error.message : `${fallback}. ${String(error)}`;
+    if (typeof error === "object" && error !== null && "message" in error) {
+        return String(error.message);
+    }
+    return `${fallback}. ${String(error)}`;
 }
 
 export function WelcomeScreen({ onProjectLoaded, errorMessage }: WelcomeScreenProps) {
@@ -89,7 +92,7 @@ export function WelcomeScreen({ onProjectLoaded, errorMessage }: WelcomeScreenPr
                 title: "Open Existing Project Folder"
             });
             if (selected) {
-                await invoke("initialize_project", { path: selected });
+                await invoke("open_existing_project", { path: selected });
                 addToRecents(selected as string);
                 await onProjectLoaded(selected as string);
             }
@@ -107,7 +110,7 @@ export function WelcomeScreen({ onProjectLoaded, errorMessage }: WelcomeScreenPr
         try {
             // Recent projects must establish the native selected-project
             // capability before Main invokes any scoped filesystem command.
-            await invoke("initialize_project", { path });
+            await invoke("open_existing_project", { path });
             addToRecents(path);
             await onProjectLoaded(path);
         } catch (e) {

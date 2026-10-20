@@ -1,13 +1,43 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
+import { invoke } from "@tauri-apps/api/core";
 // We use the ?url suffix to get the URL of the module script
 // This requires Vite to solve the path.
 // Path: src/components/panels/GameViewPanel.tsx -> ../../../.. -> root
-import gameMainUrl from "../../../../debug_project/main.js?url";
+import neptuneEntryUrl from "../../../../src/neptune.js?url";
+import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
+import { runtimeSelectionBridgeScript } from "@/lib/runtimeSelectionBridge.mjs";
+import { runtimeConsoleBridgeScript } from "@/lib/runtimeConsoleBridge.mjs";
+import { runtimeControlBridgeScript } from "@/lib/runtimeControlBridge.mjs";
 
 export function GameViewPanel() {
     const containerRef = useRef<HTMLDivElement>(null);
+    const iframeRef = useRef<HTMLIFrameElement>(null);
 
-    const baseUrl = gameMainUrl.substring(0, gameMainUrl.lastIndexOf('/') + 1);
+    useEffect(() => {
+        const handleResourceRequest = (event: MessageEvent) => {
+            const { type, payload } = event.data || {};
+            if (type !== 'editor:project-resource-request' || typeof payload?.id !== 'string') return;
+            if (event.source !== iframeRef.current?.contentWindow) return;
+            const command = payload.kind === 'image' ? 'read_image_asset' : payload.kind === 'audio' ? 'read_audio_asset' : payload.kind === 'text' ? 'read_file' : null;
+            const reply = (content: string | null, error: string | null) => {
+                (event.source as WindowProxy).postMessage({
+                    type: 'editor:project-resource-response',
+                    payload: { id: payload.id, content, error }
+                }, '*');
+            };
+            if (!command || typeof payload.path !== 'string') {
+                reply(null, 'Invalid project resource request');
+                return;
+            }
+            void invoke<string>(command, { path: payload.path })
+                .then(content => reply(content, null))
+                .catch(error => reply(null, String(error)));
+        };
+        window.addEventListener('message', handleResourceRequest);
+        return () => window.removeEventListener('message', handleResourceRequest);
+    }, []);
+
+    const baseUrl = neptuneEntryUrl.substring(0, neptuneEntryUrl.lastIndexOf('/') + 1);
 
     const iframeContent = `
 <!DOCTYPE html>
@@ -24,9 +54,38 @@ export function GameViewPanel() {
 <body>
     <canvas id="neptune-canvas"></canvas>
     <script type="module">
-        // Basic Game Loader
-        import "${gameMainUrl}";
-        
+        import { installProjectResourceBridge } from "${projectResourceBridgeUrl}";
+        installProjectResourceBridge();
+        ${runtimeSelectionBridgeScript}
+        ${runtimeConsoleBridgeScript}
+        ${runtimeControlBridgeScript}
+
+        const reportRuntimeError = (code, message, source) => {
+            window.parent.postMessage({
+                type: 'editor:diagnostic',
+                payload: {
+                    code,
+                    severity: 'error',
+                    message,
+                    source,
+                    action: 'Fix the game runtime error and retry.'
+                }
+            }, '*');
+        };
+        const describeRuntimeFailure = (reason) => {
+            if (reason && typeof reason === 'object' && typeof reason.message === 'string' && reason.message.trim()) {
+                return reason.message;
+            }
+            return String(reason);
+        };
+
+        window.addEventListener('error', (event) => {
+            reportRuntimeError('GAME_RUNTIME_ERROR', event.message || describeRuntimeFailure(event.error), event.filename || undefined);
+        });
+        window.addEventListener('unhandledrejection', (event) => {
+            reportRuntimeError('GAME_UNHANDLED_REJECTION', describeRuntimeFailure(event.reason));
+        });
+
         // Helper to find deep entities
         const findEntity = (root, id) => {
             if (!root) return null;
@@ -43,6 +102,7 @@ export function GameViewPanel() {
         const wait = () => {
             if (window.game) {
                 console.log("[GameView] Game Loaded");
+                window.dispatchEvent(new Event('neptune:editor-selection-ready'));
                 // Notify parent we are ready to receive scene load commands
                 window.parent.postMessage({ type: 'game:ready' }, '*');
                 
@@ -51,8 +111,20 @@ export function GameViewPanel() {
                     const { type, payload } = e.data;
                     const game = window.game;
 
+                    const controlHandled = runRuntimeControl(game, type, payload, state => {
+                        window.parent.postMessage({ type: 'game:state-update', payload: state }, '*');
+                    });
+                    if (controlHandled) return;
+
                     if (type === 'editor:load-scene' && game.loadScene) {
-                         game.loadScene(payload.data || payload.path).catch(console.error);
+                         game.loadScene(payload.data || payload.path)
+                             .then(() => window.dispatchEvent(new Event('neptune:editor-selection-ready')))
+                             .catch(console.error);
+                    }
+                    else if (type === 'editor:rename') {
+                         if (typeof payload?.name !== 'string') return;
+                         const entity = findEntity(game.scene, payload.id);
+                         if (entity) entity.name = payload.name;
                     }
                     else if (type === 'editor:update-component') {
                          // Inspector Update Logic
@@ -80,7 +152,9 @@ export function GameViewPanel() {
                 requestAnimationFrame(wait);
             }
         };
-        wait();
+        import("${neptuneEntryUrl}").then(wait).catch((error) => {
+            reportRuntimeError('GAME_BOOT_ERROR', error instanceof Error ? error.message : String(error));
+        });
     </script>
 </body>
 </html>
@@ -89,6 +163,7 @@ export function GameViewPanel() {
     return (
         <div ref={containerRef} className="w-full h-full bg-[#111] relative overflow-hidden flex items-center justify-center border-t border-black">
             <iframe
+                ref={iframeRef}
                 className="w-full h-full border-0 block"
                 srcDoc={iframeContent}
                 title="Game View"

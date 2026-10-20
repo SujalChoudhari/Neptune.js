@@ -2,13 +2,13 @@ import { Image } from "lucide-react"
 import { ComponentSection } from "../shared/ComponentSection"
 import { PropertyRow } from "../shared/PropertyRow"
 import { ThemedReferenceInput, ThemedVectorInput, ThemedSelect } from "@/components/library"
-import type { MockEntity, MockSprite } from "../shared/types"
+import type { EntityData, SpriteComponent } from "@/types/engine"
 
 interface SpriteSectionProps {
-    entity: MockEntity
+    entity: EntityData
     isActive: boolean
     onToggleActive: () => void
-    onUpdate: (key: keyof MockSprite, value: string | number) => void
+    onUpdate: (key: keyof SpriteComponent, value: string | number) => void
     onMoveUp?: () => void
     onMoveDown?: () => void
 }

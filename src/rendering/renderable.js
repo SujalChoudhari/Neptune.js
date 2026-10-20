@@ -76,6 +76,7 @@ export class Renderable extends Component {
 /** Collect top-level renderables, descending through non-renderable layer entities. */
 export function collectRenderableRoots(entity) {
     const renderables = [];
+    if (!entity || entity.active === false) return renderables;
     const visited = new Set(entity ? [entity] : []);
     const stack = [...(entity?.children || [])].reverse();
 
@@ -83,6 +84,7 @@ export function collectRenderableRoots(entity) {
         const child = stack.pop();
         if (!child || visited.has(child)) continue;
         visited.add(child);
+        if (child.active === false) continue;
 
         const childRenderables = (child.components || []).filter(component => component instanceof Renderable);
         if (childRenderables.length > 0) {

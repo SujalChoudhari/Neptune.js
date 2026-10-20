@@ -5,7 +5,7 @@ import { Box, Eye, EyeOff, Plus, Save } from "lucide-react"
 import { ThemedInput } from "@/components/library"
 import { useGameContext } from "@/context/GameContext"
 import { renderInspectorComponent } from "./inspector/InspectorRegistry"
-import type { MockEntity } from "./inspector/shared/types"  // Still needed for shared types in registry?
+import type { EntityData } from "@/types/engine"
 import { useFileSystem } from "@/context/FileSystemContext"
 import { EditorGameRunner } from "@/lib/editorGameRunner"
 
@@ -15,25 +15,9 @@ import { EditorGameRunner } from "@/lib/editorGameRunner"
  * Refactored to use GameContext for real data.
  */
 export const InspectorPanel = (_props: IDockviewPanelProps) => {
-    const { selectedEntityData, selectedIds, updateComponent, notifyGame, currentScenePath } = useGameContext()
+    const { selectedEntityData, selectedIds, updateComponent, setEntityActiveInHierarchy, renameEntityInHierarchy, notifyGame, currentScenePath } = useGameContext()
     const { writeScene } = useFileSystem()
     const [isSaving, setIsSaving] = useState(false)
-
-    // Local state for UI ordering/visibility (could be persisted later)
-    const [activeStates, setActiveStates] = useState<Record<string, boolean>>({
-        transform: true,
-        sprite: true,
-        collider: true,
-        body: true,
-        sound: true,
-        stats: true,
-        animator: true,
-        scripts: true
-    })
-
-    const toggleActive = (key: string) => {
-        setActiveStates(prev => ({ ...prev, [key]: !prev[key] }))
-    }
 
     // We derive component list from the actual data + standard order
     const componentOrder = useMemo(() => {
@@ -78,9 +62,20 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
         )
     }
 
-    // Cast to MockEntity because our Inspector components are typed with it
-    // EntityData and MockEntity should be compatible enough for now
-    const entity = selectedEntityData as any as MockEntity;
+    const entity: EntityData = selectedEntityData
+
+    const isComponentActive = (key: string) => {
+        const entry = Object.entries(entity.components || {}).find(([name]) => name.toLowerCase() === key.toLowerCase())
+        return entry?.[1]?.enabled !== false
+    }
+
+    const toggleActive = (key: string) => {
+        const enabled = !isComponentActive(key)
+        selectedIds.forEach(id => {
+            updateComponent(id, key, 'enabled', enabled)
+            EditorGameRunner.updateEntity(id, key, { enabled })
+        })
+    }
 
     // HELPERS
     // We map specifics to generic updateComponent(id, comp, field, value)
@@ -128,6 +123,7 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
         // UNLESS we explicitly want multi-rename.
         // Let's stick to Primary Rename to avoid accidents.
         EditorGameRunner.updateEntity(entity.id, 'name', { value: name })
+        renameEntityInHierarchy(entity.id, name)
         notifyGame('editor:rename', { id: entity.id, name });
     };
 
@@ -135,7 +131,8 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
         const nextState = !entity.active;
         selectedIds.forEach(id => {
             EditorGameRunner.updateEntity(id, 'active', { value: nextState })
-            notifyGame('editor:update-component', { id, component: 'active', data: nextState })
+            setEntityActiveInHierarchy(id, nextState)
+            notifyGame('editor:set-active', { id, active: nextState })
         });
     };
 
@@ -195,7 +192,7 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
                     compId: 'transform',
                     index: -1,
                     entity,
-                    isActive: activeStates.transform,
+                    isActive: isComponentActive('transform'),
                     onToggleActive: () => toggleActive('transform'),
                     updateHelpers,
                     moveHelpers: {}
@@ -206,7 +203,7 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
                     compId: compId as any,
                     index,
                     entity,
-                    isActive: activeStates[compId],
+                    isActive: isComponentActive(compId),
                     onToggleActive: () => toggleActive(compId),
                     updateHelpers,
                     moveHelpers: {

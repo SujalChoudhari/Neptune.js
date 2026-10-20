@@ -23,6 +23,8 @@ const slots = [];
 let hookIndex = 0;
 let currentContext;
 const writes = [];
+const runtimeMessages = [];
+const runtimeFrame = { contentWindow: { postMessage: message => runtimeMessages.push(message) } };
 const react = {
     createContext() {
         const Provider = Symbol("GameContext.Provider");
@@ -49,7 +51,7 @@ const module = { exports: {} };
 vm.runInNewContext(bundle.outputFiles[0].text, {
     console: { log() {}, error() {}, warn() {} },
     React: react,
-    document: { querySelectorAll: () => [] },
+    document: { querySelectorAll: () => [runtimeFrame] },
     window: { addEventListener() {}, removeEventListener() {}, dispatchEvent() {} },
     Event,
     Math,
@@ -62,8 +64,19 @@ vm.runInNewContext(bundle.outputFiles[0].text, {
             return {
                 useFileSystem: () => ({
                     rootPath: null,
-                    readScene: async () => {
-                        throw new Error("Could not load scene 'scenes/bad.scene'. Invalid scene payload: invalid JSON");
+                    readScene: async scenePath => {
+                        if (scenePath === "scenes/bad.scene") {
+                            throw new Error("Could not load scene 'scenes/bad.scene'. Invalid scene payload: invalid JSON");
+                        }
+                        return {
+                            type: "scene", version: "1.0.0", schemaVersion: 1,
+                            name: scenePath === "scenes/first.scene" ? "First" : "Second",
+                            entities: [{
+                                id: scenePath === "scenes/first.scene" ? "hero" : "villager",
+                                name: scenePath === "scenes/first.scene" ? "Hero" : "Villager",
+                                children: [], components: []
+                            }]
+                        };
                     },
                     readProject: async () => ({}),
                     writeProject: async () => true,
@@ -100,4 +113,22 @@ if (!saveError?.message.includes("no scene is open")) {
 }
 if (writes.length !== 0) {
     throw new Error("Save after a rejected scene read must not write the rejected source.");
+}
+
+await currentContext.loadScene("scenes/first.scene");
+render();
+currentContext.selectEntity("hero", false);
+render();
+if (currentContext.selectedIds[0] !== "hero" || !currentContext.selectedEntitiesData.hero) {
+    throw new Error("The first scene should establish a selected Inspector entity before switching scenes.");
+}
+
+await currentContext.loadScene("scenes/second.scene");
+render();
+if (currentContext.selectedIds.length !== 0 || Object.keys(currentContext.selectedEntitiesData).length !== 0) {
+    throw new Error("Adopting a new scene must clear the previous Inspector selection and selected data.");
+}
+const finalSelectionMessage = runtimeMessages.filter(message => message.type === "editor:select").slice(-1)[0];
+if (!finalSelectionMessage || finalSelectionMessage.payload.ids.length !== 0) {
+    throw new Error("Adopting a new scene must send an empty selection to the runtime.");
 }

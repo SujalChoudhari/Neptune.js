@@ -1,10 +1,13 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import gameMainUrl from "../../../../debug_project/main.js?url";
+import { invoke } from "@tauri-apps/api/core";
+import neptuneEntryUrl from "../../../../src/neptune.js?url";
+import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
 import cameraUrl from "../../../../src/thalassa/camera.js?url";
 import { ThemedIconButton } from "@/components/library";
 import { Maximize, ZoomIn, ZoomOut } from "lucide-react";
 import { useGameContext } from '@/context/GameContext';
 import { EditorGameRunner } from '@/lib/editorGameRunner';
+import { runtimeSelectionBridgeScript } from '@/lib/runtimeSelectionBridge.mjs';
 
 export function SceneViewPanel() {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -14,7 +17,23 @@ export function SceneViewPanel() {
     useEffect(() => {
         const handleBridgeMessage = (event: MessageEvent) => {
             const { type, payload } = event.data || {};
-            if (type === 'editor:scene-loaded' && payload?.data) {
+            if (type === 'editor:project-resource-request' && typeof payload?.id === 'string') {
+                if (event.source !== iframeRef.current?.contentWindow) return;
+                const command = payload.kind === 'image' ? 'read_image_asset' : payload.kind === 'audio' ? 'read_audio_asset' : payload.kind === 'text' ? 'read_file' : null;
+                const reply = (content: string | null, error: string | null) => {
+                    (event.source as WindowProxy).postMessage({
+                        type: 'editor:project-resource-response',
+                        payload: { id: payload.id, content, error }
+                    }, '*');
+                };
+                if (!command || typeof payload.path !== 'string') {
+                    reply(null, 'Invalid project resource request');
+                    return;
+                }
+                void invoke<string>(command, { path: payload.path })
+                    .then(content => reply(content, null))
+                    .catch(error => reply(null, String(error)));
+            } else if (type === 'editor:scene-loaded' && payload?.data) {
                 try {
                     EditorGameRunner.openScene(payload.data, payload.path);
                 } catch {
@@ -35,7 +54,7 @@ export function SceneViewPanel() {
     const [isPanning, setIsPanning] = useState(false);
     const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
 
-    const baseUrl = gameMainUrl.substring(0, gameMainUrl.lastIndexOf('/') + 1);
+    const baseUrl = neptuneEntryUrl.substring(0, neptuneEntryUrl.lastIndexOf('/') + 1);
 
     const handleWheel = useCallback((e: React.WheelEvent) => {
         const rect = containerRef.current?.getBoundingClientRect();
@@ -122,7 +141,10 @@ export function SceneViewPanel() {
     
     <script type="module">
         import { Camera } from "${cameraUrl}";
-        import "${gameMainUrl}";
+        import { installProjectResourceBridge } from "${projectResourceBridgeUrl}";
+        installProjectResourceBridge();
+        await import("${neptuneEntryUrl}");
+        ${runtimeSelectionBridgeScript}
         
         const findEntity = (root, id) => {
              if (!root) return null;
@@ -155,12 +177,6 @@ export function SceneViewPanel() {
              };
              cleanup();
 
-             // Start Game
-             if (game.start) {
-                 game.start();
-                 setTimeout(() => { if (game.pause) game.pause(); }, 50);
-             }
-
              // Editor Camera
              const editorCamera = new Camera(window.innerWidth, window.innerHeight);
              editorCamera.zoom = 1;
@@ -173,9 +189,24 @@ export function SceneViewPanel() {
                      editorCamera.position.y = payload.y;
                      editorCamera.setZoom(payload.zoom);
                  }
+                 else if (type === 'editor:play' && game.resume) {
+                     game.resume();
+                 }
+                 else if (type === 'editor:pause' && game.pause && game.resume) {
+                     if (payload?.paused) game.pause();
+                     else game.resume();
+                 }
+                 else if (type === 'editor:stop' && game.pause) {
+                     game.pause();
+                 }
                  else if (type === 'editor:load-scene' && game.loadScene) {
                      game.loadScene(payload.data || payload.path)
                          .then(() => {
+                             if (!game.isRunning && game.start) {
+                                 // Keep editor previews paused, but start only after the scene exists.
+                                 if (game.pause) game.pause();
+                                 game.start();
+                             }
                              window.parent.postMessage({ type: 'editor:scene-loaded', payload }, '*');
                              if(game.scene) game.scene.activeCamera = editorCamera; 
                          })
@@ -191,6 +222,22 @@ export function SceneViewPanel() {
                                  }
                              }, '*');
                          });
+                 }
+                 else if (type === 'editor:rename') {
+                    if (!game.scene || typeof payload?.name !== 'string') return;
+                    const entity = findEntity(game.scene, payload.id);
+                    if (entity) entity.name = payload.name;
+                 }
+                 else if (type === 'editor:delete') {
+                     if (!game.scene || typeof payload?.id !== 'string') return;
+                     const entity = findEntity(game.scene, payload.id);
+                     if (!entity) return;
+                     const siblings = Array.isArray(entity.parent?.children) ? entity.parent.children : game.scene.children;
+                     if (!Array.isArray(siblings)) return;
+                     const index = siblings.indexOf(entity);
+                     if (index < 0) return;
+                     siblings.splice(index, 1);
+                     if (entity.parent) entity.parent = null;
                  }
                  else if (type === 'editor:update-component') {
                      if (!game.scene) return;

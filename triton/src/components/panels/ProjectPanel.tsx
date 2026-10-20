@@ -3,6 +3,7 @@ import { useFileSystem } from "@/context/FileSystemContext"
 import { useGameContext } from "@/context/GameContext"
 import { ProjectSidebar } from "../project/ProjectSidebar"
 import { ProjectGrid } from "../project/ProjectGrid"
+import { getSceneNavigationPath } from "@/lib/projectNavigation.mjs"
 import { useState, useEffect } from "react"
 import {
     ThemedSlider,
@@ -58,22 +59,11 @@ export const ProjectPanel = (_props: IDockviewPanelProps) => {
 
         if (node.type === 'folder') {
             navigateTo(id)
-        } else {
-            // It's a file
-            if (node.name.endsWith('.scene') || node.name.endsWith('.npt') || node.name.endsWith('.scn')) {
-                // Get full path logic if needed, but if creating asset puts name, we hopefully have path or construct it.
-                // context nodes might not have full path. useFileSystem might need helper or we construct from ancestry.
-                // Assuming simple file opening for now using name/id.
-                // NOTE: 'scan_project' usually returns paths as IDs or has path property. 
-                // Let's assume ID is path or we have path property. 
-                // Checking previous view_file of FileSystemContext: `loadProject` calls `scan_project`.
-                // `FileNode` usually has path.
-                // Let's use `node.path` if it exists, or `id` (often path in Tauri apps).
-                const path = (node as any).path || id;
-                console.log("Opening scene:", path);
-                loadScene(path);
-            }
+            return
         }
+
+        const path = getSceneNavigationPath(node)
+        if (path) loadScene(path)
     }
 
     // Selection Logic

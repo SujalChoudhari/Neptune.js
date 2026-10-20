@@ -94,7 +94,8 @@ export class SceneLoader {
                 const pending = SceneLoader.#parseLayer(layerData, scene);
                 if (pending && typeof pending.then === "function") pendingLoads.push(pending);
             }
-        } else if (Array.isArray(data.entities)) {
+        }
+        if (Array.isArray(data.entities)) {
             data.entities.forEach(entityData => scene.AddChild(SceneLoader.#parseEntity(entityData)));
         }
 
@@ -260,6 +261,7 @@ export class SceneLoader {
         }
         const entity = new Entity(entityData.name || "Entity");
         if (entityData.id) entity.id = entityData.id;
+        if (entityData.active === false) entity.active = false;
 
         const transformType = ComponentRegistry.get("Transform");
         let hasTransform = false;

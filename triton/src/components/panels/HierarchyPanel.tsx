@@ -20,6 +20,14 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         entities,
         selectedIds,
         selectEntity,
+        setEntityActiveInHierarchy,
+        setEntityExpanded,
+        setAllEntitiesExpanded,
+        setEntityLocked,
+        renameEntityInHierarchy,
+        addEntityToHierarchy,
+        addEntityBranchToHierarchy,
+        removeEntityFromHierarchy,
         moveEntities,
         notifyGame
     } = useGameContext()
@@ -41,43 +49,57 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     // Actions Wrapper
     const toggleActive = (id: string) => {
         const ent = entities[id];
-        if (ent) {
-            EditorGameRunner.updateEntity(id, 'active', { value: !ent.active })
-            notifyGame('editor:update-component', { id, component: 'active', data: !ent.active });
-            notifyGame('editor:set-active', { id, active: !ent.active });
-        }
+        if (!ent) return
+        const active = !ent.active
+        if (!EditorGameRunner.updateEntity(id, 'active', { value: active })) return
+        setEntityActiveInHierarchy(id, active)
+        notifyGame('editor:set-active', { id, active });
     }
 
     const toggleLock = (id: string) => {
-        const ent = entities[id];
-        if (ent) notifyGame('editor:set-locked', { id, locked: !ent.locked });
+        const entity = entities[id];
+        if (entity) setEntityLocked(id, !entity.locked);
     }
 
     const toggleExpanded = (id: string) => {
-        notifyGame('editor:set-expanded', { id, expanded: !entities[id]?.expanded });
+        setEntityExpanded(id, !entities[id]?.expanded);
     }
 
     const renameEntity = (id: string, newName: string) => {
-        EditorGameRunner.updateEntity(id, 'name', { value: newName })
+        if (!EditorGameRunner.updateEntity(id, 'name', { value: newName })) return
+        renameEntityInHierarchy(id, newName)
         notifyGame('editor:rename', { id, name: newName });
         setRenamingId(null)
     }
 
     const removeEntity = useCallback((id: string) => {
-        EditorGameRunner.deleteEntity(id)
+        if (!EditorGameRunner.deleteEntity(id)) return
+        removeEntityFromHierarchy(id)
         notifyGame('editor:delete', { id });
-    }, [notifyGame])
+    }, [removeEntityFromHierarchy, notifyGame])
 
     const duplicateEntity = (id: string) => {
-        EditorGameRunner.duplicateEntity(id)
-        notifyGame('editor:duplicate', { id })
+        const duplicate = EditorGameRunner.duplicateEntity(id)
+        if (!duplicate) return
+        addEntityBranchToHierarchy(duplicate, entities[id]?.parentId || "root")
+        notifyGame('editor:load-scene', { data: EditorGameRunner.currentScene })
     }
 
     const addEntity = (parentId: string, name: string, type: string) => {
         const id = globalThis.crypto?.randomUUID?.() || `entity-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
         const persistenceParentId = EditorGameRunner.resolveHierarchyParentId(parentId, entities)
         if (!persistenceParentId || !EditorGameRunner.createEntity(persistenceParentId, { id, name, type })) return
-        notifyGame('editor:create-entity', { id, parentId, name, type });
+        addEntityToHierarchy({
+            id,
+            parentId,
+            name,
+            type: type as SceneEntity["type"],
+            children: [],
+            active: true,
+            locked: false,
+            expanded: false
+        })
+        notifyGame('editor:load-scene', { data: EditorGameRunner.currentScene });
     }
 
     // Simple search filtering
@@ -175,8 +197,8 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         return ancestors
     }, [selectedIds, entities])
 
-    const handleExpandAll = () => { }
-    const handleCollapseAll = () => { }
+    const handleExpandAll = () => setAllEntitiesExpanded(true)
+    const handleCollapseAll = () => setAllEntitiesExpanded(false)
 
     const handleMove = (draggedIdsArg: string | string[], targetParentId: string, targetIndex?: number | 'before' | 'after', relativeToId?: string) => {
         const draggedIds = Array.isArray(draggedIdsArg) ? draggedIdsArg : [draggedIdsArg]

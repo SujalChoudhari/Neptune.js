@@ -2,13 +2,13 @@ import { Film } from "lucide-react"
 import { ComponentSection } from "../shared/ComponentSection"
 import { PropertyRow } from "../shared/PropertyRow"
 import { ThemedSelect, ThemedSlider, ThemedToggle } from "@/components/library"
-import type { MockEntity, MockAnimator } from "../shared/types"
+import type { AnimatorComponent, EntityData } from "@/types/engine"
 
 interface AnimatorSectionProps {
-    entity: MockEntity
+    entity: EntityData
     isActive: boolean
     onToggleActive: () => void
-    onUpdate: (key: keyof MockAnimator, value: string | number | boolean) => void
+    onUpdate: (key: keyof AnimatorComponent, value: string | number | boolean) => void
     onMoveUp?: () => void
     onMoveDown?: () => void
 }

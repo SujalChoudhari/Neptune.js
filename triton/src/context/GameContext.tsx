@@ -3,6 +3,18 @@ import { createContext, useContext, useState, useEffect, useCallback, useMemo } 
 import type { ReactNode } from "react";
 import type { SceneEntity, EntityData } from "../types/engine";
 import type { VersionedScenePayload } from "./FileSystemContext";
+import { applyInspectorFieldUpdate } from "../lib/inspectorEntityData";
+import { appendHierarchyBranch, appendHierarchyEntity } from "../lib/hierarchyEntityAddition";
+import { moveHierarchyEntities } from "../lib/hierarchyEntityMovement";
+import { removeEntityBranch } from "../lib/hierarchyEntityRemoval";
+import { getPlayAction, readRuntimeState } from "../lib/runtimeControlBridge.mjs";
+import { isRuntimeViewMessageSource, readRuntimeMessage, readRuntimeSelection } from "../lib/runtimeSelectionBridge.mjs";
+import { createSceneHierarchyEntity, projectInspectorComponent } from "../lib/sceneHierarchy.mjs";
+import { createHierarchyEntityData, createHierarchyEntityDataBranch } from "../lib/hierarchyEntityData.mjs";
+import { setAllHierarchyEntitiesExpanded, setHierarchyEntityExpanded } from "../lib/hierarchyEntityExpansion";
+import { getEditorSelectionAfterClick } from "../lib/editorSelectionState";
+import { setHierarchyEntityLocked } from "../lib/hierarchyEntityLock";
+import { EditorGameRunner } from "../lib/editorGameRunner";
 
 interface GameContextType {
     isPlaying: boolean;
@@ -18,6 +30,14 @@ interface GameContextType {
     pause: () => void;
     stop: () => void;
     selectEntity: (id: string, multi: boolean) => void;
+    setEntityActiveInHierarchy: (id: string, active: boolean) => void;
+    setEntityExpanded: (id: string, expanded: boolean) => void;
+    setAllEntitiesExpanded: (expanded: boolean) => void;
+    setEntityLocked: (id: string, locked: boolean) => void;
+    renameEntityInHierarchy: (id: string, name: string) => void;
+    addEntityToHierarchy: (entity: SceneEntity) => void;
+    addEntityBranchToHierarchy: (branch: Record<string, any>, parentId: string) => void;
+    removeEntityFromHierarchy: (id: string) => void;
     moveEntities: (ids: string[], targetParentId: string, index?: number) => void;
     updateComponent: (id: string, component: string, field: string, value: any) => void;
     markAsMainScene: () => void;
@@ -103,7 +123,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
         // 2. Read File directly (Data)
         try {
-            const data = await readScene(path);
+            const data = EditorGameRunner.validateScene(await readScene(path));
             // A failed read must never turn an untrusted file path into the
             // current save target. Commit the scene identity only after the
             // versioned payload has been accepted by the native bridge.
@@ -119,6 +139,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
             setEntities({});
             setEntityDataCache({});
             setSelectedIds([]);
+            setSelectedEntitiesData({});
+            notifyGame('editor:select', { ids: [] });
 
             const newEntities: Record<string, SceneEntity> = {};
             const newDataCache: Record<string, EntityData> = {};
@@ -130,7 +152,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             newEntities['root'] = {
                 id: 'root',
                 parentId: null,
-                name: data.name || 'Main Scene',
+                name: typeof data.name === 'string' && data.name ? data.name : 'Main Scene',
                 type: 'group',
                 children: [],
                 active: true,
@@ -140,17 +162,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
             const parseEntityList = (list: any[], parentId: string) => {
                 list.forEach((entData: any) => {
-                    const id = entData.id || generateId();
-                    const entity: SceneEntity = {
-                        id: id,
-                        parentId: parentId,
-                        name: entData.name || 'Entity',
-                        type: entData.type || 'entity',
-                        children: [],
-                        active: true,
-                        locked: false,
-                        expanded: false
-                    };
+                    const entity: SceneEntity = createSceneHierarchyEntity(entData, parentId, generateId());
+                    const id = entity.id;
 
                     newEntities[id] = entity;
                     if (newEntities[parentId]) {
@@ -179,34 +192,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
                         // We use the raw props as the data
                         fullData.components[comp.type] = comp.props || {};
 
-                        // 2. Populate legacy typed fields for specific known types (for now)
-                        if (comp.type === 'Sprite') {
-                            fullData.sprite = {
-                                path: comp.props.path || '',
-                                width: comp.props.width || 1,
-                                height: comp.props.height || 1,
-                                blendMode: comp.props.blendMode || 'normal',
-                                color: comp.props.color || '#ffffff'
-                            };
-                        } else if (comp.type === 'BoxCollider') {
-                            fullData.collider = {
-                                width: comp.props.width || 1,
-                                height: comp.props.height || 1,
-                                offsetX: comp.props.offsetX || 0,
-                                offsetY: comp.props.offsetY || 0,
-                                isTrigger: comp.props.isTrigger || false
-                            };
-                        } else if (comp.type === 'PlayerController' || comp.type === 'PlatformerBody') {
-                            fullData.body = {
-                                velocityX: 0,
-                                velocityY: 0,
-                                gravity: comp.props.gravity || 9.8,
-                                maxFallSpeed: comp.props.maxFallSpeed || 10,
-                                grounded: false,
-                                friction: comp.props.friction || 0,
-                                drag: comp.props.drag || 0
-                            };
-                        }
+                        // 2. Populate typed compatibility fields without losing serialized zero values.
+                        Object.assign(fullData, projectInspectorComponent(comp));
                     });
 
                     newDataCache[id] = fullData;
@@ -282,7 +269,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
                         parseEntityList(layer.entities, layerId);
                     }
                 });
-            } else if (data.entities && Array.isArray(data.entities)) {
+            }
+            if (data.entities && Array.isArray(data.entities)) {
                 // Flat or simple root entities
                 parseEntityList(data.entities, 'root');
             } else if (data.entities && typeof data.entities === 'object') {
@@ -301,10 +289,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
-            // Validate origin if needed, but for local tool it's okay
-            const { type, payload } = event.data;
-
-            if (!type || !type.startsWith('game:')) return;
+            if (!isRuntimeViewMessageSource(event.source, document.querySelectorAll<HTMLIFrameElement>(
+                'iframe[title="Game View"], iframe[title="Scene View"]'
+            ))) return;
+            const message = readRuntimeMessage(event.data);
+            if (!message) return;
+            const { type, payload } = message;
 
             // console.log("Bridge Message:", type, payload);
 
@@ -319,32 +309,26 @@ export function GameProvider({ children }: { children: ReactNode }) {
                     }
                     break;
                 case 'game:state-update':
-                    setIsPlaying(payload.isPlaying);
-                    setIsPaused(payload.isPaused);
+                    const runtimeState = readRuntimeState(payload);
+                    if (!runtimeState) break;
+                    setIsPlaying(runtimeState.isPlaying);
+                    setIsPaused(runtimeState.isPaused);
                     break;
                 case 'game:hierarchy-update':
                     // Payload should be Record<string, SceneEntity>
                     setEntities(payload);
                     break;
                 case 'game:selection-changed':
-                    setSelectedIds(payload.ids);
+                    const runtimeSelection = readRuntimeSelection(payload);
+                    if (!runtimeSelection) break;
+                    setSelectedIds(runtimeSelection.ids);
 
-                    console.log("Selection changed debug:", payload.ids, payload.data);
+                    console.log("Selection changed debug:", runtimeSelection.ids, runtimeSelection.data);
 
-                    const newBinding: Record<string, EntityData> = {};
-                    if (payload.data) {
-                        if (Array.isArray(payload.data)) {
-                            payload.data.forEach((d: EntityData) => newBinding[d.id] = d);
-                        } else if (payload.data.id) {
-                            newBinding[payload.data.id] = payload.data;
-                        } else {
-                            // Map
-                            Object.assign(newBinding, payload.data);
-                        }
-                    }
+                    const newBinding = runtimeSelection.data as Record<string, EntityData>;
 
                     // Merge with cache if game sent incomplete data (or nothing)
-                    payload.ids.forEach((id: string) => {
+                    runtimeSelection.ids.forEach((id: string) => {
                         if (!newBinding[id] && entityDataCache[id]) {
                             newBinding[id] = entityDataCache[id];
                         }
@@ -378,8 +362,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
     // --- Actions ---
 
     const play = () => {
+        const action = getPlayAction(isPlaying, isPaused);
+        if (!action.startsNewSession) {
+            setIsPaused(false);
+            notifyGame(action.type, action.payload);
+            return;
+        }
         setIsPlaying(true);
-        notifyGame('editor:play');
+        notifyGame(action.type);
         window.dispatchEvent(new Event('editor:play'));
     };
 
@@ -400,7 +390,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
 
     const selectEntity = (id: string, multi: boolean) => {
-        const newSelection = multi ? [...selectedIds, id] : [id];
+        const newSelection = getEditorSelectionAfterClick(selectedIds, id, multi);
         setSelectedIds(newSelection);
         notifyGame('editor:select', { ids: newSelection });
 
@@ -420,23 +410,94 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
 
     const moveEntities = (ids: string[], targetParentId: string, index?: number) => {
-        // Optimistic update could happen here, but for now lets trust the game
+        setEntities(previous => moveHierarchyEntities(previous, ids, targetParentId, index));
         notifyGame('editor:move-entities', { ids, targetParentId, index });
     };
 
-    const updateComponent = (id: string, component: string, data: any) => {
-        // Optimistic update
-        if (selectedEntitiesData[id]) {
-            setSelectedEntitiesData(prev => ({
-                ...prev,
-                [id]: {
-                    ...prev[id],
-                    // We need to merge component data
-                    [component]: { ...(prev[id][component as keyof EntityData] as object || {}), ...data }
-                } as EntityData
-            }));
-        }
-        notifyGame('editor:update-component', { id, component, data });
+    const addEntityToHierarchy = useCallback((entity: SceneEntity) => {
+        setEntities(previous => appendHierarchyEntity(previous, entity));
+        const entityData = createHierarchyEntityData(entity);
+        setEntityDataCache(previous => ({ ...previous, [entity.id]: entityData }));
+    }, []);
+
+    const renameEntityInHierarchy = useCallback((id: string, name: string) => {
+        setEntities(previous => {
+            const entity = previous[id];
+            if (!entity || entity.name === name) return previous;
+            return { ...previous, [id]: { ...entity, name } };
+        });
+        setEntityDataCache(previous => {
+            const entity = previous[id];
+            return entity && entity.name !== name ? { ...previous, [id]: { ...entity, name } } : previous;
+        });
+        setSelectedEntitiesData(previous => {
+            const entity = previous[id];
+            return entity && entity.name !== name ? { ...previous, [id]: { ...entity, name } } : previous;
+        });
+    }, []);
+
+    const setEntityActiveInHierarchy = useCallback((id: string, active: boolean) => {
+        setEntities(previous => {
+            const entity = previous[id];
+            if (!entity || entity.active === active) return previous;
+            return { ...previous, [id]: { ...entity, active } };
+        });
+        setEntityDataCache(previous => {
+            const entity = previous[id];
+            return entity ? { ...previous, [id]: { ...entity, active } } : previous;
+        });
+        setSelectedEntitiesData(previous => {
+            const entity = previous[id];
+            return entity ? { ...previous, [id]: { ...entity, active } } : previous;
+        });
+    }, []);
+
+    const setEntityExpanded = useCallback((id: string, expanded: boolean) => {
+        setEntities(previous => setHierarchyEntityExpanded(previous, id, expanded));
+    }, []);
+
+    const setAllEntitiesExpanded = useCallback((expanded: boolean) => {
+        setEntities(previous => setAllHierarchyEntitiesExpanded(previous, expanded));
+    }, []);
+
+    const setEntityLocked = useCallback((id: string, locked: boolean) => {
+        setEntities(previous => setHierarchyEntityLocked(previous, id, locked));
+    }, []);
+
+    const addEntityBranchToHierarchy = useCallback((branch: Record<string, any>, parentId: string) => {
+        setEntities(previous => appendHierarchyBranch(previous, branch, parentId));
+        const branchData = createHierarchyEntityDataBranch(branch);
+        setEntityDataCache(previous => ({ ...previous, ...branchData }));
+    }, []);
+
+    const removeEntityFromHierarchy = useCallback((id: string) => {
+        const result = removeEntityBranch(entities, id);
+        if (result.removedIds.length === 0) return;
+
+        const removedIds = new Set(result.removedIds);
+        setEntities(result.entities);
+        setSelectedIds(previous => previous.filter(selectedId => !removedIds.has(selectedId)));
+        setSelectedEntitiesData(previous => Object.fromEntries(
+            Object.entries(previous).filter(([entityId]) => !removedIds.has(entityId))
+        ));
+        setEntityDataCache(previous => Object.fromEntries(
+            Object.entries(previous).filter(([entityId]) => !removedIds.has(entityId))
+        ));
+    }, [entities]);
+
+    const updateComponent = (id: string, component: string, field: string, value: any) => {
+        const update = (entity: EntityData | undefined) => (
+            entity ? applyInspectorFieldUpdate(entity, component, field, value) : undefined
+        );
+        setEntityDataCache(prev => {
+            const updated = update(prev[id]);
+            return updated ? { ...prev, [id]: updated } : prev;
+        });
+        setSelectedEntitiesData(prev => {
+            const updated = update(prev[id] || entityDataCache[id]);
+            return updated ? { ...prev, [id]: updated } : prev;
+        });
+        notifyGame('editor:update-component', { id, component, data: { [field]: value } });
     };
 
     const markAsMainScene = useCallback(async () => {
@@ -506,6 +567,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
             pause,
             stop,
             selectEntity,
+            setEntityActiveInHierarchy,
+            setEntityExpanded,
+            setAllEntitiesExpanded,
+            setEntityLocked,
+            renameEntityInHierarchy,
+            addEntityToHierarchy,
+            addEntityBranchToHierarchy,
+            removeEntityFromHierarchy,
             moveEntities,
             updateComponent,
             markAsMainScene,

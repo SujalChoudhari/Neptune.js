@@ -1,11 +1,25 @@
 import fs from "fs";
 import path from "path";
-import vm from "node:vm";
+import vm from "vm";
 import { execFileSync } from "node:child_process";
 import { buildSync } from "esbuild";
 import { describe, it, expect } from "../../tests/tester.js";
+import { SceneLoader } from "../../src/core/sceneLoader.js";
+import { ComponentRegistry } from "../../src/core/componentRegistry.js";
+import { Transform } from "../../src/components/transform.js";
+import { Sprite } from "../../src/rendering/sprite.js";
+import { pickRuntimeEntityAt, readRuntimeSelection, runtimeSelectionBridgeScript } from "../src/lib/runtimeSelectionBridge.mjs";
+import { runtimeConsoleBridgeScript } from "../src/lib/runtimeConsoleBridge.mjs";
+import { readRuntimeState, runtimeControlBridgeScript, runRuntimeControl } from "../src/lib/runtimeControlBridge.mjs";
+import { getSceneNavigationPath } from "../src/lib/projectNavigation.mjs";
+import { createEmptySceneAssetContent } from "../src/lib/projectAssetContent.mjs";
+import { createSceneHierarchyEntity } from "../src/lib/sceneHierarchy.mjs";
+import { createHierarchyEntityData, createHierarchyEntityDataBranch } from "../src/lib/hierarchyEntityData.mjs";
 
 const root = path.resolve("triton");
+
+ComponentRegistry.register("Transform", Transform);
+ComponentRegistry.register("Sprite", Sprite);
 
 function bundleSource(sourcefile, external) {
     return buildSync({
@@ -51,6 +65,10 @@ function createMainHarness() {
     const listeners = [];
     const writes = [];
     const files = new Map();
+    const notifications = [];
+    let writeSceneError = null;
+    const openedProjects = [];
+    const windowTitles = [];
     const runner = loadBundle(runnerBundle, {});
     runner.EditorGameRunner.currentScene = null;
     runner.EditorGameRunner.currentScenePath = null;
@@ -60,6 +78,8 @@ function createMainHarness() {
     const hierarchyHookSlots = [];
     let mainHookIndex = 0;
     let hierarchyHookIndex = 0;
+    let projectLoadError = null;
+    let projectReadHandler = () => Promise.resolve({});
 
     const react = {
         createElement(type, props, ...children) {
@@ -103,6 +123,34 @@ function createMainHarness() {
         Fragment: Symbol("Fragment")
     };
 
+    const additionPath = path.resolve("triton/src/lib/hierarchyEntityAddition.ts");
+    const additionBundle = buildSync({
+        bundle: true,
+        format: "cjs",
+        platform: "node",
+        write: false,
+        stdin: { contents: fs.readFileSync(additionPath, "utf8"), loader: "ts", sourcefile: additionPath }
+    }).outputFiles[0].text;
+    const { appendHierarchyBranch, appendHierarchyEntity } = loadBundle(additionBundle, {});
+    const movementPath = path.resolve("triton/src/lib/hierarchyEntityMovement.ts");
+    const movementBundle = buildSync({
+        bundle: true,
+        format: "cjs",
+        platform: "node",
+        write: false,
+        stdin: { contents: fs.readFileSync(movementPath, "utf8"), loader: "ts", sourcefile: movementPath }
+    }).outputFiles[0].text;
+    const { moveHierarchyEntities } = loadBundle(movementBundle, {});
+    const removalPath = path.resolve("triton/src/lib/hierarchyEntityRemoval.ts");
+    const removalBundle = buildSync({
+        bundle: true,
+        format: "cjs",
+        platform: "node",
+        write: false,
+        stdin: { contents: fs.readFileSync(removalPath, "utf8"), loader: "ts", sourcefile: removalPath }
+    }).outputFiles[0].text;
+    const { removeEntityBranch } = loadBundle(removalBundle, {});
+
     const listen = (_eventName, handler) => {
         const listener = { active: true, handler };
         listeners.push(listener);
@@ -126,6 +174,7 @@ function createMainHarness() {
     };
 
     const writeScene = async (scenePath, scene) => {
+        if (writeSceneError) throw writeSceneError;
         const args = { path: scenePath, content: JSON.stringify(scene, null, 2) };
         writes.push(args);
         files.set(scenePath, args.content);
@@ -142,7 +191,7 @@ function createMainHarness() {
             document: { documentElement: { classList: { add() {} } } },
             addEventListener() {},
             removeEventListener() {},
-            dispatchEvent() {}
+            dispatchEvent(event) { notifications.push({ type: event.type, payload: event.detail }); }
         }
     };
 
@@ -151,20 +200,49 @@ function createMainHarness() {
         react,
         "react/jsx-runtime": jsxRuntime,
         "@tauri-apps/api/event": { listen },
-        "@tauri-apps/api/window": { getCurrentWindow: () => ({ setTitle: () => Promise.resolve() }) },
+        "@tauri-apps/api/window": { getCurrentWindow: () => ({ setTitle: title => { windowTitles.push(title); return Promise.resolve(); } }) },
         "@tauri-apps/api/core": { invoke },
         "@/components/layout/DockLayout": { DockLayout: () => null },
         "@/components/layout/EditorToolbar": { EditorToolbar: () => null },
         "@/components/layout/StatusBar": { StatusBar: () => null },
         "@/pages/WelcomeScreen": { WelcomeScreen: () => null },
-        "@/context/FileSystemContext": { useFileSystem: () => ({ loadProject: () => Promise.resolve(), readProject: () => Promise.resolve({}), writeScene }) },
+        "@/context/FileSystemContext": { useFileSystem: () => ({
+            loadProject: path => {
+                openedProjects.push(path);
+                return projectLoadError ? Promise.reject(projectLoadError) : Promise.resolve();
+            },
+            readProject: () => projectReadHandler(),
+            writeScene
+        }) },
         "@/context/GameContext": {
             useGameContext: () => ({
                 entities: game.entities || {},
                 selectedIds: [],
                 selectEntity() {},
-                moveEntities() {},
-                notifyGame() {},
+                setEntityActiveInHierarchy(id, active) {
+                    const entity = game.entities?.[id];
+                    if (entity) game.entities = { ...game.entities, [id]: { ...entity, active } };
+                },
+                renameEntityInHierarchy(id, name) {
+                    const entity = game.entities?.[id];
+                    if (entity) game.entities = { ...game.entities, [id]: { ...entity, name } };
+                },
+                addEntityToHierarchy(entity) {
+                    game.entities = appendHierarchyEntity(game.entities || {}, entity);
+                },
+                addEntityBranchToHierarchy(branch, parentId) {
+                    game.entities = appendHierarchyBranch(game.entities || {}, branch, parentId);
+                },
+                removeEntityFromHierarchy(id) {
+                    game.entities = removeEntityBranch(game.entities || {}, id).entities;
+                },
+                moveEntities(ids, targetParentId, index) {
+                    game.entities = moveHierarchyEntities(game.entities || {}, ids, targetParentId, index);
+                    notifications.push({ type: "editor:move-entities", payload: { ids, targetParentId, index } });
+                },
+                notifyGame(type, payload) {
+                    notifications.push({ type, payload });
+                },
                 saveScene: async () => writeScene("scenes/main.scene", game.staleScene || game.openedScene)
             })
         },
@@ -181,6 +259,7 @@ function createMainHarness() {
     vm.runInNewContext(bundle, sandbox);
 
     const hierarchyModule = { exports: {} };
+    const hierarchyToolbarComponent = () => null;
     const hierarchyModules = {
         ...modules,
         "@/components/library": {
@@ -193,7 +272,7 @@ function createMainHarness() {
             ThemedContextMenuLabel: "ThemedContextMenuLabel"
         },
         "./hierarchy/HierarchyItem": { HierarchyItem: "HierarchyItem" },
-        "./hierarchy/HierarchyToolbar": { HierarchyToolbar: "HierarchyToolbar" }
+        "./hierarchy/HierarchyToolbar": { HierarchyToolbar: hierarchyToolbarComponent }
     };
     const hierarchyRequire = (specifier) => {
         if (!(specifier in hierarchyModules)) throw new Error(`Unexpected hierarchy external import: ${specifier}`);
@@ -206,7 +285,7 @@ function createMainHarness() {
     const HierarchyPanel = hierarchyModule.exports.HierarchyPanel;
     const render = () => {
         mainHookIndex = 0;
-        Main();
+        return Main();
     };
     const renderHierarchy = () => {
         hierarchyHookIndex = 0;
@@ -225,8 +304,76 @@ function createMainHarness() {
         const children = node.props?.children;
         return Array.isArray(children) ? children.some(clickDuplicate) : clickDuplicate(children);
     };
+    const clickCreateEntity = (node, type) => {
+        if (Array.isArray(node)) return node.some(child => clickCreateEntity(child, type));
+        if (!node || typeof node !== "object") return false;
+        if (node.type === hierarchyToolbarComponent) {
+            node.props.onAddEntity(type);
+            return true;
+        }
+        const children = node.props?.children;
+        return Array.isArray(children)
+            ? children.some(child => clickCreateEntity(child, type))
+            : clickCreateEntity(children, type);
+    };
+    const clickRenameEntity = (node, id, name) => {
+        if (Array.isArray(node)) return node.some(child => clickRenameEntity(child, id, name));
+        if (!node || typeof node !== "object") return false;
+        if (node.type === "HierarchyItem" && node.props?.entity?.id === id) {
+            node.props.onRename(id, name);
+            return true;
+        }
+        const children = node.props?.children;
+        return Array.isArray(children)
+            ? children.some(child => clickRenameEntity(child, id, name))
+            : clickRenameEntity(children, id, name);
+    };
+    const clickMoveEntity = (node, ids, targetParentId, index) => {
+        if (Array.isArray(node)) return node.some(child => clickMoveEntity(child, ids, targetParentId, index));
+        if (!node || typeof node !== "object") return false;
+        if (node.type === "HierarchyItem" && ids.includes(node.props?.entity?.id)) {
+            node.props.onMove(ids, targetParentId, index);
+            return true;
+        }
+        const children = node.props?.children;
+        return Array.isArray(children)
+            ? children.some(child => clickMoveEntity(child, ids, targetParentId, index))
+            : clickMoveEntity(children, ids, targetParentId, index);
+    };
+    const clickToggleActive = (node, id) => {
+        if (Array.isArray(node)) return node.some(child => clickToggleActive(child, id));
+        if (!node || typeof node !== "object") return false;
+        if (node.type === "HierarchyItem" && node.props?.entity?.id === id) {
+            node.props.onToggleActive(id);
+            return true;
+        }
+        const children = node.props?.children;
+        return Array.isArray(children)
+            ? children.some(child => clickToggleActive(child, id))
+            : clickToggleActive(children, id);
+    };
 
-    return { game, runner: runner.EditorGameRunner, files, writes, listeners, render, renderHierarchy, clickDuplicate, dispatchMenuEvent };
+    return {
+        game,
+        runner: runner.EditorGameRunner,
+        openedProjects,
+        windowTitles,
+        files,
+        writes,
+        listeners,
+        notifications,
+        render,
+        renderHierarchy,
+        clickDuplicate,
+        clickCreateEntity,
+        clickRenameEntity,
+        clickMoveEntity,
+        clickToggleActive,
+        dispatchMenuEvent,
+        failProjectLoad: error => { projectLoadError = error; },
+        failSceneWrite: error => { writeSceneError = error; },
+        setProjectReadHandler: handler => { projectReadHandler = handler; }
+    };
 }
 
 function loadBundle(bundle, context) {
@@ -244,6 +391,238 @@ function loadBundle(bundle, context) {
 }
 
 describe("Triton persistence bridge", () => {
+    it("rejects object-map scene entities before accepting the scene payload", () => {
+        const { runner } = createMainHarness();
+        let rejected = false;
+        try {
+            runner.validateScene({
+                type: "scene", version: "1.0.0", schemaVersion: 1,
+                name: "Invalid map", entities: { hero: { id: "hero", name: "Hero", children: [] } }
+            });
+        } catch (error) {
+            rejected = String(error).includes("entities must be an array");
+        }
+        expect(rejected).toBe(true);
+
+        let layerRejected = false;
+        try {
+            runner.validateScene({
+                type: "scene", version: "1.0.0", schemaVersion: 1, name: "Invalid layer",
+                layers: [{ name: "Main", entities: { hero: { id: "hero" } } }]
+            });
+        } catch (error) {
+            layerRejected = String(error).includes("Layer entities must be an array");
+        }
+        expect(layerRejected).toBe(true);
+    });
+
+    it("opens only scene assets from the project navigator using canonical node IDs", () => {
+        expect(getSceneNavigationPath({ id: "scenes/main.scene", name: "main.scene", type: "file" })).toBe("scenes/main.scene");
+        expect(getSceneNavigationPath({ id: "legacy/intro.scn", name: "INTRO.SCN", type: "file" })).toBe("legacy/intro.scn");
+        expect(getSceneNavigationPath({ id: "project.npt", name: "project.npt", type: "file" })).toBeNull();
+        expect(getSceneNavigationPath({ id: "folder.scene", name: "folder.scene", type: "folder" })).toBeNull();
+    });
+
+    it("creates versioned empty scenes that the runtime SceneLoader accepts", () => {
+        const payload = JSON.parse(createEmptySceneAssetContent("maps/New Scene.scene"));
+        expect(payload).toEqual({
+            type: "scene",
+            version: "1.0.0",
+            schemaVersion: 1,
+            name: "New Scene",
+            entities: []
+        });
+
+        const runtimeScene = SceneLoader.parse(payload);
+        expect(runtimeScene.name).toBe("New Scene");
+        expect(runtimeScene.children).toEqual([]);
+    });
+
+    it("seeds real Inspector data when a new entity enters the hierarchy", () => {
+        expect(createHierarchyEntityData({
+            id: "new-entity", parentId: "root", name: "New Entity", type: "empty",
+            children: [], active: true, locked: false, expanded: false
+        })).toEqual({
+            id: "new-entity", name: "New Entity", active: true,
+            transform: { position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 }, z: 0 },
+            components: {}
+        });
+    });
+
+    it("hydrates Inspector component data for a duplicated hierarchy branch", () => {
+        const branchData = createHierarchyEntityDataBranch({
+            id: "copy", name: "Copy", active: true,
+            transform: { pos: { x: 12, y: 24 }, rot: 0.5, scale: { x: 2, y: 3 } },
+            components: [{ type: "Sprite", props: { path: "hero.png", width: 32 } }],
+            children: [{ id: "copy-child", name: "Copy Child", active: false, children: [] }]
+        });
+        expect(branchData.copy).toEqual({
+            id: "copy", name: "Copy", active: true,
+            transform: { position: { x: 12, y: 24 }, rotation: 0.5, scale: { x: 2, y: 3 }, z: 0 },
+            components: { Sprite: { path: "hero.png", width: 32 } }
+        });
+        expect(branchData["copy-child"].active).toBe(false);
+    });
+
+    it("expands and collapses nested hierarchy state without mutating prior snapshots", () => {
+        const helperPath = path.resolve("triton/src/lib/hierarchyEntityExpansion.ts");
+        const helperBundle = buildSync({
+            bundle: true, format: "cjs", platform: "node", write: false,
+            stdin: { contents: fs.readFileSync(helperPath, "utf8"), loader: "ts", sourcefile: helperPath }
+        }).outputFiles[0].text;
+        const { setAllHierarchyEntitiesExpanded, setHierarchyEntityExpanded } = loadBundle(helperBundle, {});
+        const entities = {
+            root: { id: "root", parentId: null, name: "Scene", type: "group", children: ["folder"], active: true, locked: false, expanded: true },
+            folder: { id: "folder", parentId: "root", name: "Folder", type: "folder", children: ["child"], active: true, locked: false, expanded: false },
+            child: { id: "child", parentId: "folder", name: "Child", type: "empty", children: [], active: true, locked: false, expanded: false }
+        };
+        const opened = setHierarchyEntityExpanded(entities, "folder", true);
+        expect(opened.folder.expanded).toBe(true);
+        expect(entities.folder.expanded).toBe(false);
+        const collapsed = setAllHierarchyEntitiesExpanded(opened, false);
+        expect(collapsed.folder.expanded).toBe(false);
+        expect(collapsed.child.expanded).toBe(false);
+        expect(collapsed.root.expanded).toBe(true);
+        expect(setAllHierarchyEntitiesExpanded(collapsed, true).child.expanded).toBe(true);
+    });
+
+    it("clears empty hierarchy selections and deduplicates multi-selection IDs", () => {
+        const helperPath = path.resolve("triton/src/lib/editorSelectionState.ts");
+        const helperBundle = buildSync({
+            bundle: true, format: "cjs", platform: "node", write: false,
+            stdin: { contents: fs.readFileSync(helperPath, "utf8"), loader: "ts", sourcefile: helperPath }
+        }).outputFiles[0].text;
+        const { getEditorSelectionAfterClick } = loadBundle(helperBundle, {});
+        expect(getEditorSelectionAfterClick(["hero"], "", false)).toEqual([]);
+        expect(getEditorSelectionAfterClick(["hero", "hero", ""], "enemy", true)).toEqual(["hero", "enemy"]);
+        expect(getEditorSelectionAfterClick(["hero"], "enemy", false)).toEqual(["enemy"]);
+    });
+
+    it("updates editor-local hierarchy lock state immutably", () => {
+        const helperPath = path.resolve("triton/src/lib/hierarchyEntityLock.ts");
+        const helperBundle = buildSync({
+            bundle: true, format: "cjs", platform: "node", write: false,
+            stdin: { contents: fs.readFileSync(helperPath, "utf8"), loader: "ts", sourcefile: helperPath }
+        }).outputFiles[0].text;
+        const { setHierarchyEntityLocked } = loadBundle(helperBundle, {});
+        const entities = {
+            root: { id: "root", parentId: null, name: "Scene", type: "group", children: ["hero"], active: true, locked: false, expanded: true },
+            hero: { id: "hero", parentId: "root", name: "Hero", type: "empty", children: [], active: true, locked: false, expanded: false }
+        };
+        const locked = setHierarchyEntityLocked(entities, "hero", true);
+        expect(locked.hero.locked).toBe(true);
+        expect(entities.hero.locked).toBe(false);
+        expect(setHierarchyEntityLocked(locked, "hero", false).hero.locked).toBe(false);
+    });
+
+    it("clears stale project navigation when a selected project's native scan fails", async () => {
+        const bundle = bundleSource(path.join(root, "src", "context", "FileSystemContext.tsx"), [
+            "react",
+            "react/jsx-runtime",
+            "@tauri-apps/api/core",
+            "@/lib/projectAssetContent.mjs"
+        ]);
+        const hookState = [];
+        let hookIndex = 0;
+        let failScan = false;
+        let deferScans = false;
+        const pendingScans = [];
+        const react = {
+            createElement: (type, props) => ({ type, props }),
+            createContext: () => ({ Provider: "FileSystemProvider" }),
+            useContext: () => null,
+            useCallback: callback => callback,
+            useRef(initialValue) {
+                const index = hookIndex++;
+                if (!(index in hookState)) hookState[index] = { current: initialValue };
+                return hookState[index];
+            },
+            useState(initialValue) {
+                const index = hookIndex++;
+                if (!(index in hookState)) hookState[index] = initialValue;
+                return [hookState[index], value => {
+                    hookState[index] = typeof value === "function" ? value(hookState[index]) : value;
+                }];
+            }
+        };
+        const jsxRuntime = {
+            jsx: (type, props) => ({ type, props }),
+            jsxs: (type, props) => ({ type, props })
+        };
+        const modules = {
+            react,
+            "react/jsx-runtime": jsxRuntime,
+            "@tauri-apps/api/core": {
+                invoke: async (command, args) => {
+                    if (command !== "scan_project") throw new Error(`Unexpected command: ${command}`);
+                    if (deferScans) {
+                        return await new Promise(resolve => pendingScans.push({ resolve, path: args.path }));
+                    }
+                    if (failScan) throw new Error("selected project is unavailable");
+                    return {
+                        root: { id: "root", parentId: null, name: "Project A", type: "folder", children: ["assets"] },
+                        assets: { id: "assets", parentId: "root", name: "Assets", type: "folder", children: [] }
+                    };
+                }
+            },
+            "@/lib/projectAssetContent.mjs": { createEmptySceneAssetContent: () => "{}" }
+        };
+        const fileSystemModule = { exports: {} };
+        vm.runInNewContext(bundle, {
+            React: react,
+            console,
+            Promise,
+            CustomEvent,
+            module: fileSystemModule,
+            exports: fileSystemModule.exports,
+            require: specifier => {
+                if (!(specifier in modules)) throw new Error(`Unexpected import: ${specifier}`);
+                return modules[specifier];
+            }
+        });
+        const fileSystem = fileSystemModule.exports;
+        const renderProvider = () => {
+            hookIndex = 0;
+            return fileSystem.FileSystemProvider({ children: null }).props.value;
+        };
+
+        let context = renderProvider();
+        await context.loadProject("/projects/a");
+        context = renderProvider();
+        context.navigateTo("assets");
+        context = renderProvider();
+        expect(context.rootPath).toBe("/projects/a");
+        expect(context.currentPath).toEqual(["root", "assets"]);
+
+        failScan = true;
+        let loadError;
+        try {
+            await context.loadProject("/projects/b");
+        } catch (error) {
+            loadError = error;
+        }
+        context = renderProvider();
+        expect(loadError.message).toBe("Could not scan project '/projects/b'. selected project is unavailable");
+        expect(context.nodes).toEqual({});
+        expect(context.rootPath).toBeNull();
+        expect(context.currentPath).toEqual(["root"]);
+
+        failScan = false;
+        deferScans = true;
+        const staleLoad = context.loadProject("/projects/slow");
+        const latestLoad = context.loadProject("/projects/latest");
+        expect(pendingScans.map(scan => scan.path)).toEqual([".", "."]);
+        pendingScans[1].resolve({ root: { id: "root", parentId: null, name: "Latest", type: "folder", children: [] } });
+        await latestLoad;
+        pendingScans[0].resolve({ root: { id: "root", parentId: null, name: "Stale", type: "folder", children: [] } });
+        await staleLoad;
+
+        context = renderProvider();
+        expect(context.rootPath).toBe("/projects/latest");
+        expect(context.nodes.root.name).toBe("Latest");
+        expect(context.isLoading).toBe(false);
+    });
+
     it("uses selected-project commands for versioned project and scene payloads", () => {
         const rust = fs.readFileSync(path.join(root, "src-tauri", "src", "lib.rs"), "utf8");
         const fileSystem = fs.readFileSync(path.join(root, "src", "context", "FileSystemContext.tsx"), "utf8");
@@ -257,6 +636,27 @@ describe("Triton persistence bridge", () => {
         expect(rust.includes("SCENE_SCHEMA_VERSION")).toBe(true);
         expect(rust.includes("RESOURCE_REFERENCE_INVALID")).toBe(true);
         expect(game.includes("setCurrentScenePayload")).toBe(true);
+    });
+
+    it("hydrates root scene entities independently from layer entities", () => {
+        const game = fs.readFileSync(path.join(root, "src", "context", "GameContext.tsx"), "utf8");
+        const layersIndex = game.indexOf("if (data.layers && Array.isArray(data.layers))");
+        const rootEntitiesIndex = game.indexOf("if (data.entities && Array.isArray(data.entities))");
+        expect(layersIndex >= 0).toBe(true);
+        expect(rootEntitiesIndex > layersIndex).toBe(true);
+        expect(game.slice(layersIndex, rootEntitiesIndex).includes("else if (data.entities")).toBe(false);
+        expect(game.includes("parseEntityList(data.entities, 'root')")).toBe(true);
+    });
+
+    it("starts the paused Scene View loop only after a scene loads", () => {
+        const sceneView = fs.readFileSync(path.join(root, "src", "components", "panels", "SceneViewPanel.tsx"), "utf8");
+        const loadSceneIndex = sceneView.indexOf("game.loadScene(payload.data || payload.path)");
+        const startIndex = sceneView.indexOf("game.start();", loadSceneIndex);
+        const loadedIndex = sceneView.indexOf("type: 'editor:scene-loaded'", startIndex);
+        expect(loadSceneIndex >= 0).toBe(true);
+        expect(startIndex > loadSceneIndex).toBe(true);
+        expect(loadedIndex > startIndex).toBe(true);
+        expect(sceneView.slice(0, loadSceneIndex).includes("game.start();")).toBe(false);
     });
 
     it("requires native filesystem round-trip coverage for IDs and schema fields", () => {
@@ -280,6 +680,743 @@ describe("Triton persistence bridge", () => {
         expect(rust.includes("Migrate the {kind} before loading it")).toBe(true);
     });
 
+    it("types inspector selections as runtime EntityData without a mock cast", () => {
+        const types = fs.readFileSync(path.join(root, "src", "components", "panels", "inspector", "shared", "types.ts"), "utf8");
+        const inspector = fs.readFileSync(path.join(root, "src", "components", "panels", "InspectorPanel.tsx"), "utf8");
+        const registry = fs.readFileSync(path.join(root, "src", "components", "panels", "inspector", "InspectorRegistry.tsx"), "utf8");
+        const sectionsDirectory = path.join(root, "src", "components", "panels", "inspector", "components");
+        const productionSections = ["TransformSection.tsx", "SpriteSection.tsx", "ColliderSection.tsx", "BodySection.tsx", "SoundSection.tsx", "StatsSection.tsx", "AnimatorSection.tsx", "ScriptsSection.tsx"]
+            .map(file => fs.readFileSync(path.join(sectionsDirectory, file), "utf8"));
+
+        expect(types.includes('export type MockEntity')).toBe(false);
+        expect(fs.readFileSync(path.join(root, "src", "components", "panels", "StoryBook.tsx"), "utf8").includes('import type { EntityData } from "@/types/engine"')).toBe(true);
+        expect(fs.readFileSync(path.join(root, "src", "components", "panels", "inspector", "shared", "mockData.ts"), "utf8").includes('import type { EntityData } from "@/types/engine"')).toBe(true);
+        expect(inspector.includes('import type { EntityData } from "@/types/engine"')).toBe(true);
+        expect(registry.includes('import type { EntityData } from "@/types/engine"')).toBe(true);
+        expect(productionSections.every(source => source.includes("EntityData") && !source.includes("MockEntity"))).toBe(true);
+        expect(inspector.includes("const entity: EntityData = selectedEntityData")).toBe(true);
+        expect(inspector.includes("as any as MockEntity")).toBe(false);
+    });
+
+    it("hydrates saved inactive state into the hierarchy model and runtime scene", async () => {
+        const hierarchyEntity = createSceneHierarchyEntity({
+            id: "disabled", name: "Disabled", type: "empty", active: false
+        }, "root", "fallback-id");
+        expect(hierarchyEntity).toEqual({
+            id: "disabled", parentId: "root", name: "Disabled", type: "empty",
+            children: [], active: false, locked: false, expanded: false
+        });
+        expect(createSceneHierarchyEntity({ active: true }, "root", "generated-id").active).toBe(true);
+
+        const runtimeScene = await SceneLoader.parse({
+            type: "scene", version: "1.0.0", schemaVersion: 1,
+            id: "scene-disabled-entity", name: "Disabled Entity",
+            entities: [{ id: "disabled", name: "Disabled", type: "empty", active: false, children: [] }]
+        });
+        expect(runtimeScene.children[0].active).toBe(false);
+    });
+
+    it("forwards runtime log, warning, and error entries while preserving native console output", () => {
+        const gameView = fs.readFileSync(path.join(root, "src", "components", "panels", "GameViewPanel.tsx"), "utf8");
+
+        expect(gameView.includes("window.addEventListener('error'")).toBe(true);
+        expect(gameView.includes("window.addEventListener('unhandledrejection'")).toBe(true);
+        expect(gameView.includes("type: 'editor:diagnostic'")).toBe(true);
+        expect(gameView.includes("${runtimeConsoleBridgeScript}")).toBe(true);
+        expect(gameView.includes("GAME_BOOT_ERROR")).toBe(true);
+
+        const nativeCalls = [];
+        const messages = [];
+        const runtimeConsole = Object.fromEntries(["log", "info", "warn", "error"].map(method => [
+            method,
+            (...args) => nativeCalls.push({ method, args })
+        ]));
+        const context = {
+            console: runtimeConsole,
+            window: { parent: { postMessage: message => messages.push(message) } }
+        };
+        vm.runInNewContext(runtimeConsoleBridgeScript, context);
+        runtimeConsole.log("boot", { scene: "main" });
+        runtimeConsole.warn("asset missing");
+        runtimeConsole.error("runtime failed");
+
+        expect(nativeCalls.map(call => call.method)).toEqual(["log", "warn", "error"]);
+        expect(messages.map(message => message.detail.type)).toEqual(["info", "warn", "error"]);
+        expect(messages[0].detail.message).toBe('boot {"scene":"main"}');
+        expect(messages[1].detail.message).toBe("asset missing");
+        expect(messages[2].detail.message).toBe("runtime failed");
+    });
+
+    it("reports play, pause, resume, and stop state from the live runtime controls", () => {
+        const gameView = fs.readFileSync(path.join(root, "src", "components", "panels", "GameViewPanel.tsx"), "utf8");
+        expect(gameView.includes("${runtimeControlBridgeScript}")).toBe(true);
+        expect(gameView.includes("type: 'game:state-update'")).toBe(true);
+
+        const calls = [];
+        const states = [];
+        const game = {
+            isRunning: false,
+            isPaused: false,
+            start() { calls.push("play"); this.isRunning = true; },
+            pause() { calls.push("pause"); this.isPaused = true; },
+            resume() { calls.push("resume"); this.isPaused = false; },
+            stop() { calls.push("stop"); this.isRunning = false; this.isPaused = false; }
+        };
+        const send = (type, payload) => expect(runRuntimeControl(game, type, payload, state => states.push(state))).toBe(true);
+        send("editor:play");
+        send("editor:pause", { paused: true });
+        send("editor:pause", { paused: false });
+        send("editor:stop");
+
+        expect(calls).toEqual(["play", "pause", "resume", "stop"]);
+        expect(states).toEqual([
+            { isPlaying: true, isPaused: false },
+            { isPlaying: true, isPaused: true },
+            { isPlaying: true, isPaused: false },
+            { isPlaying: false, isPaused: false }
+        ]);
+        expect(runRuntimeControl(game, "editor:unknown", {}, () => {})).toBe(false);
+    });
+
+    it("boots Game View from the Neptune engine entry instead of the debug sample", () => {
+        const gameView = fs.readFileSync(path.join(root, "src", "components", "panels", "GameViewPanel.tsx"), "utf8");
+        expect(gameView.includes('"../../../../src/neptune.js?url"')).toBe(true);
+        expect(gameView.includes("debug_project/main.js?url")).toBe(false);
+        expect(gameView.includes('window.parent.postMessage({ type: \'game:ready\' }, \'*\')')).toBe(true);
+        expect(gameView.includes("runRuntimeControl(game, type, payload")).toBe(true);
+    });
+
+    it("ignores malformed runtime playback-state messages", () => {
+        expect(readRuntimeState({ isPlaying: true, isPaused: false })).toEqual({ isPlaying: true, isPaused: false });
+        expect(readRuntimeState({ isPlaying: false, isPaused: true })).toEqual({ isPlaying: false, isPaused: true });
+        for (const payload of [null, undefined, {}, { isPlaying: 1, isPaused: false }, { isPlaying: true }, { isPlaying: false, isPaused: "false" }]) {
+            expect(readRuntimeState(payload)).toBe(null);
+        }
+    });
+
+    it("opens existing projects without initializing them and keeps creation explicit", async () => {
+        const sourcefile = path.resolve("triton/src/pages/WelcomeScreen.tsx");
+        const bundle = buildSync({
+            bundle: true,
+            external: ["react", "react/jsx-runtime", "@tauri-apps/plugin-dialog", "@tauri-apps/api/core", "lucide-react", "@/lib/utils", "@/utils/dateUtils", "@/components/library"],
+            format: "cjs",
+            platform: "node",
+            write: false,
+            stdin: { contents: fs.readFileSync(sourcefile, "utf8"), loader: "tsx", sourcefile, resolveDir: path.dirname(sourcefile) }
+        }).outputFiles[0].text;
+        const state = [];
+        let hookIndex = 0;
+        const calls = [];
+        const loaded = [];
+        const react = {
+            createElement: (type, props, ...children) => ({
+                type,
+                props: { ...(props || {}), children: children.length > 1 ? children : children[0] }
+            }),
+            useState(initial) {
+                const index = hookIndex++;
+                if (!(index in state)) state[index] = initial;
+                return [state[index], value => { state[index] = typeof value === "function" ? value(state[index]) : value; }];
+            },
+            useEffect() {}
+        };
+        const jsx = (type, props) => ({ type, props: props || {} });
+        const modules = {
+            react,
+            "react/jsx-runtime": { jsx, jsxs: jsx },
+            "@tauri-apps/plugin-dialog": { open: async () => "/selected/folder" },
+            "@tauri-apps/api/core": { invoke: async (command, args) => { calls.push({ command, args }); } },
+            "lucide-react": new Proxy({}, { get: (_target, name) => String(name) }),
+            "@/lib/utils": { cn: (...values) => values.filter(Boolean).join(" ") },
+            "@/utils/dateUtils": { timeAgo: () => "now" },
+            "@/components/library": { ThemedScrollArea: "ScrollArea", ThemedInput: "Input", themedButtonBase: "button" }
+        };
+        const componentModule = { exports: {} };
+        vm.runInNewContext(bundle, {
+            module: componentModule,
+            exports: componentModule.exports,
+            React: react,
+            localStorage: { setItem() {}, getItem: () => null },
+            require: specifier => {
+                if (!(specifier in modules)) throw new Error(`Unexpected import: ${specifier}`);
+                return modules[specifier];
+            }
+        });
+        const tree = componentModule.exports.WelcomeScreen({ onProjectLoaded: async value => { loaded.push(value); } });
+        const findButton = (node, label) => {
+            if (!node || typeof node !== "object") return null;
+            if (node.type?.name === "SidebarButton" && node.props?.label === label) return node;
+            const children = node.props?.children;
+            for (const child of Array.isArray(children) ? children : [children]) {
+                const found = findButton(child, label);
+                if (found) return found;
+            }
+            return null;
+        };
+
+        const importButton = findButton(tree, "Import");
+        const newProjectButton = findButton(tree, "New Project");
+        expect(importButton !== null).toBe(true);
+        expect(newProjectButton !== null).toBe(true);
+        await importButton.props.onClick();
+        await newProjectButton.props.onClick();
+
+        expect(calls.map(call => call.command)).toEqual(["open_existing_project", "initialize_project"]);
+        expect(loaded).toEqual(["/selected/folder", "/selected/folder"]);
+        const mainSource = fs.readFileSync(path.resolve("triton/src/pages/Main.tsx"), "utf8");
+        expect(mainSource.includes("get_startup_config")).toBe(false);
+    });
+
+    it("keeps the Welcome screen visible and reports the reason when a project filesystem scan fails", async () => {
+        const harness = createMainHarness();
+        harness.failProjectLoad(new Error("native scan failed"));
+        const welcome = harness.render();
+
+        let rejected = false;
+        try {
+            await welcome.props.onProjectLoaded("/projects/unavailable");
+        } catch {
+            rejected = true;
+        }
+        const rerendered = harness.render();
+
+        expect(rejected).toBe(true);
+        expect(typeof welcome.type).toBe("function");
+        expect(rerendered.type).toBe(welcome.type);
+        expect(rerendered.props.errorMessage).toBe("Project could not be opened. native scan failed");
+    });
+
+    it("keeps the latest overlapping project open as the selected editor project", async () => {
+        const harness = createMainHarness();
+        const readRequests = [];
+        harness.setProjectReadHandler(() => new Promise(resolve => readRequests.push(resolve)));
+        const welcome = harness.render();
+
+        const staleOpen = welcome.props.onProjectLoaded("/projects/old");
+        const latestOpen = welcome.props.onProjectLoaded("/projects/latest");
+        readRequests[1]({});
+        await latestOpen;
+        readRequests[0]({});
+        await staleOpen;
+
+        expect(harness.openedProjects).toEqual(["/projects/latest"]);
+        expect(harness.windowTitles).toEqual(["Neptune - latest - /projects/latest"]);
+    });
+
+    it("synchronizes editor selection into the live game and runtime selection back to the editor", () => {
+        const gameView = fs.readFileSync(path.join(root, "src", "components", "panels", "GameViewPanel.tsx"), "utf8");
+        expect(gameView.includes("${runtimeSelectionBridgeScript}")).toBe(true);
+
+        const handlers = new Map();
+        const editorEvents = [];
+        const parentMessages = [];
+        const parent = { postMessage: message => parentMessages.push(message) };
+        const scene = { id: "root", children: [{ id: "hero", children: [] }, { id: "npc", children: [] }] };
+        const game = { scene };
+        const runtimeWindow = {
+            parent,
+            game,
+            addEventListener: (name, handler) => handlers.set(name, handler),
+            dispatchEvent: event => editorEvents.push(event)
+        };
+        class RuntimeCustomEvent {
+            constructor(type, options) {
+                this.type = type;
+                this.detail = options.detail;
+            }
+        }
+
+        vm.runInNewContext(runtimeSelectionBridgeScript, { window: runtimeWindow, CustomEvent: RuntimeCustomEvent });
+        handlers.get("message")({ source: parent, data: { type: "editor:select", payload: { ids: ["hero", "missing", "hero"] } } });
+        expect(game.editorSelection).toEqual(["hero"]);
+        expect(editorEvents[0].type).toBe("neptune:editor-selection-changed");
+        expect(editorEvents[0].detail.entities[0].id).toBe("hero");
+
+        handlers.get("neptune:selection-changed")({ detail: { ids: ["npc", "missing", "npc"] } });
+        expect(parentMessages).toEqual([{ type: "game:selection-changed", payload: { ids: ["npc"] } }]);
+    });
+
+    it("normalizes runtime-origin selection IDs and entity data before editor synchronization", () => {
+        const gameContext = fs.readFileSync(path.resolve("triton/src/context/GameContext.tsx"), "utf8");
+        expect(gameContext.includes("const runtimeSelection = readRuntimeSelection(payload)")).toBe(true);
+        expect(gameContext.includes("if (!runtimeSelection) break")).toBe(true);
+        expect(readRuntimeSelection(null)).toBe(null);
+        expect(readRuntimeSelection({ ids: "hero" })).toBe(null);
+        expect(readRuntimeSelection({
+            ids: ["hero", "hero", null, "", "npc"],
+            data: [{ id: "hero", name: "Hero" }, null, { name: "Missing ID" }, { id: "npc", name: "NPC" }]
+        })).toEqual({
+            ids: ["hero", "npc"],
+            data: { hero: { id: "hero", name: "Hero" }, npc: { id: "npc", name: "NPC" } }
+        });
+        expect(readRuntimeSelection({ ids: ["hero"], data: { hero: { id: "hero" }, invalid: null } })).toEqual({
+            ids: ["hero"],
+            data: { hero: { id: "hero" } }
+        });
+    });
+
+    it("selects the runtime Sprite under a Game View pointer and clears selection on empty space", () => {
+        const transform = new Transform();
+        transform.position.x = 1;
+        transform.position.y = 1;
+        const sprite = Object.create(Sprite.prototype);
+        sprite._properties = { width: 2, height: 2 };
+        const entity = {
+            id: "hero",
+            components: [transform, sprite],
+            children: []
+        };
+        const scene = { children: [entity], activeCamera: { screenToWorld: (x, y) => ({ x, y }) } };
+        expect(pickRuntimeEntityAt(scene, 64, 64)).toBe("hero");
+        entity.active = false;
+        expect(pickRuntimeEntityAt(scene, 64, 64)).toBe(null);
+        entity.active = true;
+        expect(pickRuntimeEntityAt(scene, 300, 300)).toBe(null);
+
+        const listeners = new Map();
+        const posted = [];
+        const canvas = { width: 200, height: 100, getBoundingClientRect: () => ({ left: 10, top: 20, width: 100, height: 50 }) };
+        const parent = { postMessage: message => posted.push(message) };
+        const runtimeWindow = {
+            parent, game: { scene },
+            document: { getElementById: () => canvas },
+            addEventListener: (name, handler) => listeners.set(name, handler),
+            dispatchEvent: event => listeners.get("neptune:selection-changed")?.({ detail: event.detail })
+        };
+        vm.runInNewContext(runtimeSelectionBridgeScript, {
+            window: runtimeWindow,
+            CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } }
+        });
+        const pointerdown = listeners.get("pointerdown");
+        pointerdown({ target: canvas, button: 0, clientX: 42, clientY: 52 });
+        pointerdown({ target: canvas, button: 0, clientX: 160, clientY: 80 });
+        expect(posted).toEqual([
+            { type: "game:selection-changed", payload: { ids: ["hero"] } },
+            { type: "game:selection-changed", payload: { ids: [] } }
+        ]);
+    });
+
+    it("removes deleted entities from the live runtime and nested editor hierarchy", () => {
+        const sourcePath = path.resolve("triton/src/lib/hierarchyEntityRemoval.ts");
+        const bundle = buildSync({
+            bundle: true,
+            format: "cjs",
+            platform: "node",
+            write: false,
+            stdin: { contents: fs.readFileSync(sourcePath, "utf8"), loader: "ts", sourcefile: sourcePath }
+        }).outputFiles[0].text;
+        const { removeEntityBranch } = loadBundle(bundle, {});
+        const hierarchy = {
+            root: { id: "root", parentId: null, children: ["parent"] },
+            parent: { id: "parent", parentId: "root", children: ["child", "sibling"] },
+            child: { id: "child", parentId: "parent", children: ["grandchild"] },
+            grandchild: { id: "grandchild", parentId: "child", children: [] },
+            sibling: { id: "sibling", parentId: "parent", children: [] }
+        };
+        const removal = removeEntityBranch(hierarchy, "child");
+        expect(removal.removedIds).toEqual(["child", "grandchild"]);
+        expect(removal.entities.parent.children).toEqual(["sibling"]);
+        expect(removal.entities.child === undefined && removal.entities.grandchild === undefined).toBe(true);
+
+        const gameView = fs.readFileSync(path.resolve("triton/src/components/panels/GameViewPanel.tsx"), "utf8");
+        const sceneView = fs.readFileSync(path.resolve("triton/src/components/panels/SceneViewPanel.tsx"), "utf8");
+        expect(gameView.includes("${runtimeSelectionBridgeScript}")).toBe(true);
+        expect(sceneView.includes("type === 'editor:delete'")).toBe(true);
+
+        const listeners = new Map();
+        const scene = {
+            id: "root",
+            children: [{ id: "parent", children: [{ id: "child", parent: null, children: [] }] }]
+        };
+        const runtimeGame = { scene, editorSelection: ["child"] };
+        const runtimeWindow = {
+            parent: {},
+            game: runtimeGame,
+            addEventListener: (name, handler) => listeners.set(name, handler),
+            dispatchEvent() {}
+        };
+        vm.runInNewContext(runtimeSelectionBridgeScript, {
+            window: runtimeWindow,
+            CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } }
+        });
+        listeners.get("message")({ source: runtimeWindow.parent, data: { type: "editor:delete", payload: { id: "parent" } } });
+        expect(scene.children).toEqual([]);
+        expect(runtimeGame.editorSelection).toEqual([]);
+
+        expect(sceneView.includes("${runtimeSelectionBridgeScript}")).toBe(true);
+        expect(fs.readFileSync(path.resolve("triton/src/context/GameContext.tsx"), "utf8")
+            .includes('iframe[title="Game View"], iframe[title="Scene View"]')).toBe(true);
+
+        const viewListeners = new Map();
+        const viewParent = {};
+        const viewScene = { id: "root", children: [] };
+        const parent = { id: "parent", parent: viewScene, children: [] };
+        const child = { id: "child", parent, children: [] };
+        const grandchild = { id: "grandchild", parent: child, children: [] };
+        const sibling = { id: "sibling", parent, children: [] };
+        child.children.push(grandchild);
+        parent.children.push(child, sibling);
+        viewScene.children.push(parent);
+        const viewGame = { scene: viewScene, editorSelection: ["grandchild", "sibling"] };
+        const viewWindow = {
+            parent: viewParent,
+            game: viewGame,
+            addEventListener: (name, handler) => viewListeners.set(name, handler),
+            dispatchEvent() {}
+        };
+        vm.runInNewContext(runtimeSelectionBridgeScript, {
+            window: viewWindow,
+            CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } }
+        });
+        viewListeners.get("message")({
+            source: viewParent,
+            data: { type: "editor:delete", payload: { id: "child" } }
+        });
+
+        expect(viewScene.children[0].id).toBe("parent");
+        expect(viewScene.children[0].children.map(entity => entity.id)).toEqual(["sibling"]);
+        expect(viewGame.editorSelection).toEqual(["sibling"]);
+    });
+
+    it("reparents runtime entities in both views and rejects moves that would create a cycle", () => {
+        const sceneView = fs.readFileSync(path.resolve("triton/src/components/panels/SceneViewPanel.tsx"), "utf8");
+        expect(sceneView.includes("${runtimeSelectionBridgeScript}")).toBe(true);
+        const scene = SceneLoader.parse({
+            type: "scene", version: "1.0.0", schemaVersion: 1,
+            id: "scene-runtime-reparent", name: "Runtime Reparent",
+            entities: [
+                { id: "parent", name: "Parent", components: [], children: [
+                    { id: "child", name: "Child", components: [], children: [] }
+                ] },
+                { id: "target", name: "Target", components: [], children: [] }
+            ]
+        });
+        const listeners = new Map();
+        const parent = {};
+        const runtimeWindow = {
+            parent,
+            game: { scene },
+            addEventListener: (name, handler) => listeners.set(name, handler),
+            dispatchEvent() {}
+        };
+        vm.runInNewContext(runtimeSelectionBridgeScript, {
+            window: runtimeWindow,
+            CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } }
+        });
+
+        const sendMove = (ids, targetParentId, index) => listeners.get("message")({
+            source: parent,
+            data: { type: "editor:move-entities", payload: { ids, targetParentId, index } }
+        });
+        const child = scene.children[0].children[0];
+        const target = scene.children[1];
+        sendMove(["child"], "target", 0);
+        expect(scene.children[0].children).toEqual([]);
+        expect(target.children[0]).toBe(child);
+        expect(child.parent).toBe(target);
+
+        sendMove(["target"], "child", 0);
+        expect(scene.children[1]).toBe(target);
+        expect(target.children[0]).toBe(child);
+    });
+
+    it("synchronizes Hierarchy active toggles to the runtime and persists them", () => {
+        const harness = createMainHarness();
+        harness.render();
+        const source = {
+            type: "scene", version: "1.0.0", schemaVersion: 1,
+            id: "scene-active-toggle", name: "Active Toggle",
+            entities: [{ id: "toggle-me", name: "Toggle Me", type: "empty", active: true, components: [], children: [] }]
+        };
+        harness.runner.openScene(source, "scenes/active-toggle.scene");
+        harness.game.entities = {
+            root: { id: "root", parentId: null, name: "Active Toggle", type: "group", children: ["toggle-me"], active: true, locked: false, expanded: true },
+            "toggle-me": { id: "toggle-me", parentId: "root", name: "Toggle Me", type: "empty", children: [], active: true, locked: false, expanded: false }
+        };
+
+        expect(harness.clickToggleActive(harness.renderHierarchy(), "toggle-me")).toBe(true);
+        expect(harness.game.entities["toggle-me"].active).toBe(false);
+        expect(harness.runner.currentScene.entities[0].active).toBe(false);
+        const activeMessage = harness.notifications.filter(message => message.type === "editor:set-active").pop();
+        expect(activeMessage.payload).toEqual({ id: "toggle-me", active: false });
+
+        const runtimeScene = SceneLoader.parse(source);
+        const runtimeListeners = new Map();
+        const runtimeWindow = {
+            parent: {},
+            game: { scene: runtimeScene },
+            addEventListener: (name, handler) => runtimeListeners.set(name, handler),
+            dispatchEvent() {}
+        };
+        vm.runInNewContext(runtimeSelectionBridgeScript, {
+            window: runtimeWindow,
+            CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } }
+        });
+        runtimeListeners.get("message")({ source: runtimeWindow.parent, data: { type: "editor:set-active", payload: activeMessage.payload } });
+        expect(runtimeScene.children[0].active).toBe(false);
+
+        harness.dispatchMenuEvent("save");
+        harness.runner.closeScene();
+        harness.runner.openScene(JSON.parse(harness.files.get("scenes/active-toggle.scene")), "scenes/active-toggle.scene");
+        expect(harness.runner.currentScene.entities[0].active).toBe(false);
+    });
+
+    it("applies inspector renames to both game views and persists them across reopen", async () => {
+        const sceneView = fs.readFileSync(path.join(root, "src", "components", "panels", "SceneViewPanel.tsx"), "utf8");
+        const gameView = fs.readFileSync(path.join(root, "src", "components", "panels", "GameViewPanel.tsx"), "utf8");
+        for (const view of [sceneView, gameView]) {
+            expect(view.includes("type === 'editor:rename'")).toBe(true);
+            expect(view.includes("entity.name = payload.name")).toBe(true);
+        }
+
+        const harness = createMainHarness();
+        const scene = {
+            type: "scene", version: "1.0.0", schemaVersion: 1,
+            entities: [{ id: "entity-1", name: "Before", type: "empty", components: [], children: [] }]
+        };
+        harness.runner.openScene(scene, "scenes/main.scene");
+        expect(harness.runner.updateEntity("entity-1", "name", { value: "After" })).toBe(true);
+        expect(harness.runner.isDirty).toBe(true);
+        await harness.runner.saveScene(async (filePath, content) => {
+            harness.files.set(filePath, content);
+            return true;
+        });
+        harness.runner.closeScene();
+        harness.runner.openScene(JSON.parse(harness.files.get("scenes/main.scene")), "scenes/main.scene");
+
+        expect(harness.runner.currentScene.entities[0].name).toBe("After");
+    });
+
+    it("renames Hierarchy entities in editor state and preserves the name after save and reopen", () => {
+        const harness = createMainHarness();
+        harness.render();
+        const scene = {
+            type: "scene", version: "1.0.0", schemaVersion: 1,
+            id: "scene-hierarchy-rename", name: "Main Scene",
+            entities: [{ id: "entity-rename", name: "Before", type: "empty", components: [], children: [] }]
+        };
+        harness.runner.openScene(scene, "scenes/main.scene");
+        harness.game.entities = {
+            root: { id: "root", parentId: null, name: "Main Scene", type: "group", children: ["entity-rename"], active: true, locked: false, expanded: true },
+            "entity-rename": { id: "entity-rename", parentId: "root", name: "Before", type: "empty", children: [], active: true, locked: false, expanded: false }
+        };
+
+        expect(harness.clickRenameEntity(harness.renderHierarchy(), "entity-rename", "After")).toBe(true);
+        expect(harness.game.entities["entity-rename"].name).toBe("After");
+        expect(harness.runner.currentScene.entities[0].name).toBe("After");
+        const renameMessage = harness.notifications.filter(message => message.type === "editor:rename").pop();
+        expect(renameMessage.payload).toEqual({ id: "entity-rename", name: "After" });
+
+        harness.dispatchMenuEvent("save");
+        harness.runner.closeScene();
+        harness.runner.openScene(JSON.parse(harness.files.get("scenes/main.scene")), "scenes/main.scene");
+        expect(harness.runner.currentScene.entities[0].name).toBe("After");
+    });
+
+    it("reparents a Hierarchy entity immediately and persists the new parent after reopen", () => {
+        const harness = createMainHarness();
+        harness.render();
+        const scene = {
+            type: "scene", version: "1.0.0", schemaVersion: 1,
+            id: "scene-hierarchy-move", name: "Main Scene",
+            entities: [
+                { id: "parent", name: "Parent", type: "group", parentId: null, components: [], children: [
+                    { id: "child", name: "Child", type: "empty", parentId: "parent", components: [], children: [] }
+                ] },
+                { id: "target", name: "Target", type: "group", parentId: null, components: [], children: [] }
+            ]
+        };
+        harness.runner.openScene(scene, "scenes/main.scene");
+        harness.game.entities = {
+            root: { id: "root", parentId: null, name: "Main Scene", type: "group", children: ["parent", "target"], active: true, locked: false, expanded: true },
+            parent: { id: "parent", parentId: "root", name: "Parent", type: "group", children: ["child"], active: true, locked: false, expanded: true },
+            child: { id: "child", parentId: "parent", name: "Child", type: "empty", children: [], active: true, locked: false, expanded: false },
+            target: { id: "target", parentId: "root", name: "Target", type: "group", children: [], active: true, locked: false, expanded: true }
+        };
+
+        expect(harness.clickMoveEntity(harness.renderHierarchy(), ["child"], "target", 0)).toBe(true);
+        expect(harness.game.entities.parent.children).toEqual([]);
+        expect(harness.game.entities.target.children).toEqual(["child"]);
+        expect(harness.game.entities.child.parentId).toBe("target");
+        expect(harness.runner.currentScene.entities[0].children).toEqual([]);
+        expect(harness.runner.currentScene.entities[1].children[0].id).toBe("child");
+        expect(harness.notifications.filter(message => message.type === "editor:move-entities")).toHaveLength(1);
+
+        harness.dispatchMenuEvent("save");
+        harness.runner.closeScene();
+        harness.runner.openScene(JSON.parse(harness.files.get("scenes/main.scene")), "scenes/main.scene");
+        expect(harness.runner.currentScene.entities[0].children).toEqual([]);
+        expect(harness.runner.currentScene.entities[1].children[0].id).toBe("child");
+    });
+
+    it("persists a generic Inspector component edit through save, reopen, and runtime load", async () => {
+        const harness = createMainHarness();
+        const source = {
+            type: "scene", version: "1.0.0", schemaVersion: 1,
+            id: "scene-inspector-edit", name: "Inspector Edit",
+            entities: [{
+                id: "hero", name: "Hero", type: "empty",
+                transform: { pos: { x: 0, y: 0 }, rot: 0, scale: { x: 1, y: 1 } },
+                components: [{ type: "Sprite", props: { path: "hero.png", width: 16, height: 16, enabled: true } }],
+                children: []
+            }]
+        };
+        harness.runner.openScene(source, "scenes/inspector-edit.scene");
+        const entitySource = {
+            id: "hero", name: "Hero", active: true,
+            transform: { position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 }, z: 0 },
+            components: { Sprite: { path: "hero.png", width: 16, height: 16, enabled: true } },
+            sprite: { path: "hero.png", width: 16, height: 16, blendMode: "normal", color: "#fff" }
+        };
+        const helperPath = path.resolve("triton/src/lib/inspectorEntityData.ts");
+        const helperBundle = buildSync({
+            bundle: true, format: "cjs", platform: "node", write: false,
+            stdin: { contents: fs.readFileSync(helperPath, "utf8"), loader: "ts", sourcefile: helperPath }
+        }).outputFiles[0].text;
+        const { applyInspectorFieldUpdate } = loadBundle(helperBundle, {});
+        const inspectorPath = path.resolve("triton/src/components/panels/InspectorPanel.tsx");
+        const inspectorBundle = buildSync({
+            bundle: true,
+            external: ["react", "react/jsx-runtime", "@/lib/utils", "lucide-react", "@/components/library", "@/context/GameContext", "./inspector/InspectorRegistry", "@/context/FileSystemContext", "@/lib/editorGameRunner"],
+            format: "cjs",
+            platform: "node",
+            write: false,
+            stdin: { contents: fs.readFileSync(inspectorPath, "utf8"), loader: "tsx", sourcefile: inspectorPath, resolveDir: path.dirname(inspectorPath) }
+        }).outputFiles[0].text;
+        let selectedEntityData = entitySource;
+        let savedPath = null;
+        const renderedComponents = [];
+        const inspectorNotifications = [];
+        const react = {
+            createElement: (type, props, ...children) => ({
+                type,
+                props: { ...(props || {}), children: children.length > 1 ? children : children[0] }
+            }),
+            useState: initial => [initial, () => {}],
+            useMemo: callback => callback(),
+            useEffect() {},
+            useCallback: callback => callback
+        };
+        const jsx = (type, props) => ({ type, props: props || {} });
+        const modules = {
+            react,
+            "react/jsx-runtime": { jsx, jsxs: jsx },
+            "@/lib/utils": { cn: (...values) => values.filter(Boolean).join(" ") },
+            "lucide-react": new Proxy({}, { get: (_target, name) => String(name) }),
+            "@/components/library": { ThemedInput: "ThemedInput" },
+            "@/context/GameContext": { useGameContext: () => ({
+                selectedEntityData, selectedIds: ["hero"], currentScenePath: "scenes/inspector-edit.scene",
+                updateComponent: (id, component, field, value) => {
+                    if (id === "hero") selectedEntityData = applyInspectorFieldUpdate(selectedEntityData, component, field, value);
+                },
+                setEntityActiveInHierarchy: (id, active) => {
+                    if (id === "hero") selectedEntityData = { ...selectedEntityData, active };
+                },
+                renameEntityInHierarchy: (id, name) => {
+                    if (id === "hero") selectedEntityData = { ...selectedEntityData, name };
+                },
+                notifyGame: (type, payload) => inspectorNotifications.push({ type, payload })
+            }) },
+            "./inspector/InspectorRegistry": { renderInspectorComponent: props => {
+                renderedComponents.push(props);
+                return { type: "InspectorComponent", props };
+            } },
+            "@/context/FileSystemContext": { useFileSystem: () => ({
+                writeScene: async (filePath, scene) => {
+                    savedPath = filePath;
+                    harness.files.set(filePath, JSON.stringify(scene));
+                    return true;
+                }
+            }) },
+            "@/lib/editorGameRunner": { EditorGameRunner: harness.runner }
+        };
+        const componentModule = { exports: {} };
+        vm.runInNewContext(inspectorBundle, {
+            module: componentModule,
+            exports: componentModule.exports,
+            React: react,
+            require: specifier => {
+                if (!(specifier in modules)) throw new Error(`Unexpected InspectorPanel import: ${specifier}`);
+                return modules[specifier];
+            },
+            window: { addEventListener() {}, removeEventListener() {} }
+        });
+        const tree = componentModule.exports.InspectorPanel({});
+        const spriteEditor = renderedComponents.find(component => component.compId === "Sprite");
+        expect(spriteEditor !== undefined).toBe(true);
+        const findInput = node => {
+            if (!node || typeof node !== "object") return null;
+            if (node.type === "ThemedInput") return node;
+            const children = node.props?.children;
+            for (const child of Array.isArray(children) ? children : [children]) {
+                const found = findInput(child);
+                if (found) return found;
+            }
+            return null;
+        };
+        const nameInput = findInput(tree);
+        expect(nameInput !== null).toBe(true);
+        nameInput.props.onChange({ target: { value: "Inspector Hero" } });
+        expect(selectedEntityData.name).toBe("Inspector Hero");
+        expect(harness.runner.currentScene.entities[0].name).toBe("Inspector Hero");
+        spriteEditor.updateHelpers.updateGeneric("Sprite", "width", 32);
+        expect(selectedEntityData.components.Sprite.width).toBe(32);
+        expect(harness.runner.currentScene.entities[0].components[0].props.width).toBe(32);
+        expect(spriteEditor.isActive).toBe(true);
+        spriteEditor.onToggleActive();
+        expect(selectedEntityData.components.Sprite.enabled).toBe(false);
+        expect(harness.runner.currentScene.entities[0].components[0].props.enabled).toBe(false);
+
+        const findButton = (node, title) => {
+            if (!node || typeof node !== "object") return null;
+            if (node.type === "button" && node.props?.title === title) return node;
+            const children = node.props?.children;
+            for (const child of Array.isArray(children) ? children : [children]) {
+                const found = findButton(child, title);
+                if (found) return found;
+            }
+            return null;
+        };
+        const activeButton = findButton(tree, "Disable entity");
+        expect(activeButton !== null).toBe(true);
+        activeButton.props.onClick();
+        expect(selectedEntityData.active).toBe(false);
+        expect(harness.runner.currentScene.entities[0].active).toBe(false);
+        expect(inspectorNotifications.filter(message => message.type === "editor:set-active")).toEqual([
+            { type: "editor:set-active", payload: { id: "hero", active: false } }
+        ]);
+
+        const findSaveButton = node => {
+            if (!node || typeof node !== "object") return null;
+            if (node.type === "button" && node.props?.["aria-label"] === "Save scene") return node;
+            const children = node.props?.children;
+            for (const child of Array.isArray(children) ? children : [children]) {
+                const found = findSaveButton(child);
+                if (found) return found;
+            }
+            return null;
+        };
+        const saveButton = findSaveButton(tree);
+        expect(saveButton !== null).toBe(true);
+        saveButton.props.onClick();
+        await new Promise(resolve => setTimeout(resolve, 0));
+        expect(savedPath).toBe("scenes/inspector-edit.scene");
+
+        harness.runner.closeScene();
+        const reopened = harness.runner.openScene(JSON.parse(harness.files.get(savedPath)), savedPath);
+        const originalImage = global.Image;
+        global.Image = class { set src(_value) {} };
+        try {
+            const runtimeScene = await SceneLoader.parse(reopened);
+            expect(runtimeScene.children[0].name).toBe("Inspector Hero");
+            expect(runtimeScene.children[0].GetComponent(Sprite).width).toBe(32);
+            expect(runtimeScene.children[0].GetComponent(Sprite).properties.enabled).toBe(false);
+            expect(runtimeScene.children[0].active).toBe(false);
+        } finally {
+            global.Image = originalImage;
+        }
+    });
+
     it("saves the opened versioned scene through File > Save", () => {
         const harness = createMainHarness();
         harness.render();
@@ -300,6 +1437,95 @@ describe("Triton persistence bridge", () => {
         expect(harness.writes).toHaveLength(1);
         expect(harness.writes[0].path).toBe("scenes/main.scene");
         expect(JSON.parse(harness.writes[0].content)).toEqual(harness.game.openedScene);
+    });
+
+    it("uses canonical engine entity types instead of the mock hierarchy type", () => {
+        const toolbarSource = fs.readFileSync(path.join(root, "src", "components", "panels", "hierarchy", "HierarchyToolbar.tsx"), "utf8");
+        expect(toolbarSource.includes('import type { EntityType } from "@/types/engine"')).toBe(true);
+        expect(toolbarSource.includes("@/lib/mockHierarchy")).toBe(false);
+    });
+
+    it("creates a HierarchyToolbar entity in the hierarchy and persists it through save and reopen", () => {
+        const harness = createMainHarness();
+        const source = {
+            type: "scene", version: "1.0.0", schemaVersion: 1,
+            id: "scene-main", name: "Main Scene", entities: []
+        };
+        harness.game.staleScene = JSON.parse(JSON.stringify(source));
+        harness.game.entities = {
+            root: { id: "root", parentId: null, name: "Main Scene", type: "group", children: [], active: true, locked: false, expanded: true }
+        };
+        harness.runner.openScene(source, "scenes/main.scene");
+        harness.render();
+
+        expect(harness.clickCreateEntity(harness.renderHierarchy(), "empty")).toBe(true);
+        const createdId = harness.runner.currentScene.entities[0].id;
+        expect(harness.game.entities.root.children).toEqual([createdId]);
+        expect(harness.game.entities[createdId].name).toBe("New empty");
+        const runtimeSceneLoad = harness.notifications.filter(message => message.type === "editor:load-scene").pop();
+        expect(runtimeSceneLoad.payload.data.entities[0].id).toBe(createdId);
+
+        harness.dispatchMenuEvent("save");
+        harness.runner.closeScene();
+        harness.runner.openScene(JSON.parse(harness.files.get("scenes/main.scene")), "scenes/main.scene");
+        expect(harness.runner.currentScene.entities[0].id).toBe(createdId);
+        expect(harness.runner.currentScene.entities[0].name).toBe("New empty");
+    });
+
+    it("completes HierarchyPanel create, rename, duplicate, and delete through save and reopen", () => {
+        const harness = createMainHarness();
+        const source = {
+            type: "scene", version: "1.0.0", schemaVersion: 1,
+            id: "scene-hierarchy-crud", name: "Hierarchy CRUD", entities: [{
+                id: "original", name: "Original", type: "empty", parentId: null,
+                components: [], children: []
+            }]
+        };
+        harness.game.staleScene = JSON.parse(JSON.stringify(source));
+        harness.game.entities = {
+            root: { id: "root", parentId: null, name: "Hierarchy CRUD", type: "group", children: ["original"], active: true, locked: false, expanded: true },
+            original: { id: "original", parentId: "root", name: "Original", type: "empty", children: [], active: true, locked: false, expanded: false }
+        };
+        harness.runner.openScene(source, "scenes/hierarchy-crud.scene");
+        harness.render();
+
+        expect(harness.clickCreateEntity(harness.renderHierarchy(), "empty")).toBe(true);
+        const created = harness.runner.currentScene.entities.find(entity => entity.name === "New empty");
+        expect(created !== undefined).toBe(true);
+        expect(harness.game.entities[created.id].parentId).toBe("root");
+
+        expect(harness.clickRenameEntity(harness.renderHierarchy(), created.id, "Renamed Entity")).toBe(true);
+        expect(harness.runner.currentScene.entities.find(entity => entity.id === created.id).name).toBe("Renamed Entity");
+        expect(harness.game.entities[created.id].name).toBe("Renamed Entity");
+
+        expect(harness.clickDuplicate(harness.renderHierarchy())).toBe(true);
+        const duplicate = harness.runner.currentScene.entities.find(entity => entity.id !== "original" && entity.id !== created.id);
+        expect(duplicate.name).toBe("Original");
+        expect(harness.game.entities["root"].children).toContain(duplicate.id);
+
+        const clickDelete = node => {
+            if (Array.isArray(node)) return node.some(clickDelete);
+            if (!node || typeof node !== "object") return false;
+            if (node.type === "ThemedContextMenuItem" && node.props?.children === "Delete") {
+                node.props.onClick();
+                return true;
+            }
+            const children = node.props?.children;
+            return Array.isArray(children) ? children.some(clickDelete) : clickDelete(children);
+        };
+        expect(clickDelete(harness.renderHierarchy())).toBe(true);
+        expect(harness.runner.currentScene.entities.some(entity => entity.id === "original")).toBe(false);
+        expect(harness.game.entities.original).toBeUndefined();
+        expect(harness.notifications.some(message => message.type === "editor:rename" && message.payload.id === created.id)).toBe(true);
+        expect(harness.notifications.some(message => message.type === "editor:delete" && message.payload.id === "original")).toBe(true);
+
+        harness.dispatchMenuEvent("save");
+        harness.runner.closeScene();
+        harness.runner.openScene(JSON.parse(harness.files.get("scenes/hierarchy-crud.scene")), "scenes/hierarchy-crud.scene");
+        const reopened = harness.runner.currentScene.entities;
+        expect(reopened.some(entity => entity.id === "original")).toBe(false);
+        expect(reopened.find(entity => entity.id === created.id).name).toBe("Renamed Entity");
+        expect(reopened.some(entity => entity.id === duplicate.id && entity.name === "Original")).toBe(true);
     });
 
     it("keeps a HierarchyPanel duplicate after File > Save, close, and reopen", () => {
@@ -338,6 +1564,13 @@ describe("Triton persistence bridge", () => {
         expect(harness.clickDuplicate(harness.renderHierarchy())).toBe(true);
         const duplicate = harness.runner.currentScene.entities[1];
         expect(duplicate.id).toContain("entity-");
+        expect(harness.game.entities.root.children).toEqual(["source", duplicate.id]);
+        expect(harness.game.entities[duplicate.id].children).toEqual([duplicate.children[0].id]);
+        expect(harness.game.entities[duplicate.children[0].id].parentId).toBe(duplicate.id);
+        expect(harness.game.entities[duplicate.children[0].id].name).toBe("Nested Source");
+        const runtimeSceneLoad = harness.notifications.filter(message => message.type === "editor:load-scene").pop();
+        expect(runtimeSceneLoad.payload.data.entities[1].id).toBe(duplicate.id);
+        expect(runtimeSceneLoad.payload.data.entities[1].children[0].id).toBe(duplicate.children[0].id);
 
         harness.dispatchMenuEvent("save");
         harness.runner.closeScene();
@@ -354,11 +1587,70 @@ describe("Triton persistence bridge", () => {
         expect(copy.children[0].components[0].id !== original.children[0].components[0].id).toBe(true);
     });
 
+    it("persists deletion of a nested entity after File > Save, close, and reopen", () => {
+        const harness = createMainHarness();
+        const source = {
+            type: "scene",
+            version: "1.0.0",
+            schemaVersion: 1,
+            id: "scene-main",
+            name: "Main Scene",
+            entities: [{
+                id: "parent",
+                name: "Parent",
+                type: "group",
+                parentId: null,
+                components: [],
+                children: [{
+                    id: "nested-delete-target",
+                    name: "Delete Me",
+                    type: "empty",
+                    parentId: "parent",
+                    components: [],
+                    children: []
+                }]
+            }]
+        };
+        harness.runner.openScene(source, "scenes/main.scene");
+        harness.render();
+
+        expect(harness.runner.deleteEntity("nested-delete-target")).toBe(true);
+        expect(harness.runner.isDirty).toBe(true);
+        harness.dispatchMenuEvent("save");
+        harness.runner.closeScene();
+        harness.runner.openScene(JSON.parse(harness.files.get("scenes/main.scene")), "scenes/main.scene");
+
+        const reopened = harness.runner.currentScene;
+        expect(reopened.entities[0].id).toBe("parent");
+        expect(reopened.entities[0].children).toEqual([]);
+        expect(harness.runner.isDirty).toBe(false);
+    });
+
     it("does not make a rejected scene read available to File > Save", () => {
         execFileSync(process.execPath, ["triton/tests/rejected-scene-save-harness.mjs"], {
             cwd: path.resolve("."),
             stdio: "pipe"
         });
         expect(true).toBe(true);
+    });
+
+    it("reports native scene-save failures as actionable editor diagnostics", async () => {
+        const harness = createMainHarness();
+        harness.runner.openScene({
+            type: "scene", version: "1.0.0", schemaVersion: 1,
+            id: "scene-save-error", name: "Save Error", entities: []
+        }, "scenes/save-error.scene");
+        harness.failSceneWrite(new Error("disk is read-only"));
+        harness.render();
+        harness.dispatchMenuEvent("save");
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        const diagnostic = harness.notifications.find(notification => notification.type === "editor:diagnostic");
+        expect(diagnostic && JSON.stringify(diagnostic.payload)).toBe(JSON.stringify({
+            code: "SCENE_SAVE_FAILED",
+            message: "disk is read-only",
+            source: "File > Save",
+            action: "Check project permissions and retry."
+        }));
     });
 });
