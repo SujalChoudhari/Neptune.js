@@ -143,7 +143,7 @@ test("Game View message bridge controls the real Application and forwards consol
     try {
         const sourcefile = path.resolve("triton/src/components/panels/GameViewPanel.tsx")
         const external = [
-            "react", "../../../../src/neptune.js?url", "@/lib/projectResourceBridge.mjs?url",
+            "react", "@tauri-apps/api/core", "../../../../src/neptune.js?url", "@/lib/projectResourceBridge.mjs?url",
             "@/lib/runtimeSelectionBridge.mjs", "@/lib/runtimeConsoleBridge.mjs", "@/lib/runtimeControlBridge.mjs"
         ]
         const bundle = buildSync({
@@ -164,6 +164,7 @@ test("Game View message bridge controls the real Application and forwards consol
         }
         const modules = {
             react,
+            "@tauri-apps/api/core": { invoke: async () => null },
             "../../../../src/neptune.js?url": "/assets/neptune.js",
             "@/lib/projectResourceBridge.mjs?url": "/assets/projectResourceBridge.mjs",
             "@/lib/runtimeSelectionBridge.mjs": { runtimeSelectionBridgeScript },
