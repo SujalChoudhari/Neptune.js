@@ -14,7 +14,7 @@ import { readRuntimeState, runtimeControlBridgeScript, runRuntimeControl } from 
 import { getSceneNavigationPath } from "../src/lib/projectNavigation.mjs";
 import { createEmptySceneAssetContent } from "../src/lib/projectAssetContent.mjs";
 import { createSceneHierarchyEntity } from "../src/lib/sceneHierarchy.mjs";
-import { createHierarchyEntityData } from "../src/lib/hierarchyEntityData.mjs";
+import { createHierarchyEntityData, createHierarchyEntityDataBranch } from "../src/lib/hierarchyEntityData.mjs";
 
 const root = path.resolve("triton");
 
@@ -414,6 +414,21 @@ describe("Triton persistence bridge", () => {
             transform: { position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 }, z: 0 },
             components: {}
         });
+    });
+
+    it("hydrates Inspector component data for a duplicated hierarchy branch", () => {
+        const branchData = createHierarchyEntityDataBranch({
+            id: "copy", name: "Copy", active: true,
+            transform: { pos: { x: 12, y: 24 }, rot: 0.5, scale: { x: 2, y: 3 } },
+            components: [{ type: "Sprite", props: { path: "hero.png", width: 32 } }],
+            children: [{ id: "copy-child", name: "Copy Child", active: false, children: [] }]
+        });
+        expect(branchData.copy).toEqual({
+            id: "copy", name: "Copy", active: true,
+            transform: { position: { x: 12, y: 24 }, rotation: 0.5, scale: { x: 2, y: 3 }, z: 0 },
+            components: { Sprite: { path: "hero.png", width: 32 } }
+        });
+        expect(branchData["copy-child"].active).toBe(false);
     });
 
     it("clears stale project navigation when a selected project's native scan fails", async () => {

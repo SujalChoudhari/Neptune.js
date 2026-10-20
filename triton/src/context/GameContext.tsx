@@ -10,7 +10,7 @@ import { removeEntityBranch } from "../lib/hierarchyEntityRemoval";
 import { readRuntimeState } from "../lib/runtimeControlBridge.mjs";
 import { readRuntimeSelection } from "../lib/runtimeSelectionBridge.mjs";
 import { createSceneHierarchyEntity } from "../lib/sceneHierarchy.mjs";
-import { createHierarchyEntityData } from "../lib/hierarchyEntityData.mjs";
+import { createHierarchyEntityData, createHierarchyEntityDataBranch } from "../lib/hierarchyEntityData.mjs";
 import { EditorGameRunner } from "../lib/editorGameRunner";
 
 interface GameContextType {
@@ -463,6 +463,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     const addEntityBranchToHierarchy = useCallback((branch: Record<string, any>, parentId: string) => {
         setEntities(previous => appendHierarchyBranch(previous, branch, parentId));
+        const branchData = createHierarchyEntityDataBranch(branch);
+        setEntityDataCache(previous => ({ ...previous, ...branchData }));
     }, []);
 
     const removeEntityFromHierarchy = useCallback((id: string) => {
