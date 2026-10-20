@@ -11,6 +11,9 @@ import { Sprite } from "../../src/rendering/sprite.js";
 import { BoxCollider } from "../../src/components/boxCollider.js";
 import { SceneTransition } from "../../src/components/sceneTransition.js";
 import { SpawnPoint } from "../../src/components/spawnPoint.js";
+import { Dialogue } from "../../src/components/dialogue.js";
+import { QuestDefinition } from "../../src/components/questDefinition.js";
+import { EnemyConfig } from "../../src/components/enemyConfig.js";
 import { TriggerCollider } from "../../src/nereid/collider.js";
 import { createEmptyTilemap, paintTileCell } from "../src/lib/tilemapAuthoring.mjs";
 import { isSafeSceneAssetPath } from "../src/lib/sceneTransitionAuthoring.mjs";
@@ -18,6 +21,9 @@ import { describe, it, expect } from "../../tests/tester.js";
 
 ComponentRegistry.register("SceneTransition", SceneTransition);
 ComponentRegistry.register("SpawnPoint", SpawnPoint);
+ComponentRegistry.register("Dialogue", Dialogue);
+ComponentRegistry.register("QuestDefinition", QuestDefinition);
+ComponentRegistry.register("EnemyConfig", EnemyConfig);
 ComponentRegistry.register("TriggerCollider", TriggerCollider);
 ComponentRegistry.register("Transform", Transform);
 ComponentRegistry.register("Sprite", Sprite);
@@ -672,7 +678,42 @@ describe("Triton persistence bridge", () => {
         expect(JSON.parse(harness.writes[0].content)).toEqual(harness.game.openedScene);
     });
 
-    it("loads editor-created scene transition output in the runtime after save and reopen", () => {
+    it("authors dialogue, quest, enemy, and transition entities through the hierarchy and loads saved components in the runtime", async () => {
+        const harness = createMainHarness();
+        harness.runner.openScene({ type: "scene", version: "1.0.0", schemaVersion: 1, id: "scene-gameplay-authoring", name: "Gameplay Authoring", entities: [] }, "scenes/gameplay.scene");
+        harness.game.entities = { root: { id: "root", children: [] } };
+
+        for (const type of ["dialogue", "quest", "enemy", "scene-transition"]) {
+            expect(harness.clickAddEntity(harness.renderHierarchy(), type)).toBe(true);
+        }
+
+        const authored = harness.runner.currentScene.entities;
+        const byType = Object.fromEntries(authored.map(entity => [entity.type, entity]));
+        expect(byType.dialogue).toBeDefined();
+        expect(byType.quest).toBeDefined();
+        expect(byType.enemy).toBeDefined();
+        expect(byType["scene-transition"]).toBeDefined();
+        expect(harness.runner.updateEntity(byType.dialogue.id, "Dialogue", { speaker: "Guide", text: "Find the key", next: "key-found" })).toBe(true);
+        expect(harness.runner.updateEntity(byType.quest.id, "QuestDefinition", { name: "Key Hunt", description: "Recover the key", objectiveId: "find-key", objective: "Find the key", required: 1 })).toBe(true);
+        expect(harness.runner.updateEntity(byType.enemy.id, "EnemyConfig", { maxHealth: 75, moveSpeed: 3, contactDamage: 12, behavior: "guard" })).toBe(true);
+        expect(harness.runner.updateEntity(byType["scene-transition"].id, "SceneTransition", { targetScene: "scenes/dungeon.scene", spawnPoint: "entrance", trigger: "interact" })).toBe(true);
+
+        await harness.writeScene("scenes/gameplay.scene", harness.runner.currentScene);
+        const saved = harness.files.get("scenes/gameplay.scene");
+        expect(saved).toBeDefined();
+        harness.runner.closeScene();
+        const reopened = harness.runner.openScene(JSON.parse(saved), "scenes/gameplay.scene");
+        const runtimeScene = SceneLoader.parse(reopened);
+        const runtimeByType = Object.fromEntries(runtimeScene.children.map(entity => [entity.type, entity]));
+
+        expect(runtimeByType.dialogue.GetComponent(Dialogue).properties).toEqual({ speaker: "Guide", text: "Find the key", next: "key-found" });
+        expect(runtimeByType.quest.GetComponent(QuestDefinition).properties).toEqual({ name: "Key Hunt", description: "Recover the key", objectiveId: "find-key", objective: "Find the key", required: 1 });
+        expect(runtimeByType.enemy.GetComponent(EnemyConfig).properties).toEqual({ maxHealth: 75, moveSpeed: 3, contactDamage: 12, behavior: "guard" });
+        expect(runtimeByType["scene-transition"].GetComponent(SceneTransition).properties).toEqual({ targetScene: "scenes/dungeon.scene", spawnPoint: "entrance", trigger: "interact" });
+        expect(runtimeByType["scene-transition"].GetComponent(TriggerCollider)).toBeDefined();
+    });
+
+    it("loads editor-created scene transition output in the runtime after save and reopen", async () => {
         const harness = createMainHarness();
         harness.runner.openScene({ type: "scene", version: "1.0.0", schemaVersion: 1, id: "scene-transition-integration", name: "Transition Integration", entities: [] }, "scenes/main.scene");
         expect(harness.runner.createEntity("root", {
