@@ -33,6 +33,8 @@ export class BoxCollider extends Component {
     deserialize(props) {
         if (props.size) this.size = new Vector2(props.size.x, props.size.y);
         if (props.offset) this.offset = new Vector2(props.offset.x, props.offset.y);
+        if (props.offsetX !== undefined) this.offset.x = props.offsetX;
+        if (props.offsetY !== undefined) this.offset.y = props.offsetY;
         // Direct width/height support for simpler JSON
         if (props.width !== undefined) this.size.x = props.width;
         if (props.height !== undefined) this.size.y = props.height;
