@@ -174,6 +174,32 @@ const sceneEntityLists = (scene: Record<string, any>): any[][] => {
     return lists
 }
 
+const ensureEntityIds = (scene: Record<string, any>) => {
+    const lists = sceneEntityLists(scene)
+    const usedIds = new Set<string>()
+    const reserve = (entities: unknown[]) => entities.forEach(entity => {
+        if (!isRecord(entity)) return
+        if (typeof entity.id === "string" && entity.id.trim()) usedIds.add(entity.id)
+        if (Array.isArray(entity.children)) reserve(entity.children)
+    })
+    lists.forEach(reserve)
+
+    let nextId = 0
+    const assign = (entities: unknown[]) => entities.forEach(entity => {
+        if (!isRecord(entity)) return
+        if (typeof entity.id !== "string" || !entity.id.trim()) {
+            let id = ""
+            do {
+                id = `entity-${nextId++}`
+            } while (usedIds.has(id))
+            entity.id = id
+            usedIds.add(id)
+        }
+        if (Array.isArray(entity.children)) assign(entity.children)
+    })
+    lists.forEach(assign)
+}
+
 const collectSceneIds = (scene: Record<string, any>) => {
     const entityIds = new Set<string>()
     const componentIds = new Set<string>()
@@ -313,6 +339,7 @@ export class EditorGameRunner {
         }
         const normalized = { ...clone(data), type: "scene" as const, version: SCENE_DATA_VERSION, schemaVersion: SCENE_SCHEMA_VERSION }
         ensureLayerIds(normalized)
+        ensureEntityIds(normalized)
         return normalized
     }
 

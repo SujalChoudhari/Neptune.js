@@ -373,6 +373,35 @@ describe("Triton persistence bridge", () => {
         expect(openedPath).toBe("scenes/main.scene");
     });
 
+    it("assigns stable collision-free IDs to legacy entities before runtime hydration", () => {
+        const { runner } = createMainHarness();
+        const payload = runner.validateScene({
+            type: "scene", version: "1.0.0", schemaVersion: 1, name: "Legacy IDs",
+            layers: [{
+                name: "Legacy Layer", type: "main", entities: [
+                    { name: "Legacy Parent", children: [{ name: "Legacy Child" }] },
+                    { id: "entity-0", name: "Existing ID", children: [] },
+                    { name: "Second Legacy Entity", children: [] }
+                ]
+            }]
+        });
+        const parentId = payload.layers[0].entities[0].id;
+        const childId = payload.layers[0].entities[0].children[0].id;
+        expect([parentId, childId, payload.layers[0].entities[1].id, payload.layers[0].entities[2].id]).toEqual([
+            "entity-1", "entity-2", "entity-0", "entity-3"
+        ]);
+        expect(runner.validateScene(payload).layers[0].entities[0].id).toBe(parentId);
+
+        runner.openScene(payload, "scenes/legacy.scene");
+        expect(runner.updateEntity(parentId, "transform", { position: { x: 8, y: 13 } })).toBe(true);
+        const runtimeScene = SceneLoader.parse(runner.currentScene);
+        const runtimeParent = runtimeScene.children[0].children[0];
+        expect(runtimeParent.id).toBe(parentId);
+        expect(runtimeParent.children[0].id).toBe(childId);
+        const position = runtimeParent.GetComponent(Transform).position;
+        expect({ x: position.x, y: position.y }).toEqual({ x: 8, y: 13 });
+    });
+
     it("starts with project selection instead of auto-loading the debug sample", () => {
         const harness = createMainHarness();
         const welcome = harness.render();
