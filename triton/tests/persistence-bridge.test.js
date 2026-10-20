@@ -15,7 +15,7 @@ import { Dialogue } from "../../src/components/dialogue.js";
 import { QuestDefinition } from "../../src/components/questDefinition.js";
 import { EnemyConfig } from "../../src/components/enemyConfig.js";
 import { TriggerCollider } from "../../src/nereid/collider.js";
-import { createEmptyTilemap, paintTileCell, paintTileCells, setCellMetadata, setTileMetadata, getTilesetPaletteIds, getTilesetTileOffset, getTilemapAttachError } from "../src/lib/tilemapAuthoring.mjs";
+import { createEmptyTilemap, paintTileCell, paintTileCells, setCellMetadata, setTileMetadata, getTilesetPaletteIds, getTilesetTileOffset, getTilesetGridSize, getTilemapAttachError } from "../src/lib/tilemapAuthoring.mjs";
 import { isSafeSceneAssetPath } from "../src/lib/sceneTransitionAuthoring.mjs";
 import { describe, it, expect } from "../../tests/tester.js";
 
@@ -848,6 +848,11 @@ describe("Triton persistence bridge", () => {
         expect(runtimeEntity.GetComponent(TriggerCollider).height).toBe(2);
     });
 
+    it("derives a bounded tileset grid from the loaded atlas dimensions", () => {
+        expect(getTilesetGridSize(64, 32, 16)).toEqual({ columns: 4, rows: 2, tileCount: 8 });
+        expect(() => getTilesetGridSize(8, 32, 16)).toThrow("at least one complete tile");
+    });
+
     it("paints a tile and persists TilemapPanel collision and navigation metadata from its UI controls", async () => {
         const source = path.join(root, "src", "components", "panels", "TilemapPanel.tsx");
         const bundle = bundleSource(source, [
@@ -890,7 +895,7 @@ describe("Triton persistence bridge", () => {
             width: 2,
             height: 1,
             columns: 2,
-            tileCount: 4,
+            tileCount: 64,
             tileSize: 16,
             tileset: "assets/tiles.png",
             data: [0, 0]
@@ -923,7 +928,7 @@ describe("Triton persistence bridge", () => {
             "@/context/GameContext": { useGameContext: () => gameContext },
             "@/lib/tilemapAuthoring.mjs": {
                 createEmptyTilemap, paintTileCells, setCellMetadata, setTileMetadata,
-                getTilesetPaletteIds, getTilesetTileOffset, getTilemapAttachError
+                getTilesetPaletteIds, getTilesetTileOffset, getTilesetGridSize, getTilemapAttachError
             }
         };
         const component = loadBundle(bundle, {
@@ -956,6 +961,13 @@ describe("Triton persistence bridge", () => {
         render();
         await Promise.resolve();
         let tree = render();
+        await Promise.resolve();
+        tree = render();
+        const atlasImage = find(tree, node => node.type === "img" && node.props?.alt === "Tileset atlas");
+        expect(atlasImage).toBeDefined();
+        atlasImage.props.onLoad({ currentTarget: { naturalWidth: 64, naturalHeight: 32 } });
+        tree = render();
+        expect(byLabel(tree, "Tileset palette tile count").props.value).toBe(8);
         expect(byLabel(tree, "Paint cell 1, 0; tile 0")).toBeDefined();
 
         byLabel(tree, "Tile ID to paint").props.onChange({ target: { value: "3" } });
@@ -981,6 +993,8 @@ describe("Triton persistence bridge", () => {
 
         const savedMap = JSON.parse(storedFiles.get(mapPath));
         expect(savedMap.data).toEqual([0, 3]);
+        expect(savedMap.columns).toBe(4);
+        expect(savedMap.tileCount).toBe(8);
         expect(savedMap.metadata["3"]).toEqual({ collision: true, walkable: false, terrain: "stone" });
         expect(savedMap.cellMetadata["1"]).toEqual({ collision: false, walkable: true, terrain: "moss" });
         expect(loadCalls).toEqual(["scenes/main.scene"]);

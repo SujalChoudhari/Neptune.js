@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { useFileSystem } from '@/context/FileSystemContext';
 import { useGameContext } from '@/context/GameContext';
-import { setTileMetadata, setCellMetadata, paintTileCells, getTilesetPaletteIds, getTilesetTileOffset, createEmptyTilemap, getTilemapAttachError } from '@/lib/tilemapAuthoring.mjs';
+import { setTileMetadata, setCellMetadata, paintTileCells, getTilesetPaletteIds, getTilesetTileOffset, getTilesetGridSize, createEmptyTilemap, getTilemapAttachError } from '@/lib/tilemapAuthoring.mjs';
 
 interface TileMetadata {
     walkable?: boolean;
@@ -385,7 +385,20 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
             {tilemap && (
                 <div className="flex min-h-0 max-h-40 flex-col gap-1 overflow-auto rounded border border-border bg-card/50 p-2" aria-label="Tileset tile palette">
                     {tilesetPreview && <img src={tilesetPreview} alt="Tileset atlas" className="hidden" onLoad={(event) => {
-                        setAtlasSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight });
+                        const width = event.currentTarget.naturalWidth;
+                        const height = event.currentTarget.naturalHeight;
+                        setAtlasSize({ width, height });
+                        try {
+                            const atlas = getTilesetGridSize(width, height, atlasTileSize);
+                            const tileCount = Math.min(tilemap.tileCount ?? atlas.tileCount, atlas.tileCount);
+                            setPaletteCount(tileCount);
+                            if (tilemap.columns !== atlas.columns || tilemap.tileCount !== tileCount) {
+                                setTilemap({ ...tilemap, columns: atlas.columns, tileCount });
+                                setIsDirty(true);
+                            }
+                        } catch (atlasError) {
+                            setError(atlasError instanceof Error ? atlasError.message : String(atlasError));
+                        }
                     }} />}
                     <div className="flex items-center gap-2">
                         <span className="text-xs">Tileset tile palette</span>

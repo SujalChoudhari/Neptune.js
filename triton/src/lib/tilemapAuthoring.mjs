@@ -46,6 +46,18 @@ export function getTilesetTileOffset(tileId, columns, tileSize) {
     return { x: (tileId % columns) * tileSize, y: Math.floor(tileId / columns) * tileSize };
 }
 
+export function getTilesetGridSize(width, height, tileSize) {
+    if (![width, height, tileSize].every(Number.isFinite) ||
+        !Number.isInteger(width) || !Number.isInteger(height) ||
+        width <= 0 || height <= 0 || tileSize <= 0) {
+        throw new TypeError('Tileset dimensions and tile size must be positive numbers');
+    }
+    const columns = Math.floor(width / tileSize);
+    const rows = Math.floor(height / tileSize);
+    if (columns < 1 || rows < 1) throw new RangeError('Tileset image must contain at least one complete tile');
+    return { columns, rows, tileCount: Math.min(columns * rows, 4096) };
+}
+
 export function setCellMetadata(map, x, y, updates) {
     if (!map || typeof map !== 'object' || Array.isArray(map) ||
         !Number.isInteger(map.width) || map.width <= 0 || !Number.isInteger(map.height) || map.height <= 0) {
