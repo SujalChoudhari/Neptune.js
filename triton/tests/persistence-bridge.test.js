@@ -357,6 +357,31 @@ function loadBundle(bundle, context) {
 }
 
 describe("Triton persistence bridge", () => {
+    it("rejects object-map scene entities before accepting the scene payload", () => {
+        const { runner } = createMainHarness();
+        let rejected = false;
+        try {
+            runner.validateScene({
+                type: "scene", version: "1.0.0", schemaVersion: 1,
+                name: "Invalid map", entities: { hero: { id: "hero", name: "Hero", children: [] } }
+            });
+        } catch (error) {
+            rejected = String(error).includes("entities must be an array");
+        }
+        expect(rejected).toBe(true);
+
+        let layerRejected = false;
+        try {
+            runner.validateScene({
+                type: "scene", version: "1.0.0", schemaVersion: 1, name: "Invalid layer",
+                layers: [{ name: "Main", entities: { hero: { id: "hero" } } }]
+            });
+        } catch (error) {
+            layerRejected = String(error).includes("Layer entities must be an array");
+        }
+        expect(layerRejected).toBe(true);
+    });
+
     it("opens only scene assets from the project navigator using canonical node IDs", () => {
         expect(getSceneNavigationPath({ id: "scenes/main.scene", name: "main.scene", type: "file" })).toBe("scenes/main.scene");
         expect(getSceneNavigationPath({ id: "legacy/intro.scn", name: "INTRO.SCN", type: "file" })).toBe("legacy/intro.scn");

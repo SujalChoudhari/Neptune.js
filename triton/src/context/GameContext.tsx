@@ -10,6 +10,7 @@ import { removeEntityBranch } from "../lib/hierarchyEntityRemoval";
 import { readRuntimeState } from "../lib/runtimeControlBridge.mjs";
 import { readRuntimeSelection } from "../lib/runtimeSelectionBridge.mjs";
 import { createSceneHierarchyEntity } from "../lib/sceneHierarchy.mjs";
+import { EditorGameRunner } from "../lib/editorGameRunner";
 
 interface GameContextType {
     isPlaying: boolean;
@@ -115,7 +116,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
         // 2. Read File directly (Data)
         try {
-            const data = await readScene(path);
+            const data = EditorGameRunner.validateScene(await readScene(path));
             // A failed read must never turn an untrusted file path into the
             // current save target. Commit the scene identity only after the
             // versioned payload has been accepted by the native bridge.
@@ -142,7 +143,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             newEntities['root'] = {
                 id: 'root',
                 parentId: null,
-                name: data.name || 'Main Scene',
+                name: typeof data.name === 'string' && data.name ? data.name : 'Main Scene',
                 type: 'group',
                 children: [],
                 active: true,

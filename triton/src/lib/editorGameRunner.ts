@@ -295,6 +295,12 @@ export class EditorGameRunner {
     static validateScene(data: unknown): ScenePayload {
         assertVersion(data, "scene")
         if (!isRecord(data)) throw new Error("Scene data must be a JSON object.")
+        if (data.entities !== undefined && !Array.isArray(data.entities)) {
+            throw new Error("Scene entities must be an array; object-map entity data is unsupported.")
+        }
+        if (Array.isArray(data.layers) && data.layers.some((layer: unknown) => isRecord(layer) && layer.entities !== undefined && !Array.isArray(layer.entities))) {
+            throw new Error("Layer entities must be an array; object-map entity data is unsupported.")
+        }
         const issue = collectResourceIssues(data)[0]
         if (issue) {
             const error = new Error(`[${RESOURCE_REFERENCE_ERROR_CODE}] Invalid ${issue.kind} resource reference '${displayReference(issue.reference)}' at ${issue.source}: ${issue.reason}. Expected a non-empty path, id, uri, or key.`)
