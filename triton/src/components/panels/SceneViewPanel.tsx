@@ -3,6 +3,7 @@ import neptuneEntryUrl from "../../../../src/neptune.js?url";
 import cameraUrl from "../../../../src/thalassa/camera.js?url";
 import scenePickingUrl from "@/lib/scenePicking.mjs?url";
 import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
+import { runtimeEntityBridgeScript } from "../../lib/runtimeEntityBridge.mjs";
 import { translateOnAxis, getColliderOverlayBounds, isSceneViewBridgeMessageSource } from "@/lib/scenePicking.mjs";
 import { invoke } from "@tauri-apps/api/core";
 import { ThemedIconButton } from "@/components/library";
@@ -217,7 +218,9 @@ export function SceneViewPanel() {
         import { pickEntityAt } from "${scenePickingUrl}";
         import { installProjectResourceBridge } from "${projectResourceBridgeUrl}";
         const projectResourceBridge = installProjectResourceBridge();
-        await import("${neptuneEntryUrl}");
+        const engineModule = await import("${neptuneEntryUrl}");
+        window.__neptuneEngineModule = engineModule;
+        ${runtimeEntityBridgeScript}
         
         const findEntity = (root, id) => {
              if (!root) return null;

@@ -15,6 +15,7 @@ import { BoxCollider } from "../../src/components/boxCollider.js";
 import { Hitbox, Hurtbox, TriggerCollider } from "../../src/nereid/collider.js";
 import { Sprite } from "../../src/rendering/sprite.js";
 import { createEmptyTilemap, paintTileCell, setCellMetadata, setTileMetadata } from "../src/lib/tilemapAuthoring.mjs";
+import { createRuntimeEntity, runtimeEntityBridgeScript } from "../src/lib/runtimeEntityBridge.mjs";
 
 function createEditorRunner() {
     const sourcefile = path.resolve("triton/src/lib/editorGameRunner.ts");
@@ -172,6 +173,44 @@ test("saved editor-authored scene loads through the Application runtime", async 
         assert.equal(paintedTile.GetComponent(BoxCollider), undefined);
         assert.deepEqual(blockedEmptyCell.tileMetadata, { collision: true, walkable: false, terrain: "wall" });
         assert.ok(blockedEmptyCell.GetComponent(BoxCollider), "authored blocked empty cell becomes a runtime collider");
+
+        const liveHitbox = createRuntimeEntity(application, runtimeEntry, {
+            id: "live-hitbox-child",
+            parentId: "spawn-authored-1",
+            name: "Live Hitbox",
+            active: true,
+            transform: { pos: { x: 3, y: 4 }, rot: 0.5, scale: { x: 1, y: 1 } },
+            components: [{ type: "Hitbox", props: { width: 3, height: 5, offsetX: 1, offsetY: -2 } }]
+        });
+        assert.ok(liveHitbox, "the live runtime bridge creates an authored child entity");
+        assert.equal(liveHitbox.GetComponent(Hitbox).width, 3);
+        assert.equal(runtimeEntity.children.some(entity => entity.id === "live-hitbox-child"), true);
+
+        const bridgeListeners = [];
+        const bridgeWindow = {
+            game: application,
+            __neptuneEngineModule: runtimeEntry,
+            addEventListener(type, listener) {
+                if (type === "message") bridgeListeners.push(listener);
+            }
+        };
+        vm.runInNewContext(runtimeEntityBridgeScript, { window: bridgeWindow });
+        bridgeListeners[0]({
+            data: {
+                type: "editor:create-entity",
+                payload: {
+                    id: "message-authored-spawn",
+                    parentId: "root",
+                    name: "Message Spawn",
+                    active: true,
+                    transform: { pos: { x: 11, y: 12 }, rot: 0, scale: { x: 1, y: 1 } },
+                    components: [{ type: "SpawnPoint", props: { spawnId: "message-entry", facing: "left" } }]
+                }
+            }
+        });
+        const messageSpawn = runtimeScene.children.find(entity => entity.id === "message-authored-spawn");
+        assert.ok(messageSpawn, "the iframe message bridge inserts the entity into the live scene");
+        assert.deepEqual(messageSpawn.GetComponent(SpawnPoint).properties, { spawnId: "message-entry", facing: "left" });
     } finally {
         if (originalDocument === undefined) delete globalThis.document;
         else globalThis.document = originalDocument;

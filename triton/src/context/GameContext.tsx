@@ -20,6 +20,7 @@ interface GameContextType {
     stop: () => void;
     selectEntity: (id: string, multi: boolean) => void;
     moveEntities: (ids: string[], targetParentId: string, index?: number) => void;
+    addEntityToHierarchy: (entity: SceneEntity, components?: Array<{ type: string; props?: Record<string, any> }>) => void;
     updateComponent: (id: string, component: string, field: string, value: any) => void;
     markAsMainScene: () => void;
 
@@ -67,6 +68,39 @@ export function GameProvider({ children }: { children: ReactNode }) {
     // Selection State
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [selectedEntitiesData, setSelectedEntitiesData] = useState<Record<string, EntityData>>({});
+
+    const addEntityToHierarchy = useCallback((entity: SceneEntity, components: Array<{ type: string; props?: Record<string, any> }> = []) => {
+        setEntities(previous => {
+            if (previous[entity.id]) return previous;
+            const parentId = entity.parentId && previous[entity.parentId] ? entity.parentId : 'root';
+            const parent = previous[parentId];
+            if (!parent) return previous;
+            return {
+                ...previous,
+                [parentId]: { ...parent, children: [...parent.children, entity.id] },
+                [entity.id]: { ...entity, parentId, children: [...(entity.children || [])] }
+            };
+        });
+        setEntityDataCache(previous => {
+            if (previous[entity.id]) return previous;
+            const transformProps = components.find(component => component.type.toLowerCase() === 'transform')?.props || {};
+            const position = transformProps.position || transformProps.pos || { x: 0, y: 0 };
+            const scale = transformProps.scale || { x: 1, y: 1 };
+            const data: EntityData = {
+                id: entity.id,
+                name: entity.name,
+                active: entity.active,
+                transform: {
+                    position: { x: position.x ?? 0, y: position.y ?? 0 },
+                    rotation: transformProps.rotation ?? transformProps.rot ?? 0,
+                    scale: { x: scale.x ?? 1, y: scale.y ?? 1 },
+                    z: transformProps.z ?? 0
+                },
+                components: Object.fromEntries(components.map(component => [component.type, component.props || {}]))
+            };
+            return { ...previous, [entity.id]: data };
+        });
+    }, []);
 
     // Computed for backward compatibility (primary selection)
     const selectedEntityData = useMemo(() => {
@@ -547,6 +581,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             stop,
             selectEntity,
             moveEntities,
+            addEntityToHierarchy,
             updateComponent,
             markAsMainScene,
             notifyGame,

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { invoke } from "@tauri-apps/api/core";
 import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
+import { runtimeEntityBridgeScript } from "../../lib/runtimeEntityBridge.mjs";
 // We use the ?url suffix to get the URL of the module script
 // This requires Vite to solve the path.
 // Path: src/components/panels/GameViewPanel.tsx -> ../../../.. -> root
@@ -55,7 +56,9 @@ export function GameViewPanel() {
         // Basic Game Loader
         import { installProjectResourceBridge } from "${projectResourceBridgeUrl}";
         const projectResourceBridge = installProjectResourceBridge();
-        await import("${neptuneEntryUrl}");
+        const engineModule = await import("${neptuneEntryUrl}");
+        window.__neptuneEngineModule = engineModule;
+        ${runtimeEntityBridgeScript}
         
         // Helper to find deep entities
         const findEntity = (root, id) => {

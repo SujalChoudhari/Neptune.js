@@ -32,7 +32,7 @@ function createSceneViewHarness() {
     ];
     const bundle = buildSync({
         bundle: true, format: 'cjs', platform: 'node', write: false,
-        stdin: { contents: fs.readFileSync(sourcefile, 'utf8'), loader: 'tsx', sourcefile }, external
+        stdin: { contents: fs.readFileSync(sourcefile, 'utf8'), loader: 'tsx', sourcefile, resolveDir: path.dirname(sourcefile) }, external
     }).outputFiles[0].text;
     const slots = [];
     let hookIndex = 0;

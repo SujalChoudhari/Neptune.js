@@ -21,7 +21,8 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         selectedIds,
         selectEntity,
         moveEntities,
-        notifyGame
+        notifyGame,
+        addEntityToHierarchy
     } = useGameContext()
 
     const [searchQuery, setSearchQuery] = useState("")
@@ -95,8 +96,28 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
                 : type === 'hurtbox'
                     ? [{ type: 'Hurtbox', props: { width: 1, height: 1, offsetX: 0, offsetY: 0 } }]
             : undefined
-        if (!persistenceParentId || !EditorGameRunner.createEntity(persistenceParentId, { id, name, type, components })) return
-        notifyGame('editor:create-entity', { id, parentId, name, type });
+        const entityComponents = components || [];
+        if (!persistenceParentId || !EditorGameRunner.createEntity(persistenceParentId, { id, name, type, components: entityComponents })) return;
+        const entity: SceneEntity = {
+            id,
+            parentId,
+            name,
+            type: type as SceneEntity['type'],
+            children: [],
+            active: true,
+            locked: false,
+            expanded: false
+        };
+        addEntityToHierarchy(entity, entityComponents);
+        notifyGame('editor:create-entity', {
+            id,
+            parentId: persistenceParentId,
+            name,
+            type,
+            active: true,
+            transform: { pos: { x: 0, y: 0 }, rot: 0, scale: { x: 1, y: 1 } },
+            components: entityComponents
+        });
     }
 
     // Simple search filtering

@@ -15,7 +15,7 @@ import { SpawnPoint } from "../../src/components/spawnPoint.js";
 import { Dialogue } from "../../src/components/dialogue.js";
 import { QuestDefinition } from "../../src/components/questDefinition.js";
 import { EnemyConfig } from "../../src/components/enemyConfig.js";
-import { TriggerCollider } from "../../src/nereid/collider.js";
+import { Hitbox, Hurtbox, TriggerCollider } from "../../src/nereid/collider.js";
 import { createEmptyTilemap, paintTileCell, paintTileCells, setCellMetadata, setTileMetadata, getTilesetPaletteIds, getTilesetTileOffset, getTilesetGridSize, getTilemapAttachError } from "../src/lib/tilemapAuthoring.mjs";
 import { isSafeSceneAssetPath } from "../src/lib/sceneTransitionAuthoring.mjs";
 import { describe, it, expect } from "../../tests/tester.js";
@@ -26,6 +26,8 @@ ComponentRegistry.register("Dialogue", Dialogue);
 ComponentRegistry.register("QuestDefinition", QuestDefinition);
 ComponentRegistry.register("EnemyConfig", EnemyConfig);
 ComponentRegistry.register("TriggerCollider", TriggerCollider);
+ComponentRegistry.register("Hitbox", Hitbox);
+ComponentRegistry.register("Hurtbox", Hurtbox);
 ComponentRegistry.register("Transform", Transform);
 ComponentRegistry.register("Sprite", Sprite);
 ComponentRegistry.register("BoxCollider", BoxCollider);
@@ -75,6 +77,8 @@ function createMainHarness() {
 
     const listeners = [];
     const writes = [];
+    const notifications = [];
+    const addedEntities = [];
     const invokedCommands = [];
     const files = new Map();
     const runner = loadBundle(runnerBundle, {});
@@ -191,7 +195,8 @@ function createMainHarness() {
                 selectedIds: [],
                 selectEntity() {},
                 moveEntities() {},
-                notifyGame() {},
+                addEntityToHierarchy(entity, components) { addedEntities.push({ entity, components }); },
+                notifyGame(type, payload) { notifications.push({ type, payload }); },
                 saveScene: async () => writeScene("scenes/main.scene", game.staleScene || game.openedScene)
             })
         },
@@ -264,7 +269,7 @@ function createMainHarness() {
         return Array.isArray(children) ? children.some(child => clickAddEntity(child, type)) : clickAddEntity(children, type);
     };
 
-    return { game, runner: runner.EditorGameRunner, files, writes, listeners, invokedCommands, render, renderHierarchy, clickDuplicate, clickAddEntity, dispatchMenuEvent, writeScene };
+    return { game, runner: runner.EditorGameRunner, files, writes, notifications, addedEntities, listeners, invokedCommands, render, renderHierarchy, clickDuplicate, clickAddEntity, dispatchMenuEvent, writeScene };
 }
 
 function loadBundle(bundle, context) {
@@ -280,6 +285,69 @@ function loadBundle(bundle, context) {
         require: context.require || (() => { throw new Error("Unexpected import"); })
     });
     return module.exports;
+}
+
+function createGameContextHarness(scene) {
+    const sourcefile = path.join(root, "src", "context", "GameContext.tsx");
+    const bundle = buildSync({
+        bundle: true,
+        format: "cjs",
+        platform: "node",
+        write: false,
+        stdin: { contents: fs.readFileSync(sourcefile, "utf8"), loader: "tsx", sourcefile, resolveDir: path.dirname(sourcefile) },
+        external: ["react", "react/jsx-runtime", "./FileSystemContext"]
+    }).outputFiles[0].text;
+    const state = [];
+    let cursor = 0;
+    const context = { Provider: "GameContext.Provider" };
+    const react = {
+        createElement: (type, props, ...children) => ({ type, props: { ...(props || {}), children: children.length > 1 ? children : children[0] } }),
+        createContext: () => context,
+        useContext: () => context.value,
+        useState(initial) {
+            const index = cursor++;
+            if (!(index in state)) state[index] = initial;
+            return [state[index], value => {
+                state[index] = typeof value === "function" ? value(state[index]) : value;
+            }];
+        },
+        useCallback: callback => callback,
+        useMemo: callback => callback(),
+        useEffect() {}
+    };
+    const jsx = (type, props) => ({ type, props: props || {} });
+    const modules = {
+        react,
+        "react/jsx-runtime": { jsx, jsxs: jsx },
+        "./FileSystemContext": {
+            useFileSystem: () => ({
+                readScene: async () => scene,
+                readProject: async () => ({}),
+                writeProject: async () => true,
+                writeScene: async () => true,
+                rootPath: "/project"
+            })
+        }
+    };
+    const module = { exports: {} };
+    vm.runInNewContext(bundle, {
+        console,
+        React: react,
+        document: { querySelectorAll: () => [] },
+        window: { dispatchEvent() {} },
+        CustomEvent: class CustomEvent {},
+        module,
+        exports: module.exports,
+        require: id => {
+            if (!(id in modules)) throw new Error(`Unexpected GameContext dependency: ${id}`);
+            return modules[id];
+        }
+    });
+    const render = () => {
+        cursor = 0;
+        return module.exports.GameProvider({ children: null }).props.value;
+    };
+    return { render };
 }
 
 describe("Triton persistence bridge", () => {
@@ -485,7 +553,7 @@ describe("Triton persistence bridge", () => {
         expect(hierarchy.includes("type === 'spawn-point' ? 'Spawn Point' : type === 'trigger-area' ? 'Trigger Area'")).toBe(true);
         expect(hierarchy.includes("type: 'SpawnPoint', props: { spawnId: id, facing: 'right' }")).toBe(true);
         expect(runtime.includes('ComponentRegistry.register("SpawnPoint", SpawnPoint)')).toBe(true);
-        expect(hierarchy.includes("EditorGameRunner.createEntity(persistenceParentId, { id, name, type, components })")).toBe(true);
+        expect(hierarchy.includes("EditorGameRunner.createEntity(persistenceParentId, { id, name, type, components: entityComponents })")).toBe(true);
         expect(loader.includes('if (typeof entityData.type === "string") entity.type = entityData.type;')).toBe(true);
     });
 
@@ -498,7 +566,7 @@ describe("Triton persistence bridge", () => {
         expect(engineTypes.includes("'entity'")).toBe(true);
         expect(hierarchy.includes("type === 'entity' ? 'New Entity'")).toBe(true);
         expect(hierarchy.includes("type: 'Transform', props: { position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 } }")).toBe(true);
-        expect(hierarchy.includes("EditorGameRunner.createEntity(persistenceParentId, { id, name, type, components })")).toBe(true);
+        expect(hierarchy.includes("EditorGameRunner.createEntity(persistenceParentId, { id, name, type, components: entityComponents })")).toBe(true);
     });
 
     it("authors dialogue entities with editable runtime Dialogue properties", () => {
@@ -733,14 +801,57 @@ describe("Triton persistence bridge", () => {
         expect(JSON.parse(harness.writes[0].content)).toEqual(harness.game.openedScene);
     });
 
+    it("keeps production hierarchy and Inspector cache synchronized for a new gameplay entity", async () => {
+        const harness = createGameContextHarness({
+            type: "scene",
+            version: "1.0.0",
+            schemaVersion: 1,
+            id: "scene-context-authoring",
+            name: "Context Authoring",
+            entities: []
+        });
+        let context = harness.render();
+        await context.loadScene("scenes/context.scene");
+
+        context = harness.render();
+        const entity = {
+            id: "context-hitbox",
+            parentId: "root",
+            name: "Context Hitbox",
+            type: "hitbox",
+            children: [],
+            active: true,
+            locked: false,
+            expanded: false
+        };
+        const components = [{ type: "Hitbox", props: { width: 3, height: 5, offsetX: 1, offsetY: -2 } }];
+        context.addEntityToHierarchy(entity, components);
+
+        context = harness.render();
+        expect(context.entities.root.children.join(",")).toBe("context-hitbox");
+        expect(context.entities["context-hitbox"].name).toBe("Context Hitbox");
+        context.selectEntity("context-hitbox", false);
+
+        context = harness.render();
+        expect(context.selectedEntityData.id).toBe("context-hitbox");
+        expect(context.selectedEntityData.components.Hitbox).toEqual(components[0].props);
+        expect(context.selectedEntityData.transform.position).toEqual({ x: 0, y: 0 });
+    });
+
     it("authors dialogue, quest, enemy, and transition entities through the hierarchy and loads saved components in the runtime", async () => {
         const harness = createMainHarness();
         harness.runner.openScene({ type: "scene", version: "1.0.0", schemaVersion: 1, id: "scene-gameplay-authoring", name: "Gameplay Authoring", entities: [] }, "scenes/gameplay.scene");
         harness.game.entities = { root: { id: "root", children: [] } };
 
-        for (const type of ["dialogue", "quest", "enemy", "scene-transition"]) {
+        for (const type of ["dialogue", "quest", "enemy", "scene-transition", "spawn-point", "trigger-area", "hitbox", "hurtbox"]) {
             expect(harness.clickAddEntity(harness.renderHierarchy(), type)).toBe(true);
         }
+
+        expect(harness.addedEntities).toHaveLength(8);
+        expect(harness.addedEntities.every(({ entity, components }) => entity.id && entity.parentId === "root" && Array.isArray(components))).toBe(true);
+        const runtimeNotifications = harness.notifications.filter(({ type }) => type === "editor:create-entity");
+        expect(runtimeNotifications).toHaveLength(8);
+        expect(runtimeNotifications.every(({ payload }) => payload.parentId === "root" && payload.transform && Array.isArray(payload.components))).toBe(true);
 
         const authored = harness.runner.currentScene.entities;
         const byType = Object.fromEntries(authored.map(entity => [entity.type, entity]));
@@ -766,6 +877,10 @@ describe("Triton persistence bridge", () => {
         expect(runtimeByType.enemy.GetComponent(EnemyConfig).properties).toEqual({ maxHealth: 75, moveSpeed: 3, contactDamage: 12, behavior: "guard" });
         expect(runtimeByType["scene-transition"].GetComponent(SceneTransition).properties).toEqual({ targetScene: "scenes/dungeon.scene", spawnPoint: "entrance", trigger: "interact" });
         expect(runtimeByType["scene-transition"].GetComponent(TriggerCollider)).toBeDefined();
+        expect(runtimeByType["spawn-point"].GetComponent(SpawnPoint).properties).toEqual({ spawnId: runtimeByType["spawn-point"].id, facing: "right" });
+        expect(runtimeByType["trigger-area"].GetComponent(TriggerCollider)).toBeDefined();
+        expect(runtimeByType.hitbox.GetComponent(Hitbox)).toBeDefined();
+        expect(runtimeByType.hurtbox.GetComponent(Hurtbox)).toBeDefined();
     });
 
     it("loads editor-created scene transition output in the runtime after save and reopen", async () => {

@@ -14,7 +14,7 @@ function createGameView() {
         format: "cjs",
         platform: "node",
         write: false,
-        stdin: { contents: fs.readFileSync(sourcefile, "utf8"), loader: "tsx", sourcefile }
+        stdin: { contents: fs.readFileSync(sourcefile, "utf8"), loader: "tsx", sourcefile, resolveDir: path.dirname(sourcefile) }
     }).outputFiles[0].text;
     const jsx = (type, props, ...children) => ({ type, props: { ...(props || {}), ...(children.length ? { children: children.length === 1 ? children[0] : children } : {}) } });
     const effects = [];
