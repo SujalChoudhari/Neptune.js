@@ -353,9 +353,14 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                     className="w-20 rounded border border-border bg-card px-2 py-1 text-xs"
                     type="number"
                     min="0"
+                    max={Math.max(0, Math.min(paletteCount, availableTileCount ?? 4096) - 1)}
                     step="1"
                     value={tileId}
-                    onChange={(event) => setTileId(Math.max(0, Math.floor(Number(event.target.value) || 0)))}
+                    onChange={(event) => setTileId(Math.max(
+                        0,
+                        Math.min(Math.max(0, Math.min(paletteCount, availableTileCount ?? 4096) - 1),
+                            Math.floor(Number(event.target.value) || 0))
+                    ))}
                 />
                 <button
                     type="button"
@@ -396,6 +401,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                             const tileCount = Math.min(tilemap.tileCount ?? atlas.tileCount, atlas.tileCount);
                             setAvailableTileCount(atlas.tileCount);
                             setPaletteCount(tileCount);
+                            setTileId((current) => Math.min(current, tileCount - 1));
                             if (tilemap.columns !== atlas.columns || tilemap.tileCount !== tileCount) {
                                 setTilemap({ ...tilemap, columns: atlas.columns, tileCount });
                                 setIsDirty(true);
@@ -420,6 +426,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                             onChange={(event) => {
                                 const count = Math.max(1, Math.min(availableTileCount ?? 4096, 4096, Math.floor(Number(event.target.value) || 1)));
                                 setPaletteCount(count);
+                                setTileId((current) => Math.min(current, count - 1));
                                 setTilemap({ ...tilemap, tileCount: count });
                                 setIsDirty(true);
                             }}
