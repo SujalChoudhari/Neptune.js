@@ -1011,6 +1011,20 @@ describe("Triton persistence bridge", () => {
         expect(savedMap.metadata["3"]).toEqual({ collision: true, walkable: false, terrain: "stone" });
         expect(savedMap.cellMetadata["1"]).toEqual({ collision: false, walkable: true, terrain: "moss" });
         expect(loadCalls).toEqual(["scenes/main.scene"]);
+
+        tree = render();
+        byLabel(tree, "Tile size in pixels").props.onChange({ target: { value: "32" } });
+        tree = render();
+        expect(byLabel(tree, "Tileset palette tile count").props.value).toBe(2);
+        expect(byLabel(tree, "Tile ID to paint").props.value).toBe(1);
+        const resizedSaveButton = find(tree, node => node.type === "button" && node.props?.children === "Save Map");
+        expect(resizedSaveButton).toBeDefined();
+        resizedSaveButton.props.onClick();
+        await new Promise(resolve => setTimeout(resolve, 0));
+        const resizedMap = JSON.parse(storedFiles.get(mapPath));
+        expect(resizedMap.tileSize).toBe(32);
+        expect(resizedMap.columns).toBe(2);
+        expect(resizedMap.tileCount).toBe(2);
     });
 
     it("saves and loads a TilemapPanel map attached to an editor-authored scene", async () => {

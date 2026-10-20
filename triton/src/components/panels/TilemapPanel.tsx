@@ -338,7 +338,21 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                             onChange={(event) => {
                                 const tileSize = Number(event.target.value);
                                 if (!Number.isInteger(tileSize) || tileSize < 1 || tileSize > 256) return;
-                                setTilemap({ ...tilemap, tileSize });
+                                let updatedMap = { ...tilemap, tileSize };
+                                if (atlasSize) {
+                                    try {
+                                        const atlas = getTilesetGridSize(atlasSize.width, atlasSize.height, tileSize);
+                                        const tileCount = Math.min(tilemap.tileCount ?? atlas.tileCount, atlas.tileCount);
+                                        setAvailableTileCount(atlas.tileCount);
+                                        setPaletteCount(tileCount);
+                                        setTileId((current) => Math.min(current, tileCount - 1));
+                                        updatedMap = { ...updatedMap, columns: atlas.columns, tileCount };
+                                    } catch (atlasError) {
+                                        setAvailableTileCount(0);
+                                        setError(atlasError instanceof Error ? atlasError.message : String(atlasError));
+                                    }
+                                }
+                                setTilemap(updatedMap);
                                 setIsDirty(true);
                             }}
                         />
