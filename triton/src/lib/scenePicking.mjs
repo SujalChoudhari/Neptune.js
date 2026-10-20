@@ -62,3 +62,7 @@ export function getColliderOverlayBounds(entity) {
         return [{ type, color, x: position.x + offsetX, y: position.y + offsetY, width, height }];
     });
 }
+
+export function isSceneViewBridgeMessageSource(source, iframeWindow) {
+    return iframeWindow !== null && iframeWindow !== undefined && source === iframeWindow;
+}

@@ -15,3 +15,4 @@ export interface ColliderOverlayBounds {
     height: number;
 }
 export function getColliderOverlayBounds(entity: unknown): ColliderOverlayBounds[];
+export function isSceneViewBridgeMessageSource(source: MessageEventSource | null, iframeWindow: Window | null | undefined): boolean;

@@ -4,12 +4,21 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import path from 'node:path';
 import { buildSync } from 'esbuild';
-import { pickEntityAt, translateOnAxis, getColliderOverlayBounds } from '../src/lib/scenePicking.mjs';
+import { pickEntityAt, translateOnAxis, getColliderOverlayBounds, isSceneViewBridgeMessageSource } from '../src/lib/scenePicking.mjs';
 
 const entity = (id, x, y, children = []) => ({
     id,
     components: [{ position: { x, y }, scale: { x: 1, y: 1 } }, { width: 32, height: 24 }],
     children
+});
+
+test('Scene View bridge trusts only its own live iframe for all message types', () => {
+    const trustedWindow = {};
+    assert.equal(isSceneViewBridgeMessageSource(trustedWindow, trustedWindow), true);
+    assert.equal(isSceneViewBridgeMessageSource({}, trustedWindow), false);
+    assert.equal(isSceneViewBridgeMessageSource(trustedWindow, null), false);
+    const source = fs.readFileSync(path.resolve('triton/src/components/panels/SceneViewPanel.tsx'), 'utf8');
+    assert.match(source, /if \(!isSceneViewBridgeMessageSource\(event\.source, iframeRef\.current\?\.contentWindow\)\) return/);
 });
 
 function createSceneViewHarness() {
@@ -186,22 +195,20 @@ test('Scene View UI emits viewport selection and cursor-anchored zoom updates', 
     ]);
 });
 
-test('Scene View pauses gameplay before starting the editor preview loop', () => {
+test('Scene View starts its paused editor preview only after loading a scene', () => {
     const harness = createSceneViewHarness();
     const iframe = findNode(harness.render(), node => node.props?.title === 'Scene View');
     assert.ok(iframe);
-    const startIndex = iframe.props.srcDoc.indexOf('// Start Game');
-    const cameraIndex = iframe.props.srcDoc.indexOf('// Editor Camera', startIndex);
-    const startup = iframe.props.srcDoc.slice(startIndex, cameraIndex);
-    const lifecycle = [];
-    vm.runInNewContext(startup, {
-        game: {
-            pause: () => lifecycle.push('pause'),
-            start: () => lifecycle.push('start')
-        }
-    });
-    assert.deepEqual(lifecycle, ['pause', 'start']);
-    assert.equal(startup.includes('setTimeout'), false);
+    const source = iframe.props.srcDoc;
+    const loadSceneIndex = source.indexOf('game.loadScene(payload.data || payload.path)');
+    const pauseIndex = source.indexOf('if (game.pause) game.pause();', loadSceneIndex);
+    const startIndex = source.indexOf('game.start();', pauseIndex);
+    const loadedIndex = source.indexOf("type: 'editor:scene-loaded'", startIndex);
+    assert.ok(loadSceneIndex >= 0);
+    assert.ok(pauseIndex > loadSceneIndex);
+    assert.ok(startIndex > pauseIndex);
+    assert.ok(loadedIndex > startIndex);
+    assert.equal(source.slice(0, loadSceneIndex).includes('game.start()'), false);
 });
 
 test('Scene View UI pans the camera and moves a selected entity on its gizmo axis', () => {

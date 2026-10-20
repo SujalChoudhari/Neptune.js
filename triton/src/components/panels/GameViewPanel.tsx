@@ -73,7 +73,6 @@ export function GameViewPanel() {
         const wait = () => {
             if (window.game) {
                 console.log("[GameView] Game Loaded");
-                window.game.start();
                 // Notify parent we are ready to receive scene load commands
                 window.parent.postMessage({ type: 'game:ready' }, '*');
                 
@@ -84,7 +83,11 @@ export function GameViewPanel() {
 
                     if (type === 'editor:load-scene' && game.loadScene) {
                          if (typeof payload.path === 'string') projectResourceBridge.setScenePath(payload.path);
-                         game.loadScene(payload.data || payload.path).catch(console.error);
+                         game.loadScene(payload.data || payload.path)
+                             .then(() => {
+                                 if (!game.isRunning) game.start();
+                             })
+                             .catch(console.error);
                     }
                     else if (type === 'editor:update-component') {
                          // Inspector Update Logic

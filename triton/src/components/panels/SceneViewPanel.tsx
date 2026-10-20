@@ -3,7 +3,7 @@ import neptuneEntryUrl from "../../../../src/neptune.js?url";
 import cameraUrl from "../../../../src/thalassa/camera.js?url";
 import scenePickingUrl from "@/lib/scenePicking.mjs?url";
 import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
-import { translateOnAxis, getColliderOverlayBounds } from "@/lib/scenePicking.mjs";
+import { translateOnAxis, getColliderOverlayBounds, isSceneViewBridgeMessageSource } from "@/lib/scenePicking.mjs";
 import { invoke } from "@tauri-apps/api/core";
 import { ThemedIconButton } from "@/components/library";
 import { Maximize, ZoomIn, ZoomOut } from "lucide-react";
@@ -33,9 +33,9 @@ export function SceneViewPanel() {
 
     useEffect(() => {
         const handleBridgeMessage = (event: MessageEvent) => {
+            if (!isSceneViewBridgeMessageSource(event.source, iframeRef.current?.contentWindow)) return;
             const { type, payload } = event.data || {};
             if (type === 'editor:project-resource-request' && payload?.id) {
-                if (event.source !== iframeRef.current?.contentWindow) return;
                 const command = payload.kind === 'image' ? 'read_image_asset' : payload.kind === 'audio' ? 'read_audio_asset' : payload.kind === 'text' ? 'read_file' : null;
                 const reply = (content: string | null, error: string | null) => {
                     (event.source as WindowProxy | null)?.postMessage({
@@ -250,13 +250,6 @@ export function SceneViewPanel() {
              };
              cleanup();
 
-             // Start Game
-             if (game.start) {
-                 // Render editor previews without running gameplay behaviors.
-                 if (game.pause) game.pause();
-                 game.start();
-             }
-
              // Editor Camera
              const editorCamera = new Camera(window.innerWidth, window.innerHeight);
              editorCamera.zoom = 1;
@@ -281,6 +274,11 @@ export function SceneViewPanel() {
                      if (typeof payload.path === 'string') projectResourceBridge.setScenePath(payload.path);
                      game.loadScene(payload.data || payload.path)
                          .then(() => {
+                             if (!game.isRunning && game.start) {
+                                 // Start only after a scene exists, and keep gameplay behaviors paused in the editor preview.
+                                 if (game.pause) game.pause();
+                                 game.start();
+                             }
                              window.parent.postMessage({ type: 'editor:scene-loaded', payload }, '*');
                              if(game.scene) game.scene.activeCamera = editorCamera; 
                          })
