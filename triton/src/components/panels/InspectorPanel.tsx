@@ -19,22 +19,6 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
     const { writeScene } = useFileSystem()
     const [isSaving, setIsSaving] = useState(false)
 
-    // Local state for UI ordering/visibility (could be persisted later)
-    const [activeStates, setActiveStates] = useState<Record<string, boolean>>({
-        transform: true,
-        sprite: true,
-        collider: true,
-        body: true,
-        sound: true,
-        stats: true,
-        animator: true,
-        scripts: true
-    })
-
-    const toggleActive = (key: string) => {
-        setActiveStates(prev => ({ ...prev, [key]: !prev[key] }))
-    }
-
     // We derive component list from the actual data + standard order
     const componentOrder = useMemo(() => {
         if (!selectedEntityData) return [];
@@ -81,6 +65,19 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
     // Cast to MockEntity because our Inspector components are typed with it
     // EntityData and MockEntity should be compatible enough for now
     const entity: EntityData = selectedEntityData
+
+    const isComponentActive = (key: string) => {
+        const entry = Object.entries(entity.components || {}).find(([name]) => name.toLowerCase() === key.toLowerCase())
+        return entry?.[1]?.enabled !== false
+    }
+
+    const toggleActive = (key: string) => {
+        const enabled = !isComponentActive(key)
+        selectedIds.forEach(id => {
+            updateComponent(id, key, 'enabled', enabled)
+            EditorGameRunner.updateEntity(id, key, { enabled })
+        })
+    }
 
     // HELPERS
     // We map specifics to generic updateComponent(id, comp, field, value)
@@ -196,7 +193,7 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
                     compId: 'transform',
                     index: -1,
                     entity,
-                    isActive: activeStates.transform,
+                    isActive: isComponentActive('transform'),
                     onToggleActive: () => toggleActive('transform'),
                     updateHelpers,
                     moveHelpers: {}
@@ -207,7 +204,7 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
                     compId: compId as any,
                     index,
                     entity,
-                    isActive: activeStates[compId],
+                    isActive: isComponentActive(compId),
                     onToggleActive: () => toggleActive(compId),
                     updateHelpers,
                     moveHelpers: {

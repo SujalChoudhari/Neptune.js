@@ -1016,7 +1016,7 @@ describe("Triton persistence bridge", () => {
             entities: [{
                 id: "hero", name: "Hero", type: "empty",
                 transform: { pos: { x: 0, y: 0 }, rot: 0, scale: { x: 1, y: 1 } },
-                components: [{ type: "Sprite", props: { path: "hero.png", width: 16, height: 16 } }],
+                components: [{ type: "Sprite", props: { path: "hero.png", width: 16, height: 16, enabled: true } }],
                 children: []
             }]
         };
@@ -1024,7 +1024,7 @@ describe("Triton persistence bridge", () => {
         const entitySource = {
             id: "hero", name: "Hero", active: true,
             transform: { position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 }, z: 0 },
-            components: { Sprite: { path: "hero.png", width: 16, height: 16 } },
+            components: { Sprite: { path: "hero.png", width: 16, height: 16, enabled: true } },
             sprite: { path: "hero.png", width: 16, height: 16, blendMode: "normal", color: "#fff" }
         };
         const helperPath = path.resolve("triton/src/lib/inspectorEntityData.ts");
@@ -1103,6 +1103,10 @@ describe("Triton persistence bridge", () => {
         spriteEditor.updateHelpers.updateGeneric("Sprite", "width", 32);
         expect(selectedEntityData.components.Sprite.width).toBe(32);
         expect(harness.runner.currentScene.entities[0].components[0].props.width).toBe(32);
+        expect(spriteEditor.isActive).toBe(true);
+        spriteEditor.onToggleActive();
+        expect(selectedEntityData.components.Sprite.enabled).toBe(false);
+        expect(harness.runner.currentScene.entities[0].components[0].props.enabled).toBe(false);
 
         const findButton = (node, title) => {
             if (!node || typeof node !== "object") return null;
@@ -1146,6 +1150,7 @@ describe("Triton persistence bridge", () => {
         try {
             const runtimeScene = await SceneLoader.parse(reopened);
             expect(runtimeScene.children[0].GetComponent(Sprite).width).toBe(32);
+            expect(runtimeScene.children[0].GetComponent(Sprite).properties.enabled).toBe(false);
             expect(runtimeScene.children[0].active).toBe(false);
         } finally {
             global.Image = originalImage;
