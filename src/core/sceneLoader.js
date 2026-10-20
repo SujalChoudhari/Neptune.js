@@ -94,7 +94,8 @@ export class SceneLoader {
                 const pending = SceneLoader.#parseLayer(layerData, scene);
                 if (pending && typeof pending.then === "function") pendingLoads.push(pending);
             }
-        } else if (Array.isArray(data.entities)) {
+        }
+        if (Array.isArray(data.entities)) {
             data.entities.forEach(entityData => scene.AddChild(SceneLoader.#parseEntity(entityData)));
         }
 

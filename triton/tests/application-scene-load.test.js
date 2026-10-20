@@ -12,9 +12,11 @@ import { SpawnPoint } from "../../src/components/spawnPoint.js";
 import { Dialogue } from "../../src/components/dialogue.js";
 import { QuestDefinition } from "../../src/components/questDefinition.js";
 import { EnemyConfig } from "../../src/components/enemyConfig.js";
+import { BoxCollider } from "../../src/components/boxCollider.js";
 import { Hitbox, Hurtbox, TriggerCollider } from "../../src/nereid/collider.js";
+import { Sprite } from "../../src/rendering/sprite.js";
 
-for (const [name, component] of Object.entries({ Transform, SceneTransition, SpawnPoint, Dialogue, QuestDefinition, EnemyConfig, TriggerCollider, Hitbox, Hurtbox })) {
+for (const [name, component] of Object.entries({ Transform, Sprite, BoxCollider, SceneTransition, SpawnPoint, Dialogue, QuestDefinition, EnemyConfig, TriggerCollider, Hitbox, Hurtbox })) {
     ComponentRegistry.register(name, component);
 }
 
@@ -59,6 +61,8 @@ test("saved editor-authored scene loads through the Application runtime", async 
     });
     const originalDocument = globalThis.document;
     const originalWindow = globalThis.window;
+    const originalImage = globalThis.Image;
+    const originalFetch = globalThis.fetch;
     globalThis.document = {
         getElementById: id => elements.get(id) || null,
         createElement: makeElement,
@@ -66,6 +70,30 @@ test("saved editor-authored scene loads through the Application runtime", async 
         head: makeElement("head")
     };
     globalThis.window = { innerWidth: 800, innerHeight: 600, outerWidth: 800, outerHeight: 600 };
+    globalThis.Image = class Image {
+        set src(value) { this.source = value; }
+    };
+    globalThis.fetch = async path => {
+        assert.equal(path, "maps/dungeon.map");
+        return {
+            ok: true,
+            async json() {
+                return {
+                    width: 2,
+                    height: 1,
+                    columns: 8,
+                    tileSize: 16,
+                    tileset: "assets/dungeon.png",
+                    data: [1, 0],
+                    metadata: { "1": { collision: true, walkable: false, terrain: "lava" } },
+                    cellMetadata: {
+                        "0": { collision: false, walkable: true },
+                        "1": { collision: true, walkable: false, terrain: "wall" }
+                    }
+                };
+            }
+        };
+    };
 
     try {
         const editorRunner = createEditorRunner();
@@ -89,6 +117,8 @@ test("saved editor-authored scene loads through the Application runtime", async 
                 { type: "EnemyConfig", props: { enemyId: "guard", health: 40, damage: 7, behavior: "guard" } }
             ]
         }), true);
+        const tilemapLayer = editorRunner.createTilemapLayer("maps/dungeon.map");
+        assert.equal(tilemapLayer.src, "maps/dungeon.map");
         let savedPath;
         let savedContent;
         await editorRunner.saveScene(async (filePath, content) => {
@@ -118,10 +148,20 @@ test("saved editor-authored scene loads through the Application runtime", async 
         assert.equal(runtimeEntity.GetComponent(Dialogue).properties.dialogueId, "gatekeeper");
         assert.equal(runtimeEntity.GetComponent(QuestDefinition).properties.questId, "find-key");
         assert.equal(runtimeEntity.GetComponent(EnemyConfig).properties.enemyId, "guard");
+        const paintedTile = runtimeScene.children.find(entity => entity.tileId === 1);
+        const blockedEmptyCell = runtimeScene.children.find(entity => entity.tileId === 0);
+        assert.deepEqual(paintedTile.tileMetadata, { collision: false, walkable: true, terrain: "lava" });
+        assert.equal(paintedTile.GetComponent(BoxCollider), undefined);
+        assert.deepEqual(blockedEmptyCell.tileMetadata, { collision: true, walkable: false, terrain: "wall" });
+        assert.ok(blockedEmptyCell.GetComponent(BoxCollider), "authored blocked empty cell becomes a runtime collider");
     } finally {
         if (originalDocument === undefined) delete globalThis.document;
         else globalThis.document = originalDocument;
         if (originalWindow === undefined) delete globalThis.window;
         else globalThis.window = originalWindow;
+        if (originalImage === undefined) delete globalThis.Image;
+        else globalThis.Image = originalImage;
+        if (originalFetch === undefined) delete globalThis.fetch;
+        else globalThis.fetch = originalFetch;
     }
 });
