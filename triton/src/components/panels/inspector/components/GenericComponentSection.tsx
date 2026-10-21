@@ -178,7 +178,8 @@ const PropertyField: React.FC<{
     // 5. Text Area / Long String
     if (valueType === 'string') {
         const lowerLabel = label.toLowerCase();
-        if (lowerLabel.includes('text') || lowerLabel.includes('content') || (value as string).length > 50) {
+        const isNarrativeField = lowerLabel.includes('text') || lowerLabel.includes('content') || ['description', 'objective'].includes(lowerLabel);
+        if (isNarrativeField || (value as string).length > 50) {
             return (
                 <div style={indentStyle}>
                     <div className="flex flex-col gap-1 py-1 px-1">

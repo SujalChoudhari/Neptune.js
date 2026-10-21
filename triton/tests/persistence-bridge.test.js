@@ -697,6 +697,81 @@ describe("Triton persistence bridge", () => {
         expect(updates[0]).toEqual(["targetScene", "scenes/next.scene"]);
     });
 
+    it("edits short dialogue and quest narrative fields through multiline Inspector controls and restores them at runtime", async () => {
+        const harness = createMainHarness();
+        harness.runner.openScene({ type: "scene", version: "1.0.0", schemaVersion: 1, id: "scene-narrative-inspector", name: "Narrative Inspector", entities: [] }, "scenes/narrative.scene");
+        harness.game.entities = { root: { id: "root", children: [] } };
+        for (const type of ["dialogue", "quest"]) expect(harness.clickAddEntity(harness.renderHierarchy(), type)).toBe(true);
+
+        const genericSectionPath = path.join(root, "src", "components", "panels", "inspector", "components", "GenericComponentSection.tsx");
+        const genericSectionBundle = bundleSource(genericSectionPath, [
+            "react", "react/jsx-runtime", "lucide-react", "../shared/ComponentSection", "../shared/PropertyRow",
+            "@/components/library", "@/utils/colorUtils", "@/lib/sceneTransitionAuthoring.mjs"
+        ]);
+        const hookSlots = [];
+        let hookIndex = 0;
+        const react = {
+            createElement: (type, props, ...children) => ({ type, props: { ...(props || {}), children } }),
+            useState(initialValue) {
+                const index = hookIndex++;
+                if (!(index in hookSlots)) hookSlots[index] = initialValue;
+                return [hookSlots[index], value => { hookSlots[index] = typeof value === "function" ? value(hookSlots[index]) : value; }];
+            },
+            useEffect() {}
+        };
+        const jsxRuntime = {
+            jsx: (type, props) => ({ type, props: props || {} }),
+            jsxs: (type, props) => ({ type, props: props || {} }),
+            Fragment: Symbol("Fragment")
+        };
+        const library = new Proxy({}, { get: (_target, key) => String(key) });
+        const icons = new Proxy({}, { get: (_target, key) => String(key) });
+        const genericSection = loadBundle(genericSectionBundle, {
+            React: react,
+            require: id => id === "react" ? react
+                : id === "react/jsx-runtime" ? jsxRuntime
+                    : id === "lucide-react" ? icons
+                        : id === "@/lib/sceneTransitionAuthoring.mjs" ? { isSafeSceneAssetPath }
+                            : library
+        }).GenericComponentSection;
+        const visit = node => Array.isArray(node) ? node.flatMap(visit) : node && typeof node === "object"
+            ? [node, ...visit(node.props?.children)]
+            : [];
+        const entities = Object.fromEntries(harness.runner.currentScene.entities.map(entity => [entity.type, entity]));
+        const editNarrativeField = (entity, componentType, field, value) => {
+            const componentData = entity.components.find(component => component.type === componentType).props;
+            const tree = genericSection({ type: componentType, data: componentData, entity: {}, isActive: true, onToggleActive() {},
+                onUpdate: (key, nextValue) => expect(harness.runner.updateEntity(entity.id, componentType, { [key]: nextValue })).toBe(true) });
+            if (componentType === "QuestDefinition") {
+                const objectiveId = visit(tree).find(node => node.type?.name === "PropertyField" && node.props.label === "objectiveId");
+                hookIndex = 0;
+                expect(visit(objectiveId.type(objectiveId.props)).some(node => node.type === "ThemedInput")).toBe(true);
+            }
+            const property = visit(tree).find(node => node.type?.name === "PropertyField" && node.props.label === field);
+            expect(property).toBeDefined();
+            hookIndex = 0;
+            const control = visit(property.type(property.props)).find(node => node.type === "ThemedTextArea");
+            expect(control).toBeDefined();
+            control.props.onChange({ target: { value } });
+        };
+
+        editNarrativeField(entities.dialogue, "Dialogue", "text", "The gate is locked.");
+        editNarrativeField(entities.quest, "QuestDefinition", "description", "Find the brass key.");
+        editNarrativeField(entities.quest, "QuestDefinition", "objective", "Search the old tower.");
+        const authoredQuest = entities.quest.components.find(component => component.type === "QuestDefinition").props;
+        expect(authoredQuest).toEqual({ name: "New Quest", description: "Find the brass key.", objectiveId: "objective-1", objective: "Search the old tower.", required: 1 });
+
+        await harness.writeScene("scenes/narrative.scene", harness.runner.currentScene);
+        const saved = harness.files.get("scenes/narrative.scene");
+        expect(saved).toBeDefined();
+        const reopened = harness.runner.openScene(JSON.parse(saved), "scenes/narrative.scene");
+        const runtimeScene = SceneLoader.parse(reopened);
+        const runtimeDialogue = runtimeScene.children.find(entity => entity.type === "dialogue");
+        const runtimeQuest = runtimeScene.children.find(entity => entity.type === "quest");
+        expect(runtimeDialogue.GetComponent(Dialogue).properties.text).toBe("The gate is locked.");
+        expect(runtimeQuest.GetComponent(QuestDefinition).properties).toEqual(authoredQuest);
+    });
+
     it("offers trigger-area creation as a typed scene entity that survives runtime loading", () => {
         const toolbar = fs.readFileSync(path.join(root, "src", "components", "panels", "hierarchy", "HierarchyToolbar.tsx"), "utf8");
         const hierarchy = fs.readFileSync(path.join(root, "src", "components", "panels", "HierarchyPanel.tsx"), "utf8");
