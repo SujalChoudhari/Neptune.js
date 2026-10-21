@@ -4,7 +4,7 @@ import cameraUrl from "../../../../src/thalassa/camera.js?url";
 import scenePickingUrl from "@/lib/scenePicking.mjs?url";
 import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
 import { runtimeEntityBridgeScript } from "../../lib/runtimeEntityBridge.mjs";
-import { translateOnAxis, getColliderOverlayBounds, isSceneViewBridgeMessageSource } from "@/lib/scenePicking.mjs";
+import { translateOnAxis, resizeColliderBounds, getColliderOverlayBounds, isSceneViewBridgeMessageSource } from "@/lib/scenePicking.mjs";
 import { invoke } from "@tauri-apps/api/core";
 import { ThemedIconButton } from "@/components/library";
 import { Maximize, ZoomIn, ZoomOut } from "lucide-react";
@@ -24,6 +24,14 @@ export function SceneViewPanel() {
         position: { x: number; y: number };
         rotation: number;
         scale: { x: number; y: number };
+    } | null>(null);
+    const colliderResizeDragRef = useRef<{
+        id: string;
+        type: 'Hitbox' | 'Hurtbox' | 'TriggerCollider' | 'BoxCollider';
+        startX: number;
+        startY: number;
+        width: number;
+        height: number;
     } | null>(null);
     const suppressClickRef = useRef(false);
 
@@ -79,6 +87,12 @@ export function SceneViewPanel() {
         EditorGameRunner.updateEntity(id, 'transform', data);
     }, [updateComponent]);
 
+    const applyColliderResizeEdit = useCallback((id: string, type: 'Hitbox' | 'Hurtbox' | 'TriggerCollider' | 'BoxCollider', width: number, height: number) => {
+        const data = type === 'BoxCollider' ? { size: { x: width, y: height } } : { width, height };
+        Object.entries(data).forEach(([field, value]) => updateComponent(id, type, field, value));
+        EditorGameRunner.updateEntity(id, type, data);
+    }, [updateComponent]);
+
     const handleWheel = useCallback((e: React.WheelEvent) => {
         const rect = containerRef.current?.getBoundingClientRect();
         if (!rect) return;
@@ -118,6 +132,24 @@ export function SceneViewPanel() {
         event.stopPropagation();
     };
 
+    const beginColliderResize = (type: 'Hitbox' | 'Hurtbox' | 'TriggerCollider' | 'BoxCollider', event: React.MouseEvent<SVGCircleElement>) => {
+        if (event.button !== 0 || selectedIds.length !== 1 || !selectedEntityData) return;
+        const component = selectedEntityData.components?.[type];
+        const width = component?.width ?? component?.size?.x;
+        const height = component?.height ?? component?.size?.y;
+        if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return;
+        colliderResizeDragRef.current = {
+            id: selectedIds[0],
+            type,
+            startX: event.clientX,
+            startY: event.clientY,
+            width,
+            height
+        };
+        event.preventDefault();
+        event.stopPropagation();
+    };
+
     const handleViewportClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
         if (suppressClickRef.current) {
             suppressClickRef.current = false;
@@ -139,7 +171,18 @@ export function SceneViewPanel() {
         }
     }, []);
 
-    const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    const handleMouseMove = (e: React.MouseEvent) => {
+        const colliderDrag = colliderResizeDragRef.current;
+        if (colliderDrag) {
+            const size = resizeColliderBounds(
+                { width: colliderDrag.width, height: colliderDrag.height },
+                e.clientX - colliderDrag.startX,
+                e.clientY - colliderDrag.startY,
+                zoom
+            );
+            applyColliderResizeEdit(colliderDrag.id, colliderDrag.type, size.width, size.height);
+            return;
+        }
         const drag = gizmoDragRef.current;
         if (drag) {
             const deltaX = e.clientX - drag.startX;
@@ -172,15 +215,16 @@ export function SceneViewPanel() {
 
             notifyGame('editor:camera-update', { zoom, x: newPan.x, y: newPan.y });
         }
-    }, [isPanning, lastMousePos, pan, zoom, notifyGame, applyTransformEdit]);
+    };
 
-    const handleMouseUp = useCallback(() => {
-        if (gizmoDragRef.current) {
+    const handleMouseUp = () => {
+        if (gizmoDragRef.current || colliderResizeDragRef.current) {
             gizmoDragRef.current = null;
+            colliderResizeDragRef.current = null;
             suppressClickRef.current = true;
         }
         setIsPanning(false);
-    }, []);
+    };
 
     const resetCamera = () => {
         setPan({ x: 0, y: 0 });
@@ -388,22 +432,35 @@ export function SceneViewPanel() {
                         className="absolute inset-0 w-full h-full overflow-visible pointer-events-none"
                     >
                         {colliderOverlays.map((bounds) => (
-                            <rect
-                                key={bounds.type}
-                                aria-label={`Selected ${bounds.type} bounds`}
-                                data-collider-role={bounds.type}
-                                x={(bounds.x - pan.x) * zoom}
-                                y={(bounds.y - pan.y) * zoom}
-                                width={bounds.width * zoom}
-                                height={bounds.height * zoom}
-                                fill={bounds.color}
-                                fillOpacity={0.12}
-                                stroke={bounds.color}
-                                strokeWidth={1.5}
-                                strokeDasharray={bounds.type === 'TriggerCollider' ? '5 3' : undefined}
-                            >
-                                <title>{bounds.type} bounds</title>
-                            </rect>
+                            <g key={bounds.type}>
+                                <rect
+                                    aria-label={`Selected ${bounds.type} bounds`}
+                                    data-collider-role={bounds.type}
+                                    x={(bounds.x - pan.x) * zoom}
+                                    y={(bounds.y - pan.y) * zoom}
+                                    width={bounds.width * zoom}
+                                    height={bounds.height * zoom}
+                                    fill={bounds.color}
+                                    fillOpacity={0.12}
+                                    stroke={bounds.color}
+                                    strokeWidth={1.5}
+                                    strokeDasharray={bounds.type === 'TriggerCollider' ? '5 3' : undefined}
+                                >
+                                    <title>{bounds.type} bounds</title>
+                                </rect>
+                                <circle
+                                    aria-label={`Resize ${bounds.type} bounds`}
+                                    data-collider-resize-handle={bounds.type}
+                                    cx={(bounds.x + bounds.width - pan.x) * zoom}
+                                    cy={(bounds.y + bounds.height - pan.y) * zoom}
+                                    r="5"
+                                    fill={bounds.color}
+                                    stroke="#111"
+                                    strokeWidth="1.5"
+                                    className="pointer-events-auto cursor-nwse-resize"
+                                    onMouseDown={(event) => beginColliderResize(bounds.type, event)}
+                                />
+                            </g>
                         ))}
                         <line x1={gizmoX} y1={gizmoY} x2={gizmoX + 56} y2={gizmoY} stroke="#ff5b5b" strokeWidth="3" />
                         <line x1={gizmoX} y1={gizmoY} x2={gizmoX} y2={gizmoY + 56} stroke="#55c878" strokeWidth="3" />

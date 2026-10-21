@@ -863,6 +863,16 @@ describe("Triton persistence bridge", () => {
         expect(harness.runner.updateEntity(byType.quest.id, "QuestDefinition", { name: "Key Hunt", description: "Recover the key", objectiveId: "find-key", objective: "Find the key", required: 1 })).toBe(true);
         expect(harness.runner.updateEntity(byType.enemy.id, "EnemyConfig", { maxHealth: 75, moveSpeed: 3, contactDamage: 12, behavior: "guard" })).toBe(true);
         expect(harness.runner.updateEntity(byType["scene-transition"].id, "SceneTransition", { targetScene: "scenes/dungeon.scene", spawnPoint: "entrance", trigger: "interact" })).toBe(true);
+        expect(harness.runner.updateEntity(byType.hitbox.id, "Hitbox", { width: 12, height: 6, offsetX: 1, offsetY: -2 })).toBe(true);
+        expect(harness.runner.updateEntity(byType.hurtbox.id, "Hurtbox", { width: 11, height: 7, offsetX: -3, offsetY: 4 })).toBe(true);
+        expect(harness.runner.updateEntity(byType["trigger-area"].id, "TriggerCollider", { width: 13, height: 6, offsetX: 2, offsetY: -5 })).toBe(true);
+        expect(harness.runner.createEntity("root", {
+            id: "box-collider",
+            name: "Resized Box Collider",
+            type: "box-collider",
+            components: [{ type: "BoxCollider", props: { size: { x: 4, y: 3 }, offset: { x: 2, y: -3 } } }]
+        })).toBe(true);
+        expect(harness.runner.updateEntity("box-collider", "BoxCollider", { size: { x: 14, y: 8 } })).toBe(true);
 
         await harness.writeScene("scenes/gameplay.scene", harness.runner.currentScene);
         const saved = harness.files.get("scenes/gameplay.scene");
@@ -878,9 +888,15 @@ describe("Triton persistence bridge", () => {
         expect(runtimeByType["scene-transition"].GetComponent(SceneTransition).properties).toEqual({ targetScene: "scenes/dungeon.scene", spawnPoint: "entrance", trigger: "interact" });
         expect(runtimeByType["scene-transition"].GetComponent(TriggerCollider)).toBeDefined();
         expect(runtimeByType["spawn-point"].GetComponent(SpawnPoint).properties).toEqual({ spawnId: runtimeByType["spawn-point"].id, facing: "right" });
-        expect(runtimeByType["trigger-area"].GetComponent(TriggerCollider)).toBeDefined();
-        expect(runtimeByType.hitbox.GetComponent(Hitbox)).toBeDefined();
-        expect(runtimeByType.hurtbox.GetComponent(Hurtbox)).toBeDefined();
+        const runtimeTrigger = runtimeByType["trigger-area"].GetComponent(TriggerCollider);
+        expect({ width: runtimeTrigger.width, height: runtimeTrigger.height, offsetX: runtimeTrigger.offsetX, offsetY: runtimeTrigger.offsetY }).toEqual({ width: 13, height: 6, offsetX: 2, offsetY: -5 });
+        const runtimeHitbox = runtimeByType.hitbox.GetComponent(Hitbox);
+        expect({ width: runtimeHitbox.width, height: runtimeHitbox.height, offsetX: runtimeHitbox.offsetX, offsetY: runtimeHitbox.offsetY }).toEqual({ width: 12, height: 6, offsetX: 1, offsetY: -2 });
+        const runtimeHurtbox = runtimeByType.hurtbox.GetComponent(Hurtbox);
+        expect({ width: runtimeHurtbox.width, height: runtimeHurtbox.height, offsetX: runtimeHurtbox.offsetX, offsetY: runtimeHurtbox.offsetY }).toEqual({ width: 11, height: 7, offsetX: -3, offsetY: 4 });
+        const runtimeBoxCollider = runtimeByType["box-collider"].GetComponent(BoxCollider);
+        expect({ x: runtimeBoxCollider.size.x, y: runtimeBoxCollider.size.y }).toEqual({ x: 14, y: 8 });
+        expect({ x: runtimeBoxCollider.offset.x, y: runtimeBoxCollider.offset.y }).toEqual({ x: 2, y: -3 });
     });
 
     it("loads editor-created scene transition output in the runtime after save and reopen", async () => {

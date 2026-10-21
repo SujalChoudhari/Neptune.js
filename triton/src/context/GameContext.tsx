@@ -498,19 +498,37 @@ export function GameProvider({ children }: { children: ReactNode }) {
         notifyGame('editor:move-entities', { ids, targetParentId, index });
     };
 
-    const updateComponent = (id: string, component: string, data: any) => {
-        // Optimistic update
+    const updateComponent = (id: string, component: string, field: string, value: any) => {
         if (selectedEntitiesData[id]) {
-            setSelectedEntitiesData(prev => ({
-                ...prev,
-                [id]: {
-                    ...prev[id],
-                    // We need to merge component data
-                    [component]: { ...(prev[id][component as keyof EntityData] as object || {}), ...data }
-                } as EntityData
-            }));
+            setSelectedEntitiesData(previous => {
+                const selectedEntity = previous[id];
+                if (!selectedEntity) return previous;
+
+                if (component.toLowerCase() === 'transform') {
+                    return {
+                        ...previous,
+                        [id]: {
+                            ...selectedEntity,
+                            transform: { ...selectedEntity.transform, [field]: value }
+                        }
+                    };
+                }
+
+                const components = selectedEntity.components || {};
+                const componentKey = Object.keys(components).find(key => key.toLowerCase() === component.toLowerCase()) || component;
+                return {
+                    ...previous,
+                    [id]: {
+                        ...selectedEntity,
+                        components: {
+                            ...components,
+                            [componentKey]: { ...(components[componentKey] || {}), [field]: value }
+                        }
+                    }
+                };
+            });
         }
-        notifyGame('editor:update-component', { id, component, data });
+        notifyGame('editor:update-component', { id, component, data: { [field]: value } });
     };
 
     const markAsMainScene = useCallback(async () => {

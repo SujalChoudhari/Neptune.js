@@ -9,6 +9,16 @@ export function translateOnAxis(position, deltaX, deltaY, zoom, axis) {
     };
 }
 
+export function resizeColliderBounds(size, deltaX, deltaY, zoom, minSize = 0.05) {
+    if (!size || ![size.width, size.height, deltaX, deltaY, zoom, minSize].every(Number.isFinite) || zoom <= 0 || minSize <= 0) {
+        throw new TypeError('Collider resizing needs finite dimensions, deltas, and positive zoom/minimum size');
+    }
+    return {
+        width: Math.max(minSize, size.width + deltaX / zoom),
+        height: Math.max(minSize, size.height + deltaY / zoom)
+    };
+}
+
 export function pickEntityAt(root, x, y, tolerance = 12) {
     if (!root || !Number.isFinite(x) || !Number.isFinite(y)) return null;
 

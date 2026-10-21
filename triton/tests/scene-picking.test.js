@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import path from 'node:path';
 import { buildSync } from 'esbuild';
-import { pickEntityAt, translateOnAxis, getColliderOverlayBounds, isSceneViewBridgeMessageSource } from '../src/lib/scenePicking.mjs';
+import { pickEntityAt, translateOnAxis, resizeColliderBounds, getColliderOverlayBounds, isSceneViewBridgeMessageSource } from '../src/lib/scenePicking.mjs';
 import { BoxCollider } from '../../src/components/boxCollider.js';
 
 const entity = (id, x, y, children = []) => ({
@@ -69,7 +69,8 @@ function createSceneViewHarness() {
                 components: {
                     Hitbox: { width: 2, height: 1, offsetX: -1, offsetY: 0.5 },
                     Hurtbox: { width: 1, height: 2, offsetX: 0.25, offsetY: -1 },
-                    TriggerCollider: { width: 3, height: 1, offsetX: -2, offsetY: 2 }
+                    TriggerCollider: { width: 3, height: 1, offsetX: -2, offsetY: 2 },
+                    BoxCollider: { size: { x: 4, y: 3 }, offset: { x: 2, y: -3 } }
                 }
             },
             selectedIds: ['entity-1']
@@ -77,7 +78,7 @@ function createSceneViewHarness() {
         '@/lib/editorGameRunner': { EditorGameRunner: {
             updateEntity: (id, component, data) => canonicalEdits.push({ id, component, data })
         } },
-        '@/lib/scenePicking.mjs': { translateOnAxis, getColliderOverlayBounds },
+        '@/lib/scenePicking.mjs': { translateOnAxis, resizeColliderBounds, getColliderOverlayBounds },
         '@tauri-apps/api/core': { invoke: async () => '' },
         '../../../../src/neptune.js?url': '/neptune.js',
         '../../../../src/thalassa/camera.js?url': '/camera.js',
@@ -126,6 +127,13 @@ test('gizmo drag converts screen deltas to world units and constrains movement t
     assert.deepEqual(translateOnAxis({ x: 10, y: 20 }, 30, 24, 2, 'y'), { x: 10, y: 32 });
     assert.throws(() => translateOnAxis({ x: 0, y: 0 }, 1, 1, 0, 'x'), /positive zoom/);
     assert.throws(() => translateOnAxis({ x: 0, y: 0 }, 1, 1, 1, 'z'), /axis/);
+});
+
+test('collider resize converts screen deltas through zoom and clamps dimensions above zero', () => {
+    assert.deepEqual(resizeColliderBounds({ width: 2, height: 1 }, 20, 10, 2), { width: 12, height: 6 });
+    assert.deepEqual(resizeColliderBounds({ width: 2, height: 1 }, -20, -10, 2), { width: 0.05, height: 0.05 });
+    assert.throws(() => resizeColliderBounds({ width: 2, height: 1 }, 1, 1, 0), /positive zoom/);
+    assert.throws(() => resizeColliderBounds({ width: Number.NaN, height: 1 }, 1, 1, 1), /finite dimensions/);
 });
 
 test('viewport picking chooses the closest overlapping entity, including nested entities', () => {
@@ -213,6 +221,41 @@ test('Scene View renders selected hitbox, hurtbox, and trigger bounds over the v
     assert.deepEqual([hitbox.props.x, hitbox.props.y, hitbox.props.width, hitbox.props.height], [1, 3.5, 2, 1]);
     assert.deepEqual([hurtbox.props.x, hurtbox.props.y, hurtbox.props.width, hurtbox.props.height], [2.25, 2, 1, 2]);
     assert.equal(trigger.props.strokeDasharray, '5 3');
+});
+
+test('Scene View resizes every collider shape and syncs Inspector, canonical scene, and runtime payloads', () => {
+    const cases = [
+        ['Hitbox', { width: 12, height: 6 }],
+        ['Hurtbox', { width: 11, height: 7 }],
+        ['TriggerCollider', { width: 13, height: 6 }],
+        ['BoxCollider', { size: { x: 14, y: 8 } }]
+    ];
+
+    for (const [type, expected] of cases) {
+        const harness = createSceneViewHarness();
+        const tree = harness.render();
+        const handle = findNode(tree, node => node.props?.['aria-label'] === `Resize ${type} bounds`);
+        assert.ok(handle, `${type} exposes a resize handle`);
+        handle.props.onMouseDown({
+            button: 0,
+            clientX: 100,
+            clientY: 200,
+            preventDefault() {},
+            stopPropagation() {}
+        });
+        tree.props.onMouseMove({ clientX: 110, clientY: 205 });
+        tree.props.onMouseUp();
+
+        assert.deepEqual(JSON.parse(JSON.stringify(harness.canonicalEdits.at(-1))), { id: 'entity-1', component: type, data: expected });
+        const edits = harness.componentEdits.filter(edit => edit.component === type);
+        const normalizedEdits = JSON.parse(JSON.stringify(edits.map(({ field, value }) => [field, value])));
+        if (type === 'BoxCollider') {
+            assert.deepEqual(normalizedEdits, [['size', { x: 14, y: 8 }]]);
+        } else {
+            assert.deepEqual(normalizedEdits, [['width', expected.width], ['height', expected.height]]);
+        }
+        assert.equal(harness.notifications.filter(item => item.type === 'editor:update-component' && item.payload.id === 'entity-1').length, edits.length);
+    }
 });
 
 test('Scene View UI emits viewport selection and cursor-anchored zoom updates', () => {
