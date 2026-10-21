@@ -998,6 +998,22 @@ describe("Triton persistence bridge", () => {
         expect(byType.enemy.components.find(component => component.type === "EnemyConfig").props).toEqual({
             maxHealth: 1, moveSpeed: 0, contactDamage: 0, behavior: "legacy_boss_phase_2"
         });
+        expect(harness.runner.updateEntity(byType["spawn-point"].id, "SpawnPoint", {
+            spawnId: byType["spawn-point"].id, facing: "legacy_backwards"
+        })).toBe(true);
+        const spawnProps = byType["spawn-point"].components.find(component => component.type === "SpawnPoint").props;
+        const spawnInspector = genericSection({
+            type: "SpawnPoint", data: spawnProps, entity: {}, isActive: true, onToggleActive() {},
+            onUpdate: (key, value) => expect(harness.runner.updateEntity(byType["spawn-point"].id, "SpawnPoint", { [key]: value })).toBe(true)
+        });
+        const facingProperty = visitInspector(spawnInspector).find(node => node.type?.name === "PropertyField" && node.props.label === "facing");
+        hookIndex = 0;
+        const facingSelect = visitInspector(facingProperty.type(facingProperty.props)).find(node => node.type === "ThemedSelect");
+        expect(facingSelect.props.value).toBe("legacy_backwards");
+        expect(facingSelect.props.options.map(option => option.value)).toEqual(["right", "down", "left", "up", "legacy_backwards"]);
+        expect(facingSelect.props.options[4].label).toBe("Legacy: legacy_backwards");
+        facingSelect.props.onChange("up");
+        expect(byType["spawn-point"].components.find(component => component.type === "SpawnPoint").props.facing).toBe("up");
         expect(harness.runner.updateEntity(byType["scene-transition"].id, "SceneTransition", { trigger: "legacy_on_use" })).toBe(true);
         const transitionProps = byType["scene-transition"].components.find(component => component.type === "SceneTransition").props;
         const transitionInspector = genericSection({
@@ -1042,7 +1058,7 @@ describe("Triton persistence bridge", () => {
         expect(runtimeByType.enemy.GetComponent(EnemyConfig).properties).toEqual({ maxHealth: 1, moveSpeed: 0, contactDamage: 0, behavior: "legacy_boss_phase_2" });
         expect(runtimeByType["scene-transition"].GetComponent(SceneTransition).properties).toEqual({ targetScene: "scenes/dungeon.scene", spawnPoint: "entrance", trigger: "interact" });
         expect(runtimeByType["scene-transition"].GetComponent(TriggerCollider)).toBeDefined();
-        expect(runtimeByType["spawn-point"].GetComponent(SpawnPoint).properties).toEqual({ spawnId: runtimeByType["spawn-point"].id, facing: "right" });
+        expect(runtimeByType["spawn-point"].GetComponent(SpawnPoint).properties).toEqual({ spawnId: runtimeByType["spawn-point"].id, facing: "up" });
         const runtimeTrigger = runtimeByType["trigger-area"].GetComponent(TriggerCollider);
         expect({ width: runtimeTrigger.width, height: runtimeTrigger.height, offsetX: runtimeTrigger.offsetX, offsetY: runtimeTrigger.offsetY }).toEqual({ width: 13, height: 6, offsetX: 2, offsetY: -5 });
         const runtimeHitbox = runtimeByType.hitbox.GetComponent(Hitbox);

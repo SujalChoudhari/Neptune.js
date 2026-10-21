@@ -422,6 +422,16 @@ export const GenericComponentSection: React.FC<GenericComponentSectionProps> = (
                                 ? [{ value, label: value ? `Legacy: ${value}` : "Legacy: (empty)" }]
                                 : [])
                         ]
+                        : type === "SpawnPoint" && key === "facing"
+                            ? [
+                                { value: "right", label: "Right" },
+                                { value: "down", label: "Down" },
+                                { value: "left", label: "Left" },
+                                { value: "up", label: "Up" },
+                                ...(typeof value === "string" && !["right", "down", "left", "up"].includes(value)
+                                    ? [{ value, label: value ? `Legacy: ${value}` : "Legacy: (empty)" }]
+                                    : [])
+                            ]
                         : undefined}
                     onChange={(val) => handleUpdate(rootProps, key, val, rootVirtuals, false)}
                 />
