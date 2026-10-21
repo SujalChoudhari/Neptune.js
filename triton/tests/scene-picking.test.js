@@ -357,6 +357,59 @@ test('Scene View UI pans the camera and moves a selected entity on its gizmo axi
     ]);
 });
 
+test('Scene View transform gizmos are focusable and edit transforms with arrow-key precision steps', () => {
+    const cases = [
+        ['Translate on X axis', 'ArrowRight', false, { position: { x: 2.1, y: 3 } }],
+        ['Translate on X axis', 'ArrowLeft', true, { position: { x: 1, y: 3 } }],
+        ['Translate on Y axis', 'ArrowDown', false, { position: { x: 2, y: 2.9 } }],
+        ['Translate on Y axis', 'ArrowUp', true, { position: { x: 2, y: 4 } }],
+        ['Rotate selected entity', 'ArrowUp', true, { rotation: 1.5 }],
+        ['Rotate selected entity', 'ArrowDown', false, { rotation: 0.4 }],
+        ['Scale selected entity', 'ArrowLeft', false, { scale: { x: 0.9, y: 1.8 } }],
+        ['Scale selected entity', 'ArrowRight', true, { scale: { x: 1.5, y: 3 } }]
+    ];
+
+    for (const [label, key, shiftKey, expected] of cases) {
+        const harness = createSceneViewHarness();
+        const tree = harness.render();
+        const handle = findNode(tree, node => node.props?.['aria-label'] === label);
+        assert.ok(handle, `${label} is rendered`);
+        assert.equal(handle.props.role, 'button');
+        assert.equal(handle.props.tabIndex, 0);
+        assert.match(handle.props.className, /focus-visible:stroke-white/);
+        assert.ok(handle.props['aria-keyshortcuts'].split(' ').includes(key));
+
+        let defaultPrevented = false;
+        let propagationStopped = false;
+        handle.props.onKeyDown({
+            key,
+            shiftKey,
+            preventDefault() { defaultPrevented = true; },
+            stopPropagation() { propagationStopped = true; }
+        });
+
+        assert.equal(defaultPrevented, true);
+        assert.equal(propagationStopped, true);
+        assert.deepEqual(JSON.parse(JSON.stringify(harness.canonicalEdits)), [
+            { id: 'entity-1', component: 'transform', data: expected }
+        ]);
+        assert.deepEqual(JSON.parse(JSON.stringify(harness.componentEdits)), [
+            { id: 'entity-1', component: 'transform', field: Object.keys(expected)[0], value: expected[Object.keys(expected)[0]] }
+        ]);
+        assert.deepEqual(JSON.parse(JSON.stringify(harness.notifications)), [{
+            type: 'editor:update-component',
+            payload: { id: 'entity-1', component: 'transform', data: expected }
+        }]);
+    }
+
+    const harness = createSceneViewHarness();
+    const handle = findNode(harness.render(), node => node.props?.['aria-label'] === 'Translate on X axis');
+    let tabWasPrevented = false;
+    handle.props.onKeyDown({ key: 'Tab', preventDefault() { tabWasPrevented = true; }, stopPropagation() {} });
+    assert.equal(tabWasPrevented, false, 'Tab remains available for moving focus between gizmos');
+    assert.deepEqual(harness.canonicalEdits, [], 'unsupported keys do not mutate the selected transform');
+});
+
 test('Scene View UI rotation and scale gizmos update the selected runtime Transform', () => {
     const harness = createSceneViewHarness();
     let tree = harness.render();

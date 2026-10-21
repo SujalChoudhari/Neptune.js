@@ -177,6 +177,43 @@ export function SceneViewPanel() {
         applyColliderResizeEdit(selectedIds[0], type, size.width, size.height);
     };
 
+    const adjustGizmoWithKeyboard = (
+        operation: 'translate-x' | 'translate-y' | 'rotate' | 'scale',
+        event: React.KeyboardEvent<SVGCircleElement>
+    ) => {
+        if (selectedIds.length !== 1 || !selectedEntityData) return;
+
+        const transform = selectedEntityData.transform;
+        const step = event.shiftKey ? 1 : 0.1;
+        let data: Record<string, unknown>;
+        if (operation === 'translate-x') {
+            if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+            const direction = event.key === 'ArrowRight' ? 1 : -1;
+            data = { position: { ...transform.position, x: transform.position.x + direction * step } };
+        } else if (operation === 'translate-y') {
+            if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+            const direction = event.key === 'ArrowUp' ? 1 : -1;
+            data = { position: { ...transform.position, y: transform.position.y + direction * step } };
+        } else if (operation === 'rotate') {
+            const direction = event.key === 'ArrowRight' || event.key === 'ArrowUp'
+                ? 1
+                : event.key === 'ArrowLeft' || event.key === 'ArrowDown' ? -1 : 0;
+            if (!direction) return;
+            data = { rotation: transform.rotation + direction * step };
+        } else {
+            const direction = event.key === 'ArrowRight' || event.key === 'ArrowUp'
+                ? 1
+                : event.key === 'ArrowLeft' || event.key === 'ArrowDown' ? -1 : 0;
+            if (!direction) return;
+            const scaleFactor = Math.max(0.01, 1 + direction * (event.shiftKey ? 0.5 : 0.1));
+            data = { scale: { x: transform.scale.x * scaleFactor, y: transform.scale.y * scaleFactor } };
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        applyTransformEdit(selectedIds[0], data);
+    };
+
     const handleViewportClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
         if (suppressClickRef.current) {
             suppressClickRef.current = false;
@@ -500,18 +537,28 @@ export function SceneViewPanel() {
                             cy={gizmoY}
                             r="7"
                             fill="#ff5b5b"
-                            className="pointer-events-auto cursor-ew-resize"
+                            className="pointer-events-auto cursor-ew-resize focus-visible:stroke-white focus-visible:stroke-[5px]"
                             aria-label="Translate on X axis"
+                            aria-description="Arrow Left/Right move 0.1 world units; hold Shift to move 1 world unit."
+                            aria-keyshortcuts="ArrowLeft ArrowRight Shift+ArrowLeft Shift+ArrowRight"
+                            role="button"
+                            tabIndex={0}
                             onMouseDown={(event) => beginGizmoDrag('translate-x', event)}
+                            onKeyDown={(event) => adjustGizmoWithKeyboard('translate-x', event)}
                         />
                         <circle
                             cx={gizmoX}
                             cy={gizmoY + 56}
                             r="7"
                             fill="#55c878"
-                            className="pointer-events-auto cursor-ns-resize"
+                            className="pointer-events-auto cursor-ns-resize focus-visible:stroke-white focus-visible:stroke-[5px]"
                             aria-label="Translate on Y axis"
+                            aria-description="Arrow Up/Down move 0.1 world units; hold Shift to move 1 world unit."
+                            aria-keyshortcuts="ArrowUp ArrowDown Shift+ArrowUp Shift+ArrowDown"
+                            role="button"
+                            tabIndex={0}
                             onMouseDown={(event) => beginGizmoDrag('translate-y', event)}
+                            onKeyDown={(event) => adjustGizmoWithKeyboard('translate-y', event)}
                         />
                         <circle
                             cx={gizmoX}
@@ -520,18 +567,28 @@ export function SceneViewPanel() {
                             fill="none"
                             stroke="#6e8bff"
                             strokeWidth="3"
-                            className="pointer-events-auto cursor-grab"
+                            className="pointer-events-auto cursor-grab focus-visible:stroke-white focus-visible:stroke-[5px]"
                             aria-label="Rotate selected entity"
+                            aria-description="Arrow keys rotate 0.1 radians; hold Shift to rotate 1 radian."
+                            aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Shift+ArrowLeft Shift+ArrowRight Shift+ArrowUp Shift+ArrowDown"
+                            role="button"
+                            tabIndex={0}
                             onMouseDown={(event) => beginGizmoDrag('rotate', event)}
+                            onKeyDown={(event) => adjustGizmoWithKeyboard('rotate', event)}
                         />
                         <circle
                             cx={gizmoX + 48}
                             cy={gizmoY + 48}
                             r="7"
                             fill="#6e8bff"
-                            className="pointer-events-auto cursor-nwse-resize"
+                            className="pointer-events-auto cursor-nwse-resize focus-visible:stroke-white focus-visible:stroke-[5px]"
                             aria-label="Scale selected entity"
+                            aria-description="Arrow keys change scale by 10%; hold Shift to change scale by 50%."
+                            aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Shift+ArrowLeft Shift+ArrowRight Shift+ArrowUp Shift+ArrowDown"
+                            role="button"
+                            tabIndex={0}
                             onMouseDown={(event) => beginGizmoDrag('scale', event)}
+                            onKeyDown={(event) => adjustGizmoWithKeyboard('scale', event)}
                         />
                     </svg>
                 )}
