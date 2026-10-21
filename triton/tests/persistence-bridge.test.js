@@ -1402,17 +1402,100 @@ describe("Triton persistence bridge", () => {
         indicators = findAll(metadataCell, node => node.props?.["data-metadata-indicator"] !== undefined);
         expect(indicators.map(node => node.props["data-metadata-value"])).toEqual(["false", "true", "moss"]);
 
+        byLabel(tree, "Tile ID to paint").props.onChange({ target: { value: "1" } });
+        tree = render();
+        byLabel(tree, "Tile 1 collision").props.onChange({ target: { value: "false" } });
+        tree = render();
+        byLabel(tree, "Tile 1 walkability").props.onChange({ target: { value: "true" } });
+        tree = render();
+        activeCells = connectGridCells(byLabel(tree, "Tilemap paint grid"));
+        activeCells[0].props.onClick();
+        tree = render();
+        byLabel(tree, "Tile ID to paint").props.onChange({ target: { value: "3" } });
+        tree = render();
+
+        byLabel(tree, "Tilemap brush mode").props.onChange({ target: { value: "collision" } });
+        tree = render();
+        expect(byLabel(tree, "Collision brush").props.value).toBe("true");
+        let brushCells = connectGridCells(byLabel(tree, "Tilemap paint grid"));
+        brushCells[0].props.onMouseDown({ preventDefault() {} });
+        tree = render();
+        brushCells = connectGridCells(byLabel(tree, "Tilemap paint grid"));
+        brushCells[2].props.onMouseEnter();
+        tree = render();
+        const gridSurface = find(tree, node => node.props?.onMouseUp && node.props?.onMouseLeave);
+        gridSurface.props.onMouseUp();
+        tree = render();
+        for (const index of [0, 2]) {
+            const tileId = index === 0 ? 1 : 0;
+            const cell = find(tree, node => node.props?.role === "gridcell"
+                && node.props?.["aria-label"]?.startsWith(`Paint cell ${index % 2}, ${Math.floor(index / 2)}; tile ${tileId}`));
+            expect(cell.props["aria-label"]).toContain("solid collision (cell override)");
+            expect(find(cell, node => node.props?.["data-metadata-indicator"] === "collision").props["data-metadata-value"]).toBe("true");
+        }
+
+        byLabel(tree, "Collision brush").props.onChange({ target: { value: "inherit" } });
+        tree = render();
+        brushCells = connectGridCells(byLabel(tree, "Tilemap paint grid"));
+        let inheritBrushPrevented = false;
+        brushCells[0].props.onKeyDown({
+            key: "Enter", currentTarget: brushCells[0],
+            preventDefault() { inheritBrushPrevented = true; }
+        });
+        expect(inheritBrushPrevented).toBe(true);
+        tree = render();
+        const inheritedCell = find(tree, node => node.props?.role === "gridcell"
+            && node.props?.["aria-label"]?.startsWith("Paint cell 0, 0; tile 1"));
+        expect(inheritedCell.props["aria-label"]).toContain("non-solid collision (tile default)");
+
+        byLabel(tree, "Tilemap brush mode").props.onChange({ target: { value: "walkability" } });
+        tree = render();
+        byLabel(tree, "Navigation brush").props.onChange({ target: { value: "false" } });
+        tree = render();
+        brushCells = connectGridCells(byLabel(tree, "Tilemap paint grid"));
+        let navigationBrushPrevented = false;
+        brushCells[3].props.onKeyDown({
+            key: " ", currentTarget: brushCells[3],
+            preventDefault() { navigationBrushPrevented = true; }
+        });
+        expect(navigationBrushPrevented).toBe(true);
+        tree = render();
+        const blockedCell = find(tree, node => node.props?.role === "gridcell"
+            && node.props?.["aria-label"]?.startsWith("Paint cell 1, 1; tile 0"));
+        expect(blockedCell.props["aria-label"]).toContain("blocked (cell override)");
+
+        byLabel(tree, "Tilemap brush mode").props.onChange({ target: { value: "terrain" } });
+        tree = render();
+        byLabel(tree, "Terrain brush").props.onChange({ target: { value: "mud" } });
+        tree = render();
+        brushCells = connectGridCells(byLabel(tree, "Tilemap paint grid"));
+        let terrainBrushPrevented = false;
+        brushCells[2].props.onKeyDown({
+            key: "Enter", currentTarget: brushCells[2],
+            preventDefault() { terrainBrushPrevented = true; }
+        });
+        expect(terrainBrushPrevented).toBe(true);
+        tree = render();
+        const mudCell = find(tree, node => node.props?.role === "gridcell"
+            && node.props?.["aria-label"]?.startsWith("Paint cell 0, 1; tile 0"));
+        expect(mudCell.props["aria-label"]).toContain("terrain mud (cell override)");
+
         const saveButton = find(tree, node => node.type === "button" && node.props?.children === "Save Map");
         expect(saveButton).toBeDefined();
         saveButton.props.onClick();
         await new Promise(resolve => setTimeout(resolve, 0));
 
         const savedMap = JSON.parse(storedFiles.get(mapPath));
-        expect(savedMap.data).toEqual([0, 3, 0, 0]);
+        expect(savedMap.data).toEqual([1, 3, 0, 0]);
         expect(savedMap.columns).toBe(4);
         expect(savedMap.tileCount).toBe(8);
+        expect(savedMap.metadata["1"]).toEqual({ collision: false, walkable: true });
         expect(savedMap.metadata["3"]).toEqual({ collision: true, walkable: false, terrain: "stone" });
         expect(savedMap.cellMetadata["1"]).toEqual({ collision: false, walkable: true, terrain: "moss" });
+        expect(Object.hasOwn(savedMap.cellMetadata, "0")).toBe(false);
+        expect(savedMap.cellMetadata["2"]).toEqual({ collision: true, terrain: "mud" });
+        expect(savedMap.cellMetadata["3"]).toEqual({ walkable: false });
+        expect(savedMap.data).toEqual([1, 3, 0, 0]);
         expect(loadCalls).toEqual(["scenes/main.scene"]);
 
         const runtimeHarness = createMainHarness();
@@ -1466,9 +1549,13 @@ describe("Triton persistence bridge", () => {
             expect(runtimeTile.GetComponent(Sprite).path).toBe("assets/tiles.png");
 
             const navigationMap = runtimeScene.getNavigationTilemap(mapPath);
-            expect(navigationMap.data).toEqual([-1, 2, -1, -1]);
+            expect(navigationMap.data).toEqual([0, 2, -1, -1]);
             expect(navigationMap.getTileMetadata(2)).toEqual({ collision: true, walkable: false, terrain: "stone" });
+            expect(navigationMap.getTileMetadata(0)).toEqual({ collision: false, walkable: true });
             expect(navigationMap.getResolvedMetadata(1, 0)).toEqual({ collision: false, walkable: true, terrain: "moss" });
+            expect(navigationMap.getResolvedMetadata(0, 0)).toEqual({ collision: false, walkable: true });
+            expect(navigationMap.getResolvedMetadata(0, 1)).toEqual({ collision: true, terrain: "mud" });
+            expect(navigationMap.getResolvedMetadata(1, 1)).toEqual({ walkable: false });
             expect(navigationMap.isWalkable(1, 0)).toBe(true);
             expect(navigationMap.findPath(0, 0, 1, 0)).toEqual([{ x: 1, y: 0 }]);
             navigationMap.setCellMetadata(1, 0, { walkable: false });

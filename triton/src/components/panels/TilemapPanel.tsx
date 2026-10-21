@@ -25,6 +25,8 @@ interface TilemapDocument {
     [key: string]: unknown;
 }
 
+type TilemapBrushMode = 'tile' | 'collision' | 'walkability' | 'terrain';
+
 export function TilemapPanel(_props: IDockviewPanelProps) {
     const { nodes, readFile, writeFile, rootPath, refresh } = useFileSystem();
     const { currentScenePath, loadScene, addTilemapLayer } = useGameContext();
@@ -37,6 +39,10 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
     const [mapPath, setMapPath] = useState('');
     const [tilemap, setTilemap] = useState<TilemapDocument | null>(null);
     const [tileId, setTileId] = useState(1);
+    const [brushMode, setBrushMode] = useState<TilemapBrushMode>('tile');
+    const [collisionBrush, setCollisionBrush] = useState('true');
+    const [navigationBrush, setNavigationBrush] = useState('true');
+    const [terrainBrush, setTerrainBrush] = useState('');
     const [paletteCount, setPaletteCount] = useState(25);
     const [availableTileCount, setAvailableTileCount] = useState<number | null>(null);
     const [availableAtlasColumns, setAvailableAtlasColumns] = useState<number | null>(null);
@@ -221,7 +227,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
             case 'Enter':
             case ' ':
                 event.preventDefault();
-                paint(x, y);
+                applyBrush(x, y);
                 return;
             case 'ArrowLeft': nextX--; break;
             case 'ArrowRight': nextX++; break;
@@ -249,14 +255,34 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
         }
     };
 
-    const updateCellMetadata = (field: 'collision' | 'walkable' | 'terrain', value: boolean | string | undefined) => {
-        if (!tilemap || !selectedCell) return;
+    const updateCellMetadata = (
+        field: 'collision' | 'walkable' | 'terrain',
+        value: boolean | string | undefined,
+        cell = selectedCell
+    ) => {
+        if (!tilemap || !cell) return;
         try {
-            setTilemap(setCellMetadata(tilemap, selectedCell.x, selectedCell.y, { [field]: value }));
+            setTilemap(setCellMetadata(tilemap, cell.x, cell.y, { [field]: value }));
             setIsDirty(true);
         } catch (metadataError) {
             setError(metadataError instanceof Error ? metadataError.message : String(metadataError));
         }
+    };
+
+    const applyBrush = (x: number, y: number) => {
+        if (brushMode === 'tile') {
+            paint(x, y);
+            return;
+        }
+        if (brushMode === 'collision') {
+            updateCellMetadata('collision', collisionBrush === 'inherit' ? undefined : collisionBrush === 'true', { x, y });
+            return;
+        }
+        if (brushMode === 'walkability') {
+            updateCellMetadata('walkable', navigationBrush === 'inherit' ? undefined : navigationBrush === 'true', { x, y });
+            return;
+        }
+        updateCellMetadata('terrain', terrainBrush || undefined, { x, y });
     };
 
     const activeMetadata = tilemap?.metadata?.[String(tileId)] || {};
@@ -687,6 +713,72 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                     />
                 </div>
             )}
+            {tilemap && (
+                <div role="group" aria-label="Tilemap brush controls" className="flex flex-wrap items-center gap-2 rounded border border-border bg-card/50 p-2">
+                    <label className="text-xs" htmlFor="tilemap-brush-mode">Brush</label>
+                    <select
+                        id="tilemap-brush-mode"
+                        aria-label="Tilemap brush mode"
+                        className="rounded border border-border bg-card px-2 py-1 text-xs"
+                        value={brushMode}
+                        disabled={isPainting}
+                        onChange={(event) => setBrushMode(event.target.value as TilemapBrushMode)}
+                    >
+                        <option value="tile">Tile</option>
+                        <option value="collision">Collision</option>
+                        <option value="walkability">Navigation</option>
+                        <option value="terrain">Terrain</option>
+                    </select>
+                    {brushMode === 'collision' && (
+                        <>
+                            <label className="text-xs" htmlFor="collision-brush">Collision value</label>
+                            <select
+                                id="collision-brush"
+                                aria-label="Collision brush"
+                                className="rounded border border-border bg-card px-2 py-1 text-xs"
+                                value={collisionBrush}
+                                disabled={isPainting}
+                                onChange={(event) => setCollisionBrush(event.target.value)}
+                            >
+                                <option value="inherit">Use tile default</option>
+                                <option value="true">Solid</option>
+                                <option value="false">Non-solid</option>
+                            </select>
+                        </>
+                    )}
+                    {brushMode === 'walkability' && (
+                        <>
+                            <label className="text-xs" htmlFor="navigation-brush">Navigation value</label>
+                            <select
+                                id="navigation-brush"
+                                aria-label="Navigation brush"
+                                className="rounded border border-border bg-card px-2 py-1 text-xs"
+                                value={navigationBrush}
+                                disabled={isPainting}
+                                onChange={(event) => setNavigationBrush(event.target.value)}
+                            >
+                                <option value="inherit">Use tile default</option>
+                                <option value="true">Walkable</option>
+                                <option value="false">Blocked</option>
+                            </select>
+                        </>
+                    )}
+                    {brushMode === 'terrain' && (
+                        <>
+                            <label className="text-xs" htmlFor="terrain-brush">Terrain value</label>
+                            <input
+                                id="terrain-brush"
+                                aria-label="Terrain brush"
+                                className="min-w-0 rounded border border-border bg-card px-2 py-1 text-xs"
+                                value={terrainBrush}
+                                placeholder="Use tile default"
+                                disabled={isPainting}
+                                onChange={(event) => setTerrainBrush(event.target.value)}
+                            />
+                        </>
+                    )}
+                </div>
+            )}
             {error && <p className="text-xs text-red-400" role="alert">{error}</p>}
             {tilemap ? (
                 <div
@@ -754,16 +846,16 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                                                 ? selectedCell.x === x && selectedCell.y === y ? 0 : -1
                                                 : x === 0 && y === 0 ? 0 : -1}
                                             className="flex h-6 w-6 flex-col items-center justify-center bg-card text-[9px] leading-none hover:bg-primary/30 focus-visible:outline focus-visible:outline-1 focus-visible:outline-primary"
-                                            disabled={paintingBlocked}
+                                            disabled={brushMode === 'tile' && paintingBlocked}
                                             onFocus={() => setSelectedCell({ x, y })}
                                             onKeyDown={(event) => handleGridCellKeyDown(event, x, y)}
                                             onMouseDown={(event) => {
                                                 event.preventDefault();
                                                 setIsPainting(true);
-                                                paint(x, y);
+                                                applyBrush(x, y);
                                             }}
-                                            onMouseEnter={() => { if (isPainting) paint(x, y); }}
-                                            onClick={() => paint(x, y)}
+                                            onMouseEnter={() => { if (isPainting) applyBrush(x, y); }}
+                                            onClick={() => applyBrush(x, y)}
                                         >
                                             {metadataMarkers.length > 0 && (
                                                 <span className="flex h-2 items-center justify-center gap-0.5 text-[6px] font-bold" aria-hidden="true">
