@@ -264,3 +264,56 @@ test("empty destination configuration and invalid actors do not load a scene", a
     assert.equal(await transition.Interact(null), false);
     assert.equal(fetchCount, 0);
 });
+
+test("SceneLoader discards scenes when synchronous layer parsing throws", () => {
+    const source = SceneLoader.parse({ name: "Stable Source", entities: [] });
+    const scenesBefore = SceneManager.GetScenes();
+    assert.throws(
+        () => SceneLoader.parse({ name: "Broken Layer", layers: [null] }),
+        /Invalid scene layer definition/
+    );
+    assert.deepEqual(SceneManager.GetScenes(), scenesBefore);
+    assert.equal(SceneManager.GetSceneByName("Broken Layer"), undefined);
+    assert.equal(SceneManager.GetScene(source.id), source);
+});
+
+test("SceneLoader discards scenes when asynchronous tilemap loading rejects", async () => {
+    globalThis.fetch = async () => jsonResponse({}, 404);
+    const source = SceneLoader.parse({ name: "Stable Source", entities: [] });
+    const scenesBefore = SceneManager.GetScenes();
+    const pendingScene = SceneLoader.parse({
+        name: "Broken Tilemap Scene",
+        layers: [{ type: "tilemap", src: "maps/missing.map" }]
+    });
+    await assert.rejects(pendingScene, /Failed to load tilemap/);
+    assert.deepEqual(SceneManager.GetScenes(), scenesBefore);
+    assert.equal(SceneManager.GetSceneByName("Broken Tilemap Scene"), undefined);
+    assert.equal(SceneManager.GetScene(source.id), source);
+});
+
+test("failed editor-authored destination resource loads preserve the active source actor", async () => {
+    globalThis.fetch = async path => path === "levels/broken.scene"
+        ? jsonResponse({ name: "Broken Destination", layers: [{ type: "tilemap", src: "maps/missing.map" }] })
+        : jsonResponse({}, 404);
+    const source = SceneLoader.parse({ name: "Source", entities: [] });
+    const transition = new SceneTransition();
+    transition.deserialize({
+        targetScene: "levels/broken.scene",
+        trigger: "interact"
+    });
+    const actor = new Entity("Player");
+    actor.AddComponent(new Transform(new Vector2(7, 11), 0.5));
+    source.AddChild(actor);
+    SceneManager.LoadScene(source.id);
+
+    await assert.rejects(transition.Interact(actor), /Failed to load tilemap/);
+    assert.equal(SceneManager.GetActiveScene(), source);
+    assert.equal(actor.parent, source);
+    assert.deepEqual(
+        { x: actor.GetComponent(Transform).position.x, y: actor.GetComponent(Transform).position.y },
+        { x: 7, y: 11 }
+    );
+    assert.equal(actor.GetComponent(Transform).rotation, 0.5);
+    assert.deepEqual(SceneManager.GetScenes(), [source]);
+    assert.equal(SceneManager.GetSceneByName("Broken Destination"), undefined);
+});

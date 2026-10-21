@@ -85,27 +85,38 @@ export class SceneLoader {
         const scene = new Scene(sceneName);
         if (data.id !== undefined && data.id !== null) scene.id = data.id;
 
-        // 1. Configure Global Scene properties (Camera, etc.)
-        if (data.camera) {
-            scene.cameraSettings = data.camera;
-        }
-
-        // 2. Parse Layers
-        const pendingLoads = [];
-        if (Array.isArray(data.layers)) {
-            for (const layerData of data.layers) {
-                const pending = SceneLoader.#parseLayer(layerData, scene);
-                if (pending && typeof pending.then === "function") pendingLoads.push(pending);
+        try {
+            // 1. Configure Global Scene properties (Camera, etc.)
+            if (data.camera) {
+                scene.cameraSettings = data.camera;
             }
-        }
-        if (Array.isArray(data.entities)) {
-            data.entities.forEach(entityData => scene.AddChild(SceneLoader.#parseEntity(entityData)));
-        }
 
-        if (pendingLoads.length > 0) {
-            return Promise.all(pendingLoads).then(() => scene);
+            // 2. Parse Layers
+            const pendingLoads = [];
+            if (Array.isArray(data.layers)) {
+                for (const layerData of data.layers) {
+                    const pending = SceneLoader.#parseLayer(layerData, scene);
+                    if (pending && typeof pending.then === "function") pendingLoads.push(pending);
+                }
+            }
+            if (Array.isArray(data.entities)) {
+                data.entities.forEach(entityData => scene.AddChild(SceneLoader.#parseEntity(entityData)));
+            }
+
+            if (pendingLoads.length > 0) {
+                return Promise.all(pendingLoads).then(
+                    () => scene,
+                    error => {
+                        SceneManager.removeScene(scene);
+                        throw error;
+                    }
+                );
+            }
+            return scene;
+        } catch (error) {
+            SceneManager.removeScene(scene);
+            throw error;
         }
-        return scene;
     }
 
     /** Validate a scene payload without constructing or registering a Scene. */
