@@ -30,23 +30,21 @@ function jsonResponse(data, status = 200) {
     return { ok: status >= 200 && status < 300, status, json: async () => data };
 }
 
-test("SceneLoader binds enter transitions to collision events and transfers actors to named spawns", async () => {
-    const destinationData = {
-        name: "Destination",
-        entities: [{
-            name: "Arrival Container",
-            children: [{
-                name: "Castle Spawn",
-                transform: { position: { x: 18, y: -6 } },
-                components: [{ type: "SpawnPoint", props: { spawnId: "castle" } }]
-            }]
-        }]
-    };
+async function enterSceneAtSpawn(facing) {
     globalThis.fetch = async path => {
         assert.equal(path, "levels/destination.scene");
-        return jsonResponse(destinationData);
+        return jsonResponse({
+            name: "Destination",
+            entities: [{
+                name: "Arrival Container",
+                children: [{
+                    name: "Castle Spawn",
+                    transform: { position: { x: 18, y: -6 } },
+                    components: [{ type: "SpawnPoint", props: { spawnId: "castle", facing } }]
+                }]
+            }]
+        });
     };
-
     const source = SceneLoader.parse({
         name: "Source",
         entities: [{
@@ -61,7 +59,7 @@ test("SceneLoader binds enter transitions to collision events and transfers acto
     const transition = door.components.find(component => component instanceof SceneTransition);
     const actor = new Entity("Player");
     actor.runtimeHealth = 73;
-    actor.AddComponent(new Transform(new Vector2(2, 3)));
+    actor.AddComponent(new Transform(new Vector2(2, 3), 1.75));
     const actorCollider = new TriggerCollider(16, 16);
     actor.AddComponent(actorCollider);
     source.AddChild(actor);
@@ -75,14 +73,21 @@ test("SceneLoader binds enter transitions to collision events and transfers acto
     assert.ok(transition.lastActivation instanceof Promise);
     assert.equal(await transition.lastActivation, true);
 
-    const destination = SceneManager.GetActiveScene();
-    assert.equal(destination.name, "Destination");
-    assert.equal(source.children.includes(actor), false);
-    assert.equal(destination.children.includes(actor), true);
-    assert.equal(actor.parent, destination);
-    assert.equal(actor.runtimeHealth, 73);
-    assert.deepEqual(actor.GetComponent(Transform).position, new Vector2(18, -6));
-});
+    return { source, destination: SceneManager.GetActiveScene(), actor };
+}
+
+for (const [facing, rotation] of Object.entries({ right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 })) {
+    test(`enter transition applies ${facing} SpawnPoint facing to the transferred actor`, async () => {
+        const { source, destination, actor } = await enterSceneAtSpawn(facing);
+        assert.equal(destination.name, "Destination");
+        assert.equal(source.children.includes(actor), false);
+        assert.equal(destination.children.includes(actor), true);
+        assert.equal(actor.parent, destination);
+        assert.equal(actor.runtimeHealth, 73);
+        assert.deepEqual(actor.GetComponent(Transform).position, new Vector2(18, -6));
+        assert.equal(actor.GetComponent(Transform).rotation, rotation);
+    });
+}
 
 test("interact transitions require explicit activation and deduplicate concurrent loads", async () => {
     let resolveResponse;
@@ -134,6 +139,24 @@ test("a missing requested spawn leaves the actor and active scene unchanged", as
     assert.equal(SceneManager.GetActiveScene(), source);
     assert.equal(source.children.includes(actor), true);
     assert.deepEqual(actor.GetComponent(Transform).position, new Vector2(4, 5));
+});
+
+test("a transition without a named spawn preserves the actor's existing transform", async () => {
+    globalThis.fetch = async () => jsonResponse({ name: "Destination", entities: [] });
+    const source = SceneLoader.parse({
+        name: "Source",
+        entities: [{ components: [{ type: "SceneTransition", props: { targetScene: "levels/destination.scene", trigger: "interact" } }] }]
+    });
+    const transition = source.children[0].components.find(component => component instanceof SceneTransition);
+    const actor = new Entity("Player");
+    actor.AddComponent(new Transform(new Vector2(3, 4), 0.375));
+    source.AddChild(actor);
+    SceneManager.LoadScene(source.id);
+
+    assert.equal(await transition.Interact(actor), true);
+    assert.equal(SceneManager.GetActiveScene().children.includes(actor), true);
+    assert.deepEqual(actor.GetComponent(Transform).position, new Vector2(3, 4));
+    assert.equal(actor.GetComponent(Transform).rotation, 0.375);
 });
 
 test("empty destination configuration and invalid actors do not load a scene", async () => {

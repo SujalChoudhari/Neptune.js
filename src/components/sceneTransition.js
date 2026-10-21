@@ -4,6 +4,13 @@ import { SpawnPoint } from "./spawnPoint.js";
 import { Transform } from "./transform.js";
 import { Vector2 } from "../math/vec2.js";
 
+const SPAWN_FACING_ROTATION = Object.freeze({
+    right: 0,
+    down: Math.PI / 2,
+    left: Math.PI,
+    up: -Math.PI / 2
+});
+
 function findSpawnPoint(scene, spawnId) {
     const pending = [...scene.children];
     while (pending.length > 0) {
@@ -77,9 +84,10 @@ export class SceneTransition extends Component {
         if (!destination) return false;
 
         const spawnId = this.properties.spawnPoint;
+        let spawnEntity = null;
         let spawnTransform = null;
         if (typeof spawnId === "string" && spawnId !== "") {
-            const spawnEntity = findSpawnPoint(destination, spawnId);
+            spawnEntity = findSpawnPoint(destination, spawnId);
             spawnTransform = spawnEntity?.GetComponent(Transform) ?? null;
             if (!spawnTransform) return false;
         }
@@ -87,10 +95,17 @@ export class SceneTransition extends Component {
         const actorTransform = actor.GetComponent(Transform);
         if (spawnTransform && !actorTransform) return false;
         const previousPosition = actorTransform?.position;
-        if (spawnTransform) actorTransform.position = new Vector2(spawnTransform.position.x, spawnTransform.position.y);
+        const previousRotation = actorTransform?.rotation;
+        if (spawnTransform) {
+            actorTransform.position = new Vector2(spawnTransform.position.x, spawnTransform.position.y);
+            const spawnPoint = spawnEntity.components.find(component => component instanceof SpawnPoint);
+            const rotation = SPAWN_FACING_ROTATION[spawnPoint?.properties.facing];
+            if (rotation !== undefined) actorTransform.rotation = rotation;
+        }
 
         if (!SceneManager.TransitionToScene(destination.id, [actor])) {
             if (actorTransform && previousPosition) actorTransform.position = previousPosition;
+            if (actorTransform && previousRotation !== undefined) actorTransform.rotation = previousRotation;
             return false;
         }
         return true;
