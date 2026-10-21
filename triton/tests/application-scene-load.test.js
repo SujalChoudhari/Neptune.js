@@ -15,6 +15,7 @@ import { QuestDefinition } from "../../src/components/questDefinition.js";
 import { EnemyConfig } from "../../src/components/enemyConfig.js";
 import { BoxCollider } from "../../src/components/boxCollider.js";
 import { Hitbox, Hurtbox, TriggerCollider } from "../../src/nereid/collider.js";
+import { CollisionSystem } from "../../src/nereid/collisionSystem.js";
 import { Sprite } from "../../src/rendering/sprite.js";
 import { createEmptyTilemap, paintTileCell, setCellMetadata, setTileMetadata } from "../src/lib/tilemapAuthoring.mjs";
 import { createRuntimeEntity, runtimeEntityBridgeScript } from "../src/lib/runtimeEntityBridge.mjs";
@@ -99,6 +100,28 @@ test("saved editor-authored scene loads through the Application runtime", async 
         { collision: true, walkable: false, terrain: "wall" }
     );
     globalThis.fetch = async path => {
+        if (path === "scenes/dungeon.scene") {
+            return {
+                ok: true,
+                async json() {
+                    return {
+                        type: "scene", version: "1.0.0", schemaVersion: 1, id: "scene-runtime-dungeon",
+                        name: "Runtime Dungeon",
+                        entities: [{
+                            id: "arrival-container",
+                            name: "Arrival Container",
+                            children: [{
+                                id: "dungeon-arrival",
+                                name: "Dungeon Arrival",
+                                transform: { pos: { x: 18, y: -6 }, rot: 0, scale: { x: 1, y: 1 } },
+                                components: [{ type: "SpawnPoint", props: { spawnId: "dungeon-arrival", facing: "left" } }]
+                            }]
+                        }],
+                        layers: []
+                    };
+                }
+            };
+        }
         assert.equal(path, "maps/dungeon.map");
         return {
             ok: true,
@@ -129,6 +152,23 @@ test("saved editor-authored scene loads through the Application runtime", async 
                 { type: "QuestDefinition", props: { questId: "find-key", title: "Find the Key", objectives: [{ id: "key", description: "Find the key" }] } },
                 { type: "EnemyConfig", props: { enemyId: "guard", health: 40, damage: 7, behavior: "guard" } }
             ]
+        }), true);
+        assert.equal(editorRunner.createEntity("root", {
+            id: "door-authored-1",
+            name: "Dungeon Door",
+            type: "empty",
+            transform: { pos: { x: 2, y: 3 }, rot: 0, scale: { x: 1, y: 1 } },
+            components: [
+                { type: "TriggerCollider", props: { width: 32, height: 32 } },
+                { type: "SceneTransition", props: { targetScene: "scenes/dungeon.scene", spawnPoint: "dungeon-arrival", trigger: "enter" } }
+            ]
+        }), true);
+        assert.equal(editorRunner.createEntity("root", {
+            id: "transition-actor-1",
+            name: "Transition Actor",
+            type: "empty",
+            transform: { pos: { x: 1, y: 2 }, rot: 0.5, scale: { x: 1, y: 1 } },
+            components: []
         }), true);
         const tilemapLayer = editorRunner.createTilemapLayer("maps/dungeon.map");
         assert.equal(tilemapLayer.src, "maps/dungeon.map");
@@ -258,6 +298,40 @@ test("saved editor-authored scene loads through the Application runtime", async 
             1,
             "only one runtime scene remains registered for the persisted scene ID"
         );
+
+        const authoredDoor = reloadedScene.children.find(entity => entity.id === "door-authored-1");
+        const authoredTransition = authoredDoor?.GetComponent(SceneTransition);
+        const doorTrigger = authoredDoor?.GetComponent(TriggerCollider);
+        const actor = reloadedScene.children.find(entity => entity.id === "transition-actor-1");
+        assert.ok(authoredTransition, "saved editor SceneTransition is restored by SceneLoader");
+        assert.ok(doorTrigger, "saved editor TriggerCollider is restored by SceneLoader");
+        assert.ok(actor, "saved editor actor is restored before runtime trigger activation");
+        actor.runtimeHealth = 73;
+        const actorTrigger = new TriggerCollider(16, 16);
+        actor.AddComponent(actorTrigger);
+        const collisionSystem = new CollisionSystem();
+        collisionSystem.step([
+            { collider: doorTrigger, x: 0, y: 0, entity: authoredDoor },
+            { collider: actorTrigger, x: 0, y: 0, entity: actor }
+        ]);
+        assert.ok(authoredTransition.lastActivation instanceof Promise, "loaded trigger binding activates SceneTransition on overlap-enter");
+        assert.equal(await authoredTransition.lastActivation, true);
+
+        const destinationScene = SceneManager.GetActiveScene();
+        assert.equal(destinationScene.name, "Runtime Dungeon");
+        assert.notEqual(destinationScene, reloadedScene);
+        assert.equal(reloadedScene.children.includes(actor), false, "actor leaves the authored source scene");
+        assert.equal(destinationScene.children.includes(actor), true, "actor is transferred into the loaded destination scene");
+        assert.equal(actor.parent, destinationScene);
+        assert.equal(actor.runtimeHealth, 73, "runtime-only actor state survives the authored transition");
+        assert.deepEqual(
+            { x: actor.GetComponent(Transform).position.x, y: actor.GetComponent(Transform).position.y },
+            { x: 18, y: -6 },
+            "actor is placed at the destination's saved SpawnPoint"
+        );
+        assert.equal(actor.GetComponent(Transform).rotation, Math.PI, "left-facing SpawnPoint sets actor orientation");
+        assert.equal(SceneManager.GetScene(destinationScene.id), destinationScene);
+        assert.equal(SceneManager.GetScenes().filter(scene => scene.id === destinationScene.id).length, 1);
     } finally {
         SceneManager.removeAllScenes();
         if (originalDocument === undefined) delete globalThis.document;
