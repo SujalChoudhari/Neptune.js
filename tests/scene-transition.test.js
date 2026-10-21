@@ -338,8 +338,10 @@ test("failed project opening removes scenes parsed earlier in the same attempt",
     }
 });
 
-test("successful project opening registers every parsed scene exactly once", async () => {
+test("successful project opening replaces the current project with every parsed scene exactly once", async () => {
     const key = "test-project-open-success";
+    const currentScene = SceneLoader.parse({ id: "current", name: "Current Project Scene", entities: [] });
+    SceneManager.LoadScene(currentScene.id);
     Storage.SaveProject(key, {
         name: "Valid Project",
         scenes: [
@@ -351,8 +353,57 @@ test("successful project opening registers every parsed scene exactly once", asy
     try {
         const opened = await SceneManager.OpenProject(key);
         assert.deepEqual(opened.scenes.map(scene => scene.name), ["First Scene", "Second Scene"]);
+        assert.deepEqual(opened.scenes.map(scene => scene.id), ["one", "two"]);
         assert.equal(SceneManager.GetScenes().length, 2);
         assert.deepEqual(SceneManager.GetScenes(), opened.scenes);
+        assert.equal(SceneManager.GetScene(currentScene.id), undefined);
+        assert.equal(SceneManager.GetActiveScene(), undefined);
+    } finally {
+        Storage.Remove(key);
+    }
+});
+
+test("failed project opening preserves the currently active project", async () => {
+    const key = "test-project-open-preserve-current";
+    const currentScene = SceneLoader.parse({ id: "current", name: "Current Project Scene", entities: [] });
+    SceneManager.LoadScene(currentScene.id);
+    Storage.SaveProject(key, {
+        name: "Broken Replacement",
+        scenes: [
+            { id: "replacement-first", name: "Replacement First", entities: [] },
+            { id: "replacement-broken", name: "Replacement Broken", layers: [null] }
+        ]
+    });
+
+    try {
+        await assert.rejects(SceneManager.OpenProject(key), /Invalid scene layer definition/);
+        assert.deepEqual(SceneManager.GetScenes(), [currentScene]);
+        assert.equal(SceneManager.GetActiveScene(), currentScene);
+    } finally {
+        Storage.Remove(key);
+    }
+});
+
+test("failed asynchronous project resources preserve the currently active project", async () => {
+    const key = "test-project-open-preserve-current-resource-failure";
+    const currentScene = SceneLoader.parse({ id: "current", name: "Current Project Scene", entities: [] });
+    SceneManager.LoadScene(currentScene.id);
+    globalThis.fetch = async path => {
+        assert.equal(path, "maps/missing.map");
+        return jsonResponse({}, 404);
+    };
+    Storage.SaveProject(key, {
+        name: "Broken Resource Replacement",
+        scenes: [
+            { id: "replacement-first", name: "Replacement First", entities: [] },
+            { id: "replacement-broken", name: "Replacement Broken", layers: [{ type: "tilemap", src: "maps/missing.map" }] }
+        ]
+    });
+
+    try {
+        await assert.rejects(SceneManager.OpenProject(key), /Failed to load tilemap/);
+        assert.deepEqual(SceneManager.GetScenes(), [currentScene]);
+        assert.equal(SceneManager.GetActiveScene(), currentScene);
     } finally {
         Storage.Remove(key);
     }

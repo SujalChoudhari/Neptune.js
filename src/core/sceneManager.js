@@ -228,7 +228,6 @@ export class SceneManager {
         if (project === null) return null;
 
         const { SceneLoader } = await import("./sceneLoader.js");
-        SceneManager.CloseProject();
         const scenes = [];
         try {
             for (const sceneData of project.scenes) {
@@ -240,6 +239,11 @@ export class SceneManager {
             }
             throw error;
         }
+
+        SceneManager.#scenes = [...scenes];
+        SceneManager.#loadedScenes = [];
+        SceneManager.#currentSceneIndex = -1;
+        SceneManager.#nextSceneId = 0;
         return { ...project, scenes };
     }
 
