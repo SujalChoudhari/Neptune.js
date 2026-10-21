@@ -4,6 +4,7 @@ import { ComponentSection } from "../shared/ComponentSection"
 import { PropertyRow } from "../shared/PropertyRow"
 import {
     ThemedInput,
+    ThemedSelect,
     ThemedCheckbox,
     ThemedSlider,
     ThemedColorPicker,
@@ -20,8 +21,9 @@ const PropertyField: React.FC<{
     value: any
     onChange: (value: any) => void
     minimum?: number
+    options?: { value: string; label: string }[]
     depth?: number
-}> = ({ label, value, onChange, minimum, depth = 0 }) => {
+}> = ({ label, value, onChange, minimum, options, depth = 0 }) => {
     const valueType = typeof value
     const [isExpanded, setIsExpanded] = useState(true)
     const [scenePathDraft, setScenePathDraft] = useState(typeof value === 'string' ? value : '')
@@ -138,6 +140,15 @@ const PropertyField: React.FC<{
     // 4. Asset / Reference Input (Drag & Drop)
     if (valueType === 'string') {
         const lowerLabel = label.toLowerCase();
+        if (options) {
+            return (
+                <div style={indentStyle}>
+                    <PropertyRow label={label}>
+                        <ThemedSelect value={value} onChange={onChange} options={options} />
+                    </PropertyRow>
+                </div>
+            );
+        }
         const isSceneReference = lowerLabel === 'targetscene';
         const isPath = lowerLabel.includes('src') || lowerLabel.includes('path') || lowerLabel.includes('source') || lowerLabel.includes('map') || lowerLabel.includes('texture') || isSceneReference;
         const isFileValue = typeof value === 'string' && (value.match(/\.[0-9a-z]+$/i) !== null); // Simple extension check
@@ -402,6 +413,15 @@ export const GenericComponentSection: React.FC<GenericComponentSectionProps> = (
                     value={value}
                     minimum={type === "EnemyConfig"
                         ? ({ maxHealth: 1, moveSpeed: 0, contactDamage: 0 } as Record<string, number>)[key]
+                        : undefined}
+                    options={type === "SceneTransition" && key === "trigger"
+                        ? [
+                            { value: "enter", label: "Enter" },
+                            { value: "interact", label: "Interact" },
+                            ...(typeof value === "string" && !["enter", "interact"].includes(value)
+                                ? [{ value, label: value ? `Legacy: ${value}` : "Legacy: (empty)" }]
+                                : [])
+                        ]
                         : undefined}
                     onChange={(val) => handleUpdate(rootProps, key, val, rootVirtuals, false)}
                 />

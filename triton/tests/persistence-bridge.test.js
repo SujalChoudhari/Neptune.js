@@ -998,7 +998,23 @@ describe("Triton persistence bridge", () => {
         expect(byType.enemy.components.find(component => component.type === "EnemyConfig").props).toEqual({
             maxHealth: 1, moveSpeed: 0, contactDamage: 0, behavior: "legacy_boss_phase_2"
         });
-        expect(harness.runner.updateEntity(byType["scene-transition"].id, "SceneTransition", { targetScene: "scenes/dungeon.scene", spawnPoint: "entrance", trigger: "interact" })).toBe(true);
+        expect(harness.runner.updateEntity(byType["scene-transition"].id, "SceneTransition", { trigger: "legacy_on_use" })).toBe(true);
+        const transitionProps = byType["scene-transition"].components.find(component => component.type === "SceneTransition").props;
+        const transitionInspector = genericSection({
+            type: "SceneTransition", data: transitionProps, entity: {}, isActive: true, onToggleActive() {},
+            onUpdate: (key, value) => expect(harness.runner.updateEntity(byType["scene-transition"].id, "SceneTransition", { [key]: value })).toBe(true)
+        });
+        const triggerProperty = visitInspector(transitionInspector).find(node => node.type?.name === "PropertyField" && node.props.label === "trigger");
+        hookIndex = 0;
+        const triggerSelect = visitInspector(triggerProperty.type(triggerProperty.props)).find(node => node.type === "ThemedSelect");
+        expect(triggerSelect).toBeDefined();
+        expect(triggerSelect.props.options.map(option => option.value)).toEqual(["enter", "interact", "legacy_on_use"]);
+        expect(triggerSelect.props.options[2].label).toBe("Legacy: legacy_on_use");
+        expect(transitionProps.trigger).toBe("legacy_on_use");
+        triggerSelect.props.onChange("interact");
+        expect(harness.runner.currentScene.entities.find(entity => entity.id === byType["scene-transition"].id)
+            .components.find(component => component.type === "SceneTransition").props.trigger).toBe("interact");
+        expect(harness.runner.updateEntity(byType["scene-transition"].id, "SceneTransition", { targetScene: "scenes/dungeon.scene", spawnPoint: "entrance" })).toBe(true);
         expect(harness.runner.updateEntity(byType.hitbox.id, "Hitbox", { width: 12, height: 6, offsetX: 1, offsetY: -2 })).toBe(true);
         expect(harness.runner.updateEntity(byType.hurtbox.id, "Hurtbox", { width: 11, height: 7, offsetX: -3, offsetY: 4 })).toBe(true);
         expect(harness.runner.updateEntity(byType["trigger-area"].id, "TriggerCollider", { width: 13, height: 6, offsetX: 2, offsetY: -5 })).toBe(true);
