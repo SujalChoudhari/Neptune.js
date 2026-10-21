@@ -258,6 +258,50 @@ test('Scene View resizes every collider shape and syncs Inspector, canonical sce
     }
 });
 
+test('Scene View collider resize handles are focusable and resize all collider shapes with arrow keys', () => {
+    const cases = [
+        ['Hitbox', 'ArrowRight', false, { width: 2.1, height: 1 }],
+        ['Hurtbox', 'ArrowUp', false, { width: 1, height: 2.1 }],
+        ['TriggerCollider', 'ArrowLeft', false, { width: 2.9, height: 1 }],
+        ['BoxCollider', 'ArrowDown', false, { size: { x: 4, y: 2.9 } }],
+        ['Hitbox', 'ArrowRight', true, { width: 3, height: 1 }]
+    ];
+
+    for (const [type, key, shiftKey, expected] of cases) {
+        const harness = createSceneViewHarness();
+        const tree = harness.render();
+        const handle = findNode(tree, node => node.props?.['aria-label'] === `Resize ${type} bounds`);
+        assert.ok(handle, `${type} exposes a named resize control`);
+        assert.equal(handle.props.role, 'button');
+        assert.equal(handle.props.tabIndex, 0);
+        assert.equal(handle.props['aria-keyshortcuts'], 'ArrowLeft ArrowRight ArrowUp ArrowDown');
+
+        let defaultPrevented = false;
+        let propagationStopped = false;
+        handle.props.onKeyDown({
+            key,
+            shiftKey,
+            preventDefault() { defaultPrevented = true; },
+            stopPropagation() { propagationStopped = true; }
+        });
+
+        assert.equal(defaultPrevented, true, `${key} is handled by the resize control`);
+        assert.equal(propagationStopped, true, `${key} does not bubble into viewport shortcuts`);
+        assert.deepEqual(JSON.parse(JSON.stringify(harness.canonicalEdits.at(-1))), {
+            id: 'entity-1', component: type, data: expected
+        });
+        const edits = harness.componentEdits.filter(edit => edit.component === type);
+        assert.deepEqual(edits.map(edit => edit.field), type === 'BoxCollider' ? ['size'] : ['width', 'height']);
+        assert.equal(harness.notifications.filter(item => item.type === 'editor:update-component' && item.payload.id === 'entity-1').length, edits.length);
+    }
+
+    const harness = createSceneViewHarness();
+    const handle = findNode(harness.render(), node => node.props?.['aria-label'] === 'Resize Hitbox bounds');
+    let tabWasPrevented = false;
+    handle.props.onKeyDown({ key: 'Tab', preventDefault() { tabWasPrevented = true; }, stopPropagation() {} });
+    assert.equal(tabWasPrevented, false, 'Tab remains available for moving focus between handles');
+});
+
 test('Scene View UI emits viewport selection and cursor-anchored zoom updates', () => {
     const harness = createSceneViewHarness();
     const viewport = findNode(harness.render(), node => node.props?.className === 'flex-1 relative cursor-crosshair');

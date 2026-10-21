@@ -150,6 +150,33 @@ export function SceneViewPanel() {
         event.stopPropagation();
     };
 
+    const resizeColliderWithKeyboard = (
+        type: 'Hitbox' | 'Hurtbox' | 'TriggerCollider' | 'BoxCollider',
+        event: React.KeyboardEvent<SVGCircleElement>
+    ) => {
+        if (selectedIds.length !== 1 || !selectedEntityData) return;
+        const component = selectedEntityData.components?.[type];
+        const width = component?.width ?? component?.size?.x;
+        const height = component?.height ?? component?.size?.y;
+        if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return;
+
+        const step = event.shiftKey ? 1 : 0.1;
+        let deltaX = 0;
+        let deltaY = 0;
+        switch (event.key) {
+            case 'ArrowLeft': deltaX = -step; break;
+            case 'ArrowRight': deltaX = step; break;
+            case 'ArrowUp': deltaY = step; break;
+            case 'ArrowDown': deltaY = -step; break;
+            default: return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        const size = resizeColliderBounds({ width, height }, deltaX, deltaY, 1);
+        applyColliderResizeEdit(selectedIds[0], type, size.width, size.height);
+    };
+
     const handleViewportClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
         if (suppressClickRef.current) {
             suppressClickRef.current = false;
@@ -450,6 +477,7 @@ export function SceneViewPanel() {
                                 </rect>
                                 <circle
                                     aria-label={`Resize ${bounds.type} bounds`}
+                                    aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown"
                                     data-collider-resize-handle={bounds.type}
                                     cx={(bounds.x + bounds.width - pan.x) * zoom}
                                     cy={(bounds.y + bounds.height - pan.y) * zoom}
@@ -458,7 +486,10 @@ export function SceneViewPanel() {
                                     stroke="#111"
                                     strokeWidth="1.5"
                                     className="pointer-events-auto cursor-nwse-resize"
+                                    role="button"
+                                    tabIndex={0}
                                     onMouseDown={(event) => beginColliderResize(bounds.type, event)}
+                                    onKeyDown={(event) => resizeColliderWithKeyboard(bounds.type, event)}
                                 />
                             </g>
                         ))}
