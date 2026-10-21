@@ -163,6 +163,47 @@ export class SceneManager {
     }
 
     /**
+     * Replace stale registrations that share a parsed scene's persisted ID.
+     * SceneLoader constructs and registers a Scene before restoring its ID from
+     * serialized data, so loading an edited scene again can otherwise leave
+     * duplicate IDs and make GetScene select the older instance.
+     * @param {Scene} scene - The parsed replacement scene.
+     * @returns {Scene} The registered replacement scene.
+     */
+    static replaceScene(scene) {
+        if (!scene || typeof scene !== "object") {
+            throw new TypeError("SceneManager.replaceScene expects a Scene instance.");
+        }
+
+        if (!SceneManager.#scenes.includes(scene)) {
+            SceneManager.addScene(scene);
+        }
+
+        const duplicates = SceneManager.#scenes.filter(candidate => candidate !== scene && candidate.id === scene.id);
+        if (duplicates.length === 0) return scene;
+
+        const activeScene = SceneManager.GetActiveScene();
+        const replacesActiveScene = duplicates.includes(activeScene);
+        for (const duplicate of duplicates) {
+            if (!SceneManager.#loadedScenes.includes(duplicate)) continue;
+            if (duplicate === activeScene) duplicate.OnSceneUnload();
+            else duplicate.OnSceneUnloadAdditive();
+        }
+
+        const firstDuplicateIndex = SceneManager.#scenes.findIndex(candidate => duplicates.includes(candidate));
+        const insertionIndex = SceneManager.#scenes
+            .slice(0, firstDuplicateIndex)
+            .filter(candidate => !duplicates.includes(candidate) && candidate !== scene)
+            .length;
+        SceneManager.#loadedScenes = SceneManager.#loadedScenes.filter(candidate => !duplicates.includes(candidate));
+        SceneManager.#scenes = SceneManager.#scenes.filter(candidate => !duplicates.includes(candidate) && candidate !== scene);
+        SceneManager.#scenes.splice(insertionIndex, 0, scene);
+
+        if (replacesActiveScene) SceneManager.#currentSceneIndex = -1;
+        return scene;
+    }
+
+    /**
      * Unload a scene by its id.
      * @param {number} id - Id of the scene to be unloaded.
      * @private

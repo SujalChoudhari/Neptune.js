@@ -5,6 +5,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { buildSync } from "esbuild";
 import { Application } from "../../src/core/application.js";
+import { Scene } from "../../src/core/scene.js";
+import { SceneManager } from "../../src/core/sceneManager.js";
 import { Transform } from "../../src/components/transform.js";
 import { SceneTransition } from "../../src/components/sceneTransition.js";
 import { SpawnPoint } from "../../src/components/spawnPoint.js";
@@ -105,6 +107,7 @@ test("saved editor-authored scene loads through the Application runtime", async 
     };
 
     try {
+        SceneManager.removeAllScenes();
         const editorRunner = createEditorRunner();
         editorRunner.openScene({
             type: "scene", version: "1.0.0", schemaVersion: 1, id: "scene-authored-runtime",
@@ -224,7 +227,39 @@ test("saved editor-authored scene loads through the Application runtime", async 
         const messageSpawn = runtimeScene.children.find(entity => entity.id === "message-authored-spawn");
         assert.ok(messageSpawn, "the iframe message bridge inserts the entity into the live scene");
         assert.deepEqual(messageSpawn.GetComponent(SpawnPoint).properties, { spawnId: "message-entry", facing: "left" });
+
+        let activeSceneUnloads = 0;
+        runtimeScene.OnSceneUnload = () => { activeSceneUnloads += 1; };
+        const unrelatedScene = new Scene("Unrelated Runtime Scene");
+        assert.equal(editorRunner.createEntity("root", {
+            id: "same-id-reload-entity",
+            name: "Reloaded Editor Entity",
+            type: "empty"
+        }), true);
+        let updatedSavedContent;
+        await editorRunner.saveScene(async (filePath, content) => {
+            assert.equal(filePath, "scenes/authored-runtime.scene");
+            updatedSavedContent = content;
+            return true;
+        });
+        await application.loadScene(JSON.parse(updatedSavedContent));
+
+        const reloadedScene = application.scene;
+        assert.notEqual(reloadedScene, runtimeScene, "same-ID reload replaces the stale active Scene object");
+        assert.ok(
+            reloadedScene.children.some(entity => entity.id === "same-id-reload-entity"),
+            "Application.loadScene exposes the newly saved editor-authored entity"
+        );
+        assert.equal(activeSceneUnloads, 1, "the replaced active scene unload callback runs exactly once");
+        assert.equal(SceneManager.GetScene(reloadedScene.id), reloadedScene);
+        assert.equal(SceneManager.GetSceneByName(unrelatedScene.name), unrelatedScene, "unrelated runtime scenes remain registered");
+        assert.equal(
+            SceneManager.GetScenes().filter(scene => scene.id === reloadedScene.id).length,
+            1,
+            "only one runtime scene remains registered for the persisted scene ID"
+        );
     } finally {
+        SceneManager.removeAllScenes();
         if (originalDocument === undefined) delete globalThis.document;
         else globalThis.document = originalDocument;
         if (originalWindow === undefined) delete globalThis.window;
