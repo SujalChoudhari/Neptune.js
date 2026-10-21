@@ -13,6 +13,7 @@ import { Vector2 } from "../math/vec2.js";
 import { Sprite } from "../rendering/sprite.js";
 import { Tileset } from "../thalassa/tileset.js";
 import { Tilemap } from "../thalassa/tilemap.js";
+import { SceneTransition } from "../components/sceneTransition.js";
 
 export {
     SCENE_SCHEMA_VERSION,
@@ -366,6 +367,10 @@ export class SceneLoader {
                 }
             });
         }
+
+        const transition = entity.components.find(component => component instanceof SceneTransition);
+        const triggerCollider = entity.components.find(component => component.role === "trigger");
+        if (transition && triggerCollider) transition.bindTrigger(triggerCollider);
 
         // Recursive Children
         if (Array.isArray(entityData.children)) {
