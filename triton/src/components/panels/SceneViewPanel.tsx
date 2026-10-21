@@ -11,6 +11,29 @@ import { Maximize, ZoomIn, ZoomOut } from "lucide-react";
 import { useGameContext } from '@/context/GameContext';
 import { EditorGameRunner } from '@/lib/editorGameRunner';
 
+type SpawnPointFacing = 'right' | 'down' | 'left' | 'up';
+
+type SpawnPointOverlayEntity = {
+    transform?: { position?: { x?: number; y?: number } };
+    components?: Record<string, { facing?: unknown }>;
+} | null | undefined;
+
+export function getSpawnPointOverlay(entity: SpawnPointOverlayEntity) {
+    const position = entity?.transform?.position;
+    const facing = entity?.components?.SpawnPoint?.facing;
+    const directions: Record<SpawnPointFacing, { x: number; y: number }> = {
+        right: { x: 1, y: 0 },
+        down: { x: 0, y: 1 },
+        left: { x: -1, y: 0 },
+        up: { x: 0, y: -1 }
+    };
+    if (!position || typeof position.x !== 'number' || typeof position.y !== 'number'
+        || !Number.isFinite(position.x) || !Number.isFinite(position.y)
+        || typeof facing !== 'string' || !Object.hasOwn(directions, facing)) return null;
+    const supportedFacing = facing as SpawnPointFacing;
+    return { x: position.x, y: position.y, facing: supportedFacing, direction: directions[supportedFacing] };
+}
+
 export function SceneViewPanel() {
     const containerRef = useRef<HTMLDivElement>(null);
     const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -441,9 +464,19 @@ export function SceneViewPanel() {
     `;
 
     const colliderOverlays = getColliderOverlayBounds(selectedEntityData);
+    const spawnFacingMarker = getSpawnPointOverlay(selectedEntityData);
     const activeGizmoPosition = gizmoPosition || selectedEntityData?.transform.position;
     const gizmoX = activeGizmoPosition ? (activeGizmoPosition.x - pan.x) * zoom : 0;
     const gizmoY = activeGizmoPosition ? (activeGizmoPosition.y - pan.y) * zoom : 0;
+    const spawnMarkerX = spawnFacingMarker ? (spawnFacingMarker.x - pan.x) * zoom : 0;
+    const spawnMarkerY = spawnFacingMarker ? (spawnFacingMarker.y - pan.y) * zoom : 0;
+    const spawnMarkerTipX = spawnMarkerX + (spawnFacingMarker?.direction.x || 0) * 24 * zoom;
+    const spawnMarkerTipY = spawnMarkerY + (spawnFacingMarker?.direction.y || 0) * 24 * zoom;
+    const spawnArrowBaseX = spawnMarkerTipX - (spawnFacingMarker?.direction.x || 0) * 7 * zoom;
+    const spawnArrowBaseY = spawnMarkerTipY - (spawnFacingMarker?.direction.y || 0) * 7 * zoom;
+    const spawnArrowPerpendicularX = -(spawnFacingMarker?.direction.y || 0) * 5 * zoom;
+    const spawnArrowPerpendicularY = (spawnFacingMarker?.direction.x || 0) * 5 * zoom;
+    const spawnArrowPath = `M ${spawnMarkerTipX} ${spawnMarkerTipY} L ${spawnArrowBaseX + spawnArrowPerpendicularX} ${spawnArrowBaseY + spawnArrowPerpendicularY} L ${spawnArrowBaseX - spawnArrowPerpendicularX} ${spawnArrowBaseY - spawnArrowPerpendicularY} Z`;
 
     return (
         <div
@@ -495,6 +528,33 @@ export function SceneViewPanel() {
                         aria-label="Move selected entity"
                         className="absolute inset-0 w-full h-full overflow-visible pointer-events-none"
                     >
+                        {spawnFacingMarker && (
+                            <g
+                                role="img"
+                                aria-label={`Selected Spawn Point facing ${spawnFacingMarker.facing}`}
+                                data-spawn-facing={spawnFacingMarker.facing}
+                                pointerEvents="none"
+                            >
+                                <circle
+                                    cx={spawnMarkerX}
+                                    cy={spawnMarkerY}
+                                    r={7 * zoom}
+                                    fill="#fbbf24"
+                                    stroke="#111"
+                                    strokeWidth={1.5 * zoom}
+                                />
+                                <line
+                                    data-spawn-facing-arrow="shaft"
+                                    x1={spawnMarkerX}
+                                    y1={spawnMarkerY}
+                                    x2={spawnMarkerTipX}
+                                    y2={spawnMarkerTipY}
+                                    stroke="#fbbf24"
+                                    strokeWidth={3 * zoom}
+                                />
+                                <path d={spawnArrowPath} fill="#fbbf24" />
+                            </g>
+                        )}
                         {colliderOverlays.map((bounds) => (
                             <g key={bounds.type}>
                                 <rect

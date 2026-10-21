@@ -22,7 +22,7 @@ test('Scene View bridge trusts only its own live iframe for all message types', 
     assert.match(source, /if \(!isSceneViewBridgeMessageSource\(event\.source, iframeRef\.current\?\.contentWindow\)\) return/);
 });
 
-function createSceneViewHarness() {
+function createSceneViewHarness(spawnFacing = undefined) {
     const sourcefile = path.resolve('triton/src/components/panels/SceneViewPanel.tsx');
     const external = [
         'react', 'react/jsx-runtime', 'lucide-react', '@/components/library', '@/context/GameContext',
@@ -70,7 +70,8 @@ function createSceneViewHarness() {
                     Hitbox: { width: 2, height: 1, offsetX: -1, offsetY: 0.5 },
                     Hurtbox: { width: 1, height: 2, offsetX: 0.25, offsetY: -1 },
                     TriggerCollider: { width: 3, height: 1, offsetX: -2, offsetY: 2 },
-                    BoxCollider: { size: { x: 4, y: 3 }, offset: { x: 2, y: -3 } }
+                    BoxCollider: { size: { x: 4, y: 3 }, offset: { x: 2, y: -3 } },
+                    ...(spawnFacing !== undefined ? { SpawnPoint: { facing: spawnFacing } } : {})
                 }
             },
             selectedIds: ['entity-1']
@@ -101,7 +102,7 @@ function createSceneViewHarness() {
         tree.props.ref.current = { getBoundingClientRect: () => ({ left: 10, top: 20 }) };
         return tree;
     };
-    return { render, notifications, canonicalEdits, componentEdits };
+    return { render, notifications, canonicalEdits, componentEdits, getSpawnPointOverlay: module.exports.getSpawnPointOverlay };
 }
 
 function findNode(node, predicate) {
@@ -209,6 +210,26 @@ test('combat collider overlay bounds include the selected transform and authored
     assert.deepEqual(getColliderOverlayBounds({ transform: { position: { x: 0, y: 0 } }, components: { Hitbox: { width: 0, height: 1 } } }), []);
 });
 
+test('SpawnPoint overlay model resolves all cardinal directions and ignores invalid data', () => {
+    const getSpawnPointOverlay = createSceneViewHarness().getSpawnPointOverlay;
+    const directions = {
+        right: { x: 1, y: 0 },
+        down: { x: 0, y: 1 },
+        left: { x: -1, y: 0 },
+        up: { x: 0, y: -1 }
+    };
+    for (const [facing, direction] of Object.entries(directions)) {
+        assert.deepEqual(JSON.parse(JSON.stringify(getSpawnPointOverlay({
+            transform: { position: { x: 4, y: -2 } },
+            components: { SpawnPoint: { facing } }
+        }))), { x: 4, y: -2, facing, direction });
+    }
+    assert.equal(getSpawnPointOverlay({ transform: { position: { x: 0, y: 0 } }, components: {} }), null);
+    assert.equal(getSpawnPointOverlay({ transform: { position: { x: 0, y: 0 } }, components: { SpawnPoint: { facing: 'diagonal' } } }), null);
+    assert.equal(getSpawnPointOverlay({ transform: { position: { x: Number.NaN, y: 0 } }, components: { SpawnPoint: { facing: 'right' } } }), null);
+    assert.equal(getSpawnPointOverlay({ components: { SpawnPoint: { facing: 'right' } } }), null);
+});
+
 test('Scene View renders selected hitbox, hurtbox, and trigger bounds over the viewport', () => {
     const harness = createSceneViewHarness();
     const tree = harness.render();
@@ -221,6 +242,55 @@ test('Scene View renders selected hitbox, hurtbox, and trigger bounds over the v
     assert.deepEqual([hitbox.props.x, hitbox.props.y, hitbox.props.width, hitbox.props.height], [1, 3.5, 2, 1]);
     assert.deepEqual([hurtbox.props.x, hurtbox.props.y, hurtbox.props.width, hurtbox.props.height], [2.25, 2, 1, 2]);
     assert.equal(trigger.props.strokeDasharray, '5 3');
+});
+
+test('Scene View renders an accessible, non-intercepting marker for each selected SpawnPoint facing', () => {
+    const directions = {
+        right: { x: 1, y: 0 },
+        down: { x: 0, y: 1 },
+        left: { x: -1, y: 0 },
+        up: { x: 0, y: -1 }
+    };
+    for (const [facing, direction] of Object.entries(directions)) {
+        const tree = createSceneViewHarness(facing).render();
+        const marker = findNode(tree, node => node.props?.['data-spawn-facing'] === facing);
+        const shaft = findNode(tree, node => node.props?.['data-spawn-facing-arrow'] === 'shaft');
+        assert.ok(marker, `${facing} marker is visible`);
+        assert.equal(marker.props.role, 'img');
+        assert.equal(marker.props['aria-label'], `Selected Spawn Point facing ${facing}`);
+        assert.equal(marker.props.pointerEvents, 'none');
+        assert.ok(shaft, `${facing} direction shaft is rendered`);
+        assert.deepEqual([shaft.props.x1, shaft.props.y1, shaft.props.x2, shaft.props.y2], [2, 3, 2 + direction.x * 24, 3 + direction.y * 24]);
+    }
+});
+
+test('Scene View SpawnPoint marker follows camera pan and zoom without capturing viewport input', () => {
+    const harness = createSceneViewHarness('left');
+    let tree = harness.render();
+    const viewport = findNode(tree, node => node.props?.className === 'flex-1 relative cursor-crosshair');
+    viewport.props.onMouseDown({ button: 1, clientX: 0, clientY: 0, preventDefault() {} });
+    tree = harness.render();
+    tree.props.onMouseMove({ clientX: 10, clientY: 15 });
+    tree = harness.render();
+    const zoomIn = findNode(tree, node => node.props?.title === 'Zoom In');
+    zoomIn.props.onClick();
+    tree = harness.render();
+
+    const shaft = findNode(tree, node => node.props?.['data-spawn-facing-arrow'] === 'shaft');
+    assert.deepEqual(
+        [shaft.props.x1, shaft.props.y1, shaft.props.x2, shaft.props.y2].map(value => Number(value.toFixed(5))),
+        [13.2, 19.8, -13.2, 19.8]
+    );
+    const marker = findNode(tree, node => node.props?.['data-spawn-facing'] === 'left');
+    assert.equal(marker.props.pointerEvents, 'none');
+    assert.ok(harness.notifications.some(({ type }) => type === 'editor:camera-update'));
+});
+
+test('Scene View omits direction markers for absent or unsupported SpawnPoint facing', () => {
+    for (const facing of [undefined, 'diagonal']) {
+        const tree = createSceneViewHarness(facing).render();
+        assert.equal(findNode(tree, node => node.props?.['data-spawn-facing']), null);
+    }
 });
 
 test('Scene View resizes every collider shape and syncs Inspector, canonical scene, and runtime payloads', () => {
