@@ -2,6 +2,7 @@ import { afterEach, test } from "node:test";
 import assert from "node:assert/strict";
 import { ComponentRegistry } from "../src/core/componentRegistry.js";
 import { Entity } from "../src/core/entity.js";
+import { Scene } from "../src/core/scene.js";
 import { SceneLoader } from "../src/core/sceneLoader.js";
 import { SceneManager } from "../src/core/sceneManager.js";
 import { SceneTransition } from "../src/components/sceneTransition.js";
@@ -83,6 +84,7 @@ for (const [facing, rotation] of Object.entries({ right: 0, down: Math.PI / 2, l
         assert.equal(source.children.includes(actor), false);
         assert.equal(destination.children.includes(actor), true);
         assert.equal(actor.parent, destination);
+        assert.equal(SceneManager.GetScenes().includes(destination), true, "successful destinations remain registered");
         assert.equal(actor.runtimeHealth, 73);
         assert.deepEqual(actor.GetComponent(Transform).position, new Vector2(18, -6));
         assert.equal(actor.GetComponent(Transform).rotation, rotation);
@@ -124,6 +126,7 @@ test("interact transitions require explicit activation and deduplicate concurren
 test("a missing requested spawn leaves the actor and active scene unchanged", async () => {
     globalThis.fetch = async () => jsonResponse({ name: "No Spawn", entities: [] });
     const source = SceneLoader.parse({ name: "Source", entities: [] });
+    const sceneCountBeforeTransition = SceneManager.GetScenes().length;
     const transitionEntity = new Entity("Door");
     const transition = new SceneTransition();
     transition.deserialize({ targetScene: "levels/no-spawn.scene", spawnPoint: "not-here", trigger: "interact" });
@@ -134,11 +137,101 @@ test("a missing requested spawn leaves the actor and active scene unchanged", as
     actor.AddComponent(new Transform(new Vector2(4, 5)));
     source.AddChild(actor);
     SceneManager.LoadScene(source.id);
+    const discardedSceneId = SceneManager.getIdForNewScene();
 
     assert.equal(await transition.Interact(actor), false);
     assert.equal(SceneManager.GetActiveScene(), source);
     assert.equal(source.children.includes(actor), true);
+    assert.equal(actor.parent, source);
     assert.deepEqual(actor.GetComponent(Transform).position, new Vector2(4, 5));
+    assert.deepEqual(SceneManager.GetScenes(), [source], "the rejected destination is not retained in project scenes");
+    assert.equal(SceneManager.GetSceneByName("No Spawn"), undefined);
+    assert.equal(SceneManager.GetScenes().length, sceneCountBeforeTransition);
+
+    const laterScene = new Scene("Later Scene");
+    assert.ok(laterScene.id > discardedSceneId, "discarded destination IDs are not reused");
+    assert.equal(SceneManager.GetScene(laterScene.id), laterScene);
+});
+
+test("a requested SpawnPoint without a Transform is discarded without changing actor state", async () => {
+    globalThis.fetch = async () => jsonResponse({
+        name: "Spawn Without Transform",
+        entities: [{ components: [{ type: "SpawnPoint", props: { spawnId: "arrival", facing: "down" } }] }]
+    });
+    const source = SceneLoader.parse({ name: "Source", entities: [] });
+    const transition = new SceneTransition();
+    transition.deserialize({
+        targetScene: "levels/missing-transform.scene",
+        spawnPoint: "arrival",
+        trigger: "interact"
+    });
+    const actor = new Entity("Player");
+    actor.AddComponent(new Transform(new Vector2(9, 12), 0.25));
+    source.AddChild(actor);
+    SceneManager.LoadScene(source.id);
+
+    assert.equal(await transition.Interact(actor), false);
+    assert.equal(SceneManager.GetActiveScene(), source);
+    assert.equal(actor.parent, source);
+    assert.deepEqual(
+        { x: actor.GetComponent(Transform).position.x, y: actor.GetComponent(Transform).position.y },
+        { x: 9, y: 12 }
+    );
+    assert.equal(actor.GetComponent(Transform).rotation, 0.25);
+    assert.deepEqual(SceneManager.GetScenes(), [source]);
+    assert.equal(SceneManager.GetSceneByName("Spawn Without Transform"), undefined);
+});
+
+test("failed and throwing scene transfers restore the actor and discard the parsed destination", async () => {
+    const originalTransfer = SceneManager.TransitionToScene;
+    try {
+        for (const outcome of ["false", "throw"]) {
+            SceneManager.removeAllScenes();
+            globalThis.fetch = async () => jsonResponse({
+                name: "Destination",
+                entities: [{
+                    name: "Arrival",
+                    transform: { position: { x: 18, y: -6 } },
+                    components: [{ type: "SpawnPoint", props: { spawnId: "arrival", facing: "up" } }]
+                }]
+            });
+            const source = SceneLoader.parse({ name: "Source", entities: [] });
+            const transition = new SceneTransition();
+            transition.deserialize({
+                targetScene: "levels/destination.scene",
+                spawnPoint: "arrival",
+                trigger: "interact"
+            });
+            const actor = new Entity("Player");
+            actor.runtimeHealth = 81;
+            actor.AddComponent(new Transform(new Vector2(4, 5), 0.75));
+            source.AddChild(actor);
+            SceneManager.LoadScene(source.id);
+            SceneManager.TransitionToScene = () => {
+                if (outcome === "throw") throw new Error("synthetic transfer failure");
+                return false;
+            };
+
+            if (outcome === "throw") {
+                await assert.rejects(transition.Interact(actor), /synthetic transfer failure/);
+            } else {
+                assert.equal(await transition.Interact(actor), false);
+            }
+            assert.equal(SceneManager.GetActiveScene(), source);
+            assert.equal(actor.parent, source);
+            assert.equal(source.children.includes(actor), true);
+            assert.deepEqual(
+                { x: actor.GetComponent(Transform).position.x, y: actor.GetComponent(Transform).position.y },
+                { x: 4, y: 5 }
+            );
+            assert.equal(actor.GetComponent(Transform).rotation, 0.75);
+            assert.equal(actor.runtimeHealth, 81);
+            assert.deepEqual(SceneManager.GetScenes(), [source]);
+            assert.equal(SceneManager.GetSceneByName("Destination"), undefined);
+        }
+    } finally {
+        SceneManager.TransitionToScene = originalTransfer;
+    }
 });
 
 test("a transition without a named spawn preserves the actor's existing transform", async () => {

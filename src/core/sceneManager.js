@@ -13,6 +13,8 @@ export class SceneManager {
     static #loadedScenes = [];
     /** @private */
     static #currentSceneIndex = -1;
+    /** @private */
+    static #nextSceneId = 0;
 
     /**
      * Get a scene by id.
@@ -35,6 +37,17 @@ export class SceneManager {
     /** Return a snapshot of all registered scenes for project serialization. */
     static GetScenes() {
         return [...SceneManager.#scenes];
+    }
+
+    /** Remove a registered scene that is not currently active. */
+    static removeScene(scene) {
+        const index = SceneManager.#scenes.indexOf(scene);
+        if (index === -1 || SceneManager.GetActiveScene() === scene) return false;
+
+        if (SceneManager.#loadedScenes.includes(scene)) scene.OnSceneUnloadAdditive();
+        SceneManager.#loadedScenes = SceneManager.#loadedScenes.filter(loadedScene => loadedScene !== scene);
+        SceneManager.#scenes.splice(index, 1);
+        return true;
     }
 
     /**
@@ -132,7 +145,7 @@ export class SceneManager {
             return;
         }
         if (SceneManager.#currentSceneIndex === -1) {
-            SceneManager.LoadScene(0);
+            SceneManager.LoadScene(SceneManager.#scenes[0].id);
         }
     }
 
@@ -144,6 +157,7 @@ export class SceneManager {
     static addScene(scene) {
         if (SceneManager.#scenes.indexOf(scene) === -1) {
             scene.id = SceneManager.getIdForNewScene();
+            SceneManager.#nextSceneId = scene.id + 1;
             SceneManager.#scenes.push(scene);
         }
     }
@@ -178,7 +192,10 @@ export class SceneManager {
      * @private
      */
     static getIdForNewScene() {
-        return SceneManager.#scenes.length;
+        while (SceneManager.#scenes.some(scene => scene.id === SceneManager.#nextSceneId)) {
+            SceneManager.#nextSceneId++;
+        }
+        return SceneManager.#nextSceneId;
     }
 
     /** Build a versioned project payload from the currently registered scenes. */
@@ -229,5 +246,6 @@ export class SceneManager {
         SceneManager.#scenes = [];
         SceneManager.#loadedScenes = [];
         SceneManager.#currentSceneIndex = -1;
+        SceneManager.#nextSceneId = 0;
     }
 }

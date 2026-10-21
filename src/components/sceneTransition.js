@@ -83,31 +83,68 @@ export class SceneTransition extends Component {
         const destination = await SceneLoader.load(targetScene);
         if (!destination) return false;
 
-        const spawnId = this.properties.spawnPoint;
-        let spawnEntity = null;
-        let spawnTransform = null;
-        if (typeof spawnId === "string" && spawnId !== "") {
-            spawnEntity = findSpawnPoint(destination, spawnId);
-            spawnTransform = spawnEntity?.GetComponent(Transform) ?? null;
-            if (!spawnTransform) return false;
-        }
-
+        const source = SceneManager.GetActiveScene();
+        const previousParent = actor.parent ?? null;
         const actorTransform = actor.GetComponent(Transform);
-        if (spawnTransform && !actorTransform) return false;
-        const previousPosition = actorTransform?.position;
+        const previousPosition = actorTransform
+            ? new Vector2(actorTransform.position.x, actorTransform.position.y)
+            : null;
         const previousRotation = actorTransform?.rotation;
-        if (spawnTransform) {
-            actorTransform.position = new Vector2(spawnTransform.position.x, spawnTransform.position.y);
-            const spawnPoint = spawnEntity.components.find(component => component instanceof SpawnPoint);
-            const rotation = SPAWN_FACING_ROTATION[spawnPoint?.properties.facing];
-            if (rotation !== undefined) actorTransform.rotation = rotation;
-        }
+        let committed = false;
 
-        if (!SceneManager.TransitionToScene(destination.id, [actor])) {
-            if (actorTransform && previousPosition) actorTransform.position = previousPosition;
-            if (actorTransform && previousRotation !== undefined) actorTransform.rotation = previousRotation;
-            return false;
+        try {
+            const spawnId = this.properties.spawnPoint;
+            let spawnEntity = null;
+            let spawnTransform = null;
+            if (typeof spawnId === "string" && spawnId !== "") {
+                spawnEntity = findSpawnPoint(destination, spawnId);
+                spawnTransform = spawnEntity?.GetComponent(Transform) ?? null;
+                if (!spawnTransform) return false;
+            }
+
+            if (spawnTransform && !actorTransform) return false;
+            if (spawnTransform) {
+                actorTransform.position = new Vector2(spawnTransform.position.x, spawnTransform.position.y);
+                const spawnPoint = spawnEntity.components.find(component => component instanceof SpawnPoint);
+                const rotation = SPAWN_FACING_ROTATION[spawnPoint?.properties.facing];
+                if (rotation !== undefined) actorTransform.rotation = rotation;
+            }
+
+            if (!SceneManager.TransitionToScene(destination.id, [actor])) return false;
+            committed = true;
+            return true;
+        } finally {
+            if (!committed) {
+                if (SceneManager.GetActiveScene() === destination && source) {
+                    try {
+                        SceneManager.LoadScene(source.id);
+                    } catch (error) {
+                        this.lastError ??= error;
+                    }
+                }
+
+                if (actorTransform && previousPosition) {
+                    actorTransform.position = previousPosition;
+                    actorTransform.rotation = previousRotation;
+                }
+                if (actor.parent !== previousParent) {
+                    const currentParent = actor.parent;
+                    if (currentParent && Array.isArray(currentParent.children)) {
+                        const actorIndex = currentParent.children.indexOf(actor);
+                        if (actorIndex !== -1) currentParent.children.splice(actorIndex, 1);
+                    }
+                    if (previousParent && Array.isArray(previousParent.children)) {
+                        previousParent.AddChild(actor);
+                    } else {
+                        actor.parent = previousParent;
+                    }
+                }
+                try {
+                    SceneManager.removeScene(destination);
+                } catch (error) {
+                    this.lastError ??= error;
+                }
+            }
         }
-        return true;
     }
 }
