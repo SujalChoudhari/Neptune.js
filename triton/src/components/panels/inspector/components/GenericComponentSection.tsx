@@ -19,8 +19,9 @@ const PropertyField: React.FC<{
     label: string
     value: any
     onChange: (value: any) => void
+    minimum?: number
     depth?: number
-}> = ({ label, value, onChange, depth = 0 }) => {
+}> = ({ label, value, onChange, minimum, depth = 0 }) => {
     const valueType = typeof value
     const [isExpanded, setIsExpanded] = useState(true)
     const [scenePathDraft, setScenePathDraft] = useState(typeof value === 'string' ? value : '')
@@ -124,7 +125,10 @@ const PropertyField: React.FC<{
                 <PropertyRow label={label}>
                     <ThemedNumberInput
                         value={value}
-                        onChange={(v) => onChange(v)}
+                        min={minimum}
+                        onChange={(v) => onChange(minimum === undefined
+                            ? v
+                            : Math.max(minimum, Number.isFinite(v) ? v : minimum))}
                     />
                 </PropertyRow>
             </div>
@@ -396,6 +400,9 @@ export const GenericComponentSection: React.FC<GenericComponentSectionProps> = (
                     key={key}
                     label={key}
                     value={value}
+                    minimum={type === "EnemyConfig"
+                        ? ({ maxHealth: 1, moveSpeed: 0, contactDamage: 0 } as Record<string, number>)[key]
+                        : undefined}
                     onChange={(val) => handleUpdate(rootProps, key, val, rootVirtuals, false)}
                 />
             ))}

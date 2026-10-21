@@ -5,6 +5,7 @@ import { execFileSync } from "node:child_process";
 import { buildSync } from "esbuild";
 import { chromium } from "playwright";
 import { Application } from "../../src/core/application.js";
+import { SceneManager } from "../../src/core/sceneManager.js";
 import { SceneLoader } from "../../src/core/sceneLoader.js";
 import { ComponentRegistry } from "../../src/core/componentRegistry.js";
 import { Transform } from "../../src/components/transform.js";
@@ -936,7 +937,67 @@ describe("Triton persistence bridge", () => {
         expect(byType["scene-transition"]).toBeDefined();
         expect(harness.runner.updateEntity(byType.dialogue.id, "Dialogue", { speaker: "Guide", text: "Find the key", next: "key-found" })).toBe(true);
         expect(harness.runner.updateEntity(byType.quest.id, "QuestDefinition", { name: "Key Hunt", description: "Recover the key", objectiveId: "find-key", objective: "Find the key", required: 1 })).toBe(true);
-        expect(harness.runner.updateEntity(byType.enemy.id, "EnemyConfig", { maxHealth: 75, moveSpeed: 3, contactDamage: 12, behavior: "guard" })).toBe(true);
+
+        const genericSectionPath = path.join(root, "src", "components", "panels", "inspector", "components", "GenericComponentSection.tsx");
+        const genericSectionBundle = bundleSource(genericSectionPath, [
+            "react", "react/jsx-runtime", "lucide-react", "../shared/ComponentSection", "../shared/PropertyRow",
+            "@/components/library", "@/utils/colorUtils", "@/lib/sceneTransitionAuthoring.mjs"
+        ]);
+        const hookSlots = [];
+        let hookIndex = 0;
+        const react = {
+            createElement: (type, props, ...children) => ({ type, props: { ...(props || {}), children } }),
+            useState(initialValue) {
+                const index = hookIndex++;
+                if (!(index in hookSlots)) hookSlots[index] = initialValue;
+                return [hookSlots[index], value => { hookSlots[index] = typeof value === "function" ? value(hookSlots[index]) : value; }];
+            },
+            useEffect() {}
+        };
+        const jsxRuntime = {
+            jsx: (type, props) => ({ type, props: props || {} }),
+            jsxs: (type, props) => ({ type, props: props || {} }),
+            Fragment: Symbol("Fragment")
+        };
+        const library = new Proxy({}, { get: (_target, key) => String(key) });
+        const icons = new Proxy({}, { get: (_target, key) => String(key) });
+        const genericSection = loadBundle(genericSectionBundle, {
+            React: react,
+            require: id => id === "react" ? react
+                : id === "react/jsx-runtime" ? jsxRuntime
+                    : id === "lucide-react" ? icons
+                        : id === "@/lib/sceneTransitionAuthoring.mjs" ? { isSafeSceneAssetPath }
+                            : library
+        }).GenericComponentSection;
+        const visitInspector = node => Array.isArray(node) ? node.flatMap(visitInspector) : node && typeof node === "object"
+            ? [node, ...visitInspector(node.props?.children)]
+            : [];
+        const enemyProps = byType.enemy.components.find(component => component.type === "EnemyConfig").props;
+        const enemyInspector = genericSection({
+            type: "EnemyConfig", data: enemyProps, entity: {}, isActive: true, onToggleActive() {},
+            onUpdate: (key, value) => expect(harness.runner.updateEntity(byType.enemy.id, "EnemyConfig", { [key]: value })).toBe(true)
+        });
+        const editEnemyNumber = (field, input, minimum, expected) => {
+            const property = visitInspector(enemyInspector).find(node => node.type?.name === "PropertyField" && node.props.label === field);
+            expect(property).toBeDefined();
+            hookIndex = 0;
+            const control = visitInspector(property.type(property.props)).find(node => node.type === "ThemedNumberInput");
+            expect(control).toBeDefined();
+            expect(control.props.min).toBe(minimum);
+            control.props.onChange(input);
+            expect(byType.enemy.components.find(component => component.type === "EnemyConfig").props[field]).toBe(expected);
+        };
+        editEnemyNumber("maxHealth", -75, 1, 1);
+        editEnemyNumber("moveSpeed", -3, 0, 0);
+        editEnemyNumber("contactDamage", -12, 0, 0);
+        const behaviorProperty = visitInspector(enemyInspector).find(node => node.type?.name === "PropertyField" && node.props.label === "behavior");
+        hookIndex = 0;
+        const behaviorInput = visitInspector(behaviorProperty.type(behaviorProperty.props)).find(node => node.type === "ThemedInput");
+        expect(behaviorInput).toBeDefined();
+        behaviorInput.props.onChange({ target: { value: "legacy_boss_phase_2" } });
+        expect(byType.enemy.components.find(component => component.type === "EnemyConfig").props).toEqual({
+            maxHealth: 1, moveSpeed: 0, contactDamage: 0, behavior: "legacy_boss_phase_2"
+        });
         expect(harness.runner.updateEntity(byType["scene-transition"].id, "SceneTransition", { targetScene: "scenes/dungeon.scene", spawnPoint: "entrance", trigger: "interact" })).toBe(true);
         expect(harness.runner.updateEntity(byType.hitbox.id, "Hitbox", { width: 12, height: 6, offsetX: 1, offsetY: -2 })).toBe(true);
         expect(harness.runner.updateEntity(byType.hurtbox.id, "Hurtbox", { width: 11, height: 7, offsetX: -3, offsetY: 4 })).toBe(true);
@@ -954,12 +1015,15 @@ describe("Triton persistence bridge", () => {
         expect(saved).toBeDefined();
         harness.runner.closeScene();
         const reopened = harness.runner.openScene(JSON.parse(saved), "scenes/gameplay.scene");
-        const runtimeScene = SceneLoader.parse(reopened);
+        SceneManager.CloseProject();
+        const runtimeApplication = Object.create(Application.prototype);
+        await runtimeApplication.loadScene(reopened);
+        const runtimeScene = runtimeApplication.scene;
         const runtimeByType = Object.fromEntries(runtimeScene.children.map(entity => [entity.type, entity]));
 
         expect(runtimeByType.dialogue.GetComponent(Dialogue).properties).toEqual({ speaker: "Guide", text: "Find the key", next: "key-found" });
         expect(runtimeByType.quest.GetComponent(QuestDefinition).properties).toEqual({ name: "Key Hunt", description: "Recover the key", objectiveId: "find-key", objective: "Find the key", required: 1 });
-        expect(runtimeByType.enemy.GetComponent(EnemyConfig).properties).toEqual({ maxHealth: 75, moveSpeed: 3, contactDamage: 12, behavior: "guard" });
+        expect(runtimeByType.enemy.GetComponent(EnemyConfig).properties).toEqual({ maxHealth: 1, moveSpeed: 0, contactDamage: 0, behavior: "legacy_boss_phase_2" });
         expect(runtimeByType["scene-transition"].GetComponent(SceneTransition).properties).toEqual({ targetScene: "scenes/dungeon.scene", spawnPoint: "entrance", trigger: "interact" });
         expect(runtimeByType["scene-transition"].GetComponent(TriggerCollider)).toBeDefined();
         expect(runtimeByType["spawn-point"].GetComponent(SpawnPoint).properties).toEqual({ spawnId: runtimeByType["spawn-point"].id, facing: "right" });
@@ -972,6 +1036,7 @@ describe("Triton persistence bridge", () => {
         const runtimeBoxCollider = runtimeByType["box-collider"].GetComponent(BoxCollider);
         expect({ x: runtimeBoxCollider.size.x, y: runtimeBoxCollider.size.y }).toEqual({ x: 14, y: 8 });
         expect({ x: runtimeBoxCollider.offset.x, y: runtimeBoxCollider.offset.y }).toEqual({ x: 2, y: -3 });
+        SceneManager.CloseProject();
     });
 
     it("loads editor-created scene transition output in the runtime after save and reopen", async () => {
