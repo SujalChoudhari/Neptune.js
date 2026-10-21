@@ -1100,12 +1100,12 @@ describe("Triton persistence bridge", () => {
         const mapPath = "maps/level.map";
         const initialMap = {
             width: 2,
-            height: 1,
+            height: 2,
             columns: 2,
             tileCount: 64,
             tileSize: 16,
             tileset: "assets/tiles.png",
-            data: [0, 0]
+            data: [0, 0, 0, 0]
         };
         const storedFiles = new Map([[mapPath, JSON.stringify(initialMap)]]);
         const loadCalls = [];
@@ -1162,6 +1162,30 @@ describe("Triton persistence bridge", () => {
             return find(node.props?.children, predicate);
         };
         const byLabel = (tree, label) => find(tree, node => node.props?.["aria-label"] === label);
+        const findAll = (node, predicate, matches = []) => {
+            if (Array.isArray(node)) {
+                for (const child of node) findAll(child, predicate, matches);
+            } else if (node && typeof node === "object") {
+                if (predicate(node)) matches.push(node);
+                findAll(node.props?.children, predicate, matches);
+            }
+            return matches;
+        };
+        const connectGridCells = (grid, labelPrefix = "Paint cell") => {
+            const rows = findAll(grid, node => node.props?.role === "row");
+            const rowElements = rows.map(() => ({ children: [] }));
+            const gridElement = { children: rowElements };
+            rows.forEach((row, rowIndex) => {
+                const rowElement = rowElements[rowIndex];
+                rowElement.parentElement = gridElement;
+                rowElement.children = findAll(row, node => node.type === "button" && node.props?.["aria-label"]?.startsWith(labelPrefix));
+                rowElement.children.forEach(cell => {
+                    cell.parentElement = rowElement;
+                    cell.focus = () => cell.props.onFocus();
+                });
+            });
+            return findAll(grid, node => node.type === "button" && node.props?.["aria-label"]?.startsWith(labelPrefix));
+        };
 
         render();
         await Promise.resolve();
@@ -1208,31 +1232,183 @@ describe("Triton persistence bridge", () => {
         byLabel(tree, "Tileset palette tile count").props.onChange({ target: { value: "64" } });
         tree = render();
         expect(byLabel(tree, "Tileset palette tile count").props.value).toBe(8);
-        expect(byLabel(tree, "Paint cell 1, 0; tile 0")).toBeDefined();
-
         byLabel(tree, "Tile ID to paint").props.onChange({ target: { value: "3" } });
         tree = render();
-        byLabel(tree, "Paint cell 1, 0; tile 0").props.onClick();
+
+        let paletteGrid = byLabel(tree, "Tileset keyboard palette");
+        expect(paletteGrid.props.role).toBe("grid");
+        expect(paletteGrid.props["aria-rowcount"]).toBe(2);
+        expect(paletteGrid.props["aria-colcount"]).toBe(4);
+        let paletteCells = connectGridCells(paletteGrid, "Select tileset tile");
+        expect(paletteCells).toHaveLength(8);
+        expect(paletteCells[3].props["aria-selected"]).toBe(true);
+        expect(paletteCells.map(cell => cell.props.tabIndex)).toEqual([-1, -1, -1, 0, -1, -1, -1, -1]);
+
+        let paletteArrowPrevented = false;
+        paletteCells[3].props.onKeyDown({
+            key: "ArrowLeft",
+            currentTarget: paletteCells[3],
+            preventDefault() { paletteArrowPrevented = true; }
+        });
+        expect(paletteArrowPrevented).toBe(true);
         tree = render();
+        paletteGrid = byLabel(tree, "Tileset keyboard palette");
+        paletteCells = connectGridCells(paletteGrid, "Select tileset tile");
+        expect(byLabel(tree, "Tile ID to paint").props.value).toBe(2);
+        expect(byLabel(tree, "Tile 2 walkability")).toBeDefined();
+        expect(paletteCells.map(cell => cell.props.tabIndex)).toEqual([-1, -1, 0, -1, -1, -1, -1, -1]);
+
+        paletteCells[2].props.onKeyDown({
+            key: "ArrowRight",
+            currentTarget: paletteCells[2],
+            preventDefault() {}
+        });
+        tree = render();
+        paletteGrid = byLabel(tree, "Tileset keyboard palette");
+        paletteCells = connectGridCells(paletteGrid, "Select tileset tile");
+        expect(byLabel(tree, "Tile ID to paint").props.value).toBe(3);
+
+        let paletteBoundaryPrevented = false;
+        paletteCells[3].props.onKeyDown({
+            key: "ArrowRight",
+            currentTarget: paletteCells[3],
+            preventDefault() { paletteBoundaryPrevented = true; }
+        });
+        expect(paletteBoundaryPrevented).toBe(false, "right navigation must not wrap to the next palette row");
+        paletteCells[3].props.onKeyDown({ key: "ArrowDown", currentTarget: paletteCells[3], preventDefault() {} });
+        tree = render();
+        paletteGrid = byLabel(tree, "Tileset keyboard palette");
+        paletteCells = connectGridCells(paletteGrid, "Select tileset tile");
+        expect(byLabel(tree, "Tile ID to paint").props.value).toBe(7);
+        let partialRowBoundaryPrevented = false;
+        paletteCells[7].props.onKeyDown({
+            key: "ArrowDown",
+            currentTarget: paletteCells[7],
+            preventDefault() { partialRowBoundaryPrevented = true; }
+        });
+        expect(partialRowBoundaryPrevented).toBe(false);
+        paletteCells[7].props.onKeyDown({ key: "ArrowUp", currentTarget: paletteCells[7], preventDefault() {} });
+        tree = render();
+        expect(byLabel(tree, "Tile ID to paint").props.value).toBe(3);
+        expect(byLabel(tree, "Paint cell 1, 0; tile 0")).toBeDefined();
+
+        const paintGrid = byLabel(tree, "Tilemap paint grid");
+        expect(paintGrid.props.role).toBe("grid");
+        expect(paintGrid.props["aria-rowcount"]).toBe(2);
+        expect(paintGrid.props["aria-colcount"]).toBe(2);
+        const cells = connectGridCells(paintGrid);
+        expect(findAll(paintGrid, node => node.props?.role === "row")).toHaveLength(2);
+        expect(cells.map(cell => cell.props.tabIndex)).toEqual([0, -1, -1, -1]);
+        expect(cells.map(cell => cell.props.role)).toEqual(["gridcell", "gridcell", "gridcell", "gridcell"]);
+
+        cells[0].props.onFocus();
+        tree = render();
+        expect(byLabel(tree, "Cell 0, 0 collision")).toBeDefined();
+
+        let arrowPrevented = false;
+        cells[0].props.onKeyDown({
+            key: "ArrowRight",
+            currentTarget: cells[0],
+            preventDefault() { arrowPrevented = true; }
+        });
+        expect(arrowPrevented).toBe(true);
+        tree = render();
+        let activeCells = connectGridCells(byLabel(tree, "Tilemap paint grid"));
+        expect(activeCells.map(cell => cell.props.tabIndex)).toEqual([-1, 0, -1, -1]);
+        expect(byLabel(tree, "Cell 1, 0 collision")).toBeDefined();
+        expect(byLabel(tree, "Paint cell 1, 0; tile 0")).toBeDefined();
+
+        let boundaryPrevented = false;
+        activeCells[1].props.onKeyDown({
+            key: "ArrowRight",
+            currentTarget: activeCells[1],
+            preventDefault() { boundaryPrevented = true; }
+        });
+        expect(boundaryPrevented).toBe(false);
+
+        let downPrevented = false;
+        activeCells[1].props.onKeyDown({
+            key: "ArrowDown",
+            currentTarget: activeCells[1],
+            preventDefault() { downPrevented = true; }
+        });
+        expect(downPrevented).toBe(true);
+        tree = render();
+        activeCells = connectGridCells(byLabel(tree, "Tilemap paint grid"));
+        expect(activeCells.map(cell => cell.props.tabIndex)).toEqual([-1, -1, -1, 0]);
+        expect(byLabel(tree, "Cell 1, 1 collision")).toBeDefined();
+        expect(byLabel(tree, "Paint cell 1, 0; tile 0")).toBeDefined();
+
+        let upPrevented = false;
+        activeCells[3].props.onKeyDown({
+            key: "ArrowUp",
+            currentTarget: activeCells[3],
+            preventDefault() { upPrevented = true; }
+        });
+        expect(upPrevented).toBe(true);
+        tree = render();
+        activeCells = connectGridCells(byLabel(tree, "Tilemap paint grid"));
+        expect(activeCells.map(cell => cell.props.tabIndex)).toEqual([-1, 0, -1, -1]);
+
+        let enterPrevented = false;
+        activeCells[1].props.onKeyDown({
+            key: "Enter",
+            currentTarget: activeCells[1],
+            preventDefault() { enterPrevented = true; }
+        });
+        expect(enterPrevented).toBe(true);
+        tree = render();
+        expect(byLabel(tree, "Paint cell 1, 0; tile 3")).toBeDefined();
+
+        activeCells = connectGridCells(byLabel(tree, "Tilemap paint grid"));
+        let spacePrevented = false;
+        activeCells[1].props.onKeyDown({
+            key: " ",
+            currentTarget: activeCells[1],
+            preventDefault() { spacePrevented = true; }
+        });
+        expect(spacePrevented).toBe(true);
+        tree = render();
+        expect(byLabel(tree, "Paint cell 1, 0; tile 3")).toBeDefined();
         byLabel(tree, "Tile 3 collision").props.onChange({ target: { value: "true" } });
         tree = render();
         byLabel(tree, "Tile 3 walkability").props.onChange({ target: { value: "false" } });
         tree = render();
         byLabel(tree, "Tile 3 terrain").props.onChange({ target: { value: "stone" } });
         tree = render();
+        let metadataCell = find(tree, node => node.props?.role === "gridcell"
+            && node.props?.["aria-label"]?.startsWith("Paint cell 1, 0; tile 3"));
+        expect(metadataCell.props["aria-label"]).toContain("solid collision (tile default)");
+        expect(metadataCell.props["aria-label"]).toContain("blocked (tile default)");
+        expect(metadataCell.props["aria-label"]).toContain("terrain stone (tile default)");
+        let indicators = findAll(metadataCell, node => node.props?.["data-metadata-indicator"] !== undefined);
+        expect(indicators.map(node => node.props["data-metadata-indicator"])).toEqual(["collision", "walkability", "terrain"]);
+        expect(indicators.map(node => node.props["data-metadata-value"])).toEqual(["true", "false", "stone"]);
+
         byLabel(tree, "Cell 1, 0 collision").props.onChange({ target: { value: "false" } });
         tree = render();
         byLabel(tree, "Cell 1, 0 walkability").props.onChange({ target: { value: "true" } });
         tree = render();
         byLabel(tree, "Cell 1, 0 terrain").props.onChange({ target: { value: "moss" } });
         tree = render();
+        metadataCell = find(tree, node => node.props?.role === "gridcell"
+            && node.props?.["aria-label"]?.startsWith("Paint cell 1, 0; tile 3"));
+        expect(metadataCell.props["aria-label"]).toContain("non-solid collision (cell override)");
+        expect(metadataCell.props["aria-label"]).toContain("walkable (cell override)");
+        expect(metadataCell.props["aria-label"]).toContain("terrain moss (cell override)");
+        expect(metadataCell.props.title).toContain("non-solid collision (cell override)");
+        expect(metadataCell.props.title).toContain("walkable (cell override)");
+        expect(metadataCell.props.title).toContain("terrain moss (cell override)");
+        indicators = findAll(metadataCell, node => node.props?.["data-metadata-indicator"] !== undefined);
+        expect(indicators.map(node => node.props["data-metadata-value"])).toEqual(["false", "true", "moss"]);
+
         const saveButton = find(tree, node => node.type === "button" && node.props?.children === "Save Map");
         expect(saveButton).toBeDefined();
         saveButton.props.onClick();
         await new Promise(resolve => setTimeout(resolve, 0));
 
         const savedMap = JSON.parse(storedFiles.get(mapPath));
-        expect(savedMap.data).toEqual([0, 3]);
+        expect(savedMap.data).toEqual([0, 3, 0, 0]);
         expect(savedMap.columns).toBe(4);
         expect(savedMap.tileCount).toBe(8);
         expect(savedMap.metadata["3"]).toEqual({ collision: true, walkable: false, terrain: "stone" });
@@ -1290,7 +1466,7 @@ describe("Triton persistence bridge", () => {
             expect(runtimeTile.GetComponent(Sprite).path).toBe("assets/tiles.png");
 
             const navigationMap = runtimeScene.getNavigationTilemap(mapPath);
-            expect(navigationMap.data).toEqual([-1, 2]);
+            expect(navigationMap.data).toEqual([-1, 2, -1, -1]);
             expect(navigationMap.getTileMetadata(2)).toEqual({ collision: true, walkable: false, terrain: "stone" });
             expect(navigationMap.getResolvedMetadata(1, 0)).toEqual({ collision: false, walkable: true, terrain: "moss" });
             expect(navigationMap.isWalkable(1, 0)).toBe(true);
@@ -1321,6 +1497,14 @@ describe("Triton persistence bridge", () => {
         expect(resizedMap.tileSize).toBe(32);
         expect(resizedMap.columns).toBe(2);
         expect(resizedMap.tileCount).toBe(2);
+
+        const failedAtlas = find(tree, node => node.type === "img" && node.props?.alt === "Tileset atlas");
+        expect(failedAtlas).toBeDefined();
+        failedAtlas.props.onError();
+        tree = render();
+        expect(byLabel(tree, "Tileset palette unavailable")).toBeDefined();
+        expect(find(tree, node => node.props?.["aria-label"] === "Tileset keyboard palette")).toBe(null);
+        expect(byLabel(tree, "Tile ID to paint").props.disabled).toBe(true);
     });
 
     it("saves and loads a TilemapPanel map attached to an editor-authored scene", async () => {

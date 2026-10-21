@@ -213,6 +213,32 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
         }
     };
 
+    const handleGridCellKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, x: number, y: number) => {
+        if (!tilemap) return;
+        let nextX = x;
+        let nextY = y;
+        switch (event.key) {
+            case 'Enter':
+            case ' ':
+                event.preventDefault();
+                paint(x, y);
+                return;
+            case 'ArrowLeft': nextX--; break;
+            case 'ArrowRight': nextX++; break;
+            case 'ArrowUp': nextY--; break;
+            case 'ArrowDown': nextY++; break;
+            default: return;
+        }
+        if (nextX < 0 || nextX >= tilemap.width || nextY < 0 || nextY >= tilemap.height) return;
+
+        event.preventDefault();
+        setSelectedCell({ x: nextX, y: nextY });
+        const grid = event.currentTarget.parentElement?.parentElement;
+        const nextRow = grid?.children[nextY] as HTMLElement | undefined;
+        const nextCell = nextRow?.children[nextX] as HTMLButtonElement | undefined;
+        nextCell?.focus();
+    };
+
     const updateMetadata = (field: 'walkable' | 'terrain' | 'collision', value: boolean | string | undefined) => {
         if (!tilemap) return;
         try {
@@ -236,7 +262,40 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
     const activeMetadata = tilemap?.metadata?.[String(tileId)] || {};
     const atlasColumns = tilemap?.columns ?? 10;
     const atlasTileSize = tilemap?.tileSize ?? 64;
+    const paletteTileCount = Math.min(paletteCount, availableTileCount ?? 4096);
+    const paletteIds = paletteTileCount > 0 ? getTilesetPaletteIds(atlasColumns, paletteTileCount) : [];
+    const paletteRowCount = Math.ceil(paletteIds.length / atlasColumns);
     const paintingBlocked = Boolean(tilemap?.tileset?.trim()) && !(availableTileCount && availableTileCount > 0);
+
+    const handlePaletteKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, id: number) => {
+        let nextId = id;
+        switch (event.key) {
+            case 'ArrowLeft':
+                if (id % atlasColumns === 0) return;
+                nextId--;
+                break;
+            case 'ArrowRight':
+                if (id % atlasColumns === atlasColumns - 1 || id + 1 >= paletteTileCount) return;
+                nextId++;
+                break;
+            case 'ArrowUp':
+                nextId -= atlasColumns;
+                break;
+            case 'ArrowDown':
+                nextId += atlasColumns;
+                break;
+            default:
+                return;
+        }
+        if (nextId < 0 || nextId >= paletteTileCount) return;
+
+        event.preventDefault();
+        setTileId(nextId);
+        const grid = event.currentTarget.parentElement?.parentElement;
+        const nextRow = grid?.children[Math.floor(nextId / atlasColumns)] as HTMLElement | undefined;
+        const nextButton = nextRow?.children[nextId % atlasColumns] as HTMLButtonElement | undefined;
+        nextButton?.focus();
+    };
 
     return (
         <section className="h-full flex flex-col gap-2 bg-background p-3 text-foreground">
@@ -498,28 +557,50 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                             }}
                         />
                     </div>
-                    <div className="grid w-max gap-1" style={{ gridTemplateColumns: `repeat(${atlasColumns}, 28px)` }}>
-                        {getTilesetPaletteIds(atlasColumns, paletteCount).map((id) => (
-                            <button
-                                key={id}
-                                type="button"
-                                aria-label={`Select tileset tile ${id}`}
-                                aria-pressed={tileId === id}
-                                className={`h-7 w-7 rounded border text-[9px] ${tileId === id ? 'border-primary ring-1 ring-primary' : 'border-border'} ${tilesetPreview && atlasSize ? 'text-transparent' : 'bg-card'}`}
-                                style={tilesetPreview && atlasSize ? (() => {
-                                    const tileSize = atlasTileSize;
-                                    const offset = getTilesetTileOffset(id, atlasColumns, tileSize);
-                                    const scale = 28 / tileSize;
-                                    return {
-                                        backgroundImage: `url("${tilesetPreview}")`,
-                                        backgroundSize: `${atlasSize.width * scale}px ${atlasSize.height * scale}px`,
-                                        backgroundPosition: `-${offset.x * scale}px -${offset.y * scale}px`
-                                    };
-                                })() : undefined}
-                                onClick={() => setTileId(id)}
-                            >{id}</button>
-                        ))}
-                    </div>
+                    {paletteIds.length > 0 ? (
+                        <div
+                            className="flex w-max flex-col gap-1"
+                            role="grid"
+                            aria-label="Tileset keyboard palette"
+                            aria-rowcount={paletteRowCount}
+                            aria-colcount={Math.min(atlasColumns, paletteTileCount)}
+                        >
+                            {Array.from({ length: paletteRowCount }, (_, rowIndex) => (
+                                <div key={rowIndex} className="flex gap-1" role="row">
+                                    {paletteIds.slice(rowIndex * atlasColumns, (rowIndex + 1) * atlasColumns).map((id) => (
+                                        <button
+                                            key={id}
+                                            type="button"
+                                            role="gridcell"
+                                            aria-label={`Select tileset tile ${id}`}
+                                            aria-rowindex={rowIndex + 1}
+                                            aria-colindex={id % atlasColumns + 1}
+                                            aria-selected={tileId === id}
+                                            tabIndex={tileId === id ? 0 : -1}
+                                            className={`h-7 w-7 rounded border text-[9px] focus-visible:outline focus-visible:outline-1 focus-visible:outline-primary ${tileId === id ? 'border-primary ring-1 ring-primary' : 'border-border'} ${tilesetPreview && atlasSize ? 'text-transparent' : 'bg-card'}`}
+                                            style={tilesetPreview && atlasSize ? (() => {
+                                                const tileSize = atlasTileSize;
+                                                const offset = getTilesetTileOffset(id, atlasColumns, tileSize);
+                                                const scale = 28 / tileSize;
+                                                return {
+                                                    backgroundImage: `url("${tilesetPreview}")`,
+                                                    backgroundSize: `${atlasSize.width * scale}px ${atlasSize.height * scale}px`,
+                                                    backgroundPosition: `-${offset.x * scale}px -${offset.y * scale}px`
+                                                };
+                                            })() : undefined}
+                                            onFocus={() => setTileId(id)}
+                                            onKeyDown={(event) => handlePaletteKeyDown(event, id)}
+                                            onClick={() => setTileId(id)}
+                                        >{id}</button>
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-xs text-muted-foreground" aria-label="Tileset palette unavailable" role="status">
+                            Palette unavailable until a valid tileset image is loaded.
+                        </p>
+                    )}
                 </div>
             )}
             {tilemap && (
@@ -610,37 +691,101 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
             {tilemap ? (
                 <div
                     className="min-h-0 flex-1 overflow-auto rounded border border-border p-2"
-                    aria-label="Tilemap paint grid"
                     onMouseUp={() => setIsPainting(false)}
                     onMouseLeave={() => setIsPainting(false)}
                 >
                     <div
-                        className="grid w-max gap-px bg-border"
-                        style={{ gridTemplateColumns: `repeat(${tilemap.width}, 24px)` }}
+                        className="flex w-max flex-col gap-px bg-border"
+                        role="grid"
+                        aria-label="Tilemap paint grid"
+                        aria-rowcount={tilemap.height}
+                        aria-colcount={tilemap.width}
                     >
-                        {tilemap.data.map((value, index) => {
-                            const x = index % tilemap.width;
-                            const y = Math.floor(index / tilemap.width);
-                            return (
-                                <button
-                                    key={`${x}:${y}`}
-                                    type="button"
-                                    aria-label={`Paint cell ${x}, ${y}; tile ${value}`}
-                                    title={`(${x}, ${y}) = ${value}`}
-                                    className="h-6 w-6 bg-card text-[9px] hover:bg-primary/30 focus-visible:outline focus-visible:outline-1 focus-visible:outline-primary"
-                                    disabled={paintingBlocked}
-                                    onMouseDown={(event) => {
-                                        event.preventDefault();
-                                        setIsPainting(true);
-                                        paint(x, y);
-                                    }}
-                                    onMouseEnter={() => { if (isPainting) paint(x, y); }}
-                                    onClick={() => paint(x, y)}
-                                >
-                                    {value}
-                                </button>
-                            );
-                        })}
+                        {Array.from({ length: tilemap.height }, (_, y) => (
+                            <div
+                                key={y}
+                                className="grid gap-px bg-border"
+                                role="row"
+                                style={{ gridTemplateColumns: `repeat(${tilemap.width}, 24px)` }}
+                            >
+                                {tilemap.data.slice(y * tilemap.width, (y + 1) * tilemap.width).map((value, x) => {
+                                    const cellIndex = y * tilemap.width + x;
+                                    const cellMetadata = tilemap.cellMetadata?.[String(cellIndex)] ?? {};
+                                    const tileMetadata = tilemap.metadata?.[String(value)] ?? {};
+                                    const collision = cellMetadata.collision ?? tileMetadata.collision;
+                                    const walkable = cellMetadata.walkable ?? tileMetadata.walkable;
+                                    const terrain = cellMetadata.terrain ?? tileMetadata.terrain;
+                                    const metadataDescriptions = [
+                                        collision === undefined ? '' : `${collision ? 'solid' : 'non-solid'} collision (${cellMetadata.collision === undefined ? 'tile default' : 'cell override'})`,
+                                        walkable === undefined ? '' : `${walkable ? 'walkable' : 'blocked'} (${cellMetadata.walkable === undefined ? 'tile default' : 'cell override'})`,
+                                        terrain ? `terrain ${terrain} (${cellMetadata.terrain === undefined ? 'tile default' : 'cell override'})` : ''
+                                    ].filter(Boolean);
+                                    const metadataMarkers = [
+                                        ...(collision === undefined ? [] : [{
+                                            kind: 'collision', value: String(collision), text: collision ? '■' : '□',
+                                            title: `Collision: ${collision ? 'solid' : 'non-solid'}`,
+                                            className: collision ? 'text-red-400' : 'text-slate-400'
+                                        }]),
+                                        ...(walkable === undefined ? [] : [{
+                                            kind: 'walkability', value: String(walkable), text: walkable ? 'W' : '×',
+                                            title: `Navigation: ${walkable ? 'walkable' : 'blocked'}`,
+                                            className: walkable ? 'text-emerald-400' : 'text-amber-400'
+                                        }]),
+                                        ...(terrain ? [{
+                                            kind: 'terrain', value: terrain, text: 'T', title: `Terrain: ${terrain}`,
+                                            className: 'text-sky-400'
+                                        }] : [])
+                                    ];
+                                    const metadataDescription = metadataDescriptions.length > 0
+                                        ? `; ${metadataDescriptions.join('; ')}`
+                                        : '';
+
+                                    return (
+                                        <button
+                                            key={`${x}:${y}`}
+                                            type="button"
+                                            role="gridcell"
+                                            aria-label={`Paint cell ${x}, ${y}; tile ${value}${metadataDescription}`}
+                                            aria-rowindex={y + 1}
+                                            aria-colindex={x + 1}
+                                            aria-selected={selectedCell?.x === x && selectedCell?.y === y}
+                                            title={`(${x}, ${y}) = ${value}${metadataDescription}`}
+                                            tabIndex={selectedCell
+                                                ? selectedCell.x === x && selectedCell.y === y ? 0 : -1
+                                                : x === 0 && y === 0 ? 0 : -1}
+                                            className="flex h-6 w-6 flex-col items-center justify-center bg-card text-[9px] leading-none hover:bg-primary/30 focus-visible:outline focus-visible:outline-1 focus-visible:outline-primary"
+                                            disabled={paintingBlocked}
+                                            onFocus={() => setSelectedCell({ x, y })}
+                                            onKeyDown={(event) => handleGridCellKeyDown(event, x, y)}
+                                            onMouseDown={(event) => {
+                                                event.preventDefault();
+                                                setIsPainting(true);
+                                                paint(x, y);
+                                            }}
+                                            onMouseEnter={() => { if (isPainting) paint(x, y); }}
+                                            onClick={() => paint(x, y)}
+                                        >
+                                            {metadataMarkers.length > 0 && (
+                                                <span className="flex h-2 items-center justify-center gap-0.5 text-[6px] font-bold" aria-hidden="true">
+                                                    {metadataMarkers.map(marker => (
+                                                        <span
+                                                            key={marker.kind}
+                                                            data-metadata-indicator={marker.kind}
+                                                            data-metadata-value={marker.value}
+                                                            title={marker.title}
+                                                            className={marker.className}
+                                                        >
+                                                            {marker.text}
+                                                        </span>
+                                                    ))}
+                                                </span>
+                                            )}
+                                            <span>{value}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        ))}
                     </div>
                 </div>
             ) : (
