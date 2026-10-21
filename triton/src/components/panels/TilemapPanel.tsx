@@ -9,6 +9,7 @@ interface TileMetadata {
     walkable?: boolean;
     terrain?: string;
     collision?: boolean;
+    slowdown?: number;
     [key: string]: unknown;
 }
 
@@ -17,7 +18,7 @@ interface TilemapDocument {
     height: number;
     data: number[];
     metadata?: Record<string, TileMetadata>;
-    cellMetadata?: Record<string, { collision?: boolean; walkable?: boolean; terrain?: string }>;
+    cellMetadata?: Record<string, { collision?: boolean; walkable?: boolean; terrain?: string; slowdown?: number }>;
     tileset?: string;
     columns?: number;
     tileCount?: number;
@@ -25,7 +26,7 @@ interface TilemapDocument {
     [key: string]: unknown;
 }
 
-type TilemapBrushMode = 'tile' | 'collision' | 'walkability' | 'terrain';
+type TilemapBrushMode = 'tile' | 'collision' | 'walkability' | 'terrain' | 'slowdown';
 
 export function TilemapPanel(_props: IDockviewPanelProps) {
     const { nodes, readFile, writeFile, rootPath, refresh } = useFileSystem();
@@ -43,6 +44,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
     const [collisionBrush, setCollisionBrush] = useState('true');
     const [navigationBrush, setNavigationBrush] = useState('true');
     const [terrainBrush, setTerrainBrush] = useState('');
+    const [slowdownBrush, setSlowdownBrush] = useState('');
     const [paletteCount, setPaletteCount] = useState(25);
     const [availableTileCount, setAvailableTileCount] = useState<number | null>(null);
     const [availableAtlasColumns, setAvailableAtlasColumns] = useState<number | null>(null);
@@ -256,8 +258,8 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
     };
 
     const updateCellMetadata = (
-        field: 'collision' | 'walkable' | 'terrain',
-        value: boolean | string | undefined,
+        field: 'collision' | 'walkable' | 'terrain' | 'slowdown',
+        value: boolean | string | number | undefined,
         cell = selectedCell
     ) => {
         if (!tilemap || !cell) return;
@@ -282,7 +284,11 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
             updateCellMetadata('walkable', navigationBrush === 'inherit' ? undefined : navigationBrush === 'true', { x, y });
             return;
         }
-        updateCellMetadata('terrain', terrainBrush || undefined, { x, y });
+        if (brushMode === 'terrain') {
+            updateCellMetadata('terrain', terrainBrush || undefined, { x, y });
+            return;
+        }
+        updateCellMetadata('slowdown', slowdownBrush === '' ? undefined : Number(slowdownBrush), { x, y });
     };
 
     const activeMetadata = tilemap?.metadata?.[String(tileId)] || {};
@@ -711,6 +717,18 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                         value={tilemap.cellMetadata?.[String(selectedCell.y * tilemap.width + selectedCell.x)]?.terrain || ''}
                         onChange={(event) => updateCellMetadata('terrain', event.target.value || undefined)}
                     />
+                    <label className="text-xs" htmlFor="cell-slowdown">Cell slowdown</label>
+                    <input
+                        id="cell-slowdown"
+                        aria-label={`Cell ${selectedCell.x}, ${selectedCell.y} slowdown`}
+                        className="w-24 rounded border border-border bg-card px-2 py-1 text-xs"
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={tilemap.cellMetadata?.[String(selectedCell.y * tilemap.width + selectedCell.x)]?.slowdown ?? ''}
+                        placeholder="Use tile default"
+                        onChange={(event) => updateCellMetadata('slowdown', event.target.value === '' ? undefined : Number(event.target.value))}
+                    />
                 </div>
             )}
             {tilemap && (
@@ -728,6 +746,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                         <option value="collision">Collision</option>
                         <option value="walkability">Navigation</option>
                         <option value="terrain">Terrain</option>
+                        <option value="slowdown">Slowdown</option>
                     </select>
                     {brushMode === 'collision' && (
                         <>
@@ -777,6 +796,24 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                             />
                         </>
                     )}
+                    {brushMode === 'slowdown' && (
+                        <>
+                            <label className="text-xs" htmlFor="slowdown-brush">Slowdown value</label>
+                            <input
+                                id="slowdown-brush"
+                                aria-label="Slowdown brush"
+                                className="w-24 rounded border border-border bg-card px-2 py-1 text-xs"
+                                type="number"
+                                min="0"
+                                step="0.1"
+                                value={slowdownBrush}
+                                placeholder="Use tile default"
+                                disabled={isPainting}
+                                onChange={(event) => setSlowdownBrush(event.target.value)}
+                            />
+                            <span className="text-xs text-muted-foreground">Extra movement time per cell; blank inherits the tile value.</span>
+                        </>
+                    )}
                 </div>
             )}
             {error && <p className="text-xs text-red-400" role="alert">{error}</p>}
@@ -807,10 +844,12 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                                     const collision = cellMetadata.collision ?? tileMetadata.collision;
                                     const walkable = cellMetadata.walkable ?? tileMetadata.walkable;
                                     const terrain = cellMetadata.terrain ?? tileMetadata.terrain;
+                                    const slowdown = cellMetadata.slowdown ?? tileMetadata.slowdown;
                                     const metadataDescriptions = [
                                         collision === undefined ? '' : `${collision ? 'solid' : 'non-solid'} collision (${cellMetadata.collision === undefined ? 'tile default' : 'cell override'})`,
                                         walkable === undefined ? '' : `${walkable ? 'walkable' : 'blocked'} (${cellMetadata.walkable === undefined ? 'tile default' : 'cell override'})`,
-                                        terrain ? `terrain ${terrain} (${cellMetadata.terrain === undefined ? 'tile default' : 'cell override'})` : ''
+                                        terrain ? `terrain ${terrain} (${cellMetadata.terrain === undefined ? 'tile default' : 'cell override'})` : '',
+                                        slowdown === undefined ? '' : `slowdown ${slowdown} (${cellMetadata.slowdown === undefined ? 'tile default' : 'cell override'})`
                                     ].filter(Boolean);
                                     const metadataMarkers = [
                                         ...(collision === undefined ? [] : [{
@@ -826,7 +865,12 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                                         ...(terrain ? [{
                                             kind: 'terrain', value: terrain, text: 'T', title: `Terrain: ${terrain}`,
                                             className: 'text-sky-400'
-                                        }] : [])
+                                        }] : []),
+                                        ...(slowdown === undefined ? [] : [{
+                                            kind: 'slowdown', value: String(slowdown), text: 'S',
+                                            title: `Movement delay: ${slowdown * 100}% extra`,
+                                            className: 'text-orange-400'
+                                        }])
                                     ];
                                     const metadataDescription = metadataDescriptions.length > 0
                                         ? `; ${metadataDescriptions.join('; ')}`

@@ -16,6 +16,7 @@ import { SpawnPoint } from "../../src/components/spawnPoint.js";
 import { Dialogue } from "../../src/components/dialogue.js";
 import { QuestDefinition } from "../../src/components/questDefinition.js";
 import { EnemyConfig } from "../../src/components/enemyConfig.js";
+import { EnemyAI } from "../../src/larissa/enemyAI.js";
 import { Hitbox, Hurtbox, TriggerCollider } from "../../src/nereid/collider.js";
 import { createEmptyTilemap, paintTileCell, paintTileCells, setCellMetadata, setTileMetadata, getTilesetPaletteIds, getTilesetTileOffset, getTilesetGridSize, getTilemapAttachError } from "../src/lib/tilemapAuthoring.mjs";
 import { isSafeSceneAssetPath } from "../src/lib/sceneTransitionAuthoring.mjs";
@@ -1204,6 +1205,8 @@ describe("Triton persistence bridge", () => {
             tileset: "assets/tiles.png",
             data: [0, 0, 0, 0]
         };
+        expect(() => setCellMetadata(initialMap, 0, 0, { slowdown: -0.1 })).toThrow("Invalid cell metadata value for slowdown");
+        expect(() => setCellMetadata(initialMap, 0, 0, { slowdown: Infinity })).toThrow("Invalid cell metadata value for slowdown");
         const storedFiles = new Map([[mapPath, JSON.stringify(initialMap)]]);
         const loadCalls = [];
         const fileSystem = {
@@ -1488,6 +1491,8 @@ describe("Triton persistence bridge", () => {
         tree = render();
         byLabel(tree, "Cell 1, 0 terrain").props.onChange({ target: { value: "moss" } });
         tree = render();
+        byLabel(tree, "Cell 1, 0 slowdown").props.onChange({ target: { value: "0.5" } });
+        tree = render();
         metadataCell = find(tree, node => node.props?.role === "gridcell"
             && node.props?.["aria-label"]?.startsWith("Paint cell 1, 0; tile 3"));
         expect(metadataCell.props["aria-label"]).toContain("non-solid collision (cell override)");
@@ -1496,8 +1501,9 @@ describe("Triton persistence bridge", () => {
         expect(metadataCell.props.title).toContain("non-solid collision (cell override)");
         expect(metadataCell.props.title).toContain("walkable (cell override)");
         expect(metadataCell.props.title).toContain("terrain moss (cell override)");
+        expect(metadataCell.props.title).toContain("slowdown 0.5 (cell override)");
         indicators = findAll(metadataCell, node => node.props?.["data-metadata-indicator"] !== undefined);
-        expect(indicators.map(node => node.props["data-metadata-value"])).toEqual(["false", "true", "moss"]);
+        expect(indicators.map(node => node.props["data-metadata-value"])).toEqual(["false", "true", "moss", "0.5"]);
 
         byLabel(tree, "Tile ID to paint").props.onChange({ target: { value: "1" } });
         tree = render();
@@ -1577,6 +1583,27 @@ describe("Triton persistence bridge", () => {
             && node.props?.["aria-label"]?.startsWith("Paint cell 0, 1; tile 0"));
         expect(mudCell.props["aria-label"]).toContain("terrain mud (cell override)");
 
+        byLabel(tree, "Tilemap brush mode").props.onChange({ target: { value: "slowdown" } });
+        tree = render();
+        expect(byLabel(tree, "Slowdown brush").props.type).toBe("number");
+        byLabel(tree, "Slowdown brush").props.onChange({ target: { value: "0.75" } });
+        tree = render();
+        let slowdownBrushCells = connectGridCells(byLabel(tree, "Tilemap paint grid"));
+        slowdownBrushCells[2].props.onClick();
+        tree = render();
+        let slowedMudCell = find(tree, node => node.props?.role === "gridcell"
+            && node.props?.["aria-label"]?.startsWith("Paint cell 0, 1; tile 0"));
+        expect(slowedMudCell.props["aria-label"]).toContain("slowdown 0.75 (cell override)");
+        expect(find(slowedMudCell, node => node.props?.["data-metadata-indicator"] === "slowdown").props["data-metadata-value"]).toBe("0.75");
+        byLabel(tree, "Slowdown brush").props.onChange({ target: { value: "" } });
+        tree = render();
+        slowdownBrushCells = connectGridCells(byLabel(tree, "Tilemap paint grid"));
+        slowdownBrushCells[2].props.onClick();
+        tree = render();
+        slowedMudCell = find(tree, node => node.props?.role === "gridcell"
+            && node.props?.["aria-label"]?.startsWith("Paint cell 0, 1; tile 0"));
+        expect(slowedMudCell.props["aria-label"]).not.toContain("slowdown");
+
         const saveButton = find(tree, node => node.type === "button" && node.props?.children === "Save Map");
         expect(saveButton).toBeDefined();
         saveButton.props.onClick();
@@ -1588,7 +1615,7 @@ describe("Triton persistence bridge", () => {
         expect(savedMap.tileCount).toBe(8);
         expect(savedMap.metadata["1"]).toEqual({ collision: false, walkable: true });
         expect(savedMap.metadata["3"]).toEqual({ collision: true, walkable: false, terrain: "stone" });
-        expect(savedMap.cellMetadata["1"]).toEqual({ collision: false, walkable: true, terrain: "moss" });
+        expect(savedMap.cellMetadata["1"]).toEqual({ collision: false, walkable: true, terrain: "moss", slowdown: 0.5 });
         expect(Object.hasOwn(savedMap.cellMetadata, "0")).toBe(false);
         expect(savedMap.cellMetadata["2"]).toEqual({ collision: true, terrain: "mud" });
         expect(savedMap.cellMetadata["3"]).toEqual({ walkable: false });
@@ -1641,7 +1668,7 @@ describe("Triton persistence bridge", () => {
             const runtimeScene = application.scene;
             const runtimeTile = runtimeScene.children.find(entity => entity.name === "Tile_1");
             expect(runtimeTile.tileId).toBe(3);
-            expect(runtimeTile.tileMetadata).toEqual({ collision: false, walkable: true, terrain: "moss" });
+            expect(runtimeTile.tileMetadata).toEqual({ collision: false, walkable: true, terrain: "moss", slowdown: 0.5 });
             expect(runtimeTile.GetComponent(BoxCollider)).toBeUndefined();
             expect(runtimeTile.GetComponent(Sprite).path).toBe("assets/tiles.png");
 
@@ -1649,12 +1676,19 @@ describe("Triton persistence bridge", () => {
             expect(navigationMap.data).toEqual([0, 2, -1, -1]);
             expect(navigationMap.getTileMetadata(2)).toEqual({ collision: true, walkable: false, terrain: "stone" });
             expect(navigationMap.getTileMetadata(0)).toEqual({ collision: false, walkable: true });
-            expect(navigationMap.getResolvedMetadata(1, 0)).toEqual({ collision: false, walkable: true, terrain: "moss" });
+            expect(navigationMap.getResolvedMetadata(1, 0)).toEqual({ collision: false, walkable: true, terrain: "moss", slowdown: 0.5 });
             expect(navigationMap.getResolvedMetadata(0, 0)).toEqual({ collision: false, walkable: true });
             expect(navigationMap.getResolvedMetadata(0, 1)).toEqual({ collision: true, terrain: "mud" });
             expect(navigationMap.getResolvedMetadata(1, 1)).toEqual({ walkable: false });
             expect(navigationMap.isWalkable(1, 0)).toBe(true);
             expect(navigationMap.findPath(0, 0, 1, 0)).toEqual([{ x: 1, y: 0 }]);
+            const runtimeGuard = {};
+            expect(navigationMap.occupy(0, 0, runtimeGuard)).toBe(true);
+            const runtimeAI = new EnemyAI({ tilemap: navigationMap, actor: runtimeGuard, spawn: { x: 0, y: 0 }, patrolPoints: [{ x: 1, y: 0 }], moveInterval: 0.2 });
+            runtimeAI.update(0);
+            expect(navigationMap.getOccupant(1, 0)).toBe(runtimeGuard);
+            expect(runtimeAI._moveTimer).toBe(0.30000000000000004);
+            navigationMap.vacate(runtimeGuard);
             navigationMap.setCellMetadata(1, 0, { walkable: false });
             expect(navigationMap.isWalkable(1, 0)).toBe(false);
             expect(navigationMap.findPath(0, 0, 1, 0)).toBe(null);
