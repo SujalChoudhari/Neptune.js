@@ -5,6 +5,7 @@ import { Entity } from "../src/core/entity.js";
 import { Scene } from "../src/core/scene.js";
 import { SceneLoader } from "../src/core/sceneLoader.js";
 import { SceneManager } from "../src/core/sceneManager.js";
+import { Storage } from "../src/core/storage.js";
 import { SceneTransition } from "../src/components/sceneTransition.js";
 import { SpawnPoint } from "../src/components/spawnPoint.js";
 import { Transform } from "../src/components/transform.js";
@@ -316,4 +317,43 @@ test("failed editor-authored destination resource loads preserve the active sour
     assert.equal(actor.GetComponent(Transform).rotation, 0.5);
     assert.deepEqual(SceneManager.GetScenes(), [source]);
     assert.equal(SceneManager.GetSceneByName("Broken Destination"), undefined);
+});
+
+test("failed project opening removes scenes parsed earlier in the same attempt", async () => {
+    const key = "test-project-open-rollback";
+    Storage.SaveProject(key, {
+        name: "Broken Project",
+        scenes: [
+            { id: "first", name: "First Scene", entities: [] },
+            { id: "broken", name: "Broken Scene", layers: [null] }
+        ]
+    });
+
+    try {
+        await assert.rejects(SceneManager.OpenProject(key), /Invalid scene layer definition/);
+        assert.deepEqual(SceneManager.GetScenes(), []);
+        assert.equal(SceneManager.GetSceneByName("First Scene"), undefined);
+    } finally {
+        Storage.Remove(key);
+    }
+});
+
+test("successful project opening registers every parsed scene exactly once", async () => {
+    const key = "test-project-open-success";
+    Storage.SaveProject(key, {
+        name: "Valid Project",
+        scenes: [
+            { id: "one", name: "First Scene", entities: [] },
+            { id: "two", name: "Second Scene", entities: [] }
+        ]
+    });
+
+    try {
+        const opened = await SceneManager.OpenProject(key);
+        assert.deepEqual(opened.scenes.map(scene => scene.name), ["First Scene", "Second Scene"]);
+        assert.equal(SceneManager.GetScenes().length, 2);
+        assert.deepEqual(SceneManager.GetScenes(), opened.scenes);
+    } finally {
+        Storage.Remove(key);
+    }
 });

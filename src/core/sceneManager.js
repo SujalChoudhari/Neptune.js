@@ -230,8 +230,15 @@ export class SceneManager {
         const { SceneLoader } = await import("./sceneLoader.js");
         SceneManager.CloseProject();
         const scenes = [];
-        for (const sceneData of project.scenes) {
-            scenes.push(await SceneLoader.parse(sceneData));
+        try {
+            for (const sceneData of project.scenes) {
+                scenes.push(await SceneLoader.parse(sceneData));
+            }
+        } catch (error) {
+            for (const scene of scenes.reverse()) {
+                SceneManager.removeScene(scene);
+            }
+            throw error;
         }
         return { ...project, scenes };
     }
