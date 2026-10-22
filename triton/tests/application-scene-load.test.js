@@ -171,6 +171,14 @@ test("saved editor-authored scene loads through the Application runtime", async 
             components: []
         }), true);
         assert.equal(editorRunner.moveEntities(["transition-actor-1"], "spawn-authored-1"), true);
+        assert.equal(editorRunner.createEntity("root", {
+            id: "transition-pet-1",
+            name: "Transition Pet",
+            type: "empty",
+            transform: { pos: { x: 2, y: 1 }, rot: 0, scale: { x: 1, y: 1 } },
+            components: []
+        }), true);
+        assert.equal(editorRunner.moveEntities(["transition-pet-1"], "transition-actor-1"), true);
         const tilemapLayer = editorRunner.createTilemapLayer("maps/dungeon.map");
         assert.equal(tilemapLayer.src, "maps/dungeon.map");
         let savedPath;
@@ -191,6 +199,9 @@ test("saved editor-authored scene loads through the Application runtime", async 
         const nestedActor = runtimeEntity.children.find(entity => entity.id === "transition-actor-1");
         assert.ok(nestedActor, "editor reparenting survives save and Application.loadScene as a nested runtime entity");
         assert.equal(nestedActor.parent, runtimeEntity);
+        const nestedPet = nestedActor.children.find(entity => entity.id === "transition-pet-1");
+        assert.ok(nestedPet, "the authored actor subtree survives Application.loadScene");
+        assert.equal(nestedPet.parent, nestedActor);
         assert.deepEqual(
             { x: runtimeEntity.GetComponent(Transform).position.x, y: runtimeEntity.GetComponent(Transform).position.y },
             { x: 8, y: 13 }
@@ -308,9 +319,11 @@ test("saved editor-authored scene loads through the Application runtime", async 
         const doorTrigger = authoredDoor?.GetComponent(TriggerCollider);
         const reloadedParent = reloadedScene.children.find(entity => entity.id === "spawn-authored-1");
         const actor = reloadedParent?.children.find(entity => entity.id === "transition-actor-1");
+        const pet = actor?.children.find(entity => entity.id === "transition-pet-1");
         assert.ok(authoredTransition, "saved editor SceneTransition is restored by SceneLoader");
         assert.ok(doorTrigger, "saved editor TriggerCollider is restored by SceneLoader");
         assert.ok(actor, "saved editor actor is restored before runtime trigger activation");
+        assert.ok(pet, "saved nested child is restored beneath the transition actor");
         actor.runtimeHealth = 73;
         const actorTrigger = new TriggerCollider(16, 16);
         actor.AddComponent(actorTrigger);
@@ -329,6 +342,8 @@ test("saved editor-authored scene loads through the Application runtime", async 
         assert.equal(reloadedParent.children.includes(actor), false, "actor is detached from its authored nested parent");
         assert.equal(destinationScene.children.includes(actor), true, "actor is transferred into the loaded destination scene");
         assert.equal(actor.parent, destinationScene);
+        assert.equal(actor.children.includes(pet), true, "the actor's child remains attached after the subtree transitions");
+        assert.equal(pet.parent, actor);
         assert.equal(actor.runtimeHealth, 73, "runtime-only actor state survives the authored transition");
         assert.deepEqual(
             { x: actor.GetComponent(Transform).position.x, y: actor.GetComponent(Transform).position.y },
