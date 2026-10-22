@@ -188,13 +188,21 @@ export class Entity {
         if (!child || typeof child !== "object") {
             throw new TypeError("Entity.AddChild expects an entity instance.");
         }
+        for (let ancestor = this; ancestor; ancestor = ancestor.parent) {
+            if (ancestor === child) {
+                throw new TypeError("Entity.AddChild cannot create a parent cycle.");
+            }
+        }
         if (this._children == null) {
             this._children = [];
         }
-        if (!this._children.includes(child)) {
-            child.parent = this;
-            this._children.push(child);
-        } else console.warn("Child already attached");
+        if (this._children.includes(child)) {
+            console.warn("Child already attached");
+            return;
+        }
+        if (child.parent && child.parent !== this) child.parent.RemoveChild(child);
+        child.parent = this;
+        this._children.push(child);
     }
 
     /** Remove a direct child and clear its parent reference. */
