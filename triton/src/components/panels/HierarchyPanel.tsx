@@ -20,6 +20,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         entities,
         selectedIds,
         selectEntity,
+        selectEntities,
         moveEntities,
         notifyGame,
         addEntityToHierarchy
@@ -165,7 +166,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
             const end = list.indexOf(id)
             if (start !== -1 && end !== -1) {
                 const range = list.slice(Math.min(start, end), Math.max(start, end) + 1)
-                range.forEach((rid, idx) => selectEntity(rid, idx === 0 ? false : true));
+                selectEntities(range);
             }
         } else {
             selectEntity(id, multi)

@@ -87,7 +87,7 @@ function createMainHarness() {
     runner.EditorGameRunner.currentScene = null;
     runner.EditorGameRunner.currentScenePath = null;
     runner.EditorGameRunner.isDirty = false;
-    const game = { openedScene: null, staleScene: null };
+    const game = { openedScene: null, staleScene: null, selectedIds: [], selectionCalls: [] };
     const mainHookSlots = [];
     const hierarchyHookSlots = [];
     let mainHookIndex = 0;
@@ -194,8 +194,15 @@ function createMainHarness() {
         "@/context/GameContext": {
             useGameContext: () => ({
                 entities: game.entities || {},
-                selectedIds: [],
-                selectEntity() {},
+                selectedIds: game.selectedIds,
+                selectEntity(id, multi) {
+                    game.selectedIds = multi ? [...new Set([...game.selectedIds, id])] : [id];
+                    game.selectionCalls.push([...game.selectedIds]);
+                },
+                selectEntities(ids) {
+                    game.selectedIds = [...ids];
+                    game.selectionCalls.push([...ids]);
+                },
                 moveEntities() {},
                 addEntityToHierarchy(entity, components) { addedEntities.push({ entity, components }); },
                 notifyGame(type, payload) { notifications.push({ type, payload }); },
@@ -215,8 +222,22 @@ function createMainHarness() {
     vm.runInNewContext(bundle, sandbox);
 
     const hierarchyModule = { exports: {} };
+    const hierarchyReact = {
+        ...react,
+        useState(initialValue) {
+            const index = hierarchyHookIndex++;
+            if (!hierarchyHookSlots[index]) hierarchyHookSlots[index] = { value: initialValue };
+            return [hierarchyHookSlots[index].value, value => {
+                hierarchyHookSlots[index].value = typeof value === "function" ? value(hierarchyHookSlots[index].value) : value;
+            }];
+        },
+        useMemo: callback => callback(),
+        useCallback: callback => callback,
+        useEffect() { hierarchyHookIndex += 1; }
+    };
     const hierarchyModules = {
         ...modules,
+        react: hierarchyReact,
         "@/components/library": {
             ThemedScrollArea: "ThemedScrollArea",
             ThemedContextMenu: "ThemedContextMenu",
@@ -271,7 +292,17 @@ function createMainHarness() {
         return Array.isArray(children) ? children.some(child => clickAddEntity(child, type)) : clickAddEntity(children, type);
     };
 
-    return { game, runner: runner.EditorGameRunner, files, writes, notifications, addedEntities, listeners, invokedCommands, render, renderHierarchy, clickDuplicate, clickAddEntity, dispatchMenuEvent, writeScene };
+    const selectHierarchyEntity = (node, id, multi = false, shift = false) => {
+        if (Array.isArray(node)) return node.some(child => selectHierarchyEntity(child, id, multi, shift));
+        if (!node || typeof node !== "object") return false;
+        if (node.type === "HierarchyItem" && node.props?.entity?.id === id) {
+            node.props.onSelect(id, multi, shift);
+            return true;
+        }
+        return selectHierarchyEntity(node.props?.children, id, multi, shift);
+    };
+
+    return { game, runner: runner.EditorGameRunner, files, writes, notifications, addedEntities, listeners, invokedCommands, render, renderHierarchy, clickDuplicate, clickAddEntity, selectHierarchyEntity, dispatchMenuEvent, writeScene };
 }
 
 function loadBundle(bundle, context) {
@@ -301,6 +332,8 @@ function createGameContextHarness(scene) {
     }).outputFiles[0].text;
     const state = [];
     let cursor = 0;
+    const bridgeMessages = [];
+    const gameWindow = { postMessage: message => bridgeMessages.push(message) };
     const context = { Provider: "GameContext.Provider" };
     const react = {
         createElement: (type, props, ...children) => ({ type, props: { ...(props || {}), children: children.length > 1 ? children : children[0] } }),
@@ -335,7 +368,7 @@ function createGameContextHarness(scene) {
     vm.runInNewContext(bundle, {
         console,
         React: react,
-        document: { querySelectorAll: () => [] },
+        document: { querySelectorAll: () => [{ contentWindow: gameWindow }, { contentWindow: gameWindow }] },
         window: { dispatchEvent() {} },
         CustomEvent: class CustomEvent {},
         module,
@@ -349,7 +382,7 @@ function createGameContextHarness(scene) {
         cursor = 0;
         return module.exports.GameProvider({ children: null }).props.value;
     };
-    return { render };
+    return { render, bridgeMessages };
 }
 
 describe("Triton persistence bridge", () => {
@@ -913,6 +946,54 @@ describe("Triton persistence bridge", () => {
         expect(context.selectedEntityData.id).toBe("context-hitbox");
         expect(context.selectedEntityData.components.Hitbox).toEqual(components[0].props);
         expect(context.selectedEntityData.transform.position).toEqual({ x: 0, y: 0 });
+    });
+
+    it("applies Hierarchy Shift-range selection as one ordered selection update", () => {
+        const harness = createMainHarness();
+        harness.game.entities = {
+            root: { id: "root", name: "Root", type: "group", parentId: null, children: ["first", "middle", "last"], expanded: true },
+            first: { id: "first", name: "First", type: "empty", parentId: "root", children: [], expanded: false },
+            middle: { id: "middle", name: "Middle", type: "empty", parentId: "root", children: [], expanded: false },
+            last: { id: "last", name: "Last", type: "empty", parentId: "root", children: [], expanded: false }
+        };
+
+        expect(harness.selectHierarchyEntity(harness.renderHierarchy(), "first")).toBe(true);
+        expect(harness.selectHierarchyEntity(harness.renderHierarchy(), "last", false, true)).toBe(true);
+        expect(harness.game.selectionCalls).toEqual([["first"], ["first", "middle", "last"]]);
+    });
+
+    it("deduplicates additive GameProvider selection and synchronizes cached Inspector data to both runtime views", async () => {
+        const harness = createGameContextHarness({
+            type: "scene",
+            version: "1.0.0",
+            schemaVersion: 1,
+            id: "scene-selection-sync",
+            name: "Selection Sync",
+            entities: [
+                { id: "select-a", name: "A", type: "empty", transform: { pos: { x: 1, y: 2 }, rot: 0, scale: { x: 1, y: 1 } }, components: [] },
+                { id: "select-b", name: "B", type: "empty", transform: { pos: { x: 3, y: 4 }, rot: 0, scale: { x: 1, y: 1 } }, components: [] }
+            ]
+        });
+        let context = harness.render();
+        await context.loadScene("scenes/selection.scene");
+        context = harness.render();
+
+        context.selectEntity("select-a", false);
+        context = harness.render();
+        context.selectEntity("select-a", true);
+        context = harness.render();
+        expect(context.selectedIds).toEqual(["select-a"]);
+
+        context.selectEntities(["select-a", "select-b", "select-b", ""]);
+        context = harness.render();
+        expect(context.selectedIds).toEqual(["select-a", "select-b"]);
+        expect(Object.keys(context.selectedEntitiesData).sort()).toEqual(["select-a", "select-b"]);
+        expect(context.selectedEntityData.id).toBe("select-b");
+        const selectionMessages = harness.bridgeMessages.filter(message => message.type === "editor:select");
+        expect(selectionMessages.slice(-2).map(message => message.payload.ids)).toEqual([
+            ["select-a", "select-b"],
+            ["select-a", "select-b"]
+        ]);
     });
 
     it("authors dialogue, quest, enemy, and transition entities through the hierarchy and loads saved components in the runtime", async () => {

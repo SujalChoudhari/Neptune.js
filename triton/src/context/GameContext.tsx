@@ -19,6 +19,7 @@ interface GameContextType {
     pause: () => void;
     stop: () => void;
     selectEntity: (id: string, multi: boolean) => void;
+    selectEntities: (ids: string[]) => void;
     moveEntities: (ids: string[], targetParentId: string, index?: number) => void;
     addEntityToHierarchy: (entity: SceneEntity, components?: Array<{ type: string; props?: Record<string, any> }>) => void;
     updateComponent: (id: string, component: string, field: string, value: any) => void;
@@ -473,24 +474,22 @@ export function GameProvider({ children }: { children: ReactNode }) {
         window.dispatchEvent(new Event('editor:stop'));
     };
 
-    const selectEntity = (id: string, multi: boolean) => {
-        const newSelection = multi ? [...selectedIds, id] : [id];
+    const selectEntities = (ids: string[]) => {
+        const newSelection = [...new Set(ids.filter(id => typeof id === "string" && id.length > 0))];
         setSelectedIds(newSelection);
         notifyGame('editor:select', { ids: newSelection });
 
-        // Optimistic / Local Data Selection
-        // If we have data in cache, select it immediately
         const newBinding: Record<string, EntityData> = {};
         newSelection.forEach(sid => {
             if (entityDataCache[sid]) {
                 newBinding[sid] = entityDataCache[sid];
             }
         });
-
-        // If we have previously selected data that's still selected, keep it? 
-        // No, simplest is to reset to cache or current known state.
-        // Merging with existing *might* be better but cache is safer source of truth if static.
         setSelectedEntitiesData(newBinding);
+    };
+
+    const selectEntity = (id: string, multi: boolean) => {
+        selectEntities(multi ? [...selectedIds, id] : [id]);
     };
 
     const moveEntities = (ids: string[], targetParentId: string, index?: number) => {
@@ -598,6 +597,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             pause,
             stop,
             selectEntity,
+            selectEntities,
             moveEntities,
             addEntityToHierarchy,
             updateComponent,
