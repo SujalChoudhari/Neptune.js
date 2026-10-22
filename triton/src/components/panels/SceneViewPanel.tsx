@@ -4,7 +4,7 @@ import cameraUrl from "../../../../src/thalassa/camera.js?url";
 import scenePickingUrl from "@/lib/scenePicking.mjs?url";
 import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
 import { runtimeEntityBridgeScript } from "../../lib/runtimeEntityBridge.mjs";
-import { translateOnAxis, resizeColliderBounds, getColliderOverlayBounds, getEntitySelectionBounds, isSceneViewBridgeMessageSource } from "@/lib/scenePicking.mjs";
+import { translateOnAxis, resizeColliderBounds, getColliderOverlayBounds, getEntitySelectionBounds, hasCompleteGroupTransformSelection, isSceneViewBridgeMessageSource } from "@/lib/scenePicking.mjs";
 import { invoke } from "@tauri-apps/api/core";
 import { ThemedIconButton } from "@/components/library";
 import { Maximize, ZoomIn, ZoomOut } from "lucide-react";
@@ -68,6 +68,7 @@ export function SceneViewPanel() {
         y: (Math.min(...selectionOverlays.map(bounds => bounds.y))
             + Math.max(...selectionOverlays.map(bounds => bounds.y + bounds.height))) / 2
     } : null, [selectionOverlays]);
+    const hasCompleteGroupTransform = hasCompleteGroupTransformSelection(selectedIds, selectedEntitiesData);
 
     useEffect(() => {
         const position = selectedIds.length > 1
@@ -158,6 +159,7 @@ export function SceneViewPanel() {
 
     const beginGizmoDrag = (operation: 'translate-x' | 'translate-y' | 'rotate' | 'scale', event: React.MouseEvent<SVGCircleElement>) => {
         if (event.button !== 0 || selectedIds.length === 0 || !selectedEntityData) return;
+        if (selectedIds.length > 1 && !hasCompleteGroupTransform) return;
         if (selectedIds.length > 1 && operation !== 'translate-x' && operation !== 'translate-y') return;
         const startPositions: Record<string, { x: number; y: number }> = {};
         for (const id of selectedIds) {
@@ -234,6 +236,7 @@ export function SceneViewPanel() {
         event: React.KeyboardEvent<SVGCircleElement>
     ) => {
         if (selectedIds.length > 1) {
+            if (!hasCompleteGroupTransform) return;
             if (operation !== 'translate-x' && operation !== 'translate-y') return;
             const isX = operation === 'translate-x';
             const validKeys = isX ? ['ArrowLeft', 'ArrowRight'] : ['ArrowUp', 'ArrowDown'];
@@ -612,7 +615,8 @@ export function SceneViewPanel() {
                         ))}
                     </svg>
                 )}
-                {selectedIds.length > 0 && activeGizmoPosition && (
+                {selectedIds.length > 0 && activeGizmoPosition
+                    && (selectedIds.length === 1 || hasCompleteGroupTransform) && (
                     <svg
                         aria-label={selectedIds.length > 1 ? 'Move selected entities' : 'Move selected entity'}
                         className="absolute inset-0 w-full h-full overflow-visible pointer-events-none"

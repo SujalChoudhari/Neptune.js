@@ -30,6 +30,14 @@ export function updateSelection(currentIds, selectedId, additive = false) {
         : [...selection, selectedId];
 }
 
+export function hasCompleteGroupTransformSelection(ids, entitiesData) {
+    if (!Array.isArray(ids) || ids.length < 2 || !entitiesData || typeof entitiesData !== 'object') return false;
+    return ids.every((id) => {
+        const position = entitiesData[id]?.transform?.position;
+        return position && Number.isFinite(position.x) && Number.isFinite(position.y);
+    });
+}
+
 export function getEntitySelectionBounds(entity, fallbackSize = 16) {
     const position = entity?.transform?.position;
     if (!position || !Number.isFinite(position.x) || !Number.isFinite(position.y)

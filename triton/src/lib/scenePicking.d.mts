@@ -14,6 +14,7 @@ export function resizeColliderBounds(
 ): { width: number; height: number };
 export function pickEntityAt(root: unknown, x: number, y: number, tolerance?: number): unknown;
 export function updateSelection(currentIds: unknown, selectedId: unknown, additive?: boolean): string[];
+export function hasCompleteGroupTransformSelection(ids: unknown, entitiesData: unknown): boolean;
 export interface EntitySelectionBounds {
     id: string;
     name: string;

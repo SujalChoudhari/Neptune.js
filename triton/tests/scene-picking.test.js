@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import path from 'node:path';
 import { buildSync } from 'esbuild';
-import { pickEntityAt, translateOnAxis, resizeColliderBounds, updateSelection, getEntitySelectionBounds, getColliderOverlayBounds, isSceneViewBridgeMessageSource } from '../src/lib/scenePicking.mjs';
+import { pickEntityAt, translateOnAxis, resizeColliderBounds, updateSelection, getEntitySelectionBounds, getColliderOverlayBounds, hasCompleteGroupTransformSelection, isSceneViewBridgeMessageSource } from '../src/lib/scenePicking.mjs';
 import { BoxCollider } from '../../src/components/boxCollider.js';
 
 const entity = (id, x, y, children = []) => ({
@@ -92,7 +92,7 @@ function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-
         '@/lib/editorGameRunner': { EditorGameRunner: {
             updateEntity: (id, component, data) => canonicalEdits.push({ id, component, data })
         } },
-        '@/lib/scenePicking.mjs': { translateOnAxis, resizeColliderBounds, getColliderOverlayBounds, getEntitySelectionBounds },
+        '@/lib/scenePicking.mjs': { translateOnAxis, resizeColliderBounds, getColliderOverlayBounds, getEntitySelectionBounds, hasCompleteGroupTransformSelection },
         '@tauri-apps/api/core': { invoke: async () => '' },
         '../../../../src/neptune.js?url': '/neptune.js',
         '../../../../src/thalassa/camera.js?url': '/camera.js',
@@ -520,6 +520,25 @@ test('Scene View translates selected entities together and limits the group gizm
     assert.deepEqual(keyboardHarness.componentEdits.map(({ id, field }) => [id, field]), [
         ['entity-1', 'position'], ['entity-2', 'position']
     ]);
+});
+
+test('Scene View disables group movement instead of partially editing an incomplete selection', () => {
+    const ids = ['entity-1', 'missing-entity'];
+    const harness = createSceneViewHarness(undefined, ids);
+    const tree = harness.render();
+
+    assert.equal(findNode(tree, node => node.props?.['aria-label'] === 'Move selected entities'), null);
+    assert.equal(findNode(tree, node => node.props?.['aria-label'] === 'Translate on X axis'), null);
+    assert.equal(findNode(tree, node => node.props?.['aria-label'] === 'Translate on Y axis'), null);
+    assert.deepEqual(harness.canonicalEdits, []);
+    assert.equal(hasCompleteGroupTransformSelection(ids, {
+        'entity-1': { transform: { position: { x: 2, y: 3 } } },
+        'missing-entity': undefined
+    }), false);
+    assert.equal(hasCompleteGroupTransformSelection(ids, {
+        'entity-1': { transform: { position: { x: 2, y: 3 } } },
+        'missing-entity': { transform: { position: { x: Number.NaN, y: 6 } } }
+    }), false);
 });
 
 test('Scene View transform gizmos are focusable and edit transforms with arrow-key precision steps', () => {
