@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useEffect } from 'react';
+import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import neptuneEntryUrl from "../../../../src/neptune.js?url";
 import cameraUrl from "../../../../src/thalassa/camera.js?url";
 import scenePickingUrl from "@/lib/scenePicking.mjs?url";
@@ -42,6 +42,8 @@ export function SceneViewPanel() {
     const gizmoDragRef = useRef<{
         operation: 'translate-x' | 'translate-y' | 'rotate' | 'scale';
         id: string;
+        ids: string[];
+        startPositions: Record<string, { x: number; y: number }>;
         startX: number;
         startY: number;
         position: { x: number; y: number };
@@ -57,11 +59,26 @@ export function SceneViewPanel() {
         height: number;
     } | null>(null);
     const suppressClickRef = useRef(false);
+    const selectionOverlays = useMemo(() => selectedIds
+        .map(id => getEntitySelectionBounds(selectedEntitiesData[id]))
+        .filter((bounds): bounds is NonNullable<typeof bounds> => bounds !== null), [selectedIds, selectedEntitiesData]);
+    const groupGizmoPosition = useMemo(() => selectionOverlays.length > 0 ? {
+        x: (Math.min(...selectionOverlays.map(bounds => bounds.x))
+            + Math.max(...selectionOverlays.map(bounds => bounds.x + bounds.width))) / 2,
+        y: (Math.min(...selectionOverlays.map(bounds => bounds.y))
+            + Math.max(...selectionOverlays.map(bounds => bounds.y + bounds.height))) / 2
+    } : null, [selectionOverlays]);
 
     useEffect(() => {
-        const position = selectedEntityData?.transform.position;
-        setGizmoPosition(position ? { x: position.x, y: position.y } : null);
-    }, [selectedEntityData]);
+        const position = selectedIds.length > 1
+            ? groupGizmoPosition
+            : selectedEntityData?.transform.position;
+        setGizmoPosition(current => {
+            if (!position) return current === null ? current : null;
+            if (current?.x === position.x && current.y === position.y) return current;
+            return { x: position.x, y: position.y };
+        });
+    }, [selectedEntityData, selectedIds, selectedEntitiesData, groupGizmoPosition]);
 
     useEffect(() => {
         const handleBridgeMessage = (event: MessageEvent) => {
@@ -140,11 +157,23 @@ export function SceneViewPanel() {
     }, [zoom, pan, notifyGame]);
 
     const beginGizmoDrag = (operation: 'translate-x' | 'translate-y' | 'rotate' | 'scale', event: React.MouseEvent<SVGCircleElement>) => {
-        if (event.button !== 0 || selectedIds.length !== 1 || !selectedEntityData) return;
-        const position = gizmoPosition || selectedEntityData.transform.position;
+        if (event.button !== 0 || selectedIds.length === 0 || !selectedEntityData) return;
+        if (selectedIds.length > 1 && operation !== 'translate-x' && operation !== 'translate-y') return;
+        const startPositions: Record<string, { x: number; y: number }> = {};
+        for (const id of selectedIds) {
+            const start = selectedEntitiesData[id]?.transform.position;
+            if (!start || !Number.isFinite(start.x) || !Number.isFinite(start.y)) return;
+            startPositions[id] = { x: start.x, y: start.y };
+        }
+        const position = selectedIds.length > 1
+            ? groupGizmoPosition
+            : gizmoPosition || selectedEntityData.transform.position;
+        if (!position) return;
         gizmoDragRef.current = {
             operation,
-            id: selectedIds[0],
+            id: selectedIds[selectedIds.length - 1],
+            ids: [...selectedIds],
+            startPositions,
             startX: event.clientX,
             startY: event.clientY,
             position: { x: position.x, y: position.y },
@@ -204,6 +233,30 @@ export function SceneViewPanel() {
         operation: 'translate-x' | 'translate-y' | 'rotate' | 'scale',
         event: React.KeyboardEvent<SVGCircleElement>
     ) => {
+        if (selectedIds.length > 1) {
+            if (operation !== 'translate-x' && operation !== 'translate-y') return;
+            const isX = operation === 'translate-x';
+            const validKeys = isX ? ['ArrowLeft', 'ArrowRight'] : ['ArrowUp', 'ArrowDown'];
+            if (!validKeys.includes(event.key)) return;
+            const direction = event.key === 'ArrowRight' || event.key === 'ArrowUp' ? 1 : -1;
+            const delta = direction * (event.shiftKey ? 1 : 0.1);
+            event.preventDefault();
+            event.stopPropagation();
+            selectedIds.forEach(id => {
+                const position = selectedEntitiesData[id]?.transform.position;
+                if (!position) return;
+                applyTransformEdit(id, {
+                    position: { ...position, [isX ? 'x' : 'y']: position[isX ? 'x' : 'y'] + delta }
+                });
+            });
+            if (groupGizmoPosition) {
+                setGizmoPosition({
+                    x: groupGizmoPosition.x + (isX ? delta : 0),
+                    y: groupGizmoPosition.y + (isX ? 0 : delta)
+                });
+            }
+            return;
+        }
         if (selectedIds.length !== 1 || !selectedEntityData) return;
 
         const transform = selectedEntityData.transform;
@@ -286,7 +339,12 @@ export function SceneViewPanel() {
             }
             const nextPosition = translateOnAxis(drag.position, deltaX, deltaY, zoom, drag.operation === 'translate-x' ? 'x' : 'y');
             setGizmoPosition(nextPosition);
-            applyTransformEdit(drag.id, { position: nextPosition });
+            const moveX = nextPosition.x - drag.position.x;
+            const moveY = nextPosition.y - drag.position.y;
+            drag.ids.forEach(id => {
+                const start = drag.startPositions[id];
+                applyTransformEdit(id, { position: { x: start.x + moveX, y: start.y + moveY } });
+            });
             return;
         }
         if (isPanning) {
@@ -470,11 +528,10 @@ export function SceneViewPanel() {
     `;
 
     const colliderOverlays = getColliderOverlayBounds(selectedEntityData);
-    const selectionOverlays = selectedIds
-        .map(id => getEntitySelectionBounds(selectedEntitiesData[id]))
-        .filter((bounds): bounds is NonNullable<typeof bounds> => bounds !== null);
     const spawnFacingMarker = getSpawnPointOverlay(selectedEntityData);
-    const activeGizmoPosition = gizmoPosition || selectedEntityData?.transform.position;
+    const activeGizmoPosition = gizmoPosition || (selectedIds.length > 1
+        ? groupGizmoPosition
+        : selectedEntityData?.transform.position);
     const gizmoX = activeGizmoPosition ? (activeGizmoPosition.x - pan.x) * zoom : 0;
     const gizmoY = activeGizmoPosition ? (activeGizmoPosition.y - pan.y) * zoom : 0;
     const spawnMarkerX = spawnFacingMarker ? (spawnFacingMarker.x - pan.x) * zoom : 0;
@@ -555,12 +612,12 @@ export function SceneViewPanel() {
                         ))}
                     </svg>
                 )}
-                {selectedEntityData && selectedIds.length === 1 && activeGizmoPosition && (
+                {selectedIds.length > 0 && activeGizmoPosition && (
                     <svg
-                        aria-label="Move selected entity"
+                        aria-label={selectedIds.length > 1 ? 'Move selected entities' : 'Move selected entity'}
                         className="absolute inset-0 w-full h-full overflow-visible pointer-events-none"
                     >
-                        {spawnFacingMarker && (
+                        {selectedIds.length === 1 && spawnFacingMarker && (
                             <g
                                 role="img"
                                 aria-label={`Selected Spawn Point facing ${spawnFacingMarker.facing}`}
@@ -587,7 +644,7 @@ export function SceneViewPanel() {
                                 <path d={spawnArrowPath} fill="#fbbf24" />
                             </g>
                         )}
-                        {colliderOverlays.map((bounds) => (
+                        {selectedIds.length === 1 && colliderOverlays.map((bounds) => (
                             <g key={bounds.type}>
                                 <rect
                                     aria-label={`Selected ${bounds.type} bounds`}
@@ -652,36 +709,40 @@ export function SceneViewPanel() {
                             onMouseDown={(event) => beginGizmoDrag('translate-y', event)}
                             onKeyDown={(event) => adjustGizmoWithKeyboard('translate-y', event)}
                         />
-                        <circle
-                            cx={gizmoX}
-                            cy={gizmoY}
-                            r="34"
-                            fill="none"
-                            stroke="#6e8bff"
-                            strokeWidth="3"
-                            className="pointer-events-auto cursor-grab focus-visible:stroke-white focus-visible:stroke-[5px]"
-                            aria-label="Rotate selected entity"
-                            aria-description="Arrow keys rotate 0.1 radians; hold Shift to rotate 1 radian."
-                            aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Shift+ArrowLeft Shift+ArrowRight Shift+ArrowUp Shift+ArrowDown"
-                            role="button"
-                            tabIndex={0}
-                            onMouseDown={(event) => beginGizmoDrag('rotate', event)}
-                            onKeyDown={(event) => adjustGizmoWithKeyboard('rotate', event)}
-                        />
-                        <circle
-                            cx={gizmoX + 48}
-                            cy={gizmoY + 48}
-                            r="7"
-                            fill="#6e8bff"
-                            className="pointer-events-auto cursor-nwse-resize focus-visible:stroke-white focus-visible:stroke-[5px]"
-                            aria-label="Scale selected entity"
-                            aria-description="Arrow keys change scale by 10%; hold Shift to change scale by 50%."
-                            aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Shift+ArrowLeft Shift+ArrowRight Shift+ArrowUp Shift+ArrowDown"
-                            role="button"
-                            tabIndex={0}
-                            onMouseDown={(event) => beginGizmoDrag('scale', event)}
-                            onKeyDown={(event) => adjustGizmoWithKeyboard('scale', event)}
-                        />
+                        {selectedIds.length === 1 && (
+                            <>
+                                <circle
+                                    cx={gizmoX}
+                                    cy={gizmoY}
+                                    r="34"
+                                    fill="none"
+                                    stroke="#6e8bff"
+                                    strokeWidth="3"
+                                    className="pointer-events-auto cursor-grab focus-visible:stroke-white focus-visible:stroke-[5px]"
+                                    aria-label="Rotate selected entity"
+                                    aria-description="Arrow keys rotate 0.1 radians; hold Shift to rotate 1 radian."
+                                    aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Shift+ArrowLeft Shift+ArrowRight Shift+ArrowUp Shift+ArrowDown"
+                                    role="button"
+                                    tabIndex={0}
+                                    onMouseDown={(event) => beginGizmoDrag('rotate', event)}
+                                    onKeyDown={(event) => adjustGizmoWithKeyboard('rotate', event)}
+                                />
+                                <circle
+                                    cx={gizmoX + 48}
+                                    cy={gizmoY + 48}
+                                    r="7"
+                                    fill="#6e8bff"
+                                    className="pointer-events-auto cursor-nwse-resize focus-visible:stroke-white focus-visible:stroke-[5px]"
+                                    aria-label="Scale selected entity"
+                                    aria-description="Arrow keys change scale by 10%; hold Shift to change scale by 50%."
+                                    aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown Shift+ArrowLeft Shift+ArrowRight Shift+ArrowUp Shift+ArrowDown"
+                                    role="button"
+                                    tabIndex={0}
+                                    onMouseDown={(event) => beginGizmoDrag('scale', event)}
+                                    onKeyDown={(event) => adjustGizmoWithKeyboard('scale', event)}
+                                />
+                            </>
+                        )}
                     </svg>
                 )}
             </div>

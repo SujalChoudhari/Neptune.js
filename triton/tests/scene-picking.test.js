@@ -50,6 +50,7 @@ function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-
             }];
         },
         useCallback(callback) { hookIndex++; return callback; },
+        useMemo(factory) { hookIndex++; return factory(); },
         useEffect() { hookIndex++; }
     };
     const jsx = (type, props) => ({ type, props: props || {} });
@@ -487,6 +488,37 @@ test('Scene View UI pans the camera and moves a selected entity on its gizmo axi
     ]);
     assert.deepEqual(JSON.parse(JSON.stringify(harness.componentEdits)), [
         { id: 'entity-1', component: 'transform', field: 'position', value: { x: 22, y: 3 } }
+    ]);
+});
+
+test('Scene View translates selected entities together and limits the group gizmo to translation', () => {
+    const ids = ['entity-1', 'entity-2'];
+    const harness = createSceneViewHarness(undefined, ids);
+    let tree = harness.render();
+    assert.ok(findNode(tree, node => node.props?.['aria-label'] === 'Move selected entities'));
+    assert.ok(findNode(tree, node => node.props?.['aria-label'] === 'Translate on X axis'));
+    assert.ok(findNode(tree, node => node.props?.['aria-label'] === 'Translate on Y axis'));
+    assert.equal(findNode(tree, node => node.props?.['aria-label'] === 'Rotate selected entity'), null);
+    assert.equal(findNode(tree, node => node.props?.['aria-label'] === 'Scale selected entity'), null);
+
+    const xHandle = findNode(tree, node => node.props?.['aria-label'] === 'Translate on X axis');
+    xHandle.props.onMouseDown({ button: 0, clientX: 56, clientY: 5.5, preventDefault() {}, stopPropagation() {} });
+    tree.props.onMouseMove({ clientX: 76, clientY: 5.5 });
+    assert.deepEqual(JSON.parse(JSON.stringify(harness.canonicalEdits)), [
+        { id: 'entity-1', component: 'transform', data: { position: { x: 22, y: 3 } } },
+        { id: 'entity-2', component: 'transform', data: { position: { x: 15, y: 6 } } }
+    ]);
+
+    const keyboardHarness = createSceneViewHarness(undefined, ids);
+    tree = keyboardHarness.render();
+    const yHandle = findNode(tree, node => node.props?.['aria-label'] === 'Translate on Y axis');
+    yHandle.props.onKeyDown({ key: 'ArrowUp', shiftKey: false, preventDefault() {}, stopPropagation() {} });
+    assert.deepEqual(JSON.parse(JSON.stringify(keyboardHarness.canonicalEdits)), [
+        { id: 'entity-1', component: 'transform', data: { position: { x: 2, y: 3.1 } } },
+        { id: 'entity-2', component: 'transform', data: { position: { x: -5, y: 6.1 } } }
+    ]);
+    assert.deepEqual(keyboardHarness.componentEdits.map(({ id, field }) => [id, field]), [
+        ['entity-1', 'position'], ['entity-2', 'position']
     ]);
 });
 
