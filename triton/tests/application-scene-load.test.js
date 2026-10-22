@@ -170,6 +170,7 @@ test("saved editor-authored scene loads through the Application runtime", async 
             transform: { pos: { x: 1, y: 2 }, rot: 0.5, scale: { x: 1, y: 1 } },
             components: []
         }), true);
+        assert.equal(editorRunner.moveEntities(["transition-actor-1"], "spawn-authored-1"), true);
         const tilemapLayer = editorRunner.createTilemapLayer("maps/dungeon.map");
         assert.equal(tilemapLayer.src, "maps/dungeon.map");
         let savedPath;
@@ -187,6 +188,9 @@ test("saved editor-authored scene loads through the Application runtime", async 
         assert.equal(runtimeScene.name, "Authored Runtime Smoke");
         const runtimeEntity = runtimeScene.children.find(entity => entity.id === "spawn-authored-1");
         assert.ok(runtimeEntity, "authored entity ID is preserved by the runtime loader");
+        const nestedActor = runtimeEntity.children.find(entity => entity.id === "transition-actor-1");
+        assert.ok(nestedActor, "editor reparenting survives save and Application.loadScene as a nested runtime entity");
+        assert.equal(nestedActor.parent, runtimeEntity);
         assert.deepEqual(
             { x: runtimeEntity.GetComponent(Transform).position.x, y: runtimeEntity.GetComponent(Transform).position.y },
             { x: 8, y: 13 }
@@ -302,7 +306,8 @@ test("saved editor-authored scene loads through the Application runtime", async 
         const authoredDoor = reloadedScene.children.find(entity => entity.id === "door-authored-1");
         const authoredTransition = authoredDoor?.GetComponent(SceneTransition);
         const doorTrigger = authoredDoor?.GetComponent(TriggerCollider);
-        const actor = reloadedScene.children.find(entity => entity.id === "transition-actor-1");
+        const reloadedParent = reloadedScene.children.find(entity => entity.id === "spawn-authored-1");
+        const actor = reloadedParent?.children.find(entity => entity.id === "transition-actor-1");
         assert.ok(authoredTransition, "saved editor SceneTransition is restored by SceneLoader");
         assert.ok(doorTrigger, "saved editor TriggerCollider is restored by SceneLoader");
         assert.ok(actor, "saved editor actor is restored before runtime trigger activation");
@@ -321,6 +326,7 @@ test("saved editor-authored scene loads through the Application runtime", async 
         assert.equal(destinationScene.name, "Runtime Dungeon");
         assert.notEqual(destinationScene, reloadedScene);
         assert.equal(reloadedScene.children.includes(actor), false, "actor leaves the authored source scene");
+        assert.equal(reloadedParent.children.includes(actor), false, "actor is detached from its authored nested parent");
         assert.equal(destinationScene.children.includes(actor), true, "actor is transferred into the loaded destination scene");
         assert.equal(actor.parent, destinationScene);
         assert.equal(actor.runtimeHealth, 73, "runtime-only actor state survives the authored transition");
