@@ -110,6 +110,41 @@ describe('Entity', () => {
         expect(payload.children[0].id).toBe(child.id);
         expect(payload.components[0].props).toEqual(mockComponent.properties);
     });
+
+    it('destroys a nested entity hierarchy once and detaches every node', () => {
+        const root = new Entity('Root');
+        const parent = new Entity('Parent');
+        const child = new Entity('Child');
+        let destroyCount = 0;
+        class TrackedComponent extends Component {
+            destroy() {
+                destroyCount++;
+                super.destroy();
+            }
+        }
+        root.AddChild(parent);
+        parent.AddChild(child);
+        parent.AddComponent(new TrackedComponent());
+        child.AddComponent(new TrackedComponent());
+
+        parent.destroy();
+        parent.destroy();
+
+        expect(root.children).toEqual([]);
+        expect(parent.parent).toBe(null);
+        expect(parent.children).toEqual([]);
+        expect(child.parent).toBe(null);
+        expect(parent.components).toEqual([]);
+        expect(child.components).toEqual([]);
+        expect(destroyCount).toBe(2);
+    });
+
+    it('destroys a root entity without requiring a parent', () => {
+        const root = new Entity('Root');
+        expect(() => root.destroy()).not.toThrow();
+        expect(root.parent).toBe(null);
+        expect(root.children).toEqual([]);
+    });
 });
 
 

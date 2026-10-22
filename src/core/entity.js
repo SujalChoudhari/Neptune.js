@@ -40,6 +40,7 @@ export class Entity {
         this._children = [];
         this._parent = null;
         this._components = [];
+        this._destroyed = false;
     }
 
     /**
@@ -196,6 +197,15 @@ export class Entity {
         } else console.warn("Child already attached");
     }
 
+    /** Remove a direct child and clear its parent reference. */
+    RemoveChild(child) {
+        const index = this._children.indexOf(child);
+        if (index === -1) return false;
+        this._children.splice(index, 1);
+        if (child.parent === this) child.parent = null;
+        return true;
+    }
+
     /**
      * Adds multiple child entities to this entity.
      * @param {Entity[]} children The child entities to be added.
@@ -310,16 +320,18 @@ export class Entity {
 
     /**@private */
     destroy() {
-        this._components.forEach(component => {
+        if (this._destroyed) return;
+        this._destroyed = true;
+
+        for (const component of this._components.splice(0)) {
             component.destroy();
-        });
+        }
 
-        this._children.forEach(child => {
+        for (const child of [...this._children]) {
             child.destroy();
-        });
-        this._parent.RemoveChild(this);
-        this._children = [];
-
+        }
+        this._parent?.RemoveChild(this);
+        this._parent = null;
     }
 
 }
