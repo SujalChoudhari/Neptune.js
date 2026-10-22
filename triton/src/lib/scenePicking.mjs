@@ -19,6 +19,17 @@ export function resizeColliderBounds(size, deltaX, deltaY, zoom, minSize = 0.05)
     };
 }
 
+export function updateSelection(currentIds, selectedId, additive = false) {
+    const selection = Array.isArray(currentIds)
+        ? [...new Set(currentIds.filter((id) => typeof id === 'string' && id.length > 0))]
+        : [];
+    if (!additive) return typeof selectedId === 'string' && selectedId.length > 0 ? [selectedId] : [];
+    if (typeof selectedId !== 'string' || selectedId.length === 0) return selection;
+    return selection.includes(selectedId)
+        ? selection.filter((id) => id !== selectedId)
+        : [...selection, selectedId];
+}
+
 export function pickEntityAt(root, x, y, tolerance = 12) {
     if (!root || !Number.isFinite(x) || !Number.isFinite(y)) return null;
 

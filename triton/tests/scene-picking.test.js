@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import path from 'node:path';
 import { buildSync } from 'esbuild';
-import { pickEntityAt, translateOnAxis, resizeColliderBounds, getColliderOverlayBounds, isSceneViewBridgeMessageSource } from '../src/lib/scenePicking.mjs';
+import { pickEntityAt, translateOnAxis, resizeColliderBounds, updateSelection, getColliderOverlayBounds, isSceneViewBridgeMessageSource } from '../src/lib/scenePicking.mjs';
 import { BoxCollider } from '../../src/components/boxCollider.js';
 
 const entity = (id, x, y, children = []) => ({
@@ -189,6 +189,15 @@ test('viewport picking uses runtime BoxCollider size and offset instead of point
 
     assert.equal(pickEntityAt(root, 15, 22)?.id, 'collider-only');
     assert.equal(pickEntityAt(root, 12, 20), null);
+});
+
+test('Scene View selection replacement and modifier toggling preserve unique entity IDs', () => {
+    assert.deepEqual(updateSelection(['a', 'a', '', null, 'b'], null, true), ['a', 'b']);
+    assert.deepEqual(updateSelection(['a', 'b'], 'c', true), ['a', 'b', 'c']);
+    assert.deepEqual(updateSelection(['a', 'b'], 'a', true), ['b']);
+    assert.deepEqual(updateSelection(['a', 'b'], null, true), ['a', 'b']);
+    assert.deepEqual(updateSelection(['a', 'b'], 'c', false), ['c']);
+    assert.deepEqual(updateSelection(['a', 'b'], null, false), []);
 });
 
 test('combat collider overlay bounds include the selected transform and authored offsets', () => {
@@ -388,8 +397,8 @@ test('Scene View UI emits viewport selection and cursor-anchored zoom updates', 
         { type: 'editor:camera-update', payload: { zoom: 1.1, x: 4.545454545454547, y: 5.45454545454546 } }
     ]);
     const source = fs.readFileSync(path.resolve('triton/src/components/panels/SceneViewPanel.tsx'), 'utf8');
-    assert.match(source, /type === 'editor:select'[\s\S]*editorSelection = Array\.isArray\(payload\?\.ids\)/);
-    assert.match(source, /editorSelection\.includes\(selectedId\)[\s\S]*type: 'game:selection-changed'[\s\S]*payload: \{ ids: editorSelection \}/);
+    assert.match(source, /type === 'editor:select'[\s\S]*editorSelection = updateSelection\(payload\?\.ids, null, true\)/);
+    assert.match(source, /editorSelection = updateSelection\(editorSelection, selected\?\.id, Boolean\(payload\.multi\)\)[\s\S]*type: 'game:selection-changed'[\s\S]*payload: \{ ids: editorSelection \}/);
 });
 
 test('Scene View starts its paused editor preview only after loading a scene', () => {

@@ -347,7 +347,7 @@ export function SceneViewPanel() {
     
     <script type="module">
         import { Camera } from "${cameraUrl}";
-        import { pickEntityAt } from "${scenePickingUrl}";
+        import { pickEntityAt, updateSelection } from "${scenePickingUrl}";
         import { installProjectResourceBridge } from "${projectResourceBridgeUrl}";
         const projectResourceBridge = installProjectResourceBridge();
         const engineModule = await import("${neptuneEntryUrl}");
@@ -394,9 +394,7 @@ export function SceneViewPanel() {
              window.addEventListener('message', (e) => {
                  const { type, payload } = e.data;
                 if (type === 'editor:select') {
-                    editorSelection = Array.isArray(payload?.ids)
-                        ? [...new Set(payload.ids.filter(id => typeof id === 'string' && id.length > 0))]
-                        : [];
+                    editorSelection = updateSelection(payload?.ids, null, true);
                 }
                 else if (type === 'editor:camera-update') {
                      editorCamera.position.x = payload.x;
@@ -406,16 +404,7 @@ export function SceneViewPanel() {
                  else if (type === 'editor:viewport-select') {
                      const world = editorCamera.screenToWorld(payload.x, payload.y);
                      const selected = game.scene && pickEntityAt(game.scene, world.x, world.y);
-                     const selectedId = selected?.id;
-                     if (payload.multi) {
-                         if (selectedId) {
-                             editorSelection = editorSelection.includes(selectedId)
-                                 ? editorSelection.filter(id => id !== selectedId)
-                                 : [...editorSelection, selectedId];
-                         }
-                     } else {
-                         editorSelection = selectedId ? [selectedId] : [];
-                     }
+                     editorSelection = updateSelection(editorSelection, selected?.id, Boolean(payload.multi));
                      window.parent.postMessage({
                          type: 'game:selection-changed',
                          payload: { ids: editorSelection }

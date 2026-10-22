@@ -13,6 +13,7 @@ export function resizeColliderBounds(
     minSize?: number
 ): { width: number; height: number };
 export function pickEntityAt(root: unknown, x: number, y: number, tolerance?: number): unknown;
+export function updateSelection(currentIds: unknown, selectedId: unknown, additive?: boolean): string[];
 export interface ColliderOverlayBounds {
     type: 'Hitbox' | 'Hurtbox' | 'TriggerCollider' | 'BoxCollider';
     color: string;
