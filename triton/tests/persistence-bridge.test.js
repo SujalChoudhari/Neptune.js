@@ -506,6 +506,41 @@ describe("Triton persistence bridge", () => {
         expect({ x: position.x, y: position.y }).toEqual({ x: 8, y: 13 });
     });
 
+    it("persists group-gizmo transforms for every selected entity through runtime hydration", async () => {
+        const { runner } = createMainHarness();
+        runner.openScene({
+            type: "scene", version: "1.0.0", schemaVersion: 1, name: "Group Transform Persistence",
+            entities: [
+                {
+                    id: "group-first", name: "First", children: [],
+                    components: [{ type: "Transform", props: { position: { x: 2, y: 3 }, rotation: 0, scale: { x: 1, y: 1 } } }]
+                },
+                {
+                    id: "group-second", name: "Second", children: [],
+                    components: [{ type: "Transform", props: { position: { x: -5, y: 6 }, rotation: 0, scale: { x: 1, y: 1 } } }]
+                }
+            ]
+        }, "scenes/group-transform.scene");
+
+        expect(runner.updateEntity("group-first", "transform", { position: { x: 22, y: 3 } })).toBe(true);
+        expect(runner.updateEntity("group-second", "transform", { position: { x: 15, y: 6 } })).toBe(true);
+
+        let savedScene = null;
+        await runner.saveScene(async (scenePath, content) => {
+            expect(scenePath).toBe("scenes/group-transform.scene");
+            savedScene = JSON.parse(content);
+            return true;
+        });
+        expect(savedScene !== null).toBe(true);
+
+        const runtimeScene = SceneLoader.parse(savedScene);
+        const first = runtimeScene.children.find(entity => entity.id === "group-first");
+        const second = runtimeScene.children.find(entity => entity.id === "group-second");
+        expect({ x: first.GetComponent(Transform).position.x, y: first.GetComponent(Transform).position.y }).toEqual({ x: 22, y: 3 });
+        expect({ x: second.GetComponent(Transform).position.x, y: second.GetComponent(Transform).position.y }).toEqual({ x: 15, y: 6 });
+        expect(second.GetComponent(Transform).position.x - first.GetComponent(Transform).position.x).toBe(-7);
+    });
+
     it("rejects duplicate scene entity IDs before accepting the scene", () => {
         const { runner } = createMainHarness();
         let rejected = false;
