@@ -124,6 +124,35 @@ test("interact transitions require explicit activation and deduplicate concurren
     assert.equal(SceneManager.GetActiveScene().name, "Destination");
 });
 
+test("removing a scene transition detaches its runtime trigger listener", async () => {
+    let fetchCount = 0;
+    globalThis.fetch = async () => {
+        fetchCount++;
+        return jsonResponse({ name: "Unexpected Destination", entities: [] });
+    };
+    const source = SceneLoader.parse({
+        name: "Source",
+        entities: [{ components: [
+            { type: "TriggerCollider", props: { width: 32, height: 32 } },
+            { type: "SceneTransition", props: { targetScene: "levels/destination.scene", trigger: "enter" } }
+        ] }]
+    });
+    const door = source.children[0];
+    const collider = door.GetComponent(TriggerCollider);
+    const transition = door.GetComponent(SceneTransition);
+    const actor = new Entity("Player");
+    door.RemoveComponent(SceneTransition);
+    assert.equal(transition.entity, null);
+    assert.equal(transition.properties, null);
+
+    collider.emit("enter", { otherEntity: actor });
+    await Promise.resolve();
+    await Promise.resolve();
+    assert.equal(fetchCount, 0);
+    assert.equal(SceneManager.GetScenes().length, 1);
+    assert.equal(SceneManager.GetActiveScene(), undefined);
+});
+
 test("a missing requested spawn leaves the actor and active scene unchanged", async () => {
     globalThis.fetch = async () => jsonResponse({ name: "No Spawn", entities: [] });
     const source = SceneLoader.parse({ name: "Source", entities: [] });

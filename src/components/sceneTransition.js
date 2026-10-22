@@ -34,6 +34,12 @@ export class SceneTransition extends Component {
         this.lastError = null;
     }
 
+    destroy() {
+        this._unbindTrigger?.();
+        this._unbindTrigger = null;
+        super.destroy();
+    }
+
     /** Bind enter-mode activation to the authored TriggerCollider's overlap events. */
     bindTrigger(collider) {
         if (!collider || collider.role !== "trigger" || typeof collider.on !== "function") return false;

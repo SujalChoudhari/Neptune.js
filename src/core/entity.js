@@ -141,7 +141,8 @@ export class Entity {
     RemoveComponent(type) {
         let index = this._components.findIndex(component => component instanceof type);
         if (index > -1) {
-            this._components.splice(index, 1);
+            const [component] = this._components.splice(index, 1);
+            component.destroy();
         }
         else console.warn("Component not found");
     }
