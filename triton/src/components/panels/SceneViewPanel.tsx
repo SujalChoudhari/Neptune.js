@@ -246,7 +246,8 @@ export function SceneViewPanel() {
         const rect = e.currentTarget.getBoundingClientRect();
         notifyGame('editor:viewport-select', {
             x: e.clientX - rect.left,
-            y: e.clientY - rect.top
+            y: e.clientY - rect.top,
+            multi: Boolean(e.shiftKey || e.ctrlKey || e.metaKey)
         });
     }, [notifyGame]);
 
@@ -385,13 +386,19 @@ export function SceneViewPanel() {
              cleanup();
 
              // Editor Camera
-             const editorCamera = new Camera(window.innerWidth, window.innerHeight);
-             editorCamera.zoom = 1;
+            const editorCamera = new Camera(window.innerWidth, window.innerHeight);
+            editorCamera.zoom = 1;
+            let editorSelection = [];
              
              // Camera Update Listener
              window.addEventListener('message', (e) => {
                  const { type, payload } = e.data;
-                 if (type === 'editor:camera-update') {
+                if (type === 'editor:select') {
+                    editorSelection = Array.isArray(payload?.ids)
+                        ? [...new Set(payload.ids.filter(id => typeof id === 'string' && id.length > 0))]
+                        : [];
+                }
+                else if (type === 'editor:camera-update') {
                      editorCamera.position.x = payload.x;
                      editorCamera.position.y = payload.y;
                      editorCamera.setZoom(payload.zoom);
@@ -399,9 +406,19 @@ export function SceneViewPanel() {
                  else if (type === 'editor:viewport-select') {
                      const world = editorCamera.screenToWorld(payload.x, payload.y);
                      const selected = game.scene && pickEntityAt(game.scene, world.x, world.y);
+                     const selectedId = selected?.id;
+                     if (payload.multi) {
+                         if (selectedId) {
+                             editorSelection = editorSelection.includes(selectedId)
+                                 ? editorSelection.filter(id => id !== selectedId)
+                                 : [...editorSelection, selectedId];
+                         }
+                     } else {
+                         editorSelection = selectedId ? [selectedId] : [];
+                     }
                      window.parent.postMessage({
                          type: 'game:selection-changed',
-                         payload: { ids: selected ? [selected.id] : [] }
+                         payload: { ids: editorSelection }
                      }, '*');
                  }
                  else if (type === 'editor:load-scene' && game.loadScene) {

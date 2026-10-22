@@ -402,9 +402,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
                     setEntities(payload);
                     break;
                 case 'game:selection-changed':
-                    setSelectedIds(payload.ids);
+                    const selectionIds: string[] = Array.isArray(payload.ids)
+                        ? [...new Set((payload.ids as unknown[]).filter((id): id is string => typeof id === 'string' && id.length > 0))]
+                        : [];
+                    setSelectedIds(selectionIds);
 
-                    console.log("Selection changed debug:", payload.ids, payload.data);
+                    console.log("Selection changed debug:", selectionIds, payload.data);
 
                     const newBinding: Record<string, EntityData> = {};
                     if (payload.data) {
@@ -419,7 +422,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
                     }
 
                     // Merge with cache if game sent incomplete data (or nothing)
-                    payload.ids.forEach((id: string) => {
+                    selectionIds.forEach((id: string) => {
                         if (!newBinding[id] && entityDataCache[id]) {
                             newBinding[id] = entityDataCache[id];
                         }

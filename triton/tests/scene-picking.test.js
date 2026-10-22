@@ -378,11 +378,18 @@ test('Scene View UI emits viewport selection and cursor-anchored zoom updates', 
     viewport.props.onClick({ button: 0, altKey: false, clientX: 40, clientY: 70, currentTarget: {
         getBoundingClientRect: () => ({ left: 10, top: 20 })
     } });
+    viewport.props.onClick({ button: 0, altKey: false, shiftKey: true, clientX: 50, clientY: 75, currentTarget: {
+        getBoundingClientRect: () => ({ left: 10, top: 20 })
+    } });
     viewport.props.onWheel({ clientX: 60, clientY: 80, deltaY: -1 });
     assert.deepEqual(JSON.parse(JSON.stringify(harness.notifications)), [
-        { type: 'editor:viewport-select', payload: { x: 30, y: 50 } },
+        { type: 'editor:viewport-select', payload: { x: 30, y: 50, multi: false } },
+        { type: 'editor:viewport-select', payload: { x: 40, y: 55, multi: true } },
         { type: 'editor:camera-update', payload: { zoom: 1.1, x: 4.545454545454547, y: 5.45454545454546 } }
     ]);
+    const source = fs.readFileSync(path.resolve('triton/src/components/panels/SceneViewPanel.tsx'), 'utf8');
+    assert.match(source, /type === 'editor:select'[\s\S]*editorSelection = Array\.isArray\(payload\?\.ids\)/);
+    assert.match(source, /editorSelection\.includes\(selectedId\)[\s\S]*type: 'game:selection-changed'[\s\S]*payload: \{ ids: editorSelection \}/);
 });
 
 test('Scene View starts its paused editor preview only after loading a scene', () => {
