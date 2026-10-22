@@ -30,6 +30,32 @@ export function updateSelection(currentIds, selectedId, additive = false) {
         : [...selection, selectedId];
 }
 
+export function getEntitySelectionBounds(entity, fallbackSize = 16) {
+    const position = entity?.transform?.position;
+    if (!position || !Number.isFinite(position.x) || !Number.isFinite(position.y)
+        || !Number.isFinite(fallbackSize) || fallbackSize <= 0) return null;
+    const scale = entity.transform.scale || { x: 1, y: 1 };
+    const components = entity.components && typeof entity.components === 'object' ? entity.components : {};
+    const sprite = Object.entries(components).find(([type, component]) => {
+        if (/collider|hitbox|hurtbox/i.test(type)) return false;
+        const width = component?.width ?? component?._properties?.width;
+        const height = component?.height ?? component?._properties?.height;
+        return Number.isFinite(width) && width > 0 && Number.isFinite(height) && height > 0;
+    })?.[1];
+    const width = sprite?.width ?? sprite?._properties?.width ?? fallbackSize;
+    const height = sprite?.height ?? sprite?._properties?.height ?? fallbackSize;
+    const scaledWidth = width * Math.abs(Number.isFinite(scale.x) ? scale.x : 1);
+    const scaledHeight = height * Math.abs(Number.isFinite(scale.y) ? scale.y : 1);
+    return {
+        id: typeof entity.id === 'string' ? entity.id : '',
+        name: typeof entity.name === 'string' ? entity.name : '',
+        x: position.x - scaledWidth / 2,
+        y: position.y - scaledHeight / 2,
+        width: scaledWidth,
+        height: scaledHeight
+    };
+}
+
 export function pickEntityAt(root, x, y, tolerance = 12) {
     if (!root || !Number.isFinite(x) || !Number.isFinite(y)) return null;
 

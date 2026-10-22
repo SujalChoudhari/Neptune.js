@@ -14,6 +14,15 @@ export function resizeColliderBounds(
 ): { width: number; height: number };
 export function pickEntityAt(root: unknown, x: number, y: number, tolerance?: number): unknown;
 export function updateSelection(currentIds: unknown, selectedId: unknown, additive?: boolean): string[];
+export interface EntitySelectionBounds {
+    id: string;
+    name: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+export function getEntitySelectionBounds(entity: unknown, fallbackSize?: number): EntitySelectionBounds | null;
 export interface ColliderOverlayBounds {
     type: 'Hitbox' | 'Hurtbox' | 'TriggerCollider' | 'BoxCollider';
     color: string;

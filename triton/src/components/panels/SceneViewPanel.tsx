@@ -4,7 +4,7 @@ import cameraUrl from "../../../../src/thalassa/camera.js?url";
 import scenePickingUrl from "@/lib/scenePicking.mjs?url";
 import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
 import { runtimeEntityBridgeScript } from "../../lib/runtimeEntityBridge.mjs";
-import { translateOnAxis, resizeColliderBounds, getColliderOverlayBounds, isSceneViewBridgeMessageSource } from "@/lib/scenePicking.mjs";
+import { translateOnAxis, resizeColliderBounds, getColliderOverlayBounds, getEntitySelectionBounds, isSceneViewBridgeMessageSource } from "@/lib/scenePicking.mjs";
 import { invoke } from "@tauri-apps/api/core";
 import { ThemedIconButton } from "@/components/library";
 import { Maximize, ZoomIn, ZoomOut } from "lucide-react";
@@ -37,7 +37,7 @@ export function getSpawnPointOverlay(entity: SpawnPointOverlayEntity) {
 export function SceneViewPanel() {
     const containerRef = useRef<HTMLDivElement>(null);
     const iframeRef = useRef<HTMLIFrameElement>(null);
-    const { notifyGame, updateComponent, selectedEntityData, selectedIds } = useGameContext();
+    const { notifyGame, updateComponent, selectedEntityData, selectedEntitiesData, selectedIds } = useGameContext();
     const [gizmoPosition, setGizmoPosition] = useState<{ x: number; y: number } | null>(null);
     const gizmoDragRef = useRef<{
         operation: 'translate-x' | 'translate-y' | 'rotate' | 'scale';
@@ -470,6 +470,9 @@ export function SceneViewPanel() {
     `;
 
     const colliderOverlays = getColliderOverlayBounds(selectedEntityData);
+    const selectionOverlays = selectedIds
+        .map(id => getEntitySelectionBounds(selectedEntitiesData[id]))
+        .filter((bounds): bounds is NonNullable<typeof bounds> => bounds !== null);
     const spawnFacingMarker = getSpawnPointOverlay(selectedEntityData);
     const activeGizmoPosition = gizmoPosition || selectedEntityData?.transform.position;
     const gizmoX = activeGizmoPosition ? (activeGizmoPosition.x - pan.x) * zoom : 0;
@@ -529,6 +532,29 @@ export function SceneViewPanel() {
                     title="Scene View"
                     sandbox="allow-scripts allow-same-origin allow-modals"
                 />
+                {selectionOverlays.length > 0 && (
+                    <svg
+                        aria-label="Selected entities"
+                        className="absolute inset-0 w-full h-full overflow-visible pointer-events-none"
+                    >
+                        {selectionOverlays.map(bounds => (
+                            <rect
+                                key={bounds.id}
+                                aria-label={`Selected ${bounds.name || bounds.id}`}
+                                data-selection-outline={bounds.id}
+                                x={(bounds.x - pan.x) * zoom}
+                                y={(bounds.y - pan.y) * zoom}
+                                width={bounds.width * zoom}
+                                height={bounds.height * zoom}
+                                fill="rgba(56, 189, 248, 0.12)"
+                                stroke="#38bdf8"
+                                strokeWidth={2}
+                                strokeDasharray={selectedIds.length > 1 ? '5 3' : undefined}
+                                vectorEffect="non-scaling-stroke"
+                            />
+                        ))}
+                    </svg>
+                )}
                 {selectedEntityData && selectedIds.length === 1 && activeGizmoPosition && (
                     <svg
                         aria-label="Move selected entity"

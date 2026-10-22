@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import path from 'node:path';
 import { buildSync } from 'esbuild';
-import { pickEntityAt, translateOnAxis, resizeColliderBounds, updateSelection, getColliderOverlayBounds, isSceneViewBridgeMessageSource } from '../src/lib/scenePicking.mjs';
+import { pickEntityAt, translateOnAxis, resizeColliderBounds, updateSelection, getEntitySelectionBounds, getColliderOverlayBounds, isSceneViewBridgeMessageSource } from '../src/lib/scenePicking.mjs';
 import { BoxCollider } from '../../src/components/boxCollider.js';
 
 const entity = (id, x, y, children = []) => ({
@@ -22,7 +22,7 @@ test('Scene View bridge trusts only its own live iframe for all message types', 
     assert.match(source, /if \(!isSceneViewBridgeMessageSource\(event\.source, iframeRef\.current\?\.contentWindow\)\) return/);
 });
 
-function createSceneViewHarness(spawnFacing = undefined) {
+function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-1']) {
     const sourcefile = path.resolve('triton/src/components/panels/SceneViewPanel.tsx');
     const external = [
         'react', 'react/jsx-runtime', 'lucide-react', '@/components/library', '@/context/GameContext',
@@ -74,12 +74,24 @@ function createSceneViewHarness(spawnFacing = undefined) {
                     ...(spawnFacing !== undefined ? { SpawnPoint: { facing: spawnFacing } } : {})
                 }
             },
-            selectedIds: ['entity-1']
+            selectedIds,
+            selectedEntitiesData: {
+                'entity-1': {
+                    id: 'entity-1', name: 'First',
+                    transform: { position: { x: 2, y: 3 }, scale: { x: 1, y: 2 } },
+                    components: { Sprite: { width: 10, height: 4 } }
+                },
+                'entity-2': {
+                    id: 'entity-2', name: 'Second',
+                    transform: { position: { x: -5, y: 6 }, scale: { x: 2, y: 1 } },
+                    components: { Sprite: { _properties: { width: 4, height: 8 } } }
+                }
+            }
         }) },
         '@/lib/editorGameRunner': { EditorGameRunner: {
             updateEntity: (id, component, data) => canonicalEdits.push({ id, component, data })
         } },
-        '@/lib/scenePicking.mjs': { translateOnAxis, resizeColliderBounds, getColliderOverlayBounds },
+        '@/lib/scenePicking.mjs': { translateOnAxis, resizeColliderBounds, getColliderOverlayBounds, getEntitySelectionBounds },
         '@tauri-apps/api/core': { invoke: async () => '' },
         '../../../../src/neptune.js?url': '/neptune.js',
         '../../../../src/thalassa/camera.js?url': '/camera.js',
@@ -121,6 +133,17 @@ function findNode(node, predicate) {
         if (found) return found;
     }
     return null;
+}
+
+function findNodes(node, predicate, matches = []) {
+    if (!node || typeof node !== 'object') return matches;
+    if (Array.isArray(node)) {
+        for (const child of node) findNodes(child, predicate, matches);
+        return matches;
+    }
+    if (predicate(node)) matches.push(node);
+    findNodes(node.props?.children, predicate, matches);
+    return matches;
 }
 
 test('gizmo drag converts screen deltas to world units and constrains movement to its axis', () => {
@@ -198,6 +221,30 @@ test('Scene View selection replacement and modifier toggling preserve unique ent
     assert.deepEqual(updateSelection(['a', 'b'], null, true), ['a', 'b']);
     assert.deepEqual(updateSelection(['a', 'b'], 'c', false), ['c']);
     assert.deepEqual(updateSelection(['a', 'b'], null, false), []);
+});
+
+test('selection bounds use scaled sprite geometry and a fallback marker without collider sizing', () => {
+    assert.deepEqual(getEntitySelectionBounds({
+        id: 'sprite', name: 'Sprite',
+        transform: { position: { x: 10, y: 20 }, scale: { x: -2, y: 0.5 } },
+        components: { BoxCollider: { width: 90, height: 90 }, Sprite: { width: 8, height: 12 } }
+    }), { id: 'sprite', name: 'Sprite', x: 2, y: 17, width: 16, height: 6 });
+    assert.deepEqual(getEntitySelectionBounds({
+        id: 'empty', transform: { position: { x: 1, y: 2 } }, components: {}
+    }), { id: 'empty', name: '', x: -7, y: -6, width: 16, height: 16 });
+    assert.equal(getEntitySelectionBounds({ transform: { position: { x: NaN, y: 2 } } }), null);
+});
+
+test('Scene View renders a separate outline for each selected entity without intercepting input', () => {
+    const tree = createSceneViewHarness(undefined, ['entity-1', 'entity-2']).render();
+    const outlines = findNodes(tree, node => node.type === 'rect' && node.props['data-selection-outline']);
+    assert.deepEqual(outlines.map(node => node.props['data-selection-outline']), ['entity-1', 'entity-2']);
+    assert.deepEqual(outlines.map(node => [node.props.x, node.props.y, node.props.width, node.props.height]), [
+        [-3, -1, 10, 8],
+        [-9, 2, 8, 8]
+    ]);
+    const selectionSvg = findNode(tree, node => node.type === 'svg' && node.props['aria-label'] === 'Selected entities');
+    assert.match(selectionSvg.props.className, /pointer-events-none/);
 });
 
 test('combat collider overlay bounds include the selected transform and authored offsets', () => {
