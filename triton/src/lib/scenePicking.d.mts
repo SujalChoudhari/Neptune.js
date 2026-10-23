@@ -5,6 +5,13 @@ export function translateOnAxis(
     zoom: number,
     axis: 'x' | 'y'
 ): { x: number; y: number };
+export function zoomAtPoint(
+    pan: { x: number; y: number },
+    zoom: number,
+    nextZoom: number,
+    screenX: number,
+    screenY: number
+): { x: number; y: number };
 export function resizeColliderBounds(
     size: { width: number; height: number },
     deltaX: number,

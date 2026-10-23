@@ -9,6 +9,17 @@ export function translateOnAxis(position, deltaX, deltaY, zoom, axis) {
     };
 }
 
+export function zoomAtPoint(pan, zoom, nextZoom, screenX, screenY) {
+    if (!pan || ![pan.x, pan.y, zoom, nextZoom, screenX, screenY].every(Number.isFinite)
+        || zoom <= 0 || nextZoom <= 0) {
+        throw new TypeError('Camera zoom needs finite coordinates and positive zoom levels');
+    }
+    return {
+        x: pan.x + screenX / zoom - screenX / nextZoom,
+        y: pan.y + screenY / zoom - screenY / nextZoom
+    };
+}
+
 export function resizeColliderBounds(size, deltaX, deltaY, zoom, minSize = 0.05) {
     if (!size || ![size.width, size.height, deltaX, deltaY, zoom, minSize].every(Number.isFinite) || zoom <= 0 || minSize <= 0) {
         throw new TypeError('Collider resizing needs finite dimensions, deltas, and positive zoom/minimum size');

@@ -4,10 +4,10 @@ import cameraUrl from "../../../../src/thalassa/camera.js?url";
 import scenePickingUrl from "@/lib/scenePicking.mjs?url";
 import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
 import { runtimeEntityBridgeScript } from "../../lib/runtimeEntityBridge.mjs";
-import { translateOnAxis, resizeColliderBounds, getColliderOverlayBounds, getEntitySelectionBounds, hasCompleteGroupTransformSelection, isSceneViewBridgeMessageSource } from "@/lib/scenePicking.mjs";
+import { translateOnAxis, resizeColliderBounds, zoomAtPoint, getColliderOverlayBounds, getEntitySelectionBounds, hasCompleteGroupTransformSelection, isSceneViewBridgeMessageSource } from "@/lib/scenePicking.mjs";
 import { invoke } from "@tauri-apps/api/core";
 import { ThemedIconButton } from "@/components/library";
-import { Maximize, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Maximize, ZoomIn, ZoomOut } from "lucide-react";
 import { useGameContext } from '@/context/GameContext';
 import { EditorGameRunner } from '@/lib/editorGameRunner';
 
@@ -381,6 +381,26 @@ export function SceneViewPanel() {
         notifyGame('editor:camera-update', { zoom: 1, x: 0, y: 0 });
     };
 
+    const zoomFromToolbar = (direction: 1 | -1) => {
+        const rect = containerRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        const nextZoom = Math.max(0.1, Math.min(5, zoom + direction * 0.1));
+        const nextPan = zoomAtPoint(pan, zoom, nextZoom, rect.width / 2, rect.height / 2);
+        setZoom(nextZoom);
+        setPan(nextPan);
+        notifyGame('editor:camera-update', { zoom: nextZoom, ...nextPan });
+    };
+
+    const panFromToolbar = (direction: 'up' | 'down' | 'left' | 'right') => {
+        const step = 40 / zoom;
+        const nextPan = {
+            x: pan.x + (direction === 'left' ? -step : direction === 'right' ? step : 0),
+            y: pan.y + (direction === 'up' ? -step : direction === 'down' ? step : 0)
+        };
+        setPan(nextPan);
+        notifyGame('editor:camera-update', { zoom, ...nextPan });
+    };
+
     // --- Bridge Script ---
     // Inject Editor Camera logic
     const iframeContent = `
@@ -560,18 +580,22 @@ export function SceneViewPanel() {
                 <div className="bg-black/50 backdrop-blur-md text-xs text-white px-2 py-1 rounded text-center select-none mr-2">
                     {Math.round(zoom * 100)}%
                 </div>
-                <ThemedIconButton size="sm" onClick={() => {
-                    const newZoom = Math.min(5, zoom + 0.1);
-                    setZoom(newZoom);
-                    notifyGame('editor:camera-update', { zoom: newZoom, x: pan.x, y: pan.y });
-                }} title="Zoom In">
+                <ThemedIconButton size="sm" onClick={() => panFromToolbar('left')} title="Pan Left" aria-label="Pan Left">
+                    <ChevronLeft className="w-4 h-4" />
+                </ThemedIconButton>
+                <ThemedIconButton size="sm" onClick={() => panFromToolbar('right')} title="Pan Right" aria-label="Pan Right">
+                    <ChevronRight className="w-4 h-4" />
+                </ThemedIconButton>
+                <ThemedIconButton size="sm" onClick={() => panFromToolbar('up')} title="Pan Up" aria-label="Pan Up">
+                    <ChevronUp className="w-4 h-4" />
+                </ThemedIconButton>
+                <ThemedIconButton size="sm" onClick={() => panFromToolbar('down')} title="Pan Down" aria-label="Pan Down">
+                    <ChevronDown className="w-4 h-4" />
+                </ThemedIconButton>
+                <ThemedIconButton size="sm" onClick={() => zoomFromToolbar(1)} title="Zoom In" aria-label="Zoom In">
                     <ZoomIn className="w-4 h-4" />
                 </ThemedIconButton>
-                <ThemedIconButton size="sm" onClick={() => {
-                    const newZoom = Math.max(0.1, zoom - 0.1);
-                    setZoom(newZoom);
-                    notifyGame('editor:camera-update', { zoom: newZoom, x: pan.x, y: pan.y });
-                }} title="Zoom Out">
+                <ThemedIconButton size="sm" onClick={() => zoomFromToolbar(-1)} title="Zoom Out" aria-label="Zoom Out">
                     <ZoomOut className="w-4 h-4" />
                 </ThemedIconButton>
                 <ThemedIconButton size="sm" onClick={resetCamera} title="Reset View">

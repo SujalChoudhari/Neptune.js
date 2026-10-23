@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import path from 'node:path';
 import { buildSync } from 'esbuild';
-import { pickEntityAt, translateOnAxis, resizeColliderBounds, updateSelection, getEntitySelectionBounds, getColliderOverlayBounds, hasCompleteGroupTransformSelection, isSceneViewBridgeMessageSource } from '../src/lib/scenePicking.mjs';
+import { pickEntityAt, translateOnAxis, resizeColliderBounds, zoomAtPoint, updateSelection, getEntitySelectionBounds, getColliderOverlayBounds, hasCompleteGroupTransformSelection, isSceneViewBridgeMessageSource } from '../src/lib/scenePicking.mjs';
 import { BoxCollider } from '../../src/components/boxCollider.js';
 
 const entity = (id, x, y, children = []) => ({
@@ -57,7 +57,7 @@ function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-
     const modules = {
         react,
         'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' },
-        'lucide-react': { Maximize: 'Maximize', ZoomIn: 'ZoomIn', ZoomOut: 'ZoomOut' },
+        'lucide-react': { ChevronDown: 'ChevronDown', ChevronLeft: 'ChevronLeft', ChevronRight: 'ChevronRight', ChevronUp: 'ChevronUp', Maximize: 'Maximize', ZoomIn: 'ZoomIn', ZoomOut: 'ZoomOut' },
         '@/components/library': { ThemedIconButton: 'ThemedIconButton' },
         '@/context/GameContext': { useGameContext: () => ({
             notifyGame: (type, payload) => notifications.push({ type, payload }),
@@ -92,7 +92,7 @@ function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-
         '@/lib/editorGameRunner': { EditorGameRunner: {
             updateEntity: (id, component, data) => canonicalEdits.push({ id, component, data })
         } },
-        '@/lib/scenePicking.mjs': { translateOnAxis, resizeColliderBounds, getColliderOverlayBounds, getEntitySelectionBounds, hasCompleteGroupTransformSelection },
+        '@/lib/scenePicking.mjs': { translateOnAxis, resizeColliderBounds, zoomAtPoint, getColliderOverlayBounds, getEntitySelectionBounds, hasCompleteGroupTransformSelection },
         '@tauri-apps/api/core': { invoke: async () => '' },
         '../../../../src/neptune.js?url': '/neptune.js',
         '../../../../src/thalassa/camera.js?url': '/camera.js',
@@ -112,7 +112,7 @@ function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-
     const render = () => {
         hookIndex = 0;
         const tree = module.exports.SceneViewPanel();
-        tree.props.ref.current = { getBoundingClientRect: () => ({ left: 10, top: 20 }) };
+        tree.props.ref.current = { getBoundingClientRect: () => ({ left: 10, top: 20, width: 800, height: 600 }) };
         return tree;
     };
     return { render, notifications, canonicalEdits, componentEdits, getSpawnPointOverlay: module.exports.getSpawnPointOverlay };
@@ -336,7 +336,7 @@ test('Scene View SpawnPoint marker follows camera pan and zoom without capturing
     const shaft = findNode(tree, node => node.props?.['data-spawn-facing-arrow'] === 'shaft');
     assert.deepEqual(
         [shaft.props.x1, shaft.props.y1, shaft.props.x2, shaft.props.y2].map(value => Number(value.toFixed(5))),
-        [13.2, 19.8, -13.2, 19.8]
+        [-26.8, -10.2, -53.2, -10.2]
     );
     const marker = findNode(tree, node => node.props?.['data-spawn-facing'] === 'left');
     assert.equal(marker.props.pointerEvents, 'none');
@@ -447,6 +447,39 @@ test('Scene View UI emits viewport selection and cursor-anchored zoom updates', 
     const source = fs.readFileSync(path.resolve('triton/src/components/panels/SceneViewPanel.tsx'), 'utf8');
     assert.match(source, /type === 'editor:select'[\s\S]*editorSelection = updateSelection\(payload\?\.ids, null, true\)/);
     assert.match(source, /editorSelection = updateSelection\(editorSelection, selected\?\.id, Boolean\(payload\.multi\)\)[\s\S]*type: 'game:selection-changed'[\s\S]*payload: \{ ids: editorSelection \}/);
+});
+
+test('toolbar zoom preserves the viewport-center world point and clamps zoom', () => {
+    assert.deepEqual(zoomAtPoint({ x: 10, y: -5 }, 1, 2, 400, 300), { x: 210, y: 145 });
+    assert.throws(() => zoomAtPoint({ x: 0, y: 0 }, 0, 1, 10, 10), /positive zoom levels/);
+
+    const harness = createSceneViewHarness();
+    const zoomIn = findNode(harness.render(), node => node.props?.['aria-label'] === 'Zoom In');
+    assert.ok(zoomIn);
+    zoomIn.props.onClick();
+    const cameraUpdate = harness.notifications[0];
+    assert.equal(cameraUpdate.type, 'editor:camera-update');
+    assert.equal(cameraUpdate.payload.zoom, 1.1);
+    assert.ok(Math.abs(cameraUpdate.payload.x - 36.363636363636374) < 1e-10);
+    assert.ok(Math.abs(cameraUpdate.payload.y - 27.27272727272728) < 1e-10);
+});
+
+test('Scene View provides named directional camera pan controls at the current zoom', () => {
+    const harness = createSceneViewHarness();
+    let tree = harness.render();
+    const panLeft = findNode(tree, node => node.props?.['aria-label'] === 'Pan Left');
+    assert.ok(panLeft);
+    panLeft.props.onClick();
+
+    tree = harness.render();
+    const panDown = findNode(tree, node => node.props?.['aria-label'] === 'Pan Down');
+    assert.ok(panDown);
+    panDown.props.onClick();
+
+    assert.deepEqual(JSON.parse(JSON.stringify(harness.notifications)), [
+        { type: 'editor:camera-update', payload: { zoom: 1, x: -40, y: 0 } },
+        { type: 'editor:camera-update', payload: { zoom: 1, x: -40, y: 40 } }
+    ]);
 });
 
 test('Scene View starts its paused editor preview only after loading a scene', () => {
