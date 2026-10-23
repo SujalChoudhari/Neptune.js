@@ -203,6 +203,12 @@ function createMainHarness() {
                     game.selectedIds = [...ids];
                     game.selectionCalls.push([...ids]);
                 },
+                setEntityExpansion(ids, expanded) {
+                    ids.forEach(id => {
+                        const entity = game.entities[id];
+                        if (entity) game.entities[id] = { ...entity, expanded };
+                    });
+                },
                 moveEntities() {},
                 addEntityToHierarchy(entity, components) { addedEntities.push({ entity, components }); },
                 notifyGame(type, payload) { notifications.push({ type, payload }); },
@@ -292,6 +298,16 @@ function createMainHarness() {
         return Array.isArray(children) ? children.some(child => clickAddEntity(child, type)) : clickAddEntity(children, type);
     };
 
+    const clickHierarchyAction = (node, action) => {
+        if (Array.isArray(node)) return node.some(child => clickHierarchyAction(child, action));
+        if (!node || typeof node !== "object") return false;
+        if (node.type === "HierarchyToolbar" && typeof node.props?.[action] === "function") {
+            node.props[action]();
+            return true;
+        }
+        return clickHierarchyAction(node.props?.children, action);
+    };
+
     const selectHierarchyEntity = (node, id, multi = false, shift = false) => {
         if (Array.isArray(node)) return node.some(child => selectHierarchyEntity(child, id, multi, shift));
         if (!node || typeof node !== "object") return false;
@@ -302,7 +318,7 @@ function createMainHarness() {
         return selectHierarchyEntity(node.props?.children, id, multi, shift);
     };
 
-    return { game, runner: runner.EditorGameRunner, files, writes, notifications, addedEntities, listeners, invokedCommands, render, renderHierarchy, clickDuplicate, clickAddEntity, selectHierarchyEntity, dispatchMenuEvent, writeScene };
+    return { game, runner: runner.EditorGameRunner, files, writes, notifications, addedEntities, listeners, invokedCommands, render, renderHierarchy, clickDuplicate, clickAddEntity, clickHierarchyAction, selectHierarchyEntity, dispatchMenuEvent, writeScene };
 }
 
 function loadBundle(bundle, context) {
@@ -995,6 +1011,60 @@ describe("Triton persistence bridge", () => {
         expect(harness.selectHierarchyEntity(harness.renderHierarchy(), "first")).toBe(true);
         expect(harness.selectHierarchyEntity(harness.renderHierarchy(), "last", false, true)).toBe(true);
         expect(harness.game.selectionCalls).toEqual([["first"], ["first", "middle", "last"]]);
+    });
+
+    it("expands and collapses the production hierarchy tree from its toolbar and row controls", () => {
+        const harness = createMainHarness();
+        harness.game.entities = {
+            root: { id: "root", name: "Scene", type: "group", parentId: null, children: ["folder"], expanded: true },
+            folder: { id: "folder", name: "Folder", type: "group", parentId: "root", children: ["nested"], expanded: false },
+            nested: { id: "nested", name: "Nested", type: "group", parentId: "folder", children: ["leaf"], expanded: false },
+            leaf: { id: "leaf", name: "Leaf", type: "empty", parentId: "nested", children: [], expanded: false }
+        };
+        const findItem = (node, id) => {
+            if (Array.isArray(node)) return node.map(child => findItem(child, id)).find(Boolean) || null;
+            if (!node || typeof node !== "object") return null;
+            if (node.type === "HierarchyItem" && node.props?.entity?.id === id) return node;
+            return findItem(node.props?.children, id);
+        };
+
+        expect(harness.clickHierarchyAction(harness.renderHierarchy(), "onExpandAll")).toBe(true);
+        expect(harness.game.entities.folder.expanded).toBe(true);
+        expect(harness.game.entities.nested.expanded).toBe(true);
+        expect(Boolean(findItem(harness.renderHierarchy(), "leaf"))).toBe(true);
+
+        expect(harness.clickHierarchyAction(harness.renderHierarchy(), "onCollapseAll")).toBe(true);
+        expect(harness.game.entities.folder.expanded).toBe(false);
+        expect(harness.game.entities.nested.expanded).toBe(false);
+        expect(Boolean(findItem(harness.renderHierarchy(), "nested"))).toBe(false);
+
+        findItem(harness.renderHierarchy(), "folder").props.onToggleExpanded("folder");
+        expect(Boolean(findItem(harness.renderHierarchy(), "nested"))).toBe(true);
+        findItem(harness.renderHierarchy(), "nested").props.onToggleExpanded("nested");
+        expect(Boolean(findItem(harness.renderHierarchy(), "leaf"))).toBe(true);
+        expect(harness.notifications.some(({ type }) => type === "editor:set-expanded")).toBe(false);
+    });
+
+    it("updates hierarchy expansion in GameProvider state without sending runtime commands", async () => {
+        const harness = createGameContextHarness({
+            type: "scene", version: "1.0.0", schemaVersion: 1, id: "scene-hierarchy-expansion", name: "Hierarchy Expansion",
+            entities: [{
+                id: "expansion-parent", name: "Parent", type: "group", children: [
+                    { id: "expansion-child", name: "Child", type: "group", children: [] }
+                ]
+            }]
+        });
+        let context = harness.render();
+        await context.loadScene("scenes/hierarchy.scene");
+        context = harness.render();
+        context.setEntityExpansion(["expansion-parent", "missing"], true);
+        context = harness.render();
+        expect(context.entities["expansion-parent"].expanded).toBe(true);
+        expect(context.entities["expansion-child"].expanded).toBe(false);
+        context.setEntityExpansion(["expansion-child"], true);
+        context = harness.render();
+        expect(context.entities["expansion-child"].expanded).toBe(true);
+        expect(harness.bridgeMessages.some(message => message.type === "editor:set-expanded")).toBe(false);
     });
 
     it("deduplicates additive GameProvider selection and synchronizes cached Inspector data to both runtime views", async () => {

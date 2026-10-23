@@ -21,6 +21,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         selectedIds,
         selectEntity,
         selectEntities,
+        setEntityExpansion,
         moveEntities,
         notifyGame,
         addEntityToHierarchy
@@ -56,7 +57,8 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     }
 
     const toggleExpanded = (id: string) => {
-        notifyGame('editor:set-expanded', { id, expanded: !entities[id]?.expanded });
+        const entity = entities[id];
+        if (entity?.children.length) setEntityExpansion([id], !entity.expanded);
     }
 
     const renameEntity = (id: string, newName: string) => {
@@ -216,8 +218,11 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         return ancestors
     }, [selectedIds, entities])
 
-    const handleExpandAll = () => { }
-    const handleCollapseAll = () => { }
+    const hierarchyContainers = Object.values(entities)
+        .filter(entity => entity.id !== 'root' && entity.children.length > 0)
+        .map(entity => entity.id);
+    const handleExpandAll = () => setEntityExpansion(hierarchyContainers, true)
+    const handleCollapseAll = () => setEntityExpansion(hierarchyContainers, false)
 
     const handleMove = (draggedIdsArg: string | string[], targetParentId: string, targetIndex?: number | 'before' | 'after', relativeToId?: string) => {
         const draggedIds = Array.isArray(draggedIdsArg) ? draggedIdsArg : [draggedIdsArg]

@@ -20,6 +20,7 @@ interface GameContextType {
     stop: () => void;
     selectEntity: (id: string, multi: boolean) => void;
     selectEntities: (ids: string[]) => void;
+    setEntityExpansion: (ids: string[], expanded: boolean) => void;
     moveEntities: (ids: string[], targetParentId: string, index?: number) => void;
     addEntityToHierarchy: (entity: SceneEntity, components?: Array<{ type: string; props?: Record<string, any> }>) => void;
     updateComponent: (id: string, component: string, field: string, value: any) => void;
@@ -100,6 +101,22 @@ export function GameProvider({ children }: { children: ReactNode }) {
                 components: Object.fromEntries(components.map(component => [component.type, component.props || {}]))
             };
             return { ...previous, [entity.id]: data };
+        });
+    }, []);
+
+    const setEntityExpansion = useCallback((ids: string[], expanded: boolean) => {
+        const targetIds = new Set(ids);
+        if (targetIds.size === 0) return;
+        setEntities(previous => {
+            let changed = false;
+            const next = { ...previous };
+            targetIds.forEach(id => {
+                const entity = previous[id];
+                if (!entity || entity.expanded === expanded) return;
+                next[id] = { ...entity, expanded };
+                changed = true;
+            });
+            return changed ? next : previous;
         });
     }, []);
 
@@ -601,6 +618,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             stop,
             selectEntity,
             selectEntities,
+            setEntityExpansion,
             moveEntities,
             addEntityToHierarchy,
             updateComponent,
