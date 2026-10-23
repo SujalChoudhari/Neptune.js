@@ -2,7 +2,7 @@ import { Component } from "../components/component.js";
 import { Tileset } from "./tileset.js";
 import { ResourceReferenceError } from "../core/scene.js";
 
-const TILE_METADATA_FIELDS = new Set(["walkable", "terrain", "collision", "damage", "slowdown", "interaction", "transition"]);
+const TILE_METADATA_FIELDS = new Set(["walkable", "terrain", "collision", "damage", "slowdown", "movementCost", "interaction", "transition"]);
 
 function validateGameplayMetadata(metadata, label) {
     if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
@@ -20,7 +20,7 @@ function validateGameplayMetadata(metadata, label) {
     if (metadata.collision !== undefined && typeof metadata.collision !== "boolean") {
         throw new TypeError(`${label} metadata collision must be a boolean`);
     }
-    for (const field of ["damage", "slowdown"]) {
+    for (const field of ["damage", "slowdown", "movementCost"]) {
         if (metadata[field] !== undefined && (!Number.isFinite(metadata[field]) || metadata[field] < 0)) {
             throw new TypeError(`${label} metadata ${field} must be a finite non-negative number`);
         }
@@ -198,31 +198,74 @@ export class Tilemap extends Component {
         return occupant === undefined || occupant === mover;
     }
 
-    /** Deterministic four-way shortest path; returns coordinates excluding start, or null. */
+    /** Deterministic minimum-cost four-way path; returns coordinates excluding start, or null. */
     findPath(startX, startY, goalX, goalY, mover = null) {
         if (this.gridIndex(startX, startY) === null || this.gridIndex(goalX, goalY) === null ||
             !this.isWalkable(startX, startY, mover) || !this.isWalkable(goalX, goalY, mover)) return null;
         if (startX === goalX && startY === goalY) return [];
         const key = (x, y) => y * this.width + x;
-        const queue = [[startX, startY]];
-        const previous = new Map([[key(startX, startY), null]]);
+        const start = key(startX, startY);
+        const distances = new Map([[start, 0]]);
+        const previous = new Map([[start, null]]);
+        const settled = new Set();
+        const queue = [];
+        let insertionOrder = 0;
+        const compare = (a, b) => a.distance - b.distance || a.order - b.order;
+        const push = (entry) => {
+            queue.push(entry);
+            let index = queue.length - 1;
+            while (index > 0) {
+                const parent = Math.floor((index - 1) / 2);
+                if (compare(queue[parent], entry) <= 0) break;
+                queue[index] = queue[parent];
+                index = parent;
+            }
+            queue[index] = entry;
+        };
+        const pop = () => {
+            const first = queue[0];
+            const last = queue.pop();
+            if (queue.length && last) {
+                let index = 0;
+                while (true) {
+                    const left = index * 2 + 1;
+                    const right = left + 1;
+                    if (left >= queue.length) break;
+                    const child = right < queue.length && compare(queue[right], queue[left]) < 0 ? right : left;
+                    if (compare(queue[child], last) >= 0) break;
+                    queue[index] = queue[child];
+                    index = child;
+                }
+                queue[index] = last;
+            }
+            return first;
+        };
+        push({ index: start, distance: 0, order: insertionOrder++ });
         const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]];
-        for (let cursor = 0; cursor < queue.length; cursor++) {
-            const [x, y] = queue[cursor];
+        while (queue.length) {
+            const current = pop();
+            if (!current || settled.has(current.index) || current.distance !== distances.get(current.index)) continue;
+            if (current.index === key(goalX, goalY)) {
+                const path = [];
+                let step = current.index;
+                while (step !== start) {
+                    path.push({ x: step % this.width, y: Math.floor(step / this.width) });
+                    step = previous.get(step);
+                }
+                return path.reverse();
+            }
+            settled.add(current.index);
+            const x = current.index % this.width;
+            const y = Math.floor(current.index / this.width);
             for (const [dx, dy] of directions) {
                 const nx = x + dx, ny = y + dy, next = key(nx, ny);
-                if (this.gridIndex(nx, ny) === null || previous.has(next) || !this.isWalkable(nx, ny, mover)) continue;
-                previous.set(next, key(x, y));
-                queue.push([nx, ny]);
-                if (nx === goalX && ny === goalY) {
-                    const path = [];
-                    let step = next;
-                    while (step !== key(startX, startY)) {
-                        path.push({ x: step % this.width, y: Math.floor(step / this.width) });
-                        step = previous.get(step);
-                    }
-                    return path.reverse();
-                }
+                if (this.gridIndex(nx, ny) === null || settled.has(next) || !this.isWalkable(nx, ny, mover)) continue;
+                const movementCost = this.getResolvedMetadata(nx, ny)?.movementCost ?? 1;
+                const distance = current.distance + movementCost;
+                if (distance >= (distances.get(next) ?? Infinity)) continue;
+                distances.set(next, distance);
+                previous.set(next, current.index);
+                push({ index: next, distance, order: insertionOrder++ });
             }
         }
         return null;

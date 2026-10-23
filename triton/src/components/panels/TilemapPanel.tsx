@@ -10,6 +10,7 @@ interface TileMetadata {
     terrain?: string;
     collision?: boolean;
     slowdown?: number;
+    movementCost?: number;
     [key: string]: unknown;
 }
 
@@ -18,7 +19,7 @@ interface TilemapDocument {
     height: number;
     data: number[];
     metadata?: Record<string, TileMetadata>;
-    cellMetadata?: Record<string, { collision?: boolean; walkable?: boolean; terrain?: string; slowdown?: number }>;
+    cellMetadata?: Record<string, { collision?: boolean; walkable?: boolean; terrain?: string; slowdown?: number; movementCost?: number }>;
     tileset?: string;
     columns?: number;
     tileCount?: number;
@@ -26,7 +27,7 @@ interface TilemapDocument {
     [key: string]: unknown;
 }
 
-type TilemapBrushMode = 'tile' | 'collision' | 'walkability' | 'terrain' | 'slowdown';
+type TilemapBrushMode = 'tile' | 'collision' | 'walkability' | 'terrain' | 'slowdown' | 'movementCost';
 
 export function TilemapPanel(_props: IDockviewPanelProps) {
     const { nodes, readFile, writeFile, rootPath, refresh } = useFileSystem();
@@ -45,6 +46,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
     const [navigationBrush, setNavigationBrush] = useState('true');
     const [terrainBrush, setTerrainBrush] = useState('');
     const [slowdownBrush, setSlowdownBrush] = useState('');
+    const [movementCostBrush, setMovementCostBrush] = useState('');
     const [paletteCount, setPaletteCount] = useState(25);
     const [availableTileCount, setAvailableTileCount] = useState<number | null>(null);
     const [availableAtlasColumns, setAvailableAtlasColumns] = useState<number | null>(null);
@@ -247,7 +249,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
         nextCell?.focus();
     };
 
-    const updateMetadata = (field: 'walkable' | 'terrain' | 'collision', value: boolean | string | undefined) => {
+    const updateMetadata = (field: 'walkable' | 'terrain' | 'collision' | 'movementCost', value: boolean | string | number | undefined) => {
         if (!tilemap) return;
         try {
             setTilemap(setTileMetadata(tilemap, tileId, { [field]: value }));
@@ -258,7 +260,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
     };
 
     const updateCellMetadata = (
-        field: 'collision' | 'walkable' | 'terrain' | 'slowdown',
+        field: 'collision' | 'walkable' | 'terrain' | 'slowdown' | 'movementCost',
         value: boolean | string | number | undefined,
         cell = selectedCell
     ) => {
@@ -288,7 +290,11 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
             updateCellMetadata('terrain', terrainBrush || undefined, { x, y });
             return;
         }
-        updateCellMetadata('slowdown', slowdownBrush === '' ? undefined : Number(slowdownBrush), { x, y });
+        if (brushMode === 'slowdown') {
+            updateCellMetadata('slowdown', slowdownBrush === '' ? undefined : Number(slowdownBrush), { x, y });
+            return;
+        }
+        updateCellMetadata('movementCost', movementCostBrush === '' ? undefined : Number(movementCostBrush), { x, y });
     };
 
     const activeMetadata = tilemap?.metadata?.[String(tileId)] || {};
@@ -676,6 +682,18 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                         placeholder="e.g. water, stone"
                         onChange={(event) => updateMetadata('terrain', event.target.value || undefined)}
                     />
+                    <label className="text-xs" htmlFor="tilemap-movement-cost">Tile {tileId} movement cost</label>
+                    <input
+                        id="tilemap-movement-cost"
+                        aria-label={`Tile ${tileId} movement cost`}
+                        className="w-24 rounded border border-border bg-card px-2 py-1 text-xs"
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={activeMetadata.movementCost ?? ''}
+                        placeholder="Default 1"
+                        onChange={(event) => updateMetadata('movementCost', event.target.value === '' ? undefined : Number(event.target.value))}
+                    />
                 </div>
             )}
             {tilemap && selectedCell && (
@@ -729,6 +747,18 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                         placeholder="Use tile default"
                         onChange={(event) => updateCellMetadata('slowdown', event.target.value === '' ? undefined : Number(event.target.value))}
                     />
+                    <label className="text-xs" htmlFor="cell-movement-cost">Cell movement cost</label>
+                    <input
+                        id="cell-movement-cost"
+                        aria-label={`Cell ${selectedCell.x}, ${selectedCell.y} movement cost`}
+                        className="w-24 rounded border border-border bg-card px-2 py-1 text-xs"
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={tilemap.cellMetadata?.[String(selectedCell.y * tilemap.width + selectedCell.x)]?.movementCost ?? ''}
+                        placeholder="Use tile default"
+                        onChange={(event) => updateCellMetadata('movementCost', event.target.value === '' ? undefined : Number(event.target.value))}
+                    />
                 </div>
             )}
             {tilemap && (
@@ -747,6 +777,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                         <option value="walkability">Navigation</option>
                         <option value="terrain">Terrain</option>
                         <option value="slowdown">Slowdown</option>
+                        <option value="movementCost">Movement cost</option>
                     </select>
                     {brushMode === 'collision' && (
                         <>
@@ -814,6 +845,24 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                             <span className="text-xs text-muted-foreground">Extra movement time per cell; blank inherits the tile value.</span>
                         </>
                     )}
+                    {brushMode === 'movementCost' && (
+                        <>
+                            <label className="text-xs" htmlFor="movement-cost-brush">Movement cost value</label>
+                            <input
+                                id="movement-cost-brush"
+                                aria-label="Movement cost brush"
+                                className="w-24 rounded border border-border bg-card px-2 py-1 text-xs"
+                                type="number"
+                                min="0"
+                                step="0.1"
+                                value={movementCostBrush}
+                                placeholder="Use tile default"
+                                disabled={isPainting}
+                                onChange={(event) => setMovementCostBrush(event.target.value)}
+                            />
+                            <span className="text-xs text-muted-foreground">Higher values make routes avoid this cell; blank inherits the tile value.</span>
+                        </>
+                    )}
                 </div>
             )}
             {error && <p className="text-xs text-red-400" role="alert">{error}</p>}
@@ -845,11 +894,13 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                                     const walkable = cellMetadata.walkable ?? tileMetadata.walkable;
                                     const terrain = cellMetadata.terrain ?? tileMetadata.terrain;
                                     const slowdown = cellMetadata.slowdown ?? tileMetadata.slowdown;
+                                    const movementCost = cellMetadata.movementCost ?? tileMetadata.movementCost;
                                     const metadataDescriptions = [
                                         collision === undefined ? '' : `${collision ? 'solid' : 'non-solid'} collision (${cellMetadata.collision === undefined ? 'tile default' : 'cell override'})`,
                                         walkable === undefined ? '' : `${walkable ? 'walkable' : 'blocked'} (${cellMetadata.walkable === undefined ? 'tile default' : 'cell override'})`,
                                         terrain ? `terrain ${terrain} (${cellMetadata.terrain === undefined ? 'tile default' : 'cell override'})` : '',
-                                        slowdown === undefined ? '' : `slowdown ${slowdown} (${cellMetadata.slowdown === undefined ? 'tile default' : 'cell override'})`
+                                        slowdown === undefined ? '' : `slowdown ${slowdown} (${cellMetadata.slowdown === undefined ? 'tile default' : 'cell override'})`,
+                                        movementCost === undefined ? '' : `movement cost ${movementCost} (${cellMetadata.movementCost === undefined ? 'tile default' : 'cell override'})`
                                     ].filter(Boolean);
                                     const metadataMarkers = [
                                         ...(collision === undefined ? [] : [{
@@ -870,6 +921,11 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                                             kind: 'slowdown', value: String(slowdown), text: 'S',
                                             title: `Movement delay: ${slowdown * 100}% extra`,
                                             className: 'text-orange-400'
+                                        }]),
+                                        ...(movementCost === undefined ? [] : [{
+                                            kind: 'movementCost', value: String(movementCost), text: 'C',
+                                            title: `Path movement cost: ${movementCost}`,
+                                            className: 'text-violet-400'
                                         }])
                                     ];
                                     const metadataDescription = metadataDescriptions.length > 0

@@ -118,6 +118,24 @@ describe('Tilemap', () => {
         expect(tilemap.findPath(0, 0, 1, 0)).toEqual([{ x: 1, y: 0 }]);
     });
 
+    it('finds a deterministic minimum-cost route using tile defaults and cell overrides', () => {
+        tilemap.loadFromArray([
+            [-1, -1, -1],
+            [-1, 7, -1],
+            [-1, -1, -1]
+        ]);
+        tilemap.setTileMetadata(7, { movementCost: 10, walkable: true });
+        expect(tilemap.findPath(0, 1, 2, 1)).toEqual([
+            { x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 2, y: 1 }
+        ]);
+
+        tilemap.setCellMetadata(1, 1, { movementCost: 0.25 });
+        expect(tilemap.getResolvedMetadata(1, 1).movementCost).toBe(0.25);
+        expect(tilemap.findPath(0, 1, 2, 1)).toEqual([{ x: 1, y: 1 }, { x: 2, y: 1 }]);
+        expect(() => tilemap.setTileMetadata(8, { movementCost: -1 })).toThrow('movementCost must be a finite non-negative number');
+        expect(() => tilemap.setCellMetadata(1, 1, { movementCost: Infinity })).toThrow('movementCost must be a finite non-negative number');
+    });
+
     it('validates cell metadata coordinates and values without mutating stored data', () => {
         expect(() => tilemap.setCellMetadata(-1, 0, { walkable: true })).toThrow("outside the tilemap");
         expect(() => tilemap.setCellMetadata(0, 0, { walkable: "yes" })).toThrow("Cell metadata walkable must be a boolean");

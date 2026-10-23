@@ -4,6 +4,7 @@ const TILE_METADATA_VALIDATORS = {
     collision: (value) => typeof value === 'boolean',
     damage: (value) => Number.isFinite(value) && value >= 0,
     slowdown: (value) => Number.isFinite(value) && value >= 0,
+    movementCost: (value) => Number.isFinite(value) && value >= 0,
     interaction: (value) => value === null || (typeof value === 'object' && !Array.isArray(value)),
     transition: (value) => value === null || (typeof value === 'object' && !Array.isArray(value))
 };
@@ -70,7 +71,7 @@ export function setCellMetadata(map, x, y, updates) {
         throw new TypeError('Cell metadata updates must be an object');
     }
     for (const [field, value] of Object.entries(updates)) {
-        if (!['collision', 'walkable', 'terrain', 'slowdown'].includes(field)) throw new TypeError(`Unknown cell metadata field: ${field}`);
+        if (!['collision', 'walkable', 'terrain', 'slowdown', 'movementCost'].includes(field)) throw new TypeError(`Unknown cell metadata field: ${field}`);
         if (value !== undefined && !TILE_METADATA_VALIDATORS[field](value)) {
             throw new TypeError(`Invalid cell metadata value for ${field}`);
         }
