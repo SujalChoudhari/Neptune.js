@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import path from 'node:path';
 import { buildSync } from 'esbuild';
-import { pickEntityAt, translateOnAxis, resizeColliderBounds, zoomAtPoint, updateSelection, getEntitySelectionBounds, getColliderOverlayBounds, hasCompleteGroupTransformSelection, isSceneViewBridgeMessageSource } from '../src/lib/scenePicking.mjs';
+import { pickEntityAt, translateOnAxis, resizeColliderBounds, zoomAtPoint, getFramingCamera, updateSelection, getEntitySelectionBounds, getColliderOverlayBounds, hasCompleteGroupTransformSelection, isSceneViewBridgeMessageSource } from '../src/lib/scenePicking.mjs';
 import { BoxCollider } from '../../src/components/boxCollider.js';
 
 const entity = (id, x, y, children = []) => ({
@@ -92,7 +92,7 @@ function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-
         '@/lib/editorGameRunner': { EditorGameRunner: {
             updateEntity: (id, component, data) => canonicalEdits.push({ id, component, data })
         } },
-        '@/lib/scenePicking.mjs': { translateOnAxis, resizeColliderBounds, zoomAtPoint, getColliderOverlayBounds, getEntitySelectionBounds, hasCompleteGroupTransformSelection },
+        '@/lib/scenePicking.mjs': { translateOnAxis, resizeColliderBounds, zoomAtPoint, getFramingCamera, getColliderOverlayBounds, getEntitySelectionBounds, hasCompleteGroupTransformSelection },
         '@tauri-apps/api/core': { invoke: async () => '' },
         '../../../../src/neptune.js?url': '/neptune.js',
         '../../../../src/thalassa/camera.js?url': '/camera.js',
@@ -480,6 +480,36 @@ test('Scene View provides named directional camera pan controls at the current z
         { type: 'editor:camera-update', payload: { zoom: 1, x: -40, y: 0 } },
         { type: 'editor:camera-update', payload: { zoom: 1, x: -40, y: 40 } }
     ]);
+});
+
+test('framing computes a padded camera for a group and rejects invalid bounds', () => {
+    const camera = getFramingCamera([
+        { x: -9, y: -1, width: 10, height: 8 },
+        { x: -9, y: 2, width: 8, height: 8 }
+    ], 800, 600);
+    assert.equal(camera.zoom, 5);
+    assert.equal(camera.x, -84);
+    assert.equal(camera.y, -55.5);
+    assert.equal(getFramingCamera([{ x: 0, y: 0, width: 2000, height: 1200 }], 800, 600)?.zoom, 0.352);
+    assert.equal(getFramingCamera([{ x: 0, y: 0, width: 10000, height: 10000 }], 800, 600)?.zoom, 0.1);
+    assert.equal(getFramingCamera([], 800, 600), null);
+    assert.equal(getFramingCamera([null], 800, 600), null);
+    assert.equal(getFramingCamera([{ x: NaN, y: 0, width: 10, height: 10 }], 800, 600), null);
+    assert.equal(getFramingCamera([{ x: 0, y: 0, width: 10, height: 10 }], 80, 600), null);
+});
+
+test('Frame Selection toolbar fits every selected entity and sends the runtime camera update', () => {
+    const harness = createSceneViewHarness(undefined, ['entity-1', 'entity-2']);
+    const button = findNode(harness.render(), node => node.props?.['aria-label'] === 'Frame Selection');
+    assert.ok(button);
+    assert.equal(button.props.disabled, false);
+    button.props.onClick();
+    assert.deepEqual(JSON.parse(JSON.stringify(harness.notifications)), [
+        { type: 'editor:camera-update', payload: { zoom: 5, x: -81, y: -55.5 } }
+    ]);
+
+    const empty = findNode(createSceneViewHarness(undefined, []).render(), node => node.props?.['aria-label'] === 'Frame Selection');
+    assert.equal(empty.props.disabled, true);
 });
 
 test('Scene View starts its paused editor preview only after loading a scene', () => {

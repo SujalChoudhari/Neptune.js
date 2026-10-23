@@ -12,6 +12,14 @@ export function zoomAtPoint(
     screenX: number,
     screenY: number
 ): { x: number; y: number };
+export function getFramingCamera(
+    bounds: Array<{ x: number; y: number; width: number; height: number }>,
+    viewportWidth: number,
+    viewportHeight: number,
+    padding?: number,
+    minZoom?: number,
+    maxZoom?: number
+): { zoom: number; x: number; y: number } | null;
 export function resizeColliderBounds(
     size: { width: number; height: number },
     deltaX: number,

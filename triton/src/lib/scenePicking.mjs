@@ -20,6 +20,33 @@ export function zoomAtPoint(pan, zoom, nextZoom, screenX, screenY) {
     };
 }
 
+export function getFramingCamera(bounds, viewportWidth, viewportHeight, padding = 48, minZoom = 0.1, maxZoom = 5) {
+    if (!Array.isArray(bounds) || bounds.length === 0
+        || ![viewportWidth, viewportHeight, padding, minZoom, maxZoom].every(Number.isFinite)
+        || viewportWidth <= padding * 2 || viewportHeight <= padding * 2
+        || padding < 0 || minZoom <= 0 || maxZoom < minZoom
+        || bounds.some((bound) => !bound || typeof bound !== 'object'
+            || ![bound.x, bound.y, bound.width, bound.height].every(Number.isFinite)
+            || bound.width < 0 || bound.height < 0)) return null;
+
+    const left = Math.min(...bounds.map(({ x }) => x));
+    const top = Math.min(...bounds.map(({ y }) => y));
+    const right = Math.max(...bounds.map(({ x, width }) => x + width));
+    const bottom = Math.max(...bounds.map(({ y, height }) => y + height));
+    if (![left, top, right, bottom].every(Number.isFinite)) return null;
+    const worldWidth = Math.max(right - left, 1);
+    const worldHeight = Math.max(bottom - top, 1);
+    const zoom = Math.max(minZoom, Math.min(maxZoom,
+        Math.min((viewportWidth - padding * 2) / worldWidth, (viewportHeight - padding * 2) / worldHeight)));
+    const centerX = (left + right) / 2;
+    const centerY = (top + bottom) / 2;
+    return {
+        zoom,
+        x: centerX - viewportWidth / (2 * zoom),
+        y: centerY - viewportHeight / (2 * zoom)
+    };
+}
+
 export function resizeColliderBounds(size, deltaX, deltaY, zoom, minSize = 0.05) {
     if (!size || ![size.width, size.height, deltaX, deltaY, zoom, minSize].every(Number.isFinite) || zoom <= 0 || minSize <= 0) {
         throw new TypeError('Collider resizing needs finite dimensions, deltas, and positive zoom/minimum size');

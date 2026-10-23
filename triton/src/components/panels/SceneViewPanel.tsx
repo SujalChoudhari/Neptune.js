@@ -4,7 +4,7 @@ import cameraUrl from "../../../../src/thalassa/camera.js?url";
 import scenePickingUrl from "@/lib/scenePicking.mjs?url";
 import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
 import { runtimeEntityBridgeScript } from "../../lib/runtimeEntityBridge.mjs";
-import { translateOnAxis, resizeColliderBounds, zoomAtPoint, getColliderOverlayBounds, getEntitySelectionBounds, hasCompleteGroupTransformSelection, isSceneViewBridgeMessageSource } from "@/lib/scenePicking.mjs";
+import { translateOnAxis, resizeColliderBounds, zoomAtPoint, getFramingCamera, getColliderOverlayBounds, getEntitySelectionBounds, hasCompleteGroupTransformSelection, isSceneViewBridgeMessageSource } from "@/lib/scenePicking.mjs";
 import { invoke } from "@tauri-apps/api/core";
 import { ThemedIconButton } from "@/components/library";
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Maximize, ZoomIn, ZoomOut } from "lucide-react";
@@ -401,6 +401,16 @@ export function SceneViewPanel() {
         notifyGame('editor:camera-update', { zoom, ...nextPan });
     };
 
+    const frameSelection = () => {
+        const rect = containerRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        const camera = getFramingCamera(selectionOverlays, rect.width, rect.height);
+        if (!camera) return;
+        setZoom(camera.zoom);
+        setPan({ x: camera.x, y: camera.y });
+        notifyGame('editor:camera-update', camera);
+    };
+
     // --- Bridge Script ---
     // Inject Editor Camera logic
     const iframeContent = `
@@ -580,6 +590,9 @@ export function SceneViewPanel() {
                 <div className="bg-black/50 backdrop-blur-md text-xs text-white px-2 py-1 rounded text-center select-none mr-2">
                     {Math.round(zoom * 100)}%
                 </div>
+                <ThemedIconButton size="sm" onClick={frameSelection} disabled={selectionOverlays.length === 0} title="Frame Selection" aria-label="Frame Selection">
+                    <Maximize className="w-4 h-4" />
+                </ThemedIconButton>
                 <ThemedIconButton size="sm" onClick={() => panFromToolbar('left')} title="Pan Left" aria-label="Pan Left">
                     <ChevronLeft className="w-4 h-4" />
                 </ThemedIconButton>
