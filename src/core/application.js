@@ -186,7 +186,7 @@ export class Application {
 
             const newScene = await SceneLoader.parse(data);
 
-            SceneManager.addScene(newScene);
+            SceneManager.replaceScene(newScene);
             SceneManager.LoadScene(newScene.id);
 
         } catch (e) {

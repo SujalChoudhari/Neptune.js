@@ -1,4 +1,4 @@
-import { DockviewReact, type DockviewReadyEvent, type IDockviewPanelProps, type DockviewApi } from "dockview";
+import { DockviewReact, type DockviewReadyEvent, type DockviewApi } from "dockview";
 import "dockview/dist/styles/dockview.css";
 import { themeDark } from "dockview";
 import { useRef, useEffect } from "react";
@@ -9,21 +9,8 @@ import { ConsolePanel } from "@/components/panels/ConsolePanel";
 import { HierarchyPanel } from "@/components/panels/HierarchyPanel";
 import { GameViewPanel } from "@/components/panels/GameViewPanel";
 import { SceneViewPanel } from "@/components/panels/SceneViewPanel";
+import { TilemapPanel } from "@/components/panels/TilemapPanel";
 import { useSettings } from "@/components/context/SettingsContext";
-
-const ViewportPanel = (_props: IDockviewPanelProps) => (
-    <div className="h-full w-full bg-[#1a1a1a] relative overflow-hidden flex items-center justify-center">
-        <div className="absolute top-2 left-2 flex gap-1 z-10">
-            <span className="bg-black/50 text-white px-2 py-0.5 rounded text-xs backdrop-blur-sm">Perspective</span>
-            <span className="bg-black/50 text-white px-2 py-0.5 rounded text-xs backdrop-blur-sm">Lit</span>
-        </div>
-        {/* Grid Background Mock */}
-        <div className="text-white/20 select-none pointer-events-none">
-            (Viewport Canvas Area)
-        </div>
-    </div>
-);
-
 
 // --- MAIN LAYOUT ---
 
@@ -158,6 +145,13 @@ export const DockLayout = ({ onApiReady }: DockLayoutProps) => {
                 position: { referencePanel: 'console', direction: 'within' }
             });
 
+            api.addPanel({
+                id: 'tilemap',
+                component: 'tilemap',
+                title: 'Tilemap',
+                position: { referencePanel: 'console', direction: 'within' }
+            });
+
             // Activate Scene View by default
             mainPanel.api.setActive();
 
@@ -221,13 +215,14 @@ export const DockLayout = ({ onApiReady }: DockLayoutProps) => {
 
 const componentMap = {
     hierarchy: HierarchyPanel,
-    viewport: ViewportPanel,
+    viewport: SceneViewPanel,
     inspector: InspectorPanel,
     console: ConsolePanel,
     project: ProjectPanel,
     atlas: StoryBook,
     game: GameViewPanel,
     scene: SceneViewPanel,
+    tilemap: TilemapPanel,
 };
 
 export type NeptuneDockApi = DockviewApi & { applyLayout: (type: 'default' | 'animation' | 'debug') => void };

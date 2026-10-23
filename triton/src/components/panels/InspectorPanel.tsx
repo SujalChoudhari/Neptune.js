@@ -5,9 +5,10 @@ import { Box, Eye, EyeOff, Plus, Save } from "lucide-react"
 import { ThemedInput } from "@/components/library"
 import { useGameContext } from "@/context/GameContext"
 import { renderInspectorComponent } from "./inspector/InspectorRegistry"
-import type { MockEntity } from "./inspector/shared/types"  // Still needed for shared types in registry?
+import type { EntityData } from "@/types/engine"
 import { useFileSystem } from "@/context/FileSystemContext"
 import { EditorGameRunner } from "@/lib/editorGameRunner"
+import { applyInspectorComponentUpdate } from "@/lib/inspectorComponentUpdate"
 
 /**
  * InspectorPanel
@@ -78,9 +79,7 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
         )
     }
 
-    // Cast to MockEntity because our Inspector components are typed with it
-    // EntityData and MockEntity should be compatible enough for now
-    const entity = selectedEntityData as any as MockEntity;
+    const entity: EntityData = selectedEntityData
 
     // HELPERS
     // We map specifics to generic updateComponent(id, comp, field, value)
@@ -94,12 +93,22 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
         });
     }
 
+    const applyComponentUpdate = (id: string, compName: string, key: string, value: any) => {
+        applyInspectorComponentUpdate({
+            id,
+            component: compName,
+            key,
+            value,
+            updateComponent,
+            editorGameRunner: EditorGameRunner,
+            currentScenePath,
+            notifyGame
+        })
+    }
+
     // Generic updater generator
     const makeUpdater = (compName: string) => (key: string, value: any) => {
-        selectedIds.forEach(id => {
-            updateComponent(id, compName, key, value)
-            EditorGameRunner.updateEntity(id, compName, { [key]: value })
-        });
+        selectedIds.forEach(id => applyComponentUpdate(id, compName, key, value));
     }
 
     const updateHelpers = {
@@ -113,10 +122,7 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
             console.log("Update script:", index, key, value);
         },
         updateGeneric: (compName: string, key: string, value: any) => {
-            selectedIds.forEach(id => {
-                updateComponent(id, compName, key, value)
-                EditorGameRunner.updateEntity(id, compName, { [key]: value })
-            });
+            selectedIds.forEach(id => applyComponentUpdate(id, compName, key, value));
         }
     }
 
@@ -203,7 +209,7 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
 
                 {/* DYNAMIC COMPONENTS */}
                 {componentOrder.map((compId, index) => renderInspectorComponent({
-                    compId: compId as any,
+                    compId,
                     index,
                     entity,
                     isActive: activeStates[compId],

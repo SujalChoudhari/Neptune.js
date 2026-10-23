@@ -2,13 +2,13 @@ import { Crosshair } from "lucide-react"
 import { ComponentSection } from "../shared/ComponentSection"
 import { PropertyRow } from "../shared/PropertyRow"
 import { ThemedVectorInput, ThemedCheckbox } from "@/components/library"
-import type { MockEntity, MockCollider } from "../shared/types"
+import type { InspectorEntity, InspectorCollider } from "../shared/types"
 
 interface ColliderSectionProps {
-    entity: MockEntity
+    entity: InspectorEntity
     isActive: boolean
     onToggleActive: () => void
-    onUpdate: (key: keyof MockCollider, value: number | boolean) => void
+    onUpdate: (key: keyof InspectorCollider, value: number | boolean) => void
     onMoveUp?: () => void
     onMoveDown?: () => void
 }

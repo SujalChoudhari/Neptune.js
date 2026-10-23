@@ -26,9 +26,6 @@ import {
 import { Play, Pause, Square, Plus, Minus, Search, Home, Save, Settings, Trash2 } from "lucide-react"
 import { useState } from "react"
 
-import { renderInspectorComponent } from "./inspector/InspectorRegistry"
-import type { ComponentId, MockEntity } from "./inspector/shared/types"
-
 /**
  * ATLAS PANEL
  * A Component Library panel that displays Triton's themed UI components.
@@ -46,30 +43,6 @@ export const StoryBook = (_props: IDockviewPanelProps) => {
     const [vectorValue, setVectorValue] = useState({ x: 0, y: 1.5, z: 0 })
     const [colorValue, setColorValue] = useState("#6b8cff")
     const [textAreaValue, setTextAreaValue] = useState("Multi-line text\neditor example")
-
-    // PREVIEW ENTITY for Inspector Components
-    const previewEntity: MockEntity = {
-        id: 'storybook-entity',
-        name: "Preview_Entity",
-        active: true,
-        transform: {
-            position: { x: 128, y: 256 },
-            rotation: 0,
-            scale: { x: 1, y: 1 }
-        },
-        sprite: { path: "player.png", width: 64, height: 64, blendMode: "Normal" },
-        collider: { width: 48, height: 56, offsetX: 8, offsetY: 4, isTrigger: false },
-        body: { velocityX: 0, velocityY: 0, gravity: 980, maxFallSpeed: 800, friction: 90, drag: 98, grounded: true },
-        sound: { name: "Jump", src: "jump.wav", volume: 80, loop: false, playing: false },
-        stats: { health: 85, maxHealth: 100, stamina: 60, maxStamina: 100, attack: 15, defense: 8, speed: 120 },
-        animator: { currentAnimation: "idle", speed: 100, playing: true, animations: ["idle", "walk", "run"] },
-        scripts: [
-            { path: "/scripts/player_controller.js", enabled: true },
-            { path: "/scripts/camera_follow.js", enabled: true }
-        ]
-    }
-
-    const componentList: (ComponentId)[] = ["transform", "sprite", "collider", "body", "sound", "stats", "animator", "scripts"]
 
     return (
         <ThemedScrollArea maxHeight="100%" className="h-full w-full bg-card p-4">
@@ -267,9 +240,9 @@ export const StoryBook = (_props: IDockviewPanelProps) => {
                         <div className="flex flex-wrap gap-2">
                             <ThemedMenuButton onClick={() => showModal({
                                 title: "Confirmation Modal",
-                                content: "Are you sure you want to perform this action? This can be used for destructive operations like deleting an entity.",
-                                confirmText: "Delete",
-                                onConfirm: () => console.log("Confirmed delete")
+                                content: "Are you sure you want to continue? This is a confirmation-dialog example.",
+                                confirmText: "Confirm",
+                                onConfirm: () => console.log("Confirmed example dialog")
                             })}>
                                 Show Confirmation
                             </ThemedMenuButton>
@@ -278,13 +251,13 @@ export const StoryBook = (_props: IDockviewPanelProps) => {
                                 title: "Input Modal",
                                 content: (
                                     <div className="space-y-4">
-                                        <p className="text-[11px] text-muted-foreground uppercase tracking-widest font-bold">New Entity Name</p>
-                                        <ThemedInput placeholder="Enter gameobject name..." className="w-full" autoFocus />
-                                        <p className="text-[10px] text-muted-foreground italic">Try entering a unique name for your gameobject.</p>
+                                        <p className="text-[11px] text-muted-foreground uppercase tracking-widest font-bold">Example Input</p>
+                                        <ThemedInput placeholder="Enter a label..." className="w-full" autoFocus />
+                                        <p className="text-[10px] text-muted-foreground italic">This input demonstrates the modal component.</p>
                                     </div>
                                 ),
-                                confirmText: "Create Entity",
-                                onConfirm: () => console.log("Created entity")
+                                confirmText: "Done",
+                                onConfirm: () => console.log("Input dialog example confirmed")
                             })}>
                                 Show Input Modal
                             </ThemedMenuButton>
@@ -292,32 +265,6 @@ export const StoryBook = (_props: IDockviewPanelProps) => {
                     </div>
                 </ThemedCollapsible>
 
-                {/* REAL INSPECTOR COMPONENTS */}
-                <ThemedCollapsible title="Live Inspector Modules" defaultOpen>
-                    <div className="flex flex-col border border-border rounded overflow-hidden">
-                        {componentList.map((compId, index) => renderInspectorComponent({
-                            compId,
-                            index,
-                            entity: previewEntity,
-                            isActive: true,
-                            onToggleActive: () => { },
-                            updateHelpers: {
-                                updateTransform: () => { },
-                                updateSprite: () => { },
-                                updateCollider: () => { },
-                                updateBody: () => { },
-                                updateSound: () => { },
-                                updateStats: () => { },
-                                updateAnimator: () => { },
-                                updateScript: () => { }
-                            },
-                            moveHelpers: {
-                                onMoveUp: () => { },
-                                onMoveDown: () => { }
-                            }
-                        }))}
-                    </div>
-                </ThemedCollapsible>
 
                 {/* COLOR PALETTE */}
                 <ThemedCollapsible title="Theme Colors" defaultOpen={false}>

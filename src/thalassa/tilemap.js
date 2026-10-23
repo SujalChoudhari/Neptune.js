@@ -2,6 +2,37 @@ import { Component } from "../components/component.js";
 import { Tileset } from "./tileset.js";
 import { ResourceReferenceError } from "../core/scene.js";
 
+const TILE_METADATA_FIELDS = new Set(["walkable", "terrain", "collision", "damage", "slowdown", "movementCost", "interaction", "transition"]);
+
+function validateGameplayMetadata(metadata, label) {
+    if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+        throw new TypeError(`${label} metadata must be an object`);
+    }
+    for (const key of Object.keys(metadata)) {
+        if (!TILE_METADATA_FIELDS.has(key)) throw new TypeError(`Unknown ${label.toLowerCase()} metadata field: ${key}`);
+    }
+    if (metadata.walkable !== undefined && typeof metadata.walkable !== "boolean") {
+        throw new TypeError(`${label} metadata walkable must be a boolean`);
+    }
+    if (metadata.terrain !== undefined && typeof metadata.terrain !== "string") {
+        throw new TypeError(`${label} metadata terrain must be a string`);
+    }
+    if (metadata.collision !== undefined && typeof metadata.collision !== "boolean") {
+        throw new TypeError(`${label} metadata collision must be a boolean`);
+    }
+    for (const field of ["damage", "slowdown", "movementCost"]) {
+        if (metadata[field] !== undefined && (!Number.isFinite(metadata[field]) || metadata[field] < 0)) {
+            throw new TypeError(`${label} metadata ${field} must be a finite non-negative number`);
+        }
+    }
+    for (const field of ["interaction", "transition"]) {
+        if (metadata[field] !== undefined && metadata[field] !== null &&
+            (typeof metadata[field] !== "object" || Array.isArray(metadata[field]))) {
+            throw new TypeError(`${label} metadata ${field} must be an object or null`);
+        }
+    }
+}
+
 /**
  * Tilemap component renders a grid of tiles from a tileset.
  * @class Tilemap
@@ -27,6 +58,7 @@ export class Tilemap extends Component {
         this.scale = 1;
         this.data = new Array(width * height).fill(-1); // -1 = empty
         this.metadata = new Map();
+        this.cellMetadata = new Map();
         this.layers = [];
         this.occupants = new Map();
         this.occupantCells = new Map();
@@ -59,30 +91,7 @@ export class Tilemap extends Component {
         if (!Number.isInteger(tileId) || tileId < 0) {
             throw new TypeError("Tile metadata requires a non-negative integer tileId");
         }
-        if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
-            throw new TypeError("Tile metadata must be an object");
-        }
-        const allowed = new Set(["walkable", "terrain", "damage", "slowdown", "interaction", "transition"]);
-        for (const key of Object.keys(metadata)) {
-            if (!allowed.has(key)) throw new TypeError(`Unknown tile metadata field: ${key}`);
-        }
-        if (metadata.walkable !== undefined && typeof metadata.walkable !== "boolean") {
-            throw new TypeError("Tile metadata walkable must be a boolean");
-        }
-        if (metadata.terrain !== undefined && typeof metadata.terrain !== "string") {
-            throw new TypeError("Tile metadata terrain must be a string");
-        }
-        for (const field of ["damage", "slowdown"]) {
-            if (metadata[field] !== undefined && (!Number.isFinite(metadata[field]) || metadata[field] < 0)) {
-                throw new TypeError(`Tile metadata ${field} must be a finite non-negative number`);
-            }
-        }
-        for (const field of ["interaction", "transition"]) {
-            if (metadata[field] !== undefined && metadata[field] !== null &&
-                (typeof metadata[field] !== "object" || Array.isArray(metadata[field]))) {
-                throw new TypeError(`Tile metadata ${field} must be an object or null`);
-            }
-        }
+        validateGameplayMetadata(metadata, "Tile");
         this.metadata.set(tileId, structuredClone(metadata));
         return this.getTileMetadata(tileId);
     }
@@ -91,6 +100,32 @@ export class Tilemap extends Component {
     getTileMetadata(tileId) {
         const metadata = this.metadata.get(tileId);
         return metadata ? structuredClone(metadata) : null;
+    }
+
+    /** Set validated metadata for one row-major cell, overriding tile defaults. */
+    setCellMetadata(x, y, metadata) {
+        const index = this.gridIndex(x, y);
+        if (index === null) throw new RangeError("Cell metadata coordinates are outside the tilemap");
+        validateGameplayMetadata(metadata, "Cell");
+        this.cellMetadata.set(index, structuredClone(metadata));
+        return this.getCellMetadata(x, y);
+    }
+
+    /** Return a defensive copy of cell metadata, or null when unset/out of bounds. */
+    getCellMetadata(x, y) {
+        const index = this.gridIndex(x, y);
+        if (index === null) return null;
+        const metadata = this.cellMetadata.get(index);
+        return metadata ? structuredClone(metadata) : null;
+    }
+
+    /** Resolve tile defaults with cell-specific metadata taking precedence. */
+    getResolvedMetadata(x, y) {
+        const tileId = this.getTile(x, y);
+        const tileMetadata = tileId >= 0 ? this.metadata.get(tileId) : null;
+        const cellMetadata = this.getCellMetadata(x, y);
+        if (!tileMetadata && !cellMetadata) return null;
+        return structuredClone({ ...(tileMetadata || {}), ...(cellMetadata || {}) });
     }
 
     /** Convert tile coordinates to a stable row-major grid index, or null out of bounds. */
@@ -157,37 +192,80 @@ export class Tilemap extends Component {
         const index = this.gridIndex(x, y);
         if (index === null) return false;
         const tileId = this.getTile(x, y);
-        const metadata = this.getTileMetadata(tileId);
+        const metadata = this.getResolvedMetadata(x, y);
         if (metadata?.walkable === false || (tileId >= 0 && metadata?.walkable !== true)) return false;
         const occupant = this.occupants.get(index);
         return occupant === undefined || occupant === mover;
     }
 
-    /** Deterministic four-way shortest path; returns coordinates excluding start, or null. */
+    /** Deterministic minimum-cost four-way path; returns coordinates excluding start, or null. */
     findPath(startX, startY, goalX, goalY, mover = null) {
         if (this.gridIndex(startX, startY) === null || this.gridIndex(goalX, goalY) === null ||
             !this.isWalkable(startX, startY, mover) || !this.isWalkable(goalX, goalY, mover)) return null;
         if (startX === goalX && startY === goalY) return [];
         const key = (x, y) => y * this.width + x;
-        const queue = [[startX, startY]];
-        const previous = new Map([[key(startX, startY), null]]);
+        const start = key(startX, startY);
+        const distances = new Map([[start, 0]]);
+        const previous = new Map([[start, null]]);
+        const settled = new Set();
+        const queue = [];
+        let insertionOrder = 0;
+        const compare = (a, b) => a.distance - b.distance || a.order - b.order;
+        const push = (entry) => {
+            queue.push(entry);
+            let index = queue.length - 1;
+            while (index > 0) {
+                const parent = Math.floor((index - 1) / 2);
+                if (compare(queue[parent], entry) <= 0) break;
+                queue[index] = queue[parent];
+                index = parent;
+            }
+            queue[index] = entry;
+        };
+        const pop = () => {
+            const first = queue[0];
+            const last = queue.pop();
+            if (queue.length && last) {
+                let index = 0;
+                while (true) {
+                    const left = index * 2 + 1;
+                    const right = left + 1;
+                    if (left >= queue.length) break;
+                    const child = right < queue.length && compare(queue[right], queue[left]) < 0 ? right : left;
+                    if (compare(queue[child], last) >= 0) break;
+                    queue[index] = queue[child];
+                    index = child;
+                }
+                queue[index] = last;
+            }
+            return first;
+        };
+        push({ index: start, distance: 0, order: insertionOrder++ });
         const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]];
-        for (let cursor = 0; cursor < queue.length; cursor++) {
-            const [x, y] = queue[cursor];
+        while (queue.length) {
+            const current = pop();
+            if (!current || settled.has(current.index) || current.distance !== distances.get(current.index)) continue;
+            if (current.index === key(goalX, goalY)) {
+                const path = [];
+                let step = current.index;
+                while (step !== start) {
+                    path.push({ x: step % this.width, y: Math.floor(step / this.width) });
+                    step = previous.get(step);
+                }
+                return path.reverse();
+            }
+            settled.add(current.index);
+            const x = current.index % this.width;
+            const y = Math.floor(current.index / this.width);
             for (const [dx, dy] of directions) {
                 const nx = x + dx, ny = y + dy, next = key(nx, ny);
-                if (this.gridIndex(nx, ny) === null || previous.has(next) || !this.isWalkable(nx, ny, mover)) continue;
-                previous.set(next, key(x, y));
-                queue.push([nx, ny]);
-                if (nx === goalX && ny === goalY) {
-                    const path = [];
-                    let step = next;
-                    while (step !== key(startX, startY)) {
-                        path.push({ x: step % this.width, y: Math.floor(step / this.width) });
-                        step = previous.get(step);
-                    }
-                    return path.reverse();
-                }
+                if (this.gridIndex(nx, ny) === null || settled.has(next) || !this.isWalkable(nx, ny, mover)) continue;
+                const movementCost = this.getResolvedMetadata(nx, ny)?.movementCost ?? 1;
+                const distance = current.distance + movementCost;
+                if (distance >= (distances.get(next) ?? Infinity)) continue;
+                distances.set(next, distance);
+                previous.set(next, current.index);
+                push({ index: next, distance, order: insertionOrder++ });
             }
         }
         return null;
@@ -284,7 +362,9 @@ export class Tilemap extends Component {
      * @returns {boolean}
      */
     isSolid(x, y) {
-        return this.getTile(x, y) >= 0;
+        const tileId = this.getTile(x, y);
+        const collision = this.getResolvedMetadata(x, y)?.collision;
+        return tileId >= 0 ? collision !== false : collision === true;
     }
 
     /**

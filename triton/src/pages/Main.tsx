@@ -44,20 +44,6 @@ export function Main() {
         }
     };
 
-    useEffect(() => {
-        // Check for startup config (debug mode autoload)
-        invoke<string | null>("get_startup_config").then((path: string | null) => {
-            if (path) {
-                console.log("Autoloading Debug Project:", path);
-                // Initialize just in case
-                invoke("initialize_project", { path }).then(() => {
-                    void handleProjectLoaded(path).catch(() => undefined);
-                });
-            }
-        }).catch((err: any) => {
-            console.error("Failed to check startup config", err);
-        });
-    }, []);
 
     useEffect(() => {
         const root = window.document.documentElement

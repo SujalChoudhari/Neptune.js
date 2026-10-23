@@ -1,7 +1,7 @@
 import { Plus, Search, ChevronDown, ChevronUp } from "lucide-react"
 import { ThemedIconButton, ThemedInput } from "@/components/library"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import type { EntityType } from "@/lib/mockHierarchy"
+import type { EntityType } from "@/types/engine"
 
 interface HierarchyToolbarProps {
     searchQuery: string
@@ -56,7 +56,16 @@ export const HierarchyToolbar = ({
                         </ThemedIconButton>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="min-w-[160px] bg-popover border-border">
+                        <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('entity')}>Create Entity</DropdownMenuItem>
+                        <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('dialogue')}>Create Dialogue</DropdownMenuItem>
+                        <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('quest')}>Create Quest</DropdownMenuItem>
+                        <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('enemy')}>Create Enemy</DropdownMenuItem>
+                        <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('scene-transition')}>Create Scene Transition</DropdownMenuItem>
                         <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('empty')}>Create Empty</DropdownMenuItem>
+                        <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('spawn-point')}>Create Spawn Point</DropdownMenuItem>
+                        <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('trigger-area')}>Create Trigger Area</DropdownMenuItem>
+                        <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('hitbox')}>Create Hitbox</DropdownMenuItem>
+                        <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('hurtbox')}>Create Hurtbox</DropdownMenuItem>
                         <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('group')}>Create Group</DropdownMenuItem>
                         <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('cube')}>3D Object &gt; Cube</DropdownMenuItem>
                         <DropdownMenuItem className="text-xs" onClick={() => onAddEntity('sphere')}>3D Object &gt; Sphere</DropdownMenuItem>

@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useMemo } 
 import type { ReactNode } from "react";
 import type { SceneEntity, EntityData } from "../types/engine";
 import type { VersionedScenePayload } from "./FileSystemContext";
+import { EditorGameRunner } from "../lib/editorGameRunner";
 
 interface GameContextType {
     isPlaying: boolean;
@@ -18,13 +19,17 @@ interface GameContextType {
     pause: () => void;
     stop: () => void;
     selectEntity: (id: string, multi: boolean) => void;
+    selectEntities: (ids: string[]) => void;
+    setEntityExpansion: (ids: string[], expanded: boolean) => void;
     moveEntities: (ids: string[], targetParentId: string, index?: number) => void;
+    addEntityToHierarchy: (entity: SceneEntity, components?: Array<{ type: string; props?: Record<string, any> }>) => void;
     updateComponent: (id: string, component: string, field: string, value: any) => void;
     markAsMainScene: () => void;
 
     // Internal Bridge
     notifyGame: (type: string, payload?: any) => void;
     loadScene: (path: string) => Promise<void>;
+    addTilemapLayer: (path: string) => boolean;
     loadMainScene: () => Promise<void>;
     saveScene: (scene?: VersionedScenePayload) => Promise<boolean>;
 
@@ -66,6 +71,55 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [selectedEntitiesData, setSelectedEntitiesData] = useState<Record<string, EntityData>>({});
 
+    const addEntityToHierarchy = useCallback((entity: SceneEntity, components: Array<{ type: string; props?: Record<string, any> }> = []) => {
+        setEntities(previous => {
+            if (previous[entity.id]) return previous;
+            const parentId = entity.parentId && previous[entity.parentId] ? entity.parentId : 'root';
+            const parent = previous[parentId];
+            if (!parent) return previous;
+            return {
+                ...previous,
+                [parentId]: { ...parent, children: [...parent.children, entity.id] },
+                [entity.id]: { ...entity, parentId, children: [...(entity.children || [])] }
+            };
+        });
+        setEntityDataCache(previous => {
+            if (previous[entity.id]) return previous;
+            const transformProps = components.find(component => component.type.toLowerCase() === 'transform')?.props || {};
+            const position = transformProps.position || transformProps.pos || { x: 0, y: 0 };
+            const scale = transformProps.scale || { x: 1, y: 1 };
+            const data: EntityData = {
+                id: entity.id,
+                name: entity.name,
+                active: entity.active,
+                transform: {
+                    position: { x: position.x ?? 0, y: position.y ?? 0 },
+                    rotation: transformProps.rotation ?? transformProps.rot ?? 0,
+                    scale: { x: scale.x ?? 1, y: scale.y ?? 1 },
+                    z: transformProps.z ?? 0
+                },
+                components: Object.fromEntries(components.map(component => [component.type, component.props || {}]))
+            };
+            return { ...previous, [entity.id]: data };
+        });
+    }, []);
+
+    const setEntityExpansion = useCallback((ids: string[], expanded: boolean) => {
+        const targetIds = new Set(ids);
+        if (targetIds.size === 0) return;
+        setEntities(previous => {
+            let changed = false;
+            const next = { ...previous };
+            targetIds.forEach(id => {
+                const entity = previous[id];
+                if (!entity || entity.expanded === expanded) return;
+                next[id] = { ...entity, expanded };
+                changed = true;
+            });
+            return changed ? next : previous;
+        });
+    }, []);
+
     // Computed for backward compatibility (primary selection)
     const selectedEntityData = useMemo(() => {
         // If we have ids, try to find the "last selected" (active) one if tracked, or just first in list
@@ -103,7 +157,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
         // 2. Read File directly (Data)
         try {
-            const data = await readScene(path);
+            const data = EditorGameRunner.validateScene(await readScene(path)) as unknown as VersionedScenePayload;
             // A failed read must never turn an untrusted file path into the
             // current save target. Commit the scene identity only after the
             // versioned payload has been accepted by the native bridge.
@@ -282,12 +336,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
                         parseEntityList(layer.entities, layerId);
                     }
                 });
-            } else if (data.entities && Array.isArray(data.entities)) {
+            }
+            if (data.entities && Array.isArray(data.entities)) {
                 // Flat or simple root entities
                 parseEntityList(data.entities, 'root');
-            } else if (data.entities && typeof data.entities === 'object') {
-                // Already in map format
-                Object.assign(newEntities, data.entities);
             }
 
             console.log("Parsed Entities:", newEntities);
@@ -298,6 +350,46 @@ export function GameProvider({ children }: { children: ReactNode }) {
             console.error("Failed to read/parse scene file", e);
         } // HMR Trigger
     }, [readScene, notifyGame]);
+
+    const addTilemapLayer = useCallback((path: string) => {
+        if (!currentScenePath) return false;
+        const layer = EditorGameRunner.createTilemapLayer(path);
+        if (!layer) return false;
+
+        setEntities(previous => {
+            const root = previous.root;
+            if (!root) return previous;
+            return {
+                ...previous,
+                root: { ...root, children: [...root.children, layer.id] },
+                [layer.id]: {
+                    id: layer.id,
+                    parentId: "root",
+                    name: layer.name,
+                    type: "tilemap" as const,
+                    children: [],
+                    active: true,
+                    locked: false,
+                    expanded: false
+                }
+            };
+        });
+        setEntityDataCache(previous => ({
+            ...previous,
+            [layer.id]: {
+                id: layer.id,
+                name: layer.name,
+                active: true,
+                transform: { position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 }, z: 0 },
+                components: { Tilemap: { src: layer.src } }
+            }
+        }));
+
+        const scene = EditorGameRunner.currentScene as VersionedScenePayload;
+        setCurrentScenePayload(JSON.parse(JSON.stringify(scene)) as VersionedScenePayload);
+        notifyGame("editor:load-scene", { path: currentScenePath, data: scene });
+        return true;
+    }, [currentScenePath, notifyGame]);
 
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
@@ -327,9 +419,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
                     setEntities(payload);
                     break;
                 case 'game:selection-changed':
-                    setSelectedIds(payload.ids);
+                    const selectionIds: string[] = Array.isArray(payload.ids)
+                        ? [...new Set((payload.ids as unknown[]).filter((id): id is string => typeof id === 'string' && id.length > 0))]
+                        : [];
+                    setSelectedIds(selectionIds);
 
-                    console.log("Selection changed debug:", payload.ids, payload.data);
+                    console.log("Selection changed debug:", selectionIds, payload.data);
 
                     const newBinding: Record<string, EntityData> = {};
                     if (payload.data) {
@@ -344,7 +439,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
                     }
 
                     // Merge with cache if game sent incomplete data (or nothing)
-                    payload.ids.forEach((id: string) => {
+                    selectionIds.forEach((id: string) => {
                         if (!newBinding[id] && entityDataCache[id]) {
                             newBinding[id] = entityDataCache[id];
                         }
@@ -399,24 +494,22 @@ export function GameProvider({ children }: { children: ReactNode }) {
         window.dispatchEvent(new Event('editor:stop'));
     };
 
-    const selectEntity = (id: string, multi: boolean) => {
-        const newSelection = multi ? [...selectedIds, id] : [id];
+    const selectEntities = (ids: string[]) => {
+        const newSelection = [...new Set(ids.filter(id => typeof id === "string" && id.length > 0))];
         setSelectedIds(newSelection);
         notifyGame('editor:select', { ids: newSelection });
 
-        // Optimistic / Local Data Selection
-        // If we have data in cache, select it immediately
         const newBinding: Record<string, EntityData> = {};
         newSelection.forEach(sid => {
             if (entityDataCache[sid]) {
                 newBinding[sid] = entityDataCache[sid];
             }
         });
-
-        // If we have previously selected data that's still selected, keep it? 
-        // No, simplest is to reset to cache or current known state.
-        // Merging with existing *might* be better but cache is safer source of truth if static.
         setSelectedEntitiesData(newBinding);
+    };
+
+    const selectEntity = (id: string, multi: boolean) => {
+        selectEntities(multi ? [...selectedIds, id] : [id]);
     };
 
     const moveEntities = (ids: string[], targetParentId: string, index?: number) => {
@@ -424,19 +517,37 @@ export function GameProvider({ children }: { children: ReactNode }) {
         notifyGame('editor:move-entities', { ids, targetParentId, index });
     };
 
-    const updateComponent = (id: string, component: string, data: any) => {
-        // Optimistic update
+    const updateComponent = (id: string, component: string, field: string, value: any) => {
         if (selectedEntitiesData[id]) {
-            setSelectedEntitiesData(prev => ({
-                ...prev,
-                [id]: {
-                    ...prev[id],
-                    // We need to merge component data
-                    [component]: { ...(prev[id][component as keyof EntityData] as object || {}), ...data }
-                } as EntityData
-            }));
+            setSelectedEntitiesData(previous => {
+                const selectedEntity = previous[id];
+                if (!selectedEntity) return previous;
+
+                if (component.toLowerCase() === 'transform') {
+                    return {
+                        ...previous,
+                        [id]: {
+                            ...selectedEntity,
+                            transform: { ...selectedEntity.transform, [field]: value }
+                        }
+                    };
+                }
+
+                const components = selectedEntity.components || {};
+                const componentKey = Object.keys(components).find(key => key.toLowerCase() === component.toLowerCase()) || component;
+                return {
+                    ...previous,
+                    [id]: {
+                        ...selectedEntity,
+                        components: {
+                            ...components,
+                            [componentKey]: { ...(components[componentKey] || {}), [field]: value }
+                        }
+                    }
+                };
+            });
         }
-        notifyGame('editor:update-component', { id, component, data });
+        notifyGame('editor:update-component', { id, component, data: { [field]: value } });
     };
 
     const markAsMainScene = useCallback(async () => {
@@ -506,11 +617,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
             pause,
             stop,
             selectEntity,
+            selectEntities,
+            setEntityExpansion,
             moveEntities,
+            addEntityToHierarchy,
             updateComponent,
             markAsMainScene,
             notifyGame,
             loadScene,
+            addTilemapLayer,
             loadMainScene,
             saveScene,
             mainScenePath,

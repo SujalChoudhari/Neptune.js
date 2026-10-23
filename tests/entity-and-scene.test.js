@@ -57,6 +57,32 @@ describe('Entity', () => {
         expect(entity.children.length).toBe(1);
     });
 
+    it('reparents children without leaving stale parent links', () => {
+        const previousParent = new Entity('Previous');
+        const nextParent = new Entity('Next');
+        const child = new Entity('Child');
+        previousParent.AddChild(child);
+
+        nextParent.AddChild(child);
+
+        expect(previousParent.children).toEqual([]);
+        expect(nextParent.children).toEqual([child]);
+        expect(child.parent).toBe(nextParent);
+    });
+
+    it('rejects self-parenting and ancestor cycles without mutating the hierarchy', () => {
+        const root = new Entity('Root');
+        const child = new Entity('Child');
+        root.AddChild(child);
+
+        expect(() => root.AddChild(root)).toThrow(TypeError);
+        expect(() => child.AddChild(root)).toThrow(TypeError);
+        expect(root.children).toEqual([child]);
+        expect(child.children).toEqual([]);
+        expect(root.parent).toBe(null);
+        expect(child.parent).toBe(root);
+    });
+
     it('Gets the correct Children', () => {
         const child1 = new Entity('Child1');
         const child2 = new Entity('Child2');
@@ -109,6 +135,41 @@ describe('Entity', () => {
         expect(payload.components[0].id).toBe(mockComponent.id);
         expect(payload.children[0].id).toBe(child.id);
         expect(payload.components[0].props).toEqual(mockComponent.properties);
+    });
+
+    it('destroys a nested entity hierarchy once and detaches every node', () => {
+        const root = new Entity('Root');
+        const parent = new Entity('Parent');
+        const child = new Entity('Child');
+        let destroyCount = 0;
+        class TrackedComponent extends Component {
+            destroy() {
+                destroyCount++;
+                super.destroy();
+            }
+        }
+        root.AddChild(parent);
+        parent.AddChild(child);
+        parent.AddComponent(new TrackedComponent());
+        child.AddComponent(new TrackedComponent());
+
+        parent.destroy();
+        parent.destroy();
+
+        expect(root.children).toEqual([]);
+        expect(parent.parent).toBe(null);
+        expect(parent.children).toEqual([]);
+        expect(child.parent).toBe(null);
+        expect(parent.components).toEqual([]);
+        expect(child.components).toEqual([]);
+        expect(destroyCount).toBe(2);
+    });
+
+    it('destroys a root entity without requiring a parent', () => {
+        const root = new Entity('Root');
+        expect(() => root.destroy()).not.toThrow();
+        expect(root.parent).toBe(null);
+        expect(root.children).toEqual([]);
     });
 });
 
@@ -274,7 +335,8 @@ describe("Scene", () => {
         let drawCount = 0;
         cyclicScene.AddChild(firstLayer);
         firstLayer.AddChild(secondLayer);
-        secondLayer.AddChild(firstLayer);
+        // Simulate a malformed deserialized graph; the public API rejects cycles.
+        secondLayer.children.push(firstLayer);
         secondLayer.AddChild(drawableEntity);
         drawableEntity.AddComponent(new (class extends Renderable {
             draw() { drawCount += 1; }

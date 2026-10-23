@@ -2,13 +2,13 @@ import { Heart } from "lucide-react"
 import { ComponentSection } from "../shared/ComponentSection"
 import { PropertyRow } from "../shared/PropertyRow"
 import { ThemedNumberInput } from "@/components/library"
-import type { MockEntity, MockStats } from "../shared/types"
+import type { InspectorEntity, InspectorStats } from "../shared/types"
 
 interface StatsSectionProps {
-    entity: MockEntity
+    entity: InspectorEntity
     isActive: boolean
     onToggleActive: () => void
-    onUpdate: (key: keyof MockStats, value: number) => void
+    onUpdate: (key: keyof InspectorStats, value: number) => void
     onMoveUp?: () => void
     onMoveDown?: () => void
 }

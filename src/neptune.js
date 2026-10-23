@@ -10,6 +10,12 @@ import { SceneManager } from "./core/sceneManager.js";
 import { Component } from './components/component.js';
 import { Transform } from "./components/transform.js";
 import { BoxCollider } from "./components/boxCollider.js";
+import { Dialogue } from "./components/dialogue.js";
+import { QuestDefinition } from "./components/questDefinition.js";
+import { EnemyConfig } from "./components/enemyConfig.js";
+import { SceneTransition } from "./components/sceneTransition.js";
+import { SpawnPoint } from "./components/spawnPoint.js";
+import { TriggerCollider, Hitbox, Hurtbox } from "./nereid/collider.js";
 import { Renderable } from "./rendering/renderable.js";
 import { Shape } from "./rendering/shape.js";
 import { Sprite } from "./rendering/sprite.js";
@@ -58,13 +64,22 @@ window.game = application;
 // Register Core Components
 ComponentRegistry.register("Transform", Transform);
 ComponentRegistry.register("Sprite", Sprite);
+ComponentRegistry.register("BoxCollider", BoxCollider);
 ComponentRegistry.register("Shape", Shape);
+ComponentRegistry.register("TriggerCollider", TriggerCollider);
+ComponentRegistry.register("Hitbox", Hitbox);
+ComponentRegistry.register("Hurtbox", Hurtbox);
+ComponentRegistry.register("Dialogue", Dialogue);
+ComponentRegistry.register("QuestDefinition", QuestDefinition);
+ComponentRegistry.register("EnemyConfig", EnemyConfig);
+ComponentRegistry.register("SceneTransition", SceneTransition);
+ComponentRegistry.register("SpawnPoint", SpawnPoint);
 // Register other components as needed...
 
 export {
     application, SaveManager, GameClock,
     Storage, Color, Filter, Entity, Scene, DestroyQueue, SceneManager, SceneLoader,
-    Component, Transform, BoxCollider, ComponentRegistry,
+    Component, Transform, BoxCollider, TriggerCollider, Hitbox, Hurtbox, Dialogue, QuestDefinition, EnemyConfig, SceneTransition, SpawnPoint, ComponentRegistry,
     Renderable, Shape, Sprite,
     Sound,
     UI,

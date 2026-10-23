@@ -216,7 +216,14 @@ export class Scene extends Entity {
     constructor(name) {
         super(name);
         this.id = SceneManager.getIdForNewScene();
+        // Runtime navigation grids are loaded from map resources and are not serialized.
+        this.navigationTilemaps = new Map();
         SceneManager.addScene(this);
+    }
+
+    /** Get the runtime navigation grid loaded from a tilemap resource path. */
+    getNavigationTilemap(resourcePath) {
+        return this.navigationTilemaps.get(resourcePath) ?? null;
     }
 
     /** Serialize the scene graph using the versioned scene contract. */

@@ -1,13 +1,42 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
+import { invoke } from "@tauri-apps/api/core";
+import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
+import { runtimeEntityBridgeScript } from "../../lib/runtimeEntityBridge.mjs";
 // We use the ?url suffix to get the URL of the module script
 // This requires Vite to solve the path.
 // Path: src/components/panels/GameViewPanel.tsx -> ../../../.. -> root
-import gameMainUrl from "../../../../debug_project/main.js?url";
+import neptuneEntryUrl from "../../../../src/neptune.js?url";
 
 export function GameViewPanel() {
     const containerRef = useRef<HTMLDivElement>(null);
+    const iframeRef = useRef<HTMLIFrameElement>(null);
 
-    const baseUrl = gameMainUrl.substring(0, gameMainUrl.lastIndexOf('/') + 1);
+    useEffect(() => {
+        const handleResourceRequest = (event: MessageEvent) => {
+            const { type, payload } = event.data || {};
+            if (type !== 'editor:project-resource-request' || !payload?.id) return;
+            if (event.source !== iframeRef.current?.contentWindow) return;
+
+            const command = payload.kind === 'image' ? 'read_image_asset' : payload.kind === 'audio' ? 'read_audio_asset' : payload.kind === 'text' ? 'read_file' : null;
+            const reply = (content: string | null, error: string | null) => {
+                (event.source as WindowProxy | null)?.postMessage({
+                    type: 'editor:project-resource-response',
+                    payload: { id: payload.id, content, error }
+                }, '*');
+            };
+            if (!command || typeof payload.path !== 'string') {
+                reply(null, 'Invalid project resource request');
+                return;
+            }
+            void invoke<string>(command, { path: payload.path })
+                .then(content => reply(content, null))
+                .catch(error => reply(null, String(error)));
+        };
+        window.addEventListener('message', handleResourceRequest);
+        return () => window.removeEventListener('message', handleResourceRequest);
+    }, []);
+
+    const baseUrl = neptuneEntryUrl.substring(0, neptuneEntryUrl.lastIndexOf('/') + 1);
 
     const iframeContent = `
 <!DOCTYPE html>
@@ -25,7 +54,11 @@ export function GameViewPanel() {
     <canvas id="neptune-canvas"></canvas>
     <script type="module">
         // Basic Game Loader
-        import "${gameMainUrl}";
+        import { installProjectResourceBridge } from "${projectResourceBridgeUrl}";
+        const projectResourceBridge = installProjectResourceBridge();
+        const engineModule = await import("${neptuneEntryUrl}");
+        window.__neptuneEngineModule = engineModule;
+        ${runtimeEntityBridgeScript}
         
         // Helper to find deep entities
         const findEntity = (root, id) => {
@@ -52,7 +85,12 @@ export function GameViewPanel() {
                     const game = window.game;
 
                     if (type === 'editor:load-scene' && game.loadScene) {
-                         game.loadScene(payload.data || payload.path).catch(console.error);
+                         if (typeof payload.path === 'string') projectResourceBridge.setScenePath(payload.path);
+                         game.loadScene(payload.data || payload.path)
+                             .then(() => {
+                                 if (!game.isRunning) game.start();
+                             })
+                             .catch(console.error);
                     }
                     else if (type === 'editor:update-component') {
                          // Inspector Update Logic
@@ -89,6 +127,7 @@ export function GameViewPanel() {
     return (
         <div ref={containerRef} className="w-full h-full bg-[#111] relative overflow-hidden flex items-center justify-center border-t border-black">
             <iframe
+                ref={iframeRef}
                 className="w-full h-full border-0 block"
                 srcDoc={iframeContent}
                 title="Game View"

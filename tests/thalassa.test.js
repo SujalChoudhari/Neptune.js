@@ -67,10 +67,19 @@ describe('Tilemap', () => {
         expect(tilemap.isSolid(0, 0)).toBe(false);
     });
 
+    it('uses per-tile collision metadata to disable solid collision', () => {
+        tilemap.setTile(1, 1, 7);
+        tilemap.setTileMetadata(7, { collision: false });
+        expect(tilemap.isSolid(1, 1)).toBe(false);
+        tilemap.setTileMetadata(7, { collision: true });
+        expect(tilemap.isSolid(1, 1)).toBe(true);
+    });
+
     it('stores validated tile gameplay metadata by tile ID', () => {
         const metadata = {
             walkable: true,
             terrain: "mud",
+            collision: false,
             damage: 2,
             slowdown: 0.5,
             interaction: { prompt: "open" },
@@ -82,6 +91,7 @@ describe('Tilemap', () => {
         expect(tilemap.getTileMetadata(7)).toEqual({
             walkable: true,
             terrain: "mud",
+            collision: false,
             damage: 2,
             slowdown: 0.5,
             interaction: { prompt: "open" },
@@ -90,9 +100,53 @@ describe('Tilemap', () => {
         expect(tilemap.getTileMetadata(99)).toBe(null);
     });
 
+    it('resolves per-cell metadata over tile defaults for navigation and collision', () => {
+        tilemap.loadFromArray([[7, 7]]);
+        tilemap.setTileMetadata(7, { walkable: false, collision: true, terrain: "wall" });
+        const authoredCell = { walkable: true, collision: false, terrain: "bridge" };
+        tilemap.setCellMetadata(0, 0, authoredCell);
+        authoredCell.terrain = "mutated";
+
+        expect(tilemap.getResolvedMetadata(0, 0)).toEqual({ walkable: true, collision: false, terrain: "bridge" });
+        expect(tilemap.getCellMetadata(0, 0)).toEqual({ walkable: true, collision: false, terrain: "bridge" });
+        expect(tilemap.isWalkable(0, 0)).toBe(true);
+        expect(tilemap.isSolid(0, 0)).toBe(false);
+        expect(tilemap.isWalkable(1, 0)).toBe(false);
+        expect(tilemap.isSolid(1, 0)).toBe(true);
+
+        tilemap.setCellMetadata(1, 0, { walkable: true, collision: false });
+        expect(tilemap.findPath(0, 0, 1, 0)).toEqual([{ x: 1, y: 0 }]);
+    });
+
+    it('finds a deterministic minimum-cost route using tile defaults and cell overrides', () => {
+        tilemap.loadFromArray([
+            [-1, -1, -1],
+            [-1, 7, -1],
+            [-1, -1, -1]
+        ]);
+        tilemap.setTileMetadata(7, { movementCost: 10, walkable: true });
+        expect(tilemap.findPath(0, 1, 2, 1)).toEqual([
+            { x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 2, y: 1 }
+        ]);
+
+        tilemap.setCellMetadata(1, 1, { movementCost: 0.25 });
+        expect(tilemap.getResolvedMetadata(1, 1).movementCost).toBe(0.25);
+        expect(tilemap.findPath(0, 1, 2, 1)).toEqual([{ x: 1, y: 1 }, { x: 2, y: 1 }]);
+        expect(() => tilemap.setTileMetadata(8, { movementCost: -1 })).toThrow('movementCost must be a finite non-negative number');
+        expect(() => tilemap.setCellMetadata(1, 1, { movementCost: Infinity })).toThrow('movementCost must be a finite non-negative number');
+    });
+
+    it('validates cell metadata coordinates and values without mutating stored data', () => {
+        expect(() => tilemap.setCellMetadata(-1, 0, { walkable: true })).toThrow("outside the tilemap");
+        expect(() => tilemap.setCellMetadata(0, 0, { walkable: "yes" })).toThrow("Cell metadata walkable must be a boolean");
+        expect(() => tilemap.setCellMetadata(0, 0, { unknown: true })).toThrow("Unknown cell metadata field");
+        expect(tilemap.getCellMetadata(0, 0)).toBe(null);
+    });
+
     it('rejects malformed or unsupported tile metadata without storing it', () => {
         expect(() => tilemap.setTileMetadata(-1, { walkable: true })).toThrow("non-negative integer");
         expect(() => tilemap.setTileMetadata(1, { walkable: "yes" })).toThrow("walkable must be a boolean");
+        expect(() => tilemap.setTileMetadata(1, { collision: "yes" })).toThrow("collision must be a boolean");
         expect(() => tilemap.setTileMetadata(1, { damage: -1 })).toThrow("damage must be a finite non-negative number");
         expect(() => tilemap.setTileMetadata(1, { unknown: true })).toThrow("Unknown tile metadata field");
         expect(tilemap.getTileMetadata(1)).toBe(null);

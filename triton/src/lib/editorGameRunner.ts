@@ -52,6 +52,13 @@ const isRecord = (value: unknown): value is Record<string, any> => (
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T
 
+const normalizeProjectMapPath = (source: unknown): string | null => {
+    if (typeof source !== "string") return null
+    const path = source.trim().replace(/\\/g, "/").replace(/^\.\//, "")
+    if (!path || path.startsWith("/") || path.split("/").some(part => part === "..") || !/\.map$/i.test(path)) return null
+    return path
+}
+
 const majorVersion = (value: unknown): number | null => {
     if (typeof value === "number") return Number.isInteger(value) ? value : null
     if (typeof value !== "string") return null
@@ -165,6 +172,37 @@ const sceneEntityLists = (scene: Record<string, any>): any[][] => {
         })
     }
     return lists
+}
+
+const ensureEntityIds = (scene: Record<string, any>) => {
+    const lists = sceneEntityLists(scene)
+    const usedIds = new Set<string>()
+    const reserve = (entities: unknown[]) => entities.forEach(entity => {
+        if (!isRecord(entity)) return
+        if (typeof entity.id === "string" && entity.id.trim()) {
+            if (usedIds.has(entity.id)) {
+                throw new Error(`Duplicate scene entity ID '${entity.id}'. Entity IDs must be unique across the scene.`)
+            }
+            usedIds.add(entity.id)
+        }
+        if (Array.isArray(entity.children)) reserve(entity.children)
+    })
+    lists.forEach(reserve)
+
+    let nextId = 0
+    const assign = (entities: unknown[]) => entities.forEach(entity => {
+        if (!isRecord(entity)) return
+        if (typeof entity.id !== "string" || !entity.id.trim()) {
+            let id = ""
+            do {
+                id = `entity-${nextId++}`
+            } while (usedIds.has(id))
+            entity.id = id
+            usedIds.add(id)
+        }
+        if (Array.isArray(entity.children)) assign(entity.children)
+    })
+    lists.forEach(assign)
 }
 
 const collectSceneIds = (scene: Record<string, any>) => {
@@ -295,6 +333,9 @@ export class EditorGameRunner {
     static validateScene(data: unknown): ScenePayload {
         assertVersion(data, "scene")
         if (!isRecord(data)) throw new Error("Scene data must be a JSON object.")
+        if (data.entities !== undefined && !Array.isArray(data.entities)) {
+            throw new Error("Scene entities must be an array supported by the runtime SceneLoader.")
+        }
         const issue = collectResourceIssues(data)[0]
         if (issue) {
             const error = new Error(`[${RESOURCE_REFERENCE_ERROR_CODE}] Invalid ${issue.kind} resource reference '${displayReference(issue.reference)}' at ${issue.source}: ${issue.reason}. Expected a non-empty path, id, uri, or key.`)
@@ -303,6 +344,7 @@ export class EditorGameRunner {
         }
         const normalized = { ...clone(data), type: "scene" as const, version: SCENE_DATA_VERSION, schemaVersion: SCENE_SCHEMA_VERSION }
         ensureLayerIds(normalized)
+        ensureEntityIds(normalized)
         return normalized
     }
 
@@ -375,6 +417,28 @@ export class EditorGameRunner {
 
         const layer = scene.layers[projectedIndex]
         return isRecord(layer) && typeof layer.id === "string" && layer.id.trim() ? layer.id : null
+    }
+
+    /** Attach an existing project map to the scene as a runtime tilemap layer. */
+    static createTilemapLayer(source: string) {
+        if (!this.currentScene) return null
+        const path = normalizeProjectMapPath(source)
+        if (!path) return null
+
+        const scene = this.currentScene as Record<string, any>
+        if (!Array.isArray(scene.layers)) scene.layers = []
+        const layerIds = new Set(scene.layers.map((layer: unknown) => isRecord(layer) ? layer.id : null))
+        const entityIds = new Set(sceneEntityLists(scene).flatMap(entities => entities.map((entity: unknown) => isRecord(entity) ? entity.id : null)))
+        let id = ""
+        do {
+            id = `tilemap-${Math.random().toString(36).slice(2, 11)}`
+        } while (layerIds.has(id) || entityIds.has(id))
+
+        const name = path.split("/").pop()!.replace(/\.map$/i, "") || "Tilemap"
+        const layer = { id, name, type: "tilemap" as const, src: path }
+        scene.layers.push(layer)
+        this.isDirty = true
+        return clone(layer)
     }
 
     /** Mutate the canonical scene document before the game iframe is notified. */
@@ -495,7 +559,22 @@ export class EditorGameRunner {
             return Array.isArray(entity.children) && entity.children.some((child: unknown) => isRecord(child) && update(child))
         }
         const scene = this.currentScene as Record<string, any>
-        const changed = sceneEntityLists(scene).some((entities: unknown[]) => entities.some((entity: unknown) => isRecord(entity) && update(entity)))
+        let changed = sceneEntityLists(scene).some((entities: unknown[]) => entities.some((entity: unknown) => isRecord(entity) && update(entity)))
+        if (!changed && Array.isArray(scene.layers)) {
+            const layer = scene.layers.find((item: unknown) => isRecord(item) && item.id === id)
+            if (isRecord(layer)) {
+                const field = component.toLowerCase()
+                if (field === "name" && typeof data.value === "string" && data.value.trim()) {
+                    layer.name = data.value
+                    changed = true
+                } else if (field === "tilemap" && Object.prototype.hasOwnProperty.call(data, "src")) {
+                    const path = normalizeProjectMapPath(data.src)
+                    if (!path) return false
+                    layer.src = path
+                    changed = true
+                }
+            }
+        }
         if (changed) this.isDirty = true
         return changed
     }

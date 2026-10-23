@@ -64,12 +64,18 @@ export class EnemyAI extends Component {
         if (this.onStateChange) this.onStateChange({ previous, state, target: this.target });
     }
 
+    _setMovementCooldown(position) {
+        const slowdown = this.tilemap.getResolvedMetadata(position.x, position.y)?.slowdown ?? 0;
+        const interval = this.moveInterval * (1 + slowdown);
+        this._moveTimer = Number.isFinite(interval) ? interval : Number.MAX_VALUE;
+    }
+
     _stepToward(goal) {
         const position = this._position(this.actor);
         if (!position || !goal) return false;
         const next = this.tilemap.moveOccupantToward(this.actor, goal.x, goal.y);
         if (!next || (next.x === position.x && next.y === position.y)) return false;
-        this._moveTimer = this.moveInterval;
+        this._setMovementCooldown(next);
         return true;
     }
 
@@ -98,7 +104,7 @@ export class EnemyAI extends Component {
         options.sort((a, b) => b.distance - a.distance);
         if (options.length === 0) return false;
         const moved = this.tilemap.moveOccupant(this.actor, options[0].x, options[0].y);
-        if (moved) this._moveTimer = this.moveInterval;
+        if (moved) this._setMovementCooldown(options[0]);
         return moved;
     }
 

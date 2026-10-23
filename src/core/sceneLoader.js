@@ -11,6 +11,9 @@ import { SceneManager } from "./sceneManager.js";
 import { ComponentRegistry } from "./componentRegistry.js";
 import { Vector2 } from "../math/vec2.js";
 import { Sprite } from "../rendering/sprite.js";
+import { Tileset } from "../thalassa/tileset.js";
+import { Tilemap } from "../thalassa/tilemap.js";
+import { SceneTransition } from "../components/sceneTransition.js";
 
 export {
     SCENE_SCHEMA_VERSION,
@@ -82,26 +85,38 @@ export class SceneLoader {
         const scene = new Scene(sceneName);
         if (data.id !== undefined && data.id !== null) scene.id = data.id;
 
-        // 1. Configure Global Scene properties (Camera, etc.)
-        if (data.camera) {
-            scene.cameraSettings = data.camera;
-        }
-
-        // 2. Parse Layers
-        const pendingLoads = [];
-        if (Array.isArray(data.layers)) {
-            for (const layerData of data.layers) {
-                const pending = SceneLoader.#parseLayer(layerData, scene);
-                if (pending && typeof pending.then === "function") pendingLoads.push(pending);
+        try {
+            // 1. Configure Global Scene properties (Camera, etc.)
+            if (data.camera) {
+                scene.cameraSettings = data.camera;
             }
-        } else if (Array.isArray(data.entities)) {
-            data.entities.forEach(entityData => scene.AddChild(SceneLoader.#parseEntity(entityData)));
-        }
 
-        if (pendingLoads.length > 0) {
-            return Promise.all(pendingLoads).then(() => scene);
+            // 2. Parse Layers
+            const pendingLoads = [];
+            if (Array.isArray(data.layers)) {
+                for (const layerData of data.layers) {
+                    const pending = SceneLoader.#parseLayer(layerData, scene);
+                    if (pending && typeof pending.then === "function") pendingLoads.push(pending);
+                }
+            }
+            if (Array.isArray(data.entities)) {
+                data.entities.forEach(entityData => scene.AddChild(SceneLoader.#parseEntity(entityData)));
+            }
+
+            if (pendingLoads.length > 0) {
+                return Promise.all(pendingLoads).then(
+                    () => scene,
+                    error => {
+                        SceneManager.removeScene(scene);
+                        throw error;
+                    }
+                );
+            }
+            return scene;
+        } catch (error) {
+            SceneManager.removeScene(scene);
+            throw error;
         }
-        return scene;
     }
 
     /** Validate a scene payload without constructing or registering a Scene. */
@@ -177,11 +192,66 @@ export class SceneLoader {
                 throw new ResourceReferenceError("tilemap", sourceReference, `${path}.data`, "tilemap data length does not match its dimensions", "a tilemap data array sized to width and height");
             }
 
+            const height = map.height ?? Math.ceil(data.length / cols);
+            const navigationMap = new Tilemap(new Tileset(tileset, tileSize, tileSize), cols, height);
+            navigationMap.data = Array.from({ length: cols * height }, (_, index) => {
+                const tileId = data[index] ?? 0;
+                return tileId === 0 ? -1 : tileId - 1;
+            });
+            if (map.metadata !== undefined) {
+                if (!map.metadata || typeof map.metadata !== "object" || Array.isArray(map.metadata)) {
+                    throw new ResourceReferenceError("tilemap", sourceReference, `${path}.metadata`, "tile metadata must be an object", "an object keyed by editor tile ID");
+                }
+                for (const [editorId, metadata] of Object.entries(map.metadata)) {
+                    const numericId = Number(editorId);
+                    if (!Number.isInteger(numericId) || numericId < 1) {
+                        throw new ResourceReferenceError("tilemap", sourceReference, `${path}.metadata.${editorId}`, "tile metadata key must be a positive editor tile ID", "a positive integer tile ID");
+                    }
+                    navigationMap.setTileMetadata(numericId - 1, metadata);
+                }
+            }
+            if (map.cellMetadata !== undefined) {
+                if (!map.cellMetadata || typeof map.cellMetadata !== "object" || Array.isArray(map.cellMetadata)) {
+                    throw new ResourceReferenceError("tilemap", sourceReference, `${path}.cellMetadata`, "cell metadata must be an object", "an object keyed by row-major cell index");
+                }
+                for (const [cellIndex, metadata] of Object.entries(map.cellMetadata)) {
+                    const numericIndex = Number(cellIndex);
+                    if (!Number.isInteger(numericIndex) || numericIndex < 0 || numericIndex >= cols * height) {
+                        throw new ResourceReferenceError("tilemap", sourceReference, `${path}.cellMetadata.${cellIndex}`, "cell metadata key is outside the map", "a valid row-major cell index");
+                    }
+                    if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+                        throw new ResourceReferenceError("tilemap", sourceReference, `${path}.cellMetadata[${numericIndex}]`, "cell metadata must be an object", "an object of cell metadata");
+                    }
+                    navigationMap.setCellMetadata(numericIndex % cols, Math.floor(numericIndex / cols), metadata);
+                }
+            }
+            scene.navigationTilemaps.set(path, navigationMap);
+
             for (let i = 0; i < data.length; i++) {
                 const tileId = data[i];
-                if (tileId === 0) continue; // 0 == empty
                 if (!Number.isInteger(tileId) || tileId < 0) {
                     throw new ResourceReferenceError("tileset", tileset, `${path}.data[${i}]`, "tile id must be a non-negative integer", "a tileset tile id");
+                }
+                if (tileId === 0) {
+                    const cellMetadata = map.cellMetadata?.[i];
+                    if (cellMetadata === undefined) continue;
+                    if (!cellMetadata || typeof cellMetadata !== "object" || Array.isArray(cellMetadata)) {
+                        throw new ResourceReferenceError("tilemap", sourceReference, `${path}.cellMetadata[${i}]`, "cell metadata must be an object", "an object of cell metadata");
+                    }
+
+                    const emptyCell = new Entity("TileCell_" + i);
+                    emptyCell.tileId = 0;
+                    emptyCell.tileMetadata = structuredClone(cellMetadata);
+                    const emptyCellTransform = ComponentRegistry.create("Transform");
+                    emptyCellTransform.position = new Vector2((i % cols) + 0.5, Math.floor(i / cols) + 0.5);
+                    emptyCell.AddComponent(emptyCellTransform);
+                    if (cellMetadata.collision === true) {
+                        const collider = ComponentRegistry.create("BoxCollider");
+                        collider.size = new Vector2(1, 1);
+                        emptyCell.AddComponent(collider);
+                    }
+                    scene.AddChild(emptyCell);
+                    continue;
                 }
 
                 // Calculate Grid Position
@@ -199,6 +269,15 @@ export class SceneLoader {
 
                 // Create Entity
                 const entity = new Entity("Tile_" + i);
+                const tileMetadata = map.metadata?.[tileId];
+                const cellMetadata = map.cellMetadata?.[i];
+                const resolvedTileMetadata = tileMetadata || cellMetadata
+                    ? { ...(tileMetadata || {}), ...(cellMetadata || {}) }
+                    : null;
+                if (resolvedTileMetadata && typeof resolvedTileMetadata === "object" && !Array.isArray(resolvedTileMetadata)) {
+                    entity.tileId = tileId;
+                    entity.tileMetadata = structuredClone(resolvedTileMetadata);
+                }
 
                 // Add Transform
                 const t = ComponentRegistry.create("Transform");
@@ -240,10 +319,12 @@ export class SceneLoader {
 
                 entity.AddComponent(sprite);
 
-                // Add Collider
-                const collider = ComponentRegistry.create("BoxCollider");
-                collider.size = new Vector2(1, 1);
-                entity.AddComponent(collider);
+                // Collision is solid by default; authored metadata can make a tile non-solid.
+                if ((cellMetadata?.collision ?? tileMetadata?.collision) !== false) {
+                    const collider = ComponentRegistry.create("BoxCollider");
+                    collider.size = new Vector2(1, 1);
+                    entity.AddComponent(collider);
+                }
 
                 scene.AddChild(entity);
             }
@@ -260,6 +341,7 @@ export class SceneLoader {
         }
         const entity = new Entity(entityData.name || "Entity");
         if (entityData.id) entity.id = entityData.id;
+        if (typeof entityData.type === "string") entity.type = entityData.type;
 
         const transformType = ComponentRegistry.get("Transform");
         let hasTransform = false;
@@ -296,6 +378,10 @@ export class SceneLoader {
                 }
             });
         }
+
+        const transition = entity.components.find(component => component instanceof SceneTransition);
+        const triggerCollider = entity.components.find(component => component.role === "trigger");
+        if (transition && triggerCollider) transition.bindTrigger(triggerCollider);
 
         // Recursive Children
         if (Array.isArray(entityData.children)) {

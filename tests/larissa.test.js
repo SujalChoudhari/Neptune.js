@@ -280,6 +280,47 @@ describe('EnemyAI', () => {
         expect(idle.state).toBe("idle");
     });
 
+    it('applies per-cell slowdown overrides to patrol, chase, and flee movement cadence', () => {
+        const patrolMap = createMap(4, 2);
+        patrolMap.setTile(1, 0, 0);
+        patrolMap.setTile(2, 0, 0);
+        patrolMap.setTileMetadata(0, { slowdown: 0.5, walkable: true });
+        patrolMap.setCellMetadata(1, 0, { slowdown: 0.25 });
+        const guard = {};
+        patrolMap.occupy(0, 0, guard);
+        const patrol = new EnemyAI({ tilemap: patrolMap, actor: guard, spawn: { x: 0, y: 0 }, patrolPoints: [{ x: 3, y: 0 }], moveInterval: 0.2 });
+        patrol.update(0);
+        expect(positionOf(patrolMap, guard)).toEqual({ x: 1, y: 0 });
+        expect(patrol._moveTimer).toBe(0.25, "cell slowdown overrides the tile default");
+        patrol.update(0.25);
+        expect(positionOf(patrolMap, guard)).toEqual({ x: 2, y: 0 });
+        expect(patrol._moveTimer).toBe(0.30000000000000004, "inherited tile slowdown increases the movement interval");
+        patrol.update(0.30000000000000004);
+        expect(positionOf(patrolMap, guard)).toEqual({ x: 3, y: 0 });
+        expect(patrol._moveTimer).toBe(0.2, "cells without slowdown keep the configured interval");
+
+        const chaseMap = createMap(4, 1);
+        chaseMap.setCellMetadata(1, 0, { slowdown: 0.5 });
+        const chaser = {}, target = {};
+        chaseMap.occupy(0, 0, chaser);
+        chaseMap.occupy(3, 0, target);
+        const chase = new EnemyAI({ tilemap: chaseMap, actor: chaser, spawn: { x: 0, y: 0 }, moveInterval: 0.2 });
+        chase.update(0, { target });
+        expect(positionOf(chaseMap, chaser)).toEqual({ x: 1, y: 0 });
+        expect(chase._moveTimer).toBe(0.30000000000000004);
+
+        const fleeMap = createMap(4, 3);
+        fleeMap.setCellMetadata(1, 0, { slowdown: 0.5 });
+        const fleeing = {}, threat = {};
+        fleeMap.occupy(1, 1, fleeing);
+        fleeMap.occupy(2, 1, threat);
+        const flee = new EnemyAI({ tilemap: fleeMap, actor: fleeing, spawn: { x: 1, y: 1 }, fleeHealthFraction: 0.3, moveInterval: 0.2 });
+        flee.update(0, { target: threat, healthFraction: 0.2 });
+        expect(flee.state).toBe("flee");
+        expect(positionOf(fleeMap, fleeing)).toEqual({ x: 1, y: 0 });
+        expect(flee._moveTimer).toBe(0.30000000000000004);
+    });
+
     it('chases through a path around blocked terrain and stops adjacent to its occupied target', () => {
         const map = createMap(7, 4);
         const enemy = {}, player = {};
