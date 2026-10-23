@@ -510,6 +510,12 @@ test('Frame Selection toolbar fits every selected entity and sends the runtime c
 
     const empty = findNode(createSceneViewHarness(undefined, []).render(), node => node.props?.['aria-label'] === 'Frame Selection');
     assert.equal(empty.props.disabled, true);
+
+    const incompleteHarness = createSceneViewHarness(undefined, ['entity-1', 'missing-entity']);
+    const incomplete = findNode(incompleteHarness.render(), node => node.props?.['aria-label'] === 'Frame Selection');
+    assert.equal(incomplete.props.disabled, true);
+    incomplete.props.onClick();
+    assert.deepEqual(incompleteHarness.notifications, []);
 });
 
 test('Scene View starts its paused editor preview only after loading a scene', () => {

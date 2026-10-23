@@ -62,6 +62,7 @@ export function SceneViewPanel() {
     const selectionOverlays = useMemo(() => selectedIds
         .map(id => getEntitySelectionBounds(selectedEntitiesData[id]))
         .filter((bounds): bounds is NonNullable<typeof bounds> => bounds !== null), [selectedIds, selectedEntitiesData]);
+    const canFrameSelection = selectedIds.length > 0 && selectionOverlays.length === selectedIds.length;
     const groupGizmoPosition = useMemo(() => selectionOverlays.length > 0 ? {
         x: (Math.min(...selectionOverlays.map(bounds => bounds.x))
             + Math.max(...selectionOverlays.map(bounds => bounds.x + bounds.width))) / 2,
@@ -402,6 +403,7 @@ export function SceneViewPanel() {
     };
 
     const frameSelection = () => {
+        if (!canFrameSelection) return;
         const rect = containerRef.current?.getBoundingClientRect();
         if (!rect) return;
         const camera = getFramingCamera(selectionOverlays, rect.width, rect.height);
@@ -590,7 +592,7 @@ export function SceneViewPanel() {
                 <div className="bg-black/50 backdrop-blur-md text-xs text-white px-2 py-1 rounded text-center select-none mr-2">
                     {Math.round(zoom * 100)}%
                 </div>
-                <ThemedIconButton size="sm" onClick={frameSelection} disabled={selectionOverlays.length === 0} title="Frame Selection" aria-label="Frame Selection">
+                <ThemedIconButton size="sm" onClick={frameSelection} disabled={!canFrameSelection} title="Frame Selection" aria-label="Frame Selection">
                     <Maximize className="w-4 h-4" />
                 </ThemedIconButton>
                 <ThemedIconButton size="sm" onClick={() => panFromToolbar('left')} title="Pan Left" aria-label="Pan Left">
