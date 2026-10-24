@@ -20,8 +20,11 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         entities,
         selectedIds,
         selectEntity,
+        selectEntities,
+        setEntityExpansion,
         moveEntities,
-        notifyGame
+        notifyGame,
+        addEntityToHierarchy
     } = useGameContext()
 
     const [searchQuery, setSearchQuery] = useState("")
@@ -54,7 +57,8 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     }
 
     const toggleExpanded = (id: string) => {
-        notifyGame('editor:set-expanded', { id, expanded: !entities[id]?.expanded });
+        const entity = entities[id];
+        if (entity?.children.length) setEntityExpansion([id], !entity.expanded);
     }
 
     const renameEntity = (id: string, newName: string) => {
@@ -76,8 +80,47 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     const addEntity = (parentId: string, name: string, type: string) => {
         const id = globalThis.crypto?.randomUUID?.() || `entity-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
         const persistenceParentId = EditorGameRunner.resolveHierarchyParentId(parentId, entities)
-        if (!persistenceParentId || !EditorGameRunner.createEntity(persistenceParentId, { id, name, type })) return
-        notifyGame('editor:create-entity', { id, parentId, name, type });
+        const components = type === 'enemy'
+            ? [{ type: 'EnemyConfig', props: { maxHealth: 100, moveSpeed: 2, contactDamage: 10, behavior: 'patrol' } }]
+            : type === 'quest'
+            ? [{ type: 'QuestDefinition', props: { name: 'New Quest', description: 'Describe the quest...', objectiveId: 'objective-1', objective: 'Describe the objective...', required: 1 } }]
+            : type === 'dialogue'
+            ? [{ type: 'Dialogue', props: { speaker: 'Speaker', text: 'Enter dialogue...', next: '' } }]
+            : type === 'spawn-point'
+            ? [{ type: 'SpawnPoint', props: { spawnId: id, facing: 'right' } }]
+            : type === 'scene-transition'
+            ? [{ type: 'SceneTransition', props: { targetScene: '', spawnPoint: '', trigger: 'enter' } }, { type: 'TriggerCollider', props: { width: 1, height: 1, offsetX: 0, offsetY: 0 } }]
+            : type === 'entity'
+            ? [{ type: 'Transform', props: { position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 } } }]
+            : type === 'trigger-area'
+            ? [{ type: 'TriggerCollider', props: { width: 1, height: 1, offsetX: 0, offsetY: 0 } }]
+            : type === 'hitbox'
+                ? [{ type: 'Hitbox', props: { width: 1, height: 1, offsetX: 0, offsetY: 0 } }]
+                : type === 'hurtbox'
+                    ? [{ type: 'Hurtbox', props: { width: 1, height: 1, offsetX: 0, offsetY: 0 } }]
+            : undefined
+        const entityComponents = components || [];
+        if (!persistenceParentId || !EditorGameRunner.createEntity(persistenceParentId, { id, name, type, components: entityComponents })) return;
+        const entity: SceneEntity = {
+            id,
+            parentId,
+            name,
+            type: type as SceneEntity['type'],
+            children: [],
+            active: true,
+            locked: false,
+            expanded: false
+        };
+        addEntityToHierarchy(entity, entityComponents);
+        notifyGame('editor:create-entity', {
+            id,
+            parentId: persistenceParentId,
+            name,
+            type,
+            active: true,
+            transform: { pos: { x: 0, y: 0 }, rot: 0, scale: { x: 1, y: 1 } },
+            components: entityComponents
+        });
     }
 
     // Simple search filtering
@@ -125,7 +168,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
             const end = list.indexOf(id)
             if (start !== -1 && end !== -1) {
                 const range = list.slice(Math.min(start, end), Math.max(start, end) + 1)
-                range.forEach((rid, idx) => selectEntity(rid, idx === 0 ? false : true));
+                selectEntities(range);
             }
         } else {
             selectEntity(id, multi)
@@ -175,8 +218,11 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         return ancestors
     }, [selectedIds, entities])
 
-    const handleExpandAll = () => { }
-    const handleCollapseAll = () => { }
+    const hierarchyContainers = Object.values(entities)
+        .filter(entity => entity.id !== 'root' && entity.children.length > 0)
+        .map(entity => entity.id);
+    const handleExpandAll = () => setEntityExpansion(hierarchyContainers, true)
+    const handleCollapseAll = () => setEntityExpansion(hierarchyContainers, false)
 
     const handleMove = (draggedIdsArg: string | string[], targetParentId: string, targetIndex?: number | 'before' | 'after', relativeToId?: string) => {
         const draggedIds = Array.isArray(draggedIdsArg) ? draggedIdsArg : [draggedIdsArg]
@@ -270,7 +316,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
             <HierarchyToolbar
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
-                onAddEntity={(type) => addEntity('root', `New ${type}`, type)}
+                onAddEntity={(type) => addEntity('root', type === 'scene-transition' ? 'Scene Transition' : type === 'enemy' ? 'Enemy' : type === 'quest' ? 'Quest' : type === 'dialogue' ? 'Dialogue' : type === 'entity' ? 'New Entity' : type === 'spawn-point' ? 'Spawn Point' : type === 'trigger-area' ? 'Trigger Area' : type === 'hitbox' ? 'Hitbox' : type === 'hurtbox' ? 'Hurtbox' : `New ${type}`, type)}
                 onExpandAll={handleExpandAll}
                 onCollapseAll={handleCollapseAll}
             />

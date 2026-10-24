@@ -13,6 +13,8 @@ export class SceneManager {
     static #loadedScenes = [];
     /** @private */
     static #currentSceneIndex = -1;
+    /** @private */
+    static #nextSceneId = 0;
 
     /**
      * Get a scene by id.
@@ -35,6 +37,17 @@ export class SceneManager {
     /** Return a snapshot of all registered scenes for project serialization. */
     static GetScenes() {
         return [...SceneManager.#scenes];
+    }
+
+    /** Remove a registered scene that is not currently active. */
+    static removeScene(scene) {
+        const index = SceneManager.#scenes.indexOf(scene);
+        if (index === -1 || SceneManager.GetActiveScene() === scene) return false;
+
+        if (SceneManager.#loadedScenes.includes(scene)) scene.OnSceneUnloadAdditive();
+        SceneManager.#loadedScenes = SceneManager.#loadedScenes.filter(loadedScene => loadedScene !== scene);
+        SceneManager.#scenes.splice(index, 1);
+        return true;
     }
 
     /**
@@ -132,7 +145,7 @@ export class SceneManager {
             return;
         }
         if (SceneManager.#currentSceneIndex === -1) {
-            SceneManager.LoadScene(0);
+            SceneManager.LoadScene(SceneManager.#scenes[0].id);
         }
     }
 
@@ -144,8 +157,50 @@ export class SceneManager {
     static addScene(scene) {
         if (SceneManager.#scenes.indexOf(scene) === -1) {
             scene.id = SceneManager.getIdForNewScene();
+            SceneManager.#nextSceneId = scene.id + 1;
             SceneManager.#scenes.push(scene);
         }
+    }
+
+    /**
+     * Replace stale registrations that share a parsed scene's persisted ID.
+     * SceneLoader constructs and registers a Scene before restoring its ID from
+     * serialized data, so loading an edited scene again can otherwise leave
+     * duplicate IDs and make GetScene select the older instance.
+     * @param {Scene} scene - The parsed replacement scene.
+     * @returns {Scene} The registered replacement scene.
+     */
+    static replaceScene(scene) {
+        if (!scene || typeof scene !== "object") {
+            throw new TypeError("SceneManager.replaceScene expects a Scene instance.");
+        }
+
+        if (!SceneManager.#scenes.includes(scene)) {
+            SceneManager.addScene(scene);
+        }
+
+        const duplicates = SceneManager.#scenes.filter(candidate => candidate !== scene && candidate.id === scene.id);
+        if (duplicates.length === 0) return scene;
+
+        const activeScene = SceneManager.GetActiveScene();
+        const replacesActiveScene = duplicates.includes(activeScene);
+        for (const duplicate of duplicates) {
+            if (!SceneManager.#loadedScenes.includes(duplicate)) continue;
+            if (duplicate === activeScene) duplicate.OnSceneUnload();
+            else duplicate.OnSceneUnloadAdditive();
+        }
+
+        const firstDuplicateIndex = SceneManager.#scenes.findIndex(candidate => duplicates.includes(candidate));
+        const insertionIndex = SceneManager.#scenes
+            .slice(0, firstDuplicateIndex)
+            .filter(candidate => !duplicates.includes(candidate) && candidate !== scene)
+            .length;
+        SceneManager.#loadedScenes = SceneManager.#loadedScenes.filter(candidate => !duplicates.includes(candidate));
+        SceneManager.#scenes = SceneManager.#scenes.filter(candidate => !duplicates.includes(candidate) && candidate !== scene);
+        SceneManager.#scenes.splice(insertionIndex, 0, scene);
+
+        if (replacesActiveScene) SceneManager.#currentSceneIndex = -1;
+        return scene;
     }
 
     /**
@@ -178,7 +233,10 @@ export class SceneManager {
      * @private
      */
     static getIdForNewScene() {
-        return SceneManager.#scenes.length;
+        while (SceneManager.#scenes.some(scene => scene.id === SceneManager.#nextSceneId)) {
+            SceneManager.#nextSceneId++;
+        }
+        return SceneManager.#nextSceneId;
     }
 
     /** Build a versioned project payload from the currently registered scenes. */
@@ -211,11 +269,22 @@ export class SceneManager {
         if (project === null) return null;
 
         const { SceneLoader } = await import("./sceneLoader.js");
-        SceneManager.CloseProject();
         const scenes = [];
-        for (const sceneData of project.scenes) {
-            scenes.push(await SceneLoader.parse(sceneData));
+        try {
+            for (const sceneData of project.scenes) {
+                scenes.push(await SceneLoader.parse(sceneData));
+            }
+        } catch (error) {
+            for (const scene of scenes.reverse()) {
+                SceneManager.removeScene(scene);
+            }
+            throw error;
         }
+
+        SceneManager.#scenes = [...scenes];
+        SceneManager.#loadedScenes = [];
+        SceneManager.#currentSceneIndex = -1;
+        SceneManager.#nextSceneId = 0;
         return { ...project, scenes };
     }
 
@@ -229,5 +298,6 @@ export class SceneManager {
         SceneManager.#scenes = [];
         SceneManager.#loadedScenes = [];
         SceneManager.#currentSceneIndex = -1;
+        SceneManager.#nextSceneId = 0;
     }
 }

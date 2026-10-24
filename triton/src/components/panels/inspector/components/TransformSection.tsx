@@ -2,13 +2,13 @@ import { Move } from "lucide-react"
 import { ComponentSection } from "../shared/ComponentSection"
 import { PropertyRow } from "../shared/PropertyRow"
 import { ThemedVectorInput, ThemedNumberInput } from "@/components/library"
-import type { MockEntity, MockTransform, MockVector2 } from "../shared/types"
+import type { InspectorEntity, InspectorTransform, InspectorVector2 } from "../shared/types"
 
 interface TransformSectionProps {
-    entity: MockEntity
+    entity: InspectorEntity
     isActive: boolean
     onToggleActive: () => void
-    onUpdate: (key: keyof MockTransform, value: MockVector2 | number) => void
+    onUpdate: (key: keyof InspectorTransform, value: InspectorVector2 | number) => void
 }
 
 export const TransformSection = ({ entity, isActive, onToggleActive, onUpdate }: TransformSectionProps) => {

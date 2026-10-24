@@ -1,5 +1,5 @@
 import React from "react"
-import type { ComponentId, MockEntity } from "./shared/types"
+import type { EntityData } from "@/types/engine"
 import { TransformSection } from "./components/TransformSection"
 import { SpriteSection } from "./components/SpriteSection"
 import { ColliderSection } from "./components/ColliderSection"
@@ -16,7 +16,7 @@ import { GenericComponentSection } from "./components/GenericComponentSection"
  * Maps component IDs to their respective React components.
  * Centralizing rendering logic away from the main panel.
  */
-export const InspectorRegistry: Record<ComponentId, React.FC<any>> = {
+export const InspectorRegistry: Record<string, React.FC<any>> = {
     transform: TransformSection,
     sprite: SpriteSection,
     collider: ColliderSection,
@@ -28,9 +28,9 @@ export const InspectorRegistry: Record<ComponentId, React.FC<any>> = {
 }
 
 interface RenderComponentProps {
-    compId: ComponentId
+    compId: string
     index: number
-    entity: MockEntity
+    entity: EntityData
     isActive: boolean
     onToggleActive: () => void
     updateHelpers: any // Passing all update helpers in a single object
@@ -59,17 +59,10 @@ export const renderInspectorComponent = ({
     if (!Component) {
         // Fallback to Generic Renderer for any components
         // We need to fetch the raw data from the new 'components' dictionary
-        // If the 'data' is not directly reachable via entity[compId], we try entity.components[compId]
-        // But for now, we rely on the caller to pass usage of `renderInspectorComponent` correctly.
-        // Actually, `entity` here is the MockEntity/EntityData.
-
-        // We need a generic onUpdate helper.
-        // We assume updateHelpers has a 'updateGeneric' provided by InspectorPanel.
-
         return <GenericComponentSection
             key={compId}
             type={compId}
-            data={entity.components?.[compId] || (entity as any)[compId]} // Try new dict first, then legacy prop
+            data={entity.components[compId]}
             {...commonProps}
             onUpdate={(key, value) => updateHelpers.updateGeneric(compId, key, value)}
         />

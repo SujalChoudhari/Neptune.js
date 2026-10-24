@@ -2,13 +2,13 @@ import { Volume2 } from "lucide-react"
 import { ComponentSection } from "../shared/ComponentSection"
 import { PropertyRow } from "../shared/PropertyRow"
 import { ThemedInput, ThemedReferenceInput, ThemedSlider, ThemedToggle } from "@/components/library"
-import type { MockEntity, MockSound } from "../shared/types"
+import type { InspectorEntity, InspectorSound } from "../shared/types"
 
 interface SoundSectionProps {
-    entity: MockEntity
+    entity: InspectorEntity
     isActive: boolean
     onToggleActive: () => void
-    onUpdate: (key: keyof MockSound, value: string | number | boolean) => void
+    onUpdate: (key: keyof InspectorSound, value: string | number | boolean) => void
     onMoveUp?: () => void
     onMoveDown?: () => void
 }

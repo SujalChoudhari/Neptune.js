@@ -71,4 +71,6 @@ const oldCell = ground.vacate(guard);
 
 `isWalkable` requires an in-bounds, empty tile unless metadata explicitly marks its tile ID walkable; an occupant blocks other movers. `occupy` places or relocates an occupant and returns false if blocked. `moveOccupant` moves one cardinal cell and leaves occupancy unchanged on failure. `findPath` returns a deterministic shortest four-way path excluding the start, or `null` when no route exists; the same start and goal returns an empty path. `moveOccupantToward` advances one path step and returns the new coordinates (or `null`). `gridIndex(x, y)` exposes the row-major index, or `null` out of bounds; `getOccupant` returns the occupant or `null`.
 
+`EnemyAI` applies the destination cell's resolved `slowdown` metadata to its next movement delay: a value of `0.5` adds 50% to the configured `moveInterval` (a `1.5×` interval). Cell values override tile defaults; an unset cell inherits the tile value, and an unset value keeps the normal interval. This affects EnemyAI patrol, chase, return, and flee movement; direct `Tilemap.moveOccupant` calls remain immediate.
+
 For physics-based collision against tilemaps, see the [Nereid tile collision source](../../src/nereid/tilecollision.js). For the playable tilemap sample, see the [action-RPG tutorial](action-rpg.md).

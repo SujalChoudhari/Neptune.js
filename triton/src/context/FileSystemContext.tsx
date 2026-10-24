@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback } from "react";
 import type { ReactNode } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { SCENE_DATA_VERSION, SCENE_SCHEMA_VERSION } from "../lib/editorGameRunner";
 
 export type AssetType = 'folder' | 'image' | 'script' | 'scene' | 'material' | 'audio' | 'prefab' | 'model' | 'file';
 
@@ -40,7 +41,6 @@ interface FileSystemContextType {
     refresh: () => Promise<void>;
     navigateTo: (folderId: string) => void;
     navigateUp: () => void;
-    // Mock-compatible wrappers (will implement real logic later)
     getChildren: (id: string) => FileSystemNode[];
     moveNodes: (nodeIds: string[], targetFolderId: string) => Promise<void>;
     moveNode: (nodeId: string, targetFolderId: string) => void;
@@ -133,14 +133,10 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
     const loadProject = useCallback(async (path: string, preserveNavigation?: boolean) => {
         setIsLoading(true);
         try {
-            console.log("Loading project fs from:", path);
             // The native side owns the selected absolute root. Filesystem
             // commands use project-relative paths so renderer input cannot
             // escape that capability.
             const data = await invoke<Record<string, FileSystemNode>>("scan_project", { path: "." });
-            console.log("Scanned nodes:", Object.keys(data).length);
-
-            // Normalize data if needed, or just set it
             setNodes(data);
             setRootPath(path);
             if (!preserveNavigation) {
@@ -148,6 +144,10 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
             }
         } catch (e) {
             console.error("Failed to load project file system:", e);
+            setNodes({});
+            setRootPath(null);
+            setCurrentPath(["root"]);
+            throw e instanceof Error ? e : new Error(String(e));
         } finally {
             setIsLoading(false);
         }
@@ -203,11 +203,6 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
             });
     }, [nodes]);
 
-    // --- Placeholder / Mock-ish Implementations for Mutating Actions ---
-    // These need backend implementations next. For now we just log or do nothing 
-    // to prevent crashing, or maybe do local updates if we want to be fancy.
-    // Ideally, we implement corresponding Tauri commands.
-
     const createFolder = useCallback(async (parentId: string, name: string) => {
         try {
             // parentId is a path in our system (except "root")
@@ -230,7 +225,16 @@ export function FileSystemProvider({ children }: { children: ReactNode }) {
             // Default content based on type
             let content = "";
             if (type === 'script') content = "export class NewScript {}";
-            if (type === 'scene') content = "{}";
+            if (type === 'scene') {
+                content = JSON.stringify({
+                    type: "scene",
+                    version: SCENE_DATA_VERSION,
+                    schemaVersion: SCENE_SCHEMA_VERSION,
+                    name: name.replace(/\.scene$/i, ""),
+                    entities: [],
+                    layers: []
+                }, null, 2);
+            }
 
             const newPath = await invoke<string>("create_asset", { path, content });
             await refresh();

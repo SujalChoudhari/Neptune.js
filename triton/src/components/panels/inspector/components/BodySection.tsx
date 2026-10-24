@@ -2,13 +2,13 @@ import { Zap } from "lucide-react"
 import { ComponentSection } from "../shared/ComponentSection"
 import { PropertyRow } from "../shared/PropertyRow"
 import { ThemedVectorInput, ThemedNumberInput, ThemedSlider, ThemedCheckbox } from "@/components/library"
-import type { MockEntity, MockBody } from "../shared/types"
+import type { InspectorEntity, InspectorBody } from "../shared/types"
 
 interface BodySectionProps {
-    entity: MockEntity
+    entity: InspectorEntity
     isActive: boolean
     onToggleActive: () => void
-    onUpdate: (key: keyof MockBody, value: number | boolean) => void
+    onUpdate: (key: keyof InspectorBody, value: number | boolean) => void
     onMoveUp?: () => void
     onMoveDown?: () => void
 }

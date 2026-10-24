@@ -237,23 +237,74 @@ fn resolve_existing_path(state: &SelectedProjectRoot, raw_path: &str) -> Result<
     Ok(fs::canonicalize(path).map_err(|_| scoped_error())?)
 }
 
-#[tauri::command]
-fn get_startup_config() -> Option<String> {
-    if cfg!(debug_assertions) {
-        // In debug mode, check for a "debug_project" in the workspace root
-        // Assuming we are running from project root or similar. 
-        // Let's look for it relative to current dir.
-        let debug_path = PathBuf::from("../debug_project");
-        if debug_path.exists() {
-             // Return absolute path if possible, or just the relative one if frontend handles it
-             // Let's canonicalize to be safe
-             if let Ok(abs_path) = fs::canonicalize(&debug_path) {
-                 return Some(abs_path.to_string_lossy().to_string());
-             }
-        }
+fn image_data_uri(path: &Path, bytes: &[u8]) -> Result<String, String> {
+    if bytes.len() > 16 * 1024 * 1024 {
+        return Err("Tileset image exceeds the 16 MiB preview limit".to_string());
     }
-    None
+    let extension = path.extension().and_then(|value| value.to_str()).unwrap_or_default().to_ascii_lowercase();
+    let (mime, valid) = match extension.as_str() {
+        "png" => ("image/png", bytes.starts_with(b"\x89PNG\r\n\x1a\n")),
+        "jpg" | "jpeg" => ("image/jpeg", bytes.starts_with(&[0xff, 0xd8, 0xff])),
+        "webp" => ("image/webp", bytes.len() >= 12 && &bytes[..4] == b"RIFF" && &bytes[8..12] == b"WEBP"),
+        _ => return Err("Tileset previews support PNG, JPEG, and WebP assets only".to_string()),
+    };
+    if !valid {
+        return Err("Tileset image content does not match its file extension".to_string());
+    }
+    const BASE64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut encoded = String::with_capacity(bytes.len().div_ceil(3) * 4);
+    for chunk in bytes.chunks(3) {
+        let first = chunk[0] as usize;
+        let second = chunk.get(1).copied().unwrap_or_default() as usize;
+        let third = chunk.get(2).copied().unwrap_or_default() as usize;
+        encoded.push(BASE64[first >> 2] as char);
+        encoded.push(BASE64[((first & 3) << 4) | (second >> 4)] as char);
+        encoded.push(if chunk.len() > 1 { BASE64[((second & 15) << 2) | (third >> 6)] as char } else { '=' });
+        encoded.push(if chunk.len() > 2 { BASE64[third & 63] as char } else { '=' });
+    }
+    Ok(format!("data:{mime};base64,{encoded}"))
 }
+
+fn read_image_asset_impl(raw_path: &str, state: &SelectedProjectRoot) -> Result<String, String> {
+    let path = resolve_existing_path(state, raw_path)?;
+    let bytes = fs::read(&path).map_err(|error| error.to_string())?;
+    image_data_uri(&path, &bytes)
+}
+
+fn audio_data_uri(path: &Path, bytes: &[u8]) -> Result<String, String> {
+    if bytes.len() > 16 * 1024 * 1024 {
+        return Err("Audio asset exceeds the 16 MiB runtime resource limit".to_string());
+    }
+    let extension = path.extension().and_then(|value| value.to_str()).unwrap_or_default().to_ascii_lowercase();
+    let (mime, valid) = match extension.as_str() {
+        "mp3" => ("audio/mpeg", bytes.starts_with(b"ID3") || (bytes.len() >= 2 && bytes[0] == 0xff && bytes[1] & 0xe0 == 0xe0)),
+        "wav" => ("audio/wav", bytes.len() >= 12 && &bytes[..4] == b"RIFF" && &bytes[8..12] == b"WAVE"),
+        "ogg" => ("audio/ogg", bytes.starts_with(b"OggS")),
+        _ => return Err("Runtime audio supports MP3, WAV, and OGG assets only".to_string()),
+    };
+    if !valid {
+        return Err("Audio content does not match its file extension".to_string());
+    }
+    const BASE64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut encoded = String::with_capacity(bytes.len().div_ceil(3) * 4);
+    for chunk in bytes.chunks(3) {
+        let first = chunk[0] as usize;
+        let second = chunk.get(1).copied().unwrap_or_default() as usize;
+        let third = chunk.get(2).copied().unwrap_or_default() as usize;
+        encoded.push(BASE64[first >> 2] as char);
+        encoded.push(BASE64[((first & 3) << 4) | (second >> 4)] as char);
+        encoded.push(if chunk.len() > 1 { BASE64[((second & 15) << 2) | (third >> 6)] as char } else { '=' });
+        encoded.push(if chunk.len() > 2 { BASE64[third & 63] as char } else { '=' });
+    }
+    Ok(format!("data:{mime};base64,{encoded}"))
+}
+
+fn read_audio_asset_impl(raw_path: &str, state: &SelectedProjectRoot) -> Result<String, String> {
+    let path = resolve_existing_path(state, raw_path)?;
+    let bytes = fs::read(&path).map_err(|error| error.to_string())?;
+    audio_data_uri(&path, &bytes)
+}
+
 
 #[tauri::command]
 async fn create_project(app: tauri::AppHandle) -> Result<String, String> {
@@ -431,6 +482,29 @@ mod tests {
     }
 
     #[test]
+    fn opening_existing_project_does_not_create_missing_marker_or_change_selection() {
+        let (state, root, outside) = test_root();
+        let project = root.join("existing");
+        fs::create_dir_all(&project).unwrap();
+        let selected_before = selected_root(&state).unwrap();
+
+        let error = open_existing_project_impl(project.to_str().unwrap(), &state).unwrap_err();
+        assert!(error.contains("does not contain project.npt"));
+        assert!(!project.join("project.npt").exists());
+        assert_eq!(selected_root(&state).unwrap(), selected_before);
+
+        let valid_project = serde_json::json!({
+            "type": "project",
+            "schemaVersion": PROJECT_SCHEMA_VERSION,
+            "scenes": []
+        });
+        fs::write(project.join("project.npt"), valid_project.to_string()).unwrap();
+        assert!(open_existing_project_impl(project.to_str().unwrap(), &state).unwrap());
+        assert_eq!(selected_root(&state).unwrap(), fs::canonicalize(&project).unwrap());
+        cleanup(&root, &outside);
+    }
+
+    #[test]
     fn rejects_absolute_and_traversal_paths() {
         let (state, root, outside) = test_root();
         assert!(resolve_scoped_path(&state, "/tmp", false).is_err());
@@ -473,6 +547,45 @@ mod tests {
         assert!(resolve_existing_path(&state, "assets/moved.txt").is_err());
         assert!(destination.starts_with(fs::canonicalize(&root).unwrap()));
         assert!(!destination.starts_with(&outside));
+        cleanup(&root, &outside);
+    }
+
+    #[test]
+    fn tileset_previews_encode_only_supported_matching_image_formats() {
+        let png = image_data_uri(Path::new("atlas.PNG"), b"\x89PNG\r\n\x1a\n").unwrap();
+        assert_eq!(png, "data:image/png;base64,iVBORw0KGgo=");
+        assert_eq!(image_data_uri(Path::new("atlas.jpg"), &[0xff, 0xd8, 0xff]).unwrap(), "data:image/jpeg;base64,/9j/");
+        assert!(image_data_uri(Path::new("atlas.svg"), b"<svg/>").unwrap_err().contains("PNG, JPEG, and WebP"));
+        assert!(image_data_uri(Path::new("atlas.png"), b"not a png").unwrap_err().contains("does not match"));
+        assert!(image_data_uri(Path::new("atlas.webp"), b"RIFF0000WEBP").is_ok());
+    }
+
+    #[test]
+    fn image_asset_reads_are_project_scoped_and_reject_non_images() {
+        let (state, root, outside) = test_root();
+        fs::create_dir_all(root.join("assets")).unwrap();
+        fs::write(root.join("assets/tiles.png"), b"\x89PNG\r\n\x1a\n").unwrap();
+        fs::write(root.join("assets/notes.txt"), "not an image").unwrap();
+        fs::write(outside.join("escape.png"), b"\x89PNG\r\n\x1a\n").unwrap();
+
+        assert_eq!(read_image_asset_impl("assets/tiles.png", &state).unwrap(), "data:image/png;base64,iVBORw0KGgo=");
+        assert!(read_image_asset_impl("assets/notes.txt", &state).unwrap_err().contains("PNG, JPEG, and WebP"));
+        assert!(read_image_asset_impl("../triton-containment-outside/escape.png", &state).is_err());
+        cleanup(&root, &outside);
+    }
+
+    #[test]
+    fn audio_assets_encode_supported_formats_and_remain_project_scoped() {
+        let (state, root, outside) = test_root();
+        fs::create_dir_all(root.join("assets")).unwrap();
+        fs::write(root.join("assets/theme.ogg"), b"OggSaudio").unwrap();
+        fs::write(root.join("assets/notes.txt"), b"not audio").unwrap();
+        fs::write(outside.join("escape.ogg"), b"OggSoutside").unwrap();
+
+        assert_eq!(read_audio_asset_impl("assets/theme.ogg", &state).unwrap(), "data:audio/ogg;base64,T2dnU2F1ZGlv");
+        assert!(read_audio_asset_impl("assets/notes.txt", &state).unwrap_err().contains("MP3, WAV, and OGG"));
+        assert!(read_audio_asset_impl("../triton-containment-outside/escape.ogg", &state).is_err());
+        assert!(audio_data_uri(Path::new("bad.ogg"), b"not ogg").unwrap_err().contains("does not match"));
         cleanup(&root, &outside);
     }
 
@@ -774,6 +887,46 @@ async fn initialize_project(
     Ok(true)
 }
 
+fn open_existing_project_impl(path: &str, state: &SelectedProjectRoot) -> Result<bool, String> {
+    let mut project_path = PathBuf::from(path);
+    if project_path.extension().map_or(false, |ext| ext == "npt") {
+        project_path = project_path
+            .parent()
+            .ok_or_else(|| "Could not determine the project folder from the selected file".to_string())?
+            .to_path_buf();
+    }
+
+    let project_path = fs::canonicalize(&project_path)
+        .map_err(|error| format!("Could not open existing project folder: {error}"))?;
+    if !project_path.is_dir() {
+        return Err("Could not open existing project: selected path is not a folder".to_string());
+    }
+
+    let marker_file = project_path.join("project.npt");
+    if !marker_file.is_file() {
+        return Err(format!(
+            "Could not open existing project: '{}' does not contain project.npt",
+            project_path.display()
+        ));
+    }
+    let content = fs::read_to_string(&marker_file)
+        .map_err(|error| format!("Could not read project.npt: {error}"))?;
+    let payload = parse_json_payload(&content, "project")?;
+    normalize_project_payload(payload)
+        .map_err(|error| format!("Could not open project: {error}"))?;
+
+    set_selected_root(state, project_path)?;
+    Ok(true)
+}
+
+#[tauri::command]
+async fn open_existing_project(
+    path: String,
+    state: tauri::State<'_, SelectedProjectRoot>,
+) -> Result<bool, String> {
+    open_existing_project_impl(&path, state.inner())
+}
+
 #[tauri::command]
 async fn read_file(
     path: String,
@@ -781,6 +934,22 @@ async fn read_file(
 ) -> Result<String, String> {
     let path_buf = resolve_existing_path(&state, &path)?;
     fs::read_to_string(path_buf).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn read_image_asset(
+    path: String,
+    state: tauri::State<'_, SelectedProjectRoot>,
+) -> Result<String, String> {
+    read_image_asset_impl(&path, state.inner())
+}
+
+#[tauri::command]
+async fn read_audio_asset(
+    path: String,
+    state: tauri::State<'_, SelectedProjectRoot>,
+) -> Result<String, String> {
+    read_audio_asset_impl(&path, state.inner())
 }
 
 #[tauri::command]
@@ -1034,7 +1203,7 @@ pub fn run() {
     .manage(SelectedProjectRoot::default())
     .invoke_handler(tauri::generate_handler![
         initialize_project, 
-        get_startup_config, 
+        open_existing_project,
         scan_project, 
         move_fs_node,
         create_directory,
@@ -1044,6 +1213,8 @@ pub fn run() {
         duplicate_fs_node,
         sync_neptune_lib,
         read_file,
+        read_image_asset,
+        read_audio_asset,
         write_file,
         read_project,
         write_project,
