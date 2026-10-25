@@ -1,0 +1,4 @@
+M12 #27 continuation — add a behavioral Inspector selection/update/save/reopen browser smoke that complements the existing selected-project open/reopen browser smoke (allowed paths recorded before editing):
+- triton/tests/inspector-browser-smoke.test.js (new)
+- worktree-allowlist.txt
+Scope: run production Triton in Chromium with isolated, stateful native filesystem command stubs; open an actual fixture project and scene, select a runtime-backed entity, save via the production UI, and assert the persisted scene payload. This is browser evidence with a stubbed native filesystem, not native Tauri filesystem evidence.
