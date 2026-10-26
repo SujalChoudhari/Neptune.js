@@ -4,10 +4,13 @@ import fs from "node:fs";
 import vm from "node:vm";
 import path from "node:path";
 import { buildSync } from "esbuild";
+import { runtimeSelectionBridgeScript } from "../src/lib/runtimeSelectionBridge.mjs";
+import { runtimeConsoleBridgeScript } from "../src/lib/runtimeConsoleBridge.mjs";
+import { runtimeControlBridgeScript } from "../src/lib/runtimeControlBridge.mjs";
 
 function createGameView() {
     const sourcefile = path.resolve("triton/src/components/panels/GameViewPanel.tsx");
-    const external = ["react", "react/jsx-runtime", "@tauri-apps/api/core", "@/lib/projectResourceBridge.mjs?url", "../../../../src/neptune.js?url"];
+    const external = ["react", "react/jsx-runtime", "@tauri-apps/api/core", "@/lib/projectResourceBridge.mjs?url", "../../../../src/neptune.js?url", "@/lib/runtimeSelectionBridge.mjs", "@/lib/runtimeConsoleBridge.mjs", "@/lib/runtimeControlBridge.mjs"];
     const bundle = buildSync({
         bundle: true,
         external,
@@ -38,7 +41,10 @@ function createGameView() {
             return "asset contents";
         } },
         "@/lib/projectResourceBridge.mjs?url": "/projectResourceBridge.js",
-        "../../../../src/neptune.js?url": "/neptune.js"
+        "../../../../src/neptune.js?url": "/neptune.js",
+        "@/lib/runtimeSelectionBridge.mjs": { runtimeSelectionBridgeScript },
+        "@/lib/runtimeConsoleBridge.mjs": { runtimeConsoleBridgeScript },
+        "@/lib/runtimeControlBridge.mjs": { runtimeControlBridgeScript }
     };
     const module = { exports: {} };
     vm.runInNewContext(bundle, {
@@ -76,14 +82,16 @@ function findNode(node, predicate) {
     return null;
 }
 
-test("Game View installs the selected-project resource bridge before booting Neptune", () => {
+test("Game View embeds runtime selection, console, and playback bridges", () => {
     const harness = createGameView();
     const iframe = findNode(harness.tree, node => node.type === "iframe" && node.props?.title === "Game View");
     assert.ok(iframe);
     assert.ok(iframe.props.ref);
-    assert.match(iframe.props.srcDoc, /const projectResourceBridge = installProjectResourceBridge\(\);[\s\S]*await import\("\/neptune\.js"\)/);
-    assert.match(iframe.props.srcDoc, /projectResourceBridge\.setScenePath\(payload\.path\)/);
-    assert.match(iframe.props.srcDoc, /\/projectResourceBridge\.js/);
+    assert.match(iframe.props.srcDoc, /import \{ installProjectResourceBridge \} from "\/projectResourceBridge\.js";[\s\S]*import\("\/neptune\.js"\)/);
+    assert.match(iframe.props.srcDoc, /window\.addEventListener\("pointerdown"/);
+    assert.match(iframe.props.srcDoc, /type: "editor:log"/);
+    assert.match(iframe.props.srcDoc, /const runRuntimeControl = function runRuntimeControl/);
+    assert.match(iframe.props.srcDoc, /type: 'editor:diagnostic'/);
 });
 
 test("Game View serves text and audio iframe resources through selected-project native readers", async () => {
