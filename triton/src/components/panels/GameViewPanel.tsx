@@ -1,11 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { invoke } from "@tauri-apps/api/core";
-import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
-import { runtimeEntityBridgeScript } from "../../lib/runtimeEntityBridge.mjs";
 // We use the ?url suffix to get the URL of the module script
 // This requires Vite to solve the path.
 // Path: src/components/panels/GameViewPanel.tsx -> ../../../.. -> root
 import neptuneEntryUrl from "../../../../src/neptune.js?url";
+import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
+import { runtimeSelectionBridgeScript } from "@/lib/runtimeSelectionBridge.mjs";
+import { runtimeConsoleBridgeScript } from "@/lib/runtimeConsoleBridge.mjs";
+import { runtimeControlBridgeScript } from "@/lib/runtimeControlBridge.mjs";
 
 export function GameViewPanel() {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -14,12 +16,11 @@ export function GameViewPanel() {
     useEffect(() => {
         const handleResourceRequest = (event: MessageEvent) => {
             const { type, payload } = event.data || {};
-            if (type !== 'editor:project-resource-request' || !payload?.id) return;
+            if (type !== 'editor:project-resource-request' || typeof payload?.id !== 'string') return;
             if (event.source !== iframeRef.current?.contentWindow) return;
-
             const command = payload.kind === 'image' ? 'read_image_asset' : payload.kind === 'audio' ? 'read_audio_asset' : payload.kind === 'text' ? 'read_file' : null;
             const reply = (content: string | null, error: string | null) => {
-                (event.source as WindowProxy | null)?.postMessage({
+                (event.source as WindowProxy).postMessage({
                     type: 'editor:project-resource-response',
                     payload: { id: payload.id, content, error }
                 }, '*');
@@ -53,13 +54,38 @@ export function GameViewPanel() {
 <body>
     <canvas id="neptune-canvas"></canvas>
     <script type="module">
-        // Basic Game Loader
         import { installProjectResourceBridge } from "${projectResourceBridgeUrl}";
-        const projectResourceBridge = installProjectResourceBridge();
-        const engineModule = await import("${neptuneEntryUrl}");
-        window.__neptuneEngineModule = engineModule;
-        ${runtimeEntityBridgeScript}
-        
+        installProjectResourceBridge();
+        ${runtimeSelectionBridgeScript}
+        ${runtimeConsoleBridgeScript}
+        ${runtimeControlBridgeScript}
+
+        const reportRuntimeError = (code, message, source) => {
+            window.parent.postMessage({
+                type: 'editor:diagnostic',
+                payload: {
+                    code,
+                    severity: 'error',
+                    message,
+                    source,
+                    action: 'Fix the game runtime error and retry.'
+                }
+            }, '*');
+        };
+        const describeRuntimeFailure = (reason) => {
+            if (reason && typeof reason === 'object' && typeof reason.message === 'string' && reason.message.trim()) {
+                return reason.message;
+            }
+            return String(reason);
+        };
+
+        window.addEventListener('error', (event) => {
+            reportRuntimeError('GAME_RUNTIME_ERROR', event.message || describeRuntimeFailure(event.error), event.filename || undefined);
+        });
+        window.addEventListener('unhandledrejection', (event) => {
+            reportRuntimeError('GAME_UNHANDLED_REJECTION', describeRuntimeFailure(event.reason));
+        });
+
         // Helper to find deep entities
         const findEntity = (root, id) => {
             if (!root) return null;
@@ -76,6 +102,7 @@ export function GameViewPanel() {
         const wait = () => {
             if (window.game) {
                 console.log("[GameView] Game Loaded");
+                window.dispatchEvent(new Event('neptune:editor-selection-ready'));
                 // Notify parent we are ready to receive scene load commands
                 window.parent.postMessage({ type: 'game:ready' }, '*');
                 
@@ -84,13 +111,20 @@ export function GameViewPanel() {
                     const { type, payload } = e.data;
                     const game = window.game;
 
+                    const controlHandled = runRuntimeControl(game, type, payload, state => {
+                        window.parent.postMessage({ type: 'game:state-update', payload: state }, '*');
+                    });
+                    if (controlHandled) return;
+
                     if (type === 'editor:load-scene' && game.loadScene) {
-                         if (typeof payload.path === 'string') projectResourceBridge.setScenePath(payload.path);
                          game.loadScene(payload.data || payload.path)
-                             .then(() => {
-                                 if (!game.isRunning) game.start();
-                             })
+                             .then(() => window.dispatchEvent(new Event('neptune:editor-selection-ready')))
                              .catch(console.error);
+                    }
+                    else if (type === 'editor:rename') {
+                         if (typeof payload?.name !== 'string') return;
+                         const entity = findEntity(game.scene, payload.id);
+                         if (entity) entity.name = payload.name;
                     }
                     else if (type === 'editor:update-component') {
                          // Inspector Update Logic
@@ -118,7 +152,9 @@ export function GameViewPanel() {
                 requestAnimationFrame(wait);
             }
         };
-        wait();
+        import("${neptuneEntryUrl}").then(wait).catch((error) => {
+            reportRuntimeError('GAME_BOOT_ERROR', error instanceof Error ? error.message : String(error));
+        });
     </script>
 </body>
 </html>
