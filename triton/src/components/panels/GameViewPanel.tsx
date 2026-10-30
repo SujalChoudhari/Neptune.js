@@ -119,7 +119,7 @@ export function GameViewPanel() {
                     if (type === 'editor:load-scene' && game.loadScene) {
                          game.loadScene(payload.data || payload.path)
                              .then(() => window.dispatchEvent(new Event('neptune:editor-selection-ready')))
-                             .catch(console.error);
+                             .catch(error => reportRuntimeError('GAME_SCENE_LOAD_ERROR', describeRuntimeFailure(error), payload?.path));
                     }
                     else if (type === 'editor:rename') {
                          if (typeof payload?.name !== 'string') return;

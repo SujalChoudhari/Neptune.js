@@ -359,6 +359,12 @@ test("Game View message bridge controls the real Application and forwards consol
         const send = (type, payload) => {
             for (const handler of listeners.get("message") || []) handler({ source: parent, data: { type, payload } })
         }
+        app.loadScene = async () => { throw new Error("scene asset missing") }
+        send("editor:load-scene", { data: { entities: [] } })
+        await new Promise(resolve => setImmediate(resolve))
+        assert.ok(parentMessages.some(message => message.type === "editor:diagnostic"
+            && message.payload.code === "GAME_SCENE_LOAD_ERROR"
+            && message.payload.message === "scene asset missing"), "failed scene loads must appear in editor diagnostics")
         const pointerDown = (clientX, clientY) => {
             for (const handler of listeners.get("pointerdown") || []) handler({
                 target: elements.get("neptune-canvas"),
