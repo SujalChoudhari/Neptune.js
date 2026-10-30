@@ -85,7 +85,8 @@ export function pickRuntimeEntityAt(scene, screenX, screenY, pixelsPerMeter = 64
             const worldMatrix = getWorldMatrix(entity, parentMatrix);
             const components = Array.isArray(entity.components) ? entity.components : [];
             const renderables = components.filter(component =>
-                component && Number.isFinite(component.renderOrder) && typeof component.draw === "function");
+                component && Number.isFinite(component.renderOrder) && typeof component.draw === "function" &&
+                component?.properties?.enabled !== false && component?.enabled !== false);
             if (renderables.length > 0) {
                 renderables.forEach(component => roots.push({ entity, component, worldMatrix, insertionOrder: roots.length }));
                 continue;
