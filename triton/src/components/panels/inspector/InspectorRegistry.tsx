@@ -7,7 +7,6 @@ import { BodySection } from "./components/BodySection"
 import { SoundSection } from "./components/SoundSection"
 import { StatsSection } from "./components/StatsSection"
 import { AnimatorSection } from "./components/AnimatorSection"
-import { ScriptsGroup } from "./components/ScriptsSection"
 import { GenericComponentSection } from "./components/GenericComponentSection"
 
 /**
@@ -23,8 +22,7 @@ export const InspectorRegistry: Record<string, React.FC<any>> = {
     body: BodySection,
     sound: SoundSection,
     stats: StatsSection,
-    animator: AnimatorSection,
-    scripts: ScriptsGroup
+    animator: AnimatorSection
 }
 
 interface RenderComponentProps {
@@ -32,7 +30,7 @@ interface RenderComponentProps {
     index: number
     entity: EntityData
     isActive: boolean
-    onToggleActive: () => void
+    onToggleActive?: () => void
     updateHelpers: any // Passing all update helpers in a single object
     moveHelpers: any // Passing move up/down helpers
 }
@@ -84,8 +82,6 @@ export const renderInspectorComponent = ({
             return <StatsSection key={compId} {...commonProps} onUpdate={updateHelpers.updateStats} {...moveHelpers} />
         case "animator":
             return <AnimatorSection key={compId} {...commonProps} onUpdate={updateHelpers.updateAnimator} {...moveHelpers} />
-        case "scripts":
-            return <ScriptsGroup key={compId} {...commonProps} onUpdate={updateHelpers.updateScript} {...moveHelpers} />
         default:
             return null
     }

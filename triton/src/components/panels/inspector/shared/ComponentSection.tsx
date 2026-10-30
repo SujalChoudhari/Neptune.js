@@ -78,9 +78,9 @@ export const ComponentSection = ({
                 {/* Controls (Eye, Reordering, Options) */}
                 <div className="flex items-center gap-0">
                     {/* Active Toggle (Eye) */}
-                    <button
+                    {onToggleActive && <button
                         type="button"
-                        onClick={() => onToggleActive?.(!isActive)}
+                        onClick={() => onToggleActive(!isActive)}
                         className={cn(
                             "w-6 h-6 flex items-center justify-center rounded transition-colors",
                             isActive ? "text-blue-400/80 hover:text-blue-300" : "text-muted-foreground/30 hover:text-foreground"
@@ -88,7 +88,7 @@ export const ComponentSection = ({
                         title={isActive ? "Disable component" : "Enable component"}
                     >
                         {isActive ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-                    </button>
+                    </button>}
 
                     {/* Reordering & Options (Subtle visibility until hover) */}
                     <div className="flex items-center gap-0.5 opacity-80 group-hover:opacity-100 transition-all duration-200">

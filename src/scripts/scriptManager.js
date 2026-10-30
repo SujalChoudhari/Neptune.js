@@ -19,6 +19,8 @@ export class ScriptManager {
     static behaviourInit() {
         console.log(`ScriptManager: Init ${this.#behaviours.length} scripts`);
         this.#behaviours.forEach(behaviour => {
+            if (behaviour.properties?.enabled === false || behaviour.enabled === false) return;
+            if (behaviour.entity && !isEntityActive(behaviour.entity)) return;
             behaviour.Init();
         });
     }
@@ -27,6 +29,7 @@ export class ScriptManager {
     static behaviourUpdate(deltaTime) {
         console.log(`ScriptManager: Updating ${this.#behaviours.length} scripts`);
         this.#behaviours.forEach(behaviour => {
+            if (behaviour.properties?.enabled === false || behaviour.enabled === false) return;
             if (behaviour.entity && !isEntityActive(behaviour.entity)) return;
             behaviour.Update(deltaTime);
         });

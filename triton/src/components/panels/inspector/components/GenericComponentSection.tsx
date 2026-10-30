@@ -305,7 +305,7 @@ interface GenericComponentSectionProps {
     data: any
     entity: any
     isActive: boolean
-    onToggleActive: () => void
+    onToggleActive?: () => void
     onUpdate: (key: string, value: any) => void
 }
 
@@ -321,6 +321,9 @@ export const GenericComponentSection: React.FC<GenericComponentSectionProps> = (
 
     // Logic: Extract 'param' to flatten it, keep others as is.
     const { param, ...rootProps } = safeData
+    // Unknown components may carry legacy enabled data, but their runtime does not
+    // promise to honor it; do not present an editable control that does nothing.
+    if (!onToggleActive) delete rootProps.enabled
     const hasParam = param && typeof param === 'object'
     const hasRoot = Object.keys(rootProps).length > 0
     const isEmpty = !hasParam && !hasRoot

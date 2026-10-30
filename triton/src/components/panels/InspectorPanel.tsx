@@ -10,6 +10,18 @@ import { useFileSystem } from "@/context/FileSystemContext"
 import { EditorGameRunner } from "@/lib/editorGameRunner"
 import { applyInspectorComponentUpdate } from "@/lib/inspectorComponentUpdate"
 
+/** Resolve the scene's serialized type key without assuming registry casing. */
+export const inspectorComponentEnabled = (entity: EntityData, component: string) => {
+    const key = Object.keys(entity.components || {}).find(name => name.toLowerCase() === component.toLowerCase())
+    const data = key ? entity.components[key] : undefined
+    return data && typeof data === "object" && "enabled" in data
+        ? (data as { enabled?: boolean }).enabled !== false
+        : true
+}
+
+// Only expose toggles whose serialized enabled state is honored by the runtime.
+const toggleableComponents = new Set(["sprite", "collider", "solidcollider", "triggercollider", "hitbox", "hurtbox", "interactionarea", "hazardarea", "behaviour"])
+
 /** Inspector backed by the selected runtime entity and canonical scene. */
 export const InspectorPanel = (_props: IDockviewPanelProps) => {
     const {
@@ -20,7 +32,7 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
     const [isSaving, setIsSaving] = useState(false)
 
     const componentOrder = useMemo(() => selectedEntityData
-        ? Object.keys(selectedEntityData.components || {}).filter(key => key !== "transform")
+        ? Object.keys(selectedEntityData.components || {}).filter(key => key.toLowerCase() !== "transform")
         : [], [selectedEntityData])
 
     const handleSave = useCallback(async () => {
@@ -69,23 +81,15 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
         updateBody: makeUpdater("body"),
         updateStats: makeUpdater("stats"),
         updateAnimator: makeUpdater("animator"),
-        updateScript: (index: number, key: string, value: any) => selectedIds.forEach(id =>
-            applyComponentUpdate(id, "scripts", String(index), { [key]: value })),
         updateGeneric: (component: string, key: string, value: any) =>
             selectedIds.forEach(id => applyComponentUpdate(id, component, key, value))
     }
-    const componentEnabled = (component: string) => {
-        const data = entity.components?.[component]
-        return data && typeof data === "object" && "enabled" in data
-            ? (data as { enabled?: boolean }).enabled !== false
-            : true
-    }
+    const componentEnabled = (component: string) => inspectorComponentEnabled(entity, component)
     const toggleActive = (component: string) => {
         const enabled = !componentEnabled(component)
         selectedIds.forEach(id => {
             updateComponent(id, component, "enabled", enabled)
             EditorGameRunner.updateEntity(id, component, { enabled })
-            notifyGame("editor:update-component", { id, component, data: { enabled } })
         })
     }
     const handleRename = (name: string) => {
@@ -120,8 +124,11 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
             </div>
         </div>
         <div className="flex-1 overflow-auto bg-[hsl(0,0%,14%)]">
-            {renderInspectorComponent({ compId: "transform", index: -1, entity, isActive: componentEnabled("transform"), onToggleActive: () => toggleActive("transform"), updateHelpers, moveHelpers: {} })}
-            {componentOrder.map((compId, index) => renderInspectorComponent({ compId, index, entity, isActive: componentEnabled(compId), onToggleActive: () => toggleActive(compId), updateHelpers, moveHelpers: { onMoveUp: () => {}, onMoveDown: () => {} } }))}
+            {renderInspectorComponent({ compId: "transform", index: -1, entity, isActive: true, onToggleActive: undefined, updateHelpers, moveHelpers: {} })}
+            {componentOrder.map((compId, index) => {
+                const canToggle = toggleableComponents.has(compId.toLowerCase()) || compId.toLowerCase().endsWith("behaviour")
+                return renderInspectorComponent({ compId, index, entity, isActive: canToggle ? componentEnabled(compId) : true, onToggleActive: canToggle ? () => toggleActive(compId) : undefined, updateHelpers, moveHelpers: { onMoveUp: () => {}, onMoveDown: () => {} } })
+            })}
             <div className="p-4 mt-2">
                 <button type="button" className={cn("w-full h-8 flex items-center justify-center gap-2 rounded-md", "bg-gradient-to-b from-[hsl(0,0%,25%)] to-[hsl(0,0%,20%)]", "border border-[hsl(0,0%,18%)] border-t-[hsl(0,0%,30%)]", "text-foreground/90 hover:text-foreground hover:from-[hsl(0,0%,28%)]", "shadow-[0_2px_4px_rgba(0,0,0,0.2)] transition-all active:translate-y-0.5")}>
                     <Plus className="w-3.5 h-3.5" /><span className="text-xs font-medium">Add Component</span>

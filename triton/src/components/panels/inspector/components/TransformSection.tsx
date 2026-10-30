@@ -7,7 +7,7 @@ import type { InspectorEntity, InspectorTransform, InspectorVector2 } from "../s
 interface TransformSectionProps {
     entity: InspectorEntity
     isActive: boolean
-    onToggleActive: () => void
+    onToggleActive?: () => void
     onUpdate: (key: keyof InspectorTransform, value: InspectorVector2 | number) => void
 }
 

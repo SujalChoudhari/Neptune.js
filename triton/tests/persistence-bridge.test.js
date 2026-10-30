@@ -957,15 +957,12 @@ describe("Triton persistence bridge", () => {
         expect(registry.includes("MockEntity")).toBe(false);
     });
 
-    it("keeps Inspector identity and component enabled edits in hierarchy, runtime, and scene state", () => {
+    it("keeps Inspector identity edits wired to hierarchy and canonical scene", () => {
         const inspector = fs.readFileSync(path.join(root, "src", "components", "panels", "InspectorPanel.tsx"), "utf8");
         expect(inspector.includes("const entity: EntityData = selectedEntityData")).toBe(true);
         expect(inspector.includes("renameEntityInHierarchy(entity.id, name)")).toBe(true);
         expect(inspector.includes("setEntityActiveInHierarchy(id, active)")).toBe(true);
-        expect(inspector.includes("const enabled = !componentEnabled(component)")).toBe(true);
-        expect(inspector.includes("updateComponent(id, component, \"enabled\", enabled)")).toBe(true);
         expect(inspector.includes("EditorGameRunner.updateEntity(id, component, { enabled })")).toBe(true);
-        expect(inspector.includes("isActive: componentEnabled(compId)")).toBe(true);
         expect(inspector.includes("activeStates")).toBe(false);
     });
 
@@ -1059,6 +1056,25 @@ describe("Triton persistence bridge", () => {
         expect(context.selectedEntityData.id).toBe("context-hitbox");
         expect(context.selectedEntityData.components.Hitbox).toEqual(components[0].props);
         expect(context.selectedEntityData.transform.position).toEqual({ x: 0, y: 0 });
+    });
+
+    it("retains component enabled state when selecting away and back before saving", async () => {
+        const scene = { type: "scene", schemaVersion: 1, version: "1.0.0", name: "Components",
+            entities: [{ id: "hero", name: "Hero", components: [{ type: "Sprite", props: { path: "assets/hero.png", enabled: true } }] },
+                { id: "other", name: "Other" }] };
+        const harness = createGameContextHarness(scene);
+        let context = harness.render();
+        await context.loadScene("scenes/main.scene");
+        context = harness.render();
+        context.selectEntity("hero", false);
+        context = harness.render();
+        context.updateComponent("hero", "sprite", "enabled", false);
+        expect(harness.render().selectedEntityData.components.Sprite.enabled).toBe(false);
+        context = harness.render();
+        context.selectEntity("other", false);
+        context = harness.render();
+        context.selectEntity("hero", false);
+        expect(harness.render().selectedEntityData.components.Sprite.enabled).toBe(false);
     });
 
     it("keeps hierarchy rename, active and lock edits synchronized with selected Inspector data", async () => {

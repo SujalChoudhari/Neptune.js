@@ -86,7 +86,8 @@ export function collectRenderableRoots(entity) {
         visited.add(child);
         if (child.active === false) continue;
 
-        const childRenderables = (child.components || []).filter(component => component instanceof Renderable);
+        const childRenderables = (child.components || []).filter(component =>
+            component instanceof Renderable && component.properties?.enabled !== false && component.enabled !== false);
         if (childRenderables.length > 0) {
             renderables.push(...childRenderables);
             continue;

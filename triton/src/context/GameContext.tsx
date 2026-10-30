@@ -598,7 +598,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     const updateComponent = (id: string, component: string, field: string, value: any) => {
         if (selectedEntitiesData[id]) {
-            setSelectedEntitiesData(previous => {
+            const updateData = (previous: Record<string, EntityData>) => {
                 const selectedEntity = previous[id];
                 if (!selectedEntity) return previous;
 
@@ -624,7 +624,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
                         }
                     }
                 };
-            });
+            };
+            setSelectedEntitiesData(updateData);
+            setEntityDataCache(updateData);
         }
         notifyGame('editor:update-component', { id, component, data: { [field]: value } });
     };
