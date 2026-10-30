@@ -957,6 +957,18 @@ describe("Triton persistence bridge", () => {
         expect(registry.includes("MockEntity")).toBe(false);
     });
 
+    it("keeps Inspector identity and component enabled edits in hierarchy, runtime, and scene state", () => {
+        const inspector = fs.readFileSync(path.join(root, "src", "components", "panels", "InspectorPanel.tsx"), "utf8");
+        expect(inspector.includes("const entity: EntityData = selectedEntityData")).toBe(true);
+        expect(inspector.includes("renameEntityInHierarchy(entity.id, name)")).toBe(true);
+        expect(inspector.includes("setEntityActiveInHierarchy(id, active)")).toBe(true);
+        expect(inspector.includes("const enabled = !componentEnabled(component)")).toBe(true);
+        expect(inspector.includes("updateComponent(id, component, \"enabled\", enabled)")).toBe(true);
+        expect(inspector.includes("EditorGameRunner.updateEntity(id, component, { enabled })")).toBe(true);
+        expect(inspector.includes("isActive: componentEnabled(compId)")).toBe(true);
+        expect(inspector.includes("activeStates")).toBe(false);
+    });
+
     it("reloads runtime views after the Inspector changes a tilemap layer", () => {
         const bundle = bundleSource(path.join(root, "src", "lib", "inspectorComponentUpdate.ts"), []);
         const { applyInspectorComponentUpdate } = loadBundle(bundle, {});
