@@ -478,6 +478,13 @@ export class EditorGameRunner {
     }
 
     /** Reparent hierarchy entities in the canonical nested scene document. */
+    static resolveHierarchyDropIndex(children: string[], draggedIds: string[], position: 'before' | 'after', relativeToId: string) {
+        const index = children.indexOf(relativeToId)
+        if (index < 0 || draggedIds.includes(relativeToId)) return null
+        const insertionPoint = position === 'before' ? index : index + 1
+        return insertionPoint - children.slice(0, insertionPoint).filter(id => draggedIds.includes(id)).length
+    }
+
     static moveEntities(ids: string[], targetParentId: string, targetIndex?: number) {
         if (!this.currentScene) return false
         if (!Array.isArray(ids) || ids.length === 0 || ids.some(id => typeof id !== "string" || !id.trim()) || new Set(ids).size !== ids.length) return false

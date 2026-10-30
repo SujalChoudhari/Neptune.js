@@ -236,10 +236,8 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         const parent = entities[targetParentId]
         if (!parent || !relativeToId) return
 
-        const currentIndex = parent.children.indexOf(relativeToId)
-        if (currentIndex === -1) return
-
-        const finalIndex = targetIndex === 'before' ? currentIndex : currentIndex + 1
+        const finalIndex = EditorGameRunner.resolveHierarchyDropIndex(parent.children, draggedIds, targetIndex, relativeToId)
+        if (finalIndex === null) return
         if (!EditorGameRunner.moveEntities(draggedIds, persistenceParentId, finalIndex)) return
         moveEntities(draggedIds, targetParentId, finalIndex)
     }
