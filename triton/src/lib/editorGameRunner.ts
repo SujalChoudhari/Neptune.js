@@ -552,7 +552,8 @@ export class EditorGameRunner {
                 }
                 else {
                     const target = Array.isArray(entity.components) ? entity.components.find((item: any) => item?.type?.toLowerCase() === component.toLowerCase()) : undefined
-                    if (target) target.props = { ...(target.props || {}), ...data }
+                    if (!target) return false
+                    target.props = { ...(target.props || {}), ...data }
                 }
                 return true
             }
