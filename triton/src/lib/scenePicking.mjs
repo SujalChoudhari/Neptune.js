@@ -119,7 +119,7 @@ export function pickEntityAt(root, x, y, tolerance = 12) {
                 component?.constructor?.name || component?.type || ''
             );
             const sprite = components.find((component) => {
-                if (isCollider(component)) return false;
+                if (component?.enabled === false || isCollider(component)) return false;
                 const width = component?.width ?? component?._properties?.width;
                 const height = component?.height ?? component?._properties?.height;
                 return Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0;
@@ -138,7 +138,7 @@ export function pickEntityAt(root, x, y, tolerance = 12) {
                 if (dx <= halfWidth && dy <= halfHeight) hitDistance = dx * dx + dy * dy;
             }
 
-            for (const collider of components.filter(isCollider)) {
+            for (const collider of components.filter((component) => component?.enabled !== false && isCollider(component))) {
                 const properties = collider?._properties || collider?.props || {};
                 const width = collider.width ?? properties.width ?? properties.size?.x;
                 const height = collider.height ?? properties.height ?? properties.size?.y;

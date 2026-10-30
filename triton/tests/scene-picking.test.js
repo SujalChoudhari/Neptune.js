@@ -199,6 +199,8 @@ test('viewport picking reads dimensions from runtime Sprite properties', () => {
     const hero = { id: 'runtime-hero', components: [new RuntimeTransform(), new RuntimeSprite()], children: [] };
     assert.equal(pickEntityAt({ children: [hero] }, 25, 30)?.id, 'runtime-hero');
     assert.equal(pickEntityAt({ children: [hero] }, 27, 30), null);
+    hero.components[1].enabled = false;
+    assert.equal(pickEntityAt({ children: [hero] }, 25, 30), null);
 });
 
 test('viewport picking uses runtime BoxCollider size and offset instead of point tolerance', () => {
@@ -213,6 +215,18 @@ test('viewport picking uses runtime BoxCollider size and offset instead of point
 
     assert.equal(pickEntityAt(root, 15, 22)?.id, 'collider-only');
     assert.equal(pickEntityAt(root, 12, 20), null);
+});
+
+test('Scene View does not pick disabled collider bounds', () => {
+    const collider = new BoxCollider(40, 20, 20, 0);
+    const target = {
+        id: 'collider-only',
+        components: [{ position: { x: 10, y: 20 }, scale: { x: 1, y: 1 } }, collider],
+        children: []
+    };
+    assert.equal(pickEntityAt({ children: [target] }, 40, 25), target);
+    collider.enabled = false;
+    assert.equal(pickEntityAt({ children: [target] }, 40, 25), null);
 });
 
 test('Scene View selection replacement and modifier toggling preserve unique entity IDs', () => {
