@@ -203,6 +203,20 @@ test('viewport picking reads dimensions from runtime Sprite properties', () => {
     assert.equal(pickEntityAt({ children: [hero] }, 25, 30), null);
 });
 
+test('Scene View picks the rendered footprint of a rotated runtime sprite', () => {
+    const target = {
+        id: 'rotated',
+        components: [
+            { position: { x: 10, y: 20 }, scale: { x: 1, y: 1 }, rotation: Math.PI / 2 },
+            { _properties: { width: 40, height: 4 } }
+        ],
+        children: []
+    };
+    const root = { children: [target] };
+    assert.equal(pickEntityAt(root, 10, 35), target, 'visible vertical end is selectable');
+    assert.equal(pickEntityAt(root, 25, 20), null, 'empty horizontal area is not selectable');
+});
+
 test('viewport picking uses runtime BoxCollider size and offset instead of point tolerance', () => {
     class RuntimeTransform {
         constructor() {

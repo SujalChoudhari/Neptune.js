@@ -132,8 +132,14 @@ export function pickEntityAt(root, x, y, tolerance = 12) {
                 const height = sprite.height ?? sprite._properties?.height;
                 const halfWidth = width * Math.abs(transform.scale.x) / 2;
                 const halfHeight = height * Math.abs(transform.scale.y) / 2;
-                const dx = Math.abs(x - position.x);
-                const dy = Math.abs(y - position.y);
+                const angle = Number.isFinite(transform.rotation) ? transform.rotation : 0;
+                const cos = Math.cos(angle);
+                const sin = Math.sin(angle);
+                const offsetX = x - position.x;
+                const offsetY = y - position.y;
+                // Match Sprite.draw's translate/rotate/scale transform in local space.
+                const dx = Math.abs(offsetX * cos + offsetY * sin);
+                const dy = Math.abs(-offsetX * sin + offsetY * cos);
                 hasBounds = true;
                 if (dx <= halfWidth && dy <= halfHeight) hitDistance = dx * dx + dy * dy;
             }
