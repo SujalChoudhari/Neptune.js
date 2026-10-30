@@ -247,6 +247,10 @@ test('selection bounds use scaled sprite geometry and a fallback marker without 
     assert.deepEqual(getEntitySelectionBounds({
         id: 'empty', transform: { position: { x: 1, y: 2 } }, components: {}
     }), { id: 'empty', name: '', x: -7, y: -6, width: 16, height: 16 });
+    assert.deepEqual(getEntitySelectionBounds({
+        id: 'disabled', transform: { position: { x: 10, y: 20 } },
+        components: { Sprite: { width: 80, height: 60, enabled: false } }
+    }), { id: 'disabled', name: '', x: 2, y: 12, width: 16, height: 16 });
     assert.equal(getEntitySelectionBounds({ transform: { position: { x: NaN, y: 2 } } }), null);
 });
 
@@ -279,6 +283,11 @@ test('combat collider overlay bounds include the selected transform and authored
         { type: 'BoxCollider', color: '#a78bfa', x: 5, y: 0, width: 100, height: 100 }
     ]);
     assert.deepEqual(getColliderOverlayBounds({ transform: { position: { x: 0, y: 0 } }, components: { Hitbox: { width: 0, height: 1 } } }), []);
+    assert.deepEqual(getColliderOverlayBounds({
+        transform: { position: { x: 0, y: 0 } },
+        components: { Hitbox: { width: 2, height: 3, enabled: false }, Hurtbox: { width: 4, height: 5, enabled: true } }
+    }), [{ type: 'Hurtbox', color: '#38bdf8', x: 0, y: 0, width: 4, height: 5 }],
+    'disabled collider must not show an editable overlay');
 });
 
 test('SpawnPoint overlay model resolves all cardinal directions and ignores invalid data', () => {

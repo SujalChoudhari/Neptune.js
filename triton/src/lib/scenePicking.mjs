@@ -86,7 +86,7 @@ export function getEntitySelectionBounds(entity, fallbackSize = 16) {
         if (/collider|hitbox|hurtbox/i.test(type)) return false;
         const width = component?.width ?? component?._properties?.width;
         const height = component?.height ?? component?._properties?.height;
-        return Number.isFinite(width) && width > 0 && Number.isFinite(height) && height > 0;
+        return component?.enabled !== false && Number.isFinite(width) && width > 0 && Number.isFinite(height) && height > 0;
     })?.[1];
     const width = sprite?.width ?? sprite?._properties?.width ?? fallbackSize;
     const height = sprite?.height ?? sprite?._properties?.height ?? fallbackSize;
@@ -186,7 +186,7 @@ export function getColliderOverlayBounds(entity) {
     ];
     return colliderTypes.flatMap(({ type, color }) => {
         const collider = components[type];
-        if (!collider || typeof collider !== 'object') return [];
+        if (!collider || typeof collider !== 'object' || collider.enabled === false) return [];
         const width = collider.width ?? collider.size?.x;
         const height = collider.height ?? collider.size?.y;
         const offsetX = collider.offsetX ?? collider.offset?.x ?? 0;
