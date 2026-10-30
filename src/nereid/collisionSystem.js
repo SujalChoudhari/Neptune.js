@@ -1,4 +1,5 @@
 import { Collider } from "./collider.js";
+import { isEntityActive } from "../core/entity.js";
 
 /** Deterministic AABB broadphase for solid, trigger, combat, hazard, and interaction colliders. */
 export class CollisionSystem {
@@ -84,7 +85,7 @@ export class CollisionSystem {
                 throw new TypeError("Each collision entry requires a Collider and finite x/y coordinates");
             }
             return { ...entry, id: this._id(entry.collider) };
-        }).filter(entry => entry.collider.enabled).sort((a, b) => a.id - b.id);
+        }).filter(entry => entry.collider.enabled && isEntityActive(entry.entity ?? entry.collider.entity)).sort((a, b) => a.id - b.id);
         const current = new Map();
         for (let i = 0; i < active.length; i++) {
             for (let j = i + 1; j < active.length; j++) {

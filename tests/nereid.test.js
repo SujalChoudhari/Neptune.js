@@ -133,6 +133,41 @@ describe('CollisionSystem', () => {
         expect(system.step([{ collider: sensor, x: 0, y: 0 }, { collider: new SolidCollider(10, 10, 0, 0, { layer: 4, mask: 1 }), x: 0, y: 0 }])).toBe(0);
     });
 
+    it('does not process inactive collider branches and resumes contacts when reactivated', () => {
+        const system = new CollisionSystem();
+        const parent = new Entity("Inactive branch");
+        const child = new Entity("Sensor");
+        parent.AddChild(child);
+        const sensor = new TriggerCollider(10, 10);
+        child.AddComponent(sensor);
+        const target = new Entity("Target");
+        const solid = new SolidCollider(10, 10);
+        target.AddComponent(solid);
+        const events = [];
+        sensor.on("enter", () => events.push("enter"));
+        sensor.on("stay", () => events.push("stay"));
+        sensor.on("exit", () => events.push("exit"));
+        const entries = [{ collider: sensor, x: 0, y: 0, entity: child }, { collider: solid, x: 0, y: 0, entity: target }];
+        parent.active = false;
+        expect(system.step(entries)).toBe(0);
+        expect(events).toEqual([]);
+        parent.active = true;
+        expect(system.step(entries)).toBe(1);
+        expect(events).toEqual(["enter"]);
+        child.active = false;
+        expect(system.step(entries)).toBe(0);
+        expect(events).toEqual(["enter", "exit"]);
+        child.active = true;
+        expect(system.step(entries)).toBe(1);
+        expect(events).toEqual(["enter", "exit", "enter"]);
+        target.active = false;
+        expect(system.step(entries)).toBe(0);
+        expect(events).toEqual(["enter", "exit", "enter", "exit"]);
+        target.active = true;
+        parent.active = false;
+        expect(system.step([{ collider: sensor, x: 0, y: 0 }, { collider: solid, x: 0, y: 0 }])).toBe(0);
+    });
+
     it('reports hit, hurt, hazard, interaction, and climbable contacts with entities', () => {
         const system = new CollisionSystem();
         const attacker = new Hitbox(8, 8);

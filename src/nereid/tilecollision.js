@@ -1,6 +1,7 @@
 import { Body } from "./body.js";
 import { Collider } from "./collider.js";
 import { Transform } from "../components/transform.js";
+import { isEntityActive } from "../core/entity.js";
 
 /**
  * TileCollision handles collision between entities and tilemaps.
@@ -20,6 +21,7 @@ export class TileCollision {
      * @param {number} deltaTime 
      */
     resolve(entity, deltaTime) {
+        if (!isEntityActive(entity)) return;
         const transform = entity.GetComponent(Transform);
         const body = entity.GetComponent(Body);
         const collider = entity.GetComponent(Collider);

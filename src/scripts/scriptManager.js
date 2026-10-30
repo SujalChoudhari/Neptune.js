@@ -1,5 +1,6 @@
 import { Behaviour } from "./script.js";
 import { Global } from "./script.js";
+import { isEntityActive } from "../core/entity.js";
 
 export class ScriptManager {
     static #behaviours = [];
@@ -26,6 +27,7 @@ export class ScriptManager {
     static behaviourUpdate(deltaTime) {
         console.log(`ScriptManager: Updating ${this.#behaviours.length} scripts`);
         this.#behaviours.forEach(behaviour => {
+            if (behaviour.entity && !isEntityActive(behaviour.entity)) return;
             behaviour.Update(deltaTime);
         });
     }

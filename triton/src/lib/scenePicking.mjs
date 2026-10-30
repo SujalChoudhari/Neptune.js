@@ -108,7 +108,7 @@ export function pickEntityAt(root, x, y, tolerance = 12) {
     let best = null;
     let bestDistance = Infinity;
     const visit = (entity) => {
-        if (!entity) return;
+        if (!entity || entity.active === false) return;
         const components = Array.isArray(entity.components) ? entity.components : [];
         const transform = components.find((component) =>
             component && component.position && component.scale

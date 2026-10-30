@@ -3,6 +3,14 @@ import { ComponentRegistry } from "./componentRegistry.js";
 
 const makeId = (prefix) => `${prefix}_${Math.random().toString(36).slice(2, 11)}`;
 
+/** Whether this entity and every ancestor are enabled for runtime processing. */
+export function isEntityActive(entity) {
+    for (let current = entity; current; current = current.parent) {
+        if (current.active === false) return false;
+    }
+    return true;
+}
+
 function cloneSerializable(value, seen = new WeakSet()) {
     if (value === null || typeof value !== "object") return value;
     if (seen.has(value)) return undefined;
@@ -41,6 +49,7 @@ export class Entity {
         this._parent = null;
         this._components = [];
         this._destroyed = false;
+        this.active = true;
     }
 
     /**
@@ -282,6 +291,7 @@ export class Entity {
         return {
             id: this.id,
             name: this.name,
+            ...(this.active === false ? { active: false } : {}),
             components: this._components.map(component => ({
                 id: component.id,
                 type: ComponentRegistry.nameOf(component),

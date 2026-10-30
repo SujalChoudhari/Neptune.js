@@ -10,6 +10,8 @@ import { SceneLoader } from "../../src/core/sceneLoader.js";
 import { ComponentRegistry } from "../../src/core/componentRegistry.js";
 import { Transform } from "../../src/components/transform.js";
 import { Sprite } from "../../src/rendering/sprite.js";
+import { Renderable, collectRenderableRoots } from "../../src/rendering/renderable.js";
+import { pickEntityAt } from "../src/lib/scenePicking.mjs";
 import { BoxCollider } from "../../src/components/boxCollider.js";
 import { SceneTransition } from "../../src/components/sceneTransition.js";
 import { SpawnPoint } from "../../src/components/spawnPoint.js";
@@ -211,6 +213,32 @@ function createMainHarness() {
                 },
                 moveEntities() {},
                 addEntityToHierarchy(entity, components) { addedEntities.push({ entity, components }); },
+                addEntityBranchToHierarchy(branch, parentId, afterId) {
+                    const append = (node, parent) => {
+                        const children = node.children || [];
+                        game.entities[node.id] = { id: node.id, parentId: parent, name: node.name,
+                            type: node.type, children: children.map(child => child.id), active: node.active !== false,
+                            locked: false, expanded: false };
+                        children.forEach(child => append(child, node.id));
+                    };
+                    const siblings = game.entities[parentId].children;
+                    const sourceIndex = siblings.indexOf(afterId);
+                    siblings.splice(sourceIndex === -1 ? siblings.length : sourceIndex + 1, 0, branch.id);
+                    append(branch, parentId);
+                },
+                renameEntityInHierarchy(id, name) { game.entities[id] = { ...game.entities[id], name }; },
+                setEntityActiveInHierarchy(id, active) { game.entities[id] = { ...game.entities[id], active }; },
+                setEntityLocked(id, locked) { game.entities[id] = { ...game.entities[id], locked }; },
+                removeEntityFromHierarchy(id) {
+                    const remove = entityId => {
+                        (game.entities[entityId]?.children || []).forEach(remove);
+                        delete game.entities[entityId];
+                    };
+                    const parent = game.entities[game.entities[id].parentId];
+                    parent.children = parent.children.filter(child => child !== id);
+                    remove(id);
+                    game.selectedIds = game.selectedIds.filter(selectedId => game.entities[selectedId]);
+                },
                 notifyGame(type, payload) { notifications.push({ type, payload }); },
                 saveScene: async () => writeScene("scenes/main.scene", game.staleScene || game.openedScene)
             })
@@ -307,6 +335,28 @@ function createMainHarness() {
         }
         return clickHierarchyAction(node.props?.children, action);
     };
+    const findHierarchyItem = (node, id) => {
+        if (Array.isArray(node)) return node.map(child => findHierarchyItem(child, id)).find(Boolean);
+        if (!node || typeof node !== "object") return null;
+        if (node.type === "HierarchyItem" && node.props?.entity?.id === id) return node;
+        return findHierarchyItem(node.props?.children, id);
+    };
+    const clickContextAction = (node, id, action) => {
+        if (Array.isArray(node)) return node.some(child => clickContextAction(child, id, action));
+        if (!node || typeof node !== "object") return false;
+        if (node.type === "ThemedContextMenu" && findHierarchyItem(node, id)) {
+            const visit = child => {
+                if (Array.isArray(child)) return child.some(visit);
+                if (!child || typeof child !== "object") return false;
+                if (child.type === "ThemedContextMenuItem" && child.props?.children === action) {
+                    child.props.onClick(); return true;
+                }
+                return visit(child.props?.children);
+            };
+            return visit(node);
+        }
+        return clickContextAction(node.props?.children, id, action);
+    };
 
     const selectHierarchyEntity = (node, id, multi = false, shift = false) => {
         if (Array.isArray(node)) return node.some(child => selectHierarchyEntity(child, id, multi, shift));
@@ -318,7 +368,7 @@ function createMainHarness() {
         return selectHierarchyEntity(node.props?.children, id, multi, shift);
     };
 
-    return { game, runner: runner.EditorGameRunner, files, writes, notifications, addedEntities, listeners, invokedCommands, render, renderHierarchy, clickDuplicate, clickAddEntity, clickHierarchyAction, selectHierarchyEntity, dispatchMenuEvent, writeScene };
+    return { game, runner: runner.EditorGameRunner, files, writes, notifications, addedEntities, listeners, invokedCommands, render, renderHierarchy, clickDuplicate, clickAddEntity, clickHierarchyAction, clickContextAction, findHierarchyItem, selectHierarchyEntity, dispatchMenuEvent, writeScene };
 }
 
 function loadBundle(bundle, context) {
@@ -997,6 +1047,105 @@ describe("Triton persistence bridge", () => {
         expect(context.selectedEntityData.id).toBe("context-hitbox");
         expect(context.selectedEntityData.components.Hitbox).toEqual(components[0].props);
         expect(context.selectedEntityData.transform.position).toEqual({ x: 0, y: 0 });
+    });
+
+    it("keeps hierarchy rename, active and lock edits synchronized with selected Inspector data", async () => {
+        const harness = createGameContextHarness({
+            type: "scene", version: "1.0.0", schemaVersion: 1, name: "CRUD",
+            entities: [{ id: "hero", name: "Hero", active: true, children: [] }]
+        });
+        let context = harness.render();
+        await context.loadScene("scenes/main.scene");
+        context = harness.render();
+        context.selectEntity("hero", false);
+        context = harness.render();
+        context.renameEntityInHierarchy("hero", "Renamed Hero");
+        context.setEntityActiveInHierarchy("hero", false);
+        context.setEntityLocked("hero", true);
+        context = harness.render();
+        expect(context.entities.hero.name).toBe("Renamed Hero");
+        expect(context.entities.hero.active).toBe(false);
+        expect(context.entities.hero.locked).toBe(true);
+        expect(context.selectedEntityData.name).toBe("Renamed Hero");
+        expect(context.selectedEntityData.active).toBe(false);
+        context.selectEntity("hero", false);
+        expect(harness.render().selectedEntityData.active).toBe(false);
+        expect(harness.bridgeMessages.some(message => message.type === "editor:set-locked")).toBe(false);
+    });
+
+    it("adds a duplicated branch with independent Inspector data and removes selected descendants", async () => {
+        const harness = createGameContextHarness({
+            type: "scene", version: "1.0.0", schemaVersion: 1, name: "CRUD",
+            entities: [{ id: "source", name: "Source", children: [{ id: "child", name: "Child", children: [] }] }]
+        });
+        let context = harness.render();
+        await context.loadScene("scenes/main.scene");
+        context = harness.render();
+        context.addEntityBranchToHierarchy({ id: "copy", name: "Source", active: false, children: [
+            { id: "copy-child", name: "Child", components: [{ type: "Stats", props: { health: 7 } }], children: [] }
+        ] }, "root");
+        context = harness.render();
+        expect(context.entities.root.children).toEqual(["source", "copy"]);
+        expect(context.entities.copy.children).toEqual(["copy-child"]);
+        expect(context.entities["copy-child"].parentId).toBe("copy");
+        context.selectEntity("copy-child", false);
+        context = harness.render();
+        expect(context.selectedEntityData.components.Stats.health).toBe(7);
+        context.removeEntityFromHierarchy("copy");
+        context = harness.render();
+        expect(context.entities.root.children).toEqual(["source"]);
+        expect(context.entities.copy).toBe(undefined);
+        expect(context.entities["copy-child"]).toBe(undefined);
+        expect(context.selectedIds).toEqual([]);
+        expect(context.selectedEntityData).toBe(null);
+        context.selectEntity("copy-child", false);
+        expect(harness.render().selectedEntityData).toBe(null);
+    });
+
+    it("projects duplicates directly after their source, matching canonical sibling order", async () => {
+        const scene = { type: "scene", version: "1.0.0", schemaVersion: 1, name: "Ordered duplicates",
+            entities: [{ id: "first", name: "First", children: [
+                { id: "child-a", name: "A", children: [] }, { id: "child-b", name: "B", children: [] }
+            ] }, { id: "last", name: "Last", children: [] }] };
+        const harness = createGameContextHarness(scene);
+        const { runner } = createMainHarness();
+        runner.openScene(scene, "scenes/main.scene");
+        let context = harness.render();
+        await context.loadScene("scenes/main.scene");
+        context = harness.render();
+        const copy = runner.duplicateEntity("first");
+        context.addEntityBranchToHierarchy(copy, "root", "first");
+        context = harness.render();
+        expect(context.entities.root.children).toEqual(runner.currentScene.entities.map(entity => entity.id));
+        const nestedCopy = runner.duplicateEntity("child-a");
+        context.addEntityBranchToHierarchy(nestedCopy, "first", "child-a");
+        context = harness.render();
+        expect(context.entities.first.children).toEqual(runner.currentScene.entities[0].children.map(entity => entity.id));
+    });
+
+    it("hydrates inactive saved entities and excludes inactive branches from rendering", async () => {
+        const scene = { type: "scene", version: "1.0.0", schemaVersion: 1, name: "Inactive",
+            entities: [{ id: "inactive", name: "Inactive", active: false, children: [
+                { id: "nested", name: "Nested", children: [] }
+            ] }] };
+        const harness = createGameContextHarness(scene);
+        let context = harness.render();
+        await context.loadScene("scenes/main.scene");
+        context = harness.render();
+        expect(context.entities.inactive.active).toBe(false);
+        context.selectEntity("inactive", false);
+        expect(harness.render().selectedEntityData.active).toBe(false);
+        const runtime = SceneLoader.parse(scene);
+        const inactive = runtime.children[0];
+        expect(inactive.active).toBe(false);
+        expect(inactive.serialize().active).toBe(false);
+        inactive.children[0].AddComponent(new Renderable());
+        expect(collectRenderableRoots(runtime)).toHaveLength(0);
+        inactive.children[0].transform = { position: { x: 0, y: 0 }, scale: { x: 1, y: 1 } };
+        expect(pickEntityAt(runtime, 0, 0)).toBe(null);
+        inactive.active = true;
+        expect(collectRenderableRoots(runtime)).toHaveLength(1);
+        expect(pickEntityAt(runtime, 0, 0)?.id).toBe("nested");
     });
 
     it("applies Hierarchy Shift-range selection as one ordered selection update", () => {
@@ -2079,6 +2228,51 @@ describe("Triton persistence bridge", () => {
         expect(copy.components[0].id !== original.components[0].id).toBe(true);
         expect(copy.children[0].id !== original.children[0].id).toBe(true);
         expect(copy.children[0].components[0].id !== original.children[0].components[0].id).toBe(true);
+    });
+
+    it("applies HierarchyPanel rename, active, lock, duplicate and nested delete to the saved runtime scene", () => {
+        const harness = createMainHarness();
+        const scene = { type: "scene", version: "1.0.0", schemaVersion: 1, name: "CRUD",
+            entities: [{ id: "parent", name: "Before", active: true, type: "group", children: [
+                { id: "child", name: "Child", type: "empty", children: [] }
+            ] }, { id: "sibling", name: "Sibling", type: "empty", children: [] }] };
+        harness.runner.openScene(scene, "scenes/main.scene");
+        harness.game.entities = {
+            root: { id: "root", parentId: null, name: "CRUD", type: "group", children: ["parent", "sibling"], active: true, locked: false, expanded: true },
+            parent: { id: "parent", parentId: "root", name: "Before", type: "group", children: ["child"], active: true, locked: false, expanded: true },
+            child: { id: "child", parentId: "parent", name: "Child", type: "empty", children: [], active: true, locked: false, expanded: false },
+            sibling: { id: "sibling", parentId: "root", name: "Sibling", type: "empty", children: [], active: true, locked: false, expanded: false }
+        };
+        harness.render();
+        harness.findHierarchyItem(harness.renderHierarchy(), "parent").props.onRename("parent", "After");
+        harness.findHierarchyItem(harness.renderHierarchy(), "parent").props.onToggleActive("parent");
+        harness.findHierarchyItem(harness.renderHierarchy(), "parent").props.onToggleLock("parent");
+        expect(harness.game.entities.parent.name).toBe("After");
+        expect(harness.game.entities.parent.active).toBe(false);
+        expect(harness.game.entities.parent.locked).toBe(true);
+        expect(harness.clickContextAction(harness.renderHierarchy(), "parent", "Duplicate")).toBe(true);
+        const copy = harness.runner.currentScene.entities[1];
+        expect(harness.game.entities.root.children).toEqual(["parent", copy.id, "sibling"]);
+        expect(harness.game.entities.root.children).toEqual(harness.runner.currentScene.entities.map(entity => entity.id));
+        expect(harness.game.entities[copy.children[0].id].parentId).toBe(copy.id);
+        harness.game.selectedIds = ["child"];
+        harness.findHierarchyItem(harness.renderHierarchy(), "child").props.onRemove("child");
+        expect(harness.game.entities.child).toBe(undefined);
+        expect(harness.game.selectedIds).toEqual([]);
+        harness.dispatchMenuEvent("save");
+        harness.runner.closeScene();
+        const saved = JSON.parse(harness.files.get("scenes/main.scene"));
+        const reopened = harness.runner.openScene(saved, "scenes/main.scene");
+        expect(reopened.entities[0].name).toBe("After");
+        expect(reopened.entities[0].active).toBe(false);
+        expect(reopened.entities[0].children).toEqual([]);
+        expect(reopened.entities[1].children[0].id).toBe(copy.children[0].id);
+        const runtime = SceneLoader.parse(reopened);
+        expect(runtime.children[0].name).toBe("After");
+        expect(runtime.children[0].active).toBe(false);
+        expect(harness.notifications.some(message => message.type === "editor:set-locked")).toBe(false);
+        expect(harness.notifications.some(message => message.type === "editor:delete" && message.payload.id === "child")).toBe(true);
+        expect(harness.notifications.some(message => message.type === "editor:load-scene" && message.payload.data.entities[1].id === copy.id)).toBe(true);
     });
 
     it("does not make a rejected scene read available to File > Save", () => {

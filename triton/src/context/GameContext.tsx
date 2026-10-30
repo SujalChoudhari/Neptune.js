@@ -23,6 +23,11 @@ interface GameContextType {
     setEntityExpansion: (ids: string[], expanded: boolean) => void;
     moveEntities: (ids: string[], targetParentId: string, index?: number) => void;
     addEntityToHierarchy: (entity: SceneEntity, components?: Array<{ type: string; props?: Record<string, any> }>) => void;
+    addEntityBranchToHierarchy: (branch: Record<string, any>, parentId: string, afterId?: string) => void;
+    renameEntityInHierarchy: (id: string, name: string) => void;
+    removeEntityFromHierarchy: (id: string) => void;
+    setEntityActiveInHierarchy: (id: string, active: boolean) => void;
+    setEntityLocked: (id: string, locked: boolean) => void;
     updateComponent: (id: string, component: string, field: string, value: any) => void;
     markAsMainScene: () => void;
 
@@ -41,6 +46,22 @@ interface GameContextType {
 const GameContext = createContext<GameContextType | null>(null);
 
 import { useFileSystem } from "./FileSystemContext";
+
+function hierarchyEntityData(entity: { id: string; name: string; active?: boolean; transform?: Record<string, any>; components?: Array<{ type: string; props?: Record<string, any> }> }): EntityData {
+    const components = entity.components || [];
+    const transform = entity.transform || components.find(component => component.type.toLowerCase() === 'transform')?.props || {};
+    const position = transform.position || transform.pos || { x: 0, y: 0 };
+    const scale = transform.scale || { x: 1, y: 1 };
+    return {
+        id: entity.id, name: entity.name, active: entity.active !== false,
+        transform: {
+            position: { x: position.x ?? 0, y: position.y ?? 0 },
+            rotation: transform.rotation ?? transform.rot ?? 0,
+            scale: { x: scale.x ?? 1, y: scale.y ?? 1 }, z: transform.z ?? 0
+        },
+        components: Object.fromEntries(components.map(component => [component.type, component.props || {}]))
+    };
+}
 
 export function GameProvider({ children }: { children: ReactNode }) {
     const { readScene, readProject, writeProject, writeScene, rootPath } = useFileSystem();
@@ -85,24 +106,82 @@ export function GameProvider({ children }: { children: ReactNode }) {
         });
         setEntityDataCache(previous => {
             if (previous[entity.id]) return previous;
-            const transformProps = components.find(component => component.type.toLowerCase() === 'transform')?.props || {};
-            const position = transformProps.position || transformProps.pos || { x: 0, y: 0 };
-            const scale = transformProps.scale || { x: 1, y: 1 };
-            const data: EntityData = {
-                id: entity.id,
-                name: entity.name,
-                active: entity.active,
-                transform: {
-                    position: { x: position.x ?? 0, y: position.y ?? 0 },
-                    rotation: transformProps.rotation ?? transformProps.rot ?? 0,
-                    scale: { x: scale.x ?? 1, y: scale.y ?? 1 },
-                    z: transformProps.z ?? 0
-                },
-                components: Object.fromEntries(components.map(component => [component.type, component.props || {}]))
-            };
+            const data = hierarchyEntityData({ ...entity, components });
             return { ...previous, [entity.id]: data };
         });
     }, []);
+
+    const renameEntityInHierarchy = useCallback((id: string, name: string) => {
+        setEntities(previous => previous[id] ? { ...previous, [id]: { ...previous[id], name } } : previous);
+        setEntityDataCache(previous => previous[id] ? { ...previous, [id]: { ...previous[id], name } } : previous);
+        setSelectedEntitiesData(previous => previous[id] ? { ...previous, [id]: { ...previous[id], name } } : previous);
+    }, []);
+
+    const setEntityActiveInHierarchy = useCallback((id: string, active: boolean) => {
+        setEntities(previous => previous[id] ? { ...previous, [id]: { ...previous[id], active } } : previous);
+        setEntityDataCache(previous => previous[id] ? { ...previous, [id]: { ...previous[id], active } } : previous);
+        setSelectedEntitiesData(previous => previous[id] ? { ...previous, [id]: { ...previous[id], active } } : previous);
+    }, []);
+
+    const setEntityLocked = useCallback((id: string, locked: boolean) => {
+        setEntities(previous => previous[id] && previous[id].locked !== locked
+            ? { ...previous, [id]: { ...previous[id], locked } } : previous);
+    }, []);
+
+    const addEntityBranchToHierarchy = useCallback((branch: Record<string, any>, parentId: string, afterId?: string) => {
+        const additions: Record<string, SceneEntity> = {};
+        const data: Record<string, EntityData> = {};
+        const visit = (node: Record<string, any>, nodeParentId: string): boolean => {
+            if (typeof node?.id !== 'string' || entities[node.id] || additions[node.id]) return false;
+            const children = Array.isArray(node.children) ? node.children : [];
+            additions[node.id] = {
+                id: node.id, parentId: nodeParentId, name: node.name || 'Entity',
+                type: node.type || 'entity', children: [], active: node.active !== false,
+                locked: false, expanded: false
+            };
+            data[node.id] = hierarchyEntityData(node as Parameters<typeof hierarchyEntityData>[0]);
+            for (const child of children) {
+                if (!visit(child, node.id)) return false;
+                additions[node.id].children.push(child.id);
+            }
+            return true;
+        };
+        if (!entities[parentId] || !visit(branch, parentId)) return;
+        setEntities(previous => {
+            const parent = previous[parentId];
+            if (!parent || previous[branch.id]) return previous;
+            const children = [...parent.children];
+            const sourceIndex = afterId ? children.indexOf(afterId) : -1;
+            children.splice(sourceIndex === -1 ? children.length : sourceIndex + 1, 0, branch.id);
+            return { ...previous, [parentId]: { ...parent, children }, ...additions };
+        });
+        setEntityDataCache(previous => ({ ...previous, ...data }));
+    }, [entities]);
+
+    const removeEntityFromHierarchy = useCallback((id: string) => {
+        if (id === 'root' || !entities[id]) return;
+        const removed = new Set<string>();
+        const collect = (entityId: string) => {
+            if (removed.has(entityId)) return;
+            removed.add(entityId);
+            entities[entityId]?.children.forEach(collect);
+        };
+        collect(id);
+        setEntities(previous => {
+            const next = { ...previous };
+            const parentId = previous[id]?.parentId;
+            if (parentId && next[parentId]) next[parentId] = {
+                ...next[parentId], children: next[parentId].children.filter(childId => childId !== id)
+            };
+            removed.forEach(entityId => delete next[entityId]);
+            return next;
+        });
+        const withoutBranch = <T,>(previous: Record<string, T>): Record<string, T> =>
+            Object.fromEntries(Object.entries(previous).filter(([entityId]) => !removed.has(entityId)));
+        setEntityDataCache(withoutBranch);
+        setSelectedEntitiesData(withoutBranch);
+        setSelectedIds(previous => previous.filter(selectedId => !removed.has(selectedId)));
+    }, [entities]);
 
     const setEntityExpansion = useCallback((ids: string[], expanded: boolean) => {
         const targetIds = new Set(ids);
@@ -201,7 +280,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
                         name: entData.name || 'Entity',
                         type: entData.type || 'entity',
                         children: [],
-                        active: true,
+                        active: entData.active !== false,
                         locked: false,
                         expanded: false
                     };
@@ -621,6 +700,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
             setEntityExpansion,
             moveEntities,
             addEntityToHierarchy,
+            addEntityBranchToHierarchy,
+            renameEntityInHierarchy,
+            removeEntityFromHierarchy,
+            setEntityActiveInHierarchy,
+            setEntityLocked,
             updateComponent,
             markAsMainScene,
             notifyGame,

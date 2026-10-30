@@ -1,0 +1,52 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { Entity } from "../src/core/entity.js";
+import { Behaviour } from "../src/scripts/script.js";
+import { ScriptManager } from "../src/scripts/scriptManager.js";
+import { TileCollision } from "../src/nereid/tilecollision.js";
+import { Body } from "../src/nereid/body.js";
+import { Collider } from "../src/nereid/collider.js";
+import { Transform } from "../src/components/transform.js";
+
+test("behaviours pause under inactive ancestors and resume without reinitializing", () => {
+    const parent = new Entity("Parent");
+    const child = new Entity("Child");
+    parent.AddChild(child);
+    let updates = 0;
+    let inits = 0;
+    const behaviour = new Behaviour("Counter", () => { inits++; }, () => { updates++; });
+    child.AddComponent(behaviour);
+    behaviour.Init();
+    ScriptManager.behaviourUpdate(0.1);
+    assert.equal(updates, 1);
+    parent.active = false;
+    ScriptManager.behaviourUpdate(0.1);
+    assert.equal(updates, 1);
+    parent.active = true;
+    child.active = false;
+    ScriptManager.behaviourUpdate(0.1);
+    assert.equal(updates, 1);
+    child.active = true;
+    ScriptManager.behaviourUpdate(0.1);
+    assert.equal(updates, 2);
+    assert.equal(inits, 1);
+});
+
+test("tile collision does not move an entity beneath an inactive parent", () => {
+    const parent = new Entity("Parent");
+    const child = new Entity("Child");
+    parent.AddChild(child);
+    const transform = new Transform();
+    const body = new Body();
+    body.velocity.x = 4;
+    child.AddComponent(transform);
+    child.AddComponent(body);
+    child.AddComponent(new Collider(1, 1));
+    const collision = new TileCollision({ tileset: { tileWidth: 16, tileHeight: 16 }, scale: 1, isSolid: () => false });
+    parent.active = false;
+    collision.resolve(child, 1);
+    assert.equal(transform.position.x, 0);
+    parent.active = true;
+    collision.resolve(child, 1);
+    assert.equal(transform.position.x, 4);
+});

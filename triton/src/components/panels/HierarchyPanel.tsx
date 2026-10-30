@@ -24,7 +24,12 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         setEntityExpansion,
         moveEntities,
         notifyGame,
-        addEntityToHierarchy
+        addEntityToHierarchy,
+        setEntityActiveInHierarchy,
+        setEntityLocked,
+        renameEntityInHierarchy,
+        removeEntityFromHierarchy,
+        addEntityBranchToHierarchy
     } = useGameContext()
 
     const [searchQuery, setSearchQuery] = useState("")
@@ -44,16 +49,16 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     // Actions Wrapper
     const toggleActive = (id: string) => {
         const ent = entities[id];
-        if (ent) {
-            EditorGameRunner.updateEntity(id, 'active', { value: !ent.active })
-            notifyGame('editor:update-component', { id, component: 'active', data: !ent.active });
-            notifyGame('editor:set-active', { id, active: !ent.active });
-        }
+        if (!ent) return;
+        const active = !ent.active;
+        if (!EditorGameRunner.updateEntity(id, 'active', { value: active })) return;
+        setEntityActiveInHierarchy(id, active);
+        notifyGame('editor:set-active', { id, active });
     }
 
     const toggleLock = (id: string) => {
         const ent = entities[id];
-        if (ent) notifyGame('editor:set-locked', { id, locked: !ent.locked });
+        if (ent) setEntityLocked(id, !ent.locked);
     }
 
     const toggleExpanded = (id: string) => {
@@ -62,19 +67,23 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     }
 
     const renameEntity = (id: string, newName: string) => {
-        EditorGameRunner.updateEntity(id, 'name', { value: newName })
+        if (!EditorGameRunner.updateEntity(id, 'name', { value: newName })) return;
+        renameEntityInHierarchy(id, newName);
         notifyGame('editor:rename', { id, name: newName });
         setRenamingId(null)
     }
 
     const removeEntity = useCallback((id: string) => {
-        EditorGameRunner.deleteEntity(id)
+        if (!EditorGameRunner.deleteEntity(id)) return;
+        removeEntityFromHierarchy(id);
         notifyGame('editor:delete', { id });
-    }, [notifyGame])
+    }, [removeEntityFromHierarchy, notifyGame])
 
     const duplicateEntity = (id: string) => {
-        EditorGameRunner.duplicateEntity(id)
-        notifyGame('editor:duplicate', { id })
+        const duplicate = EditorGameRunner.duplicateEntity(id);
+        if (!duplicate) return;
+        addEntityBranchToHierarchy(duplicate, entities[id]?.parentId || "root", id);
+        notifyGame('editor:load-scene', { data: EditorGameRunner.currentScene });
     }
 
     const addEntity = (parentId: string, name: string, type: string) => {
@@ -101,23 +110,12 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
             : undefined
         const entityComponents = components || [];
         if (!persistenceParentId || !EditorGameRunner.createEntity(persistenceParentId, { id, name, type, components: entityComponents })) return;
-        const entity: SceneEntity = {
-            id,
-            parentId,
-            name,
-            type: type as SceneEntity['type'],
-            children: [],
-            active: true,
-            locked: false,
-            expanded: false
-        };
-        addEntityToHierarchy(entity, entityComponents);
+        addEntityToHierarchy({
+            id, parentId, name, type: type as SceneEntity['type'], children: [],
+            active: true, locked: false, expanded: false
+        }, entityComponents);
         notifyGame('editor:create-entity', {
-            id,
-            parentId: persistenceParentId,
-            name,
-            type,
-            active: true,
+            id, parentId: persistenceParentId, name, type, active: true,
             transform: { pos: { x: 0, y: 0 }, rot: 0, scale: { x: 1, y: 1 } },
             components: entityComponents
         });
