@@ -13,6 +13,7 @@ import {
     XCircle
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { readRuntimeConsoleMessage } from "@/lib/runtimeConsoleBridge.mjs"
 
 interface LogEntry {
     id: string
@@ -55,10 +56,10 @@ export const ConsolePanel = (_props: IDockviewPanelProps) => {
         };
 
         const handleMessage = (event: MessageEvent) => {
-            if (event.data && event.data.type === 'editor:log') {
-                const { type, message } = event.data.detail;
-                addLog(type, message);
-            }
+            const message = readRuntimeConsoleMessage(event,
+                document.querySelectorAll<HTMLIFrameElement>('iframe[title="Game View"], iframe[title="Scene View"]'));
+            if (message?.kind === 'log') addLog(message.type, message.message);
+            if (message?.kind === 'diagnostic') handleDiagnostic({ detail: message.diagnostic } as CustomEvent);
         };
 
         const handleDiagnostic = (event: CustomEvent) => {
@@ -68,10 +69,6 @@ export const ConsolePanel = (_props: IDockviewPanelProps) => {
             addLog('error', `[${diagnostic.code || 'EDITOR_DATA_INVALID'}] ${diagnostic.message || 'Invalid editor data.'}${source}.${action}`);
         };
 
-        const handleDiagnosticMessage = (event: MessageEvent) => {
-            if (event.data?.type !== 'editor:diagnostic') return;
-            handleDiagnostic({ detail: event.data.payload } as CustomEvent);
-        };
 
         const handleClear = () => {
             if (clearOnPlay) {
@@ -82,14 +79,12 @@ export const ConsolePanel = (_props: IDockviewPanelProps) => {
         window.addEventListener('editor:log', handleLog as EventListener);
         window.addEventListener('editor:diagnostic', handleDiagnostic as EventListener);
         window.addEventListener('message', handleMessage);
-        window.addEventListener('message', handleDiagnosticMessage);
         window.addEventListener('editor:play', handleClear as EventListener);
 
         return () => {
         window.removeEventListener('editor:log', handleLog as EventListener);
             window.removeEventListener('editor:diagnostic', handleDiagnostic as EventListener);
             window.removeEventListener('message', handleMessage);
-            window.removeEventListener('message', handleDiagnosticMessage);
             window.removeEventListener('editor:play', handleClear as EventListener);
         };
     }, [clearOnPlay]);
