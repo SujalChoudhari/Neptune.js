@@ -14,7 +14,7 @@ import { HierarchyItem } from "./hierarchy/HierarchyItem"
 import { HierarchyToolbar } from "./hierarchy/HierarchyToolbar"
 import type { SceneEntity } from "@/types/engine"
 import { EditorGameRunner } from "@/lib/editorGameRunner"
-import { visibleHierarchyIds } from "../../lib/visibleHierarchyIds"
+import { visibleHierarchyIds, hierarchySelectionForClick } from "../../lib/visibleHierarchyIds"
 
 export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     const {
@@ -151,13 +151,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
 
     const handleSelect = (id: string, multi: boolean, shift?: boolean) => {
         if (shift && lastSelectedId) {
-            const list = getVisibleFlatList
-            const start = list.indexOf(lastSelectedId)
-            const end = list.indexOf(id)
-            if (start !== -1 && end !== -1) {
-                const range = list.slice(Math.min(start, end), Math.max(start, end) + 1)
-                selectEntities(range);
-            }
+            selectEntities(hierarchySelectionForClick(getVisibleFlatList, lastSelectedId, id));
         } else {
             selectEntity(id, multi)
         }

@@ -22,3 +22,10 @@ export function visibleHierarchyIds(entities: Record<string, SceneEntity>, searc
     if (entities.root) traverse('root');
     return list;
 }
+
+export function hierarchySelectionForClick(visibleIds: string[], anchorId: string, clickedId: string): string[] {
+    const start = visibleIds.indexOf(anchorId);
+    const end = visibleIds.indexOf(clickedId);
+    if (start === -1 || end === -1) return [clickedId];
+    return visibleIds.slice(Math.min(start, end), Math.max(start, end) + 1);
+}
