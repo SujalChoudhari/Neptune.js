@@ -249,6 +249,7 @@ export const runtimeSelectionBridgeScript = `
         const ids = normalizeIds(event.detail?.ids);
         const scene = window.game?.scene;
         const validIds = scene ? ids.filter(id => findEntity(scene, id)) : ids;
+        if (scene) applyEditorSelection(validIds);
         window.parent.postMessage({
             type: "game:selection-changed",
             payload: { ids: validIds }
