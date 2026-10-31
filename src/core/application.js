@@ -208,6 +208,7 @@ export class Application {
 
         } catch (e) {
             console.error("Application: Failed to load scene", e);
+            throw e;
         }
     }
 
