@@ -47,7 +47,8 @@ function bundleSource(sourcefile, external) {
         stdin: {
             contents: fs.readFileSync(sourcefile, "utf8"),
             loader: sourcefile.endsWith(".tsx") ? "tsx" : "ts",
-            sourcefile
+            sourcefile,
+            resolveDir: path.dirname(sourcefile)
         },
         external
     }).outputFiles[0].text;

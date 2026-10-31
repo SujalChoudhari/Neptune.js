@@ -14,6 +14,7 @@ import { HierarchyItem } from "./hierarchy/HierarchyItem"
 import { HierarchyToolbar } from "./hierarchy/HierarchyToolbar"
 import type { SceneEntity } from "@/types/engine"
 import { EditorGameRunner } from "@/lib/editorGameRunner"
+import { visibleHierarchyIds } from "../../lib/visibleHierarchyIds"
 
 export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     const {
@@ -146,18 +147,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     }, [entities, searchQuery])
 
     // Helper to get flattened list of visible (expanded) entity IDs
-    const getVisibleFlatList = useMemo(() => {
-        const list: string[] = []
-        const traverse = (id: string) => {
-            if (id !== 'root') list.push(id)
-            if ((id === 'root' || (entities[id] && entities[id].expanded)) || searchQuery.trim()) {
-                const children = getChildren(id)
-                children.forEach(child => traverse(child.id))
-            }
-        }
-        if (entities['root']) traverse('root')
-        return list
-    }, [entities, searchQuery, getChildren])
+    const getVisibleFlatList = useMemo(() => visibleHierarchyIds(entities, searchQuery), [entities, searchQuery])
 
     const handleSelect = (id: string, multi: boolean, shift?: boolean) => {
         if (shift && lastSelectedId) {
