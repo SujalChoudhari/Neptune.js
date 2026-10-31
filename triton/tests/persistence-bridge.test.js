@@ -1151,6 +1151,15 @@ describe("Triton persistence bridge", () => {
         expect(context.entities.first.children).toEqual(runner.currentScene.entities[0].children.map(entity => entity.id));
     });
 
+    it("rejects blank hierarchy renames without changing the saved scene", () => {
+        const { runner } = createMainHarness();
+        runner.openScene({ type: "scene", version: "1.0.0", schemaVersion: 1,
+            name: "Names", entities: [{ id: "hero", name: "Hero", children: [] }] }, "scenes/main.scene");
+        expect(runner.updateEntity("hero", "name", { value: "  " })).toBe(false);
+        expect(runner.currentScene.entities[0].name).toBe("Hero");
+        expect(runner.isDirty).toBe(false);
+    });
+
     it("hydrates inactive saved entities and excludes inactive branches from rendering", async () => {
         const scene = { type: "scene", version: "1.0.0", schemaVersion: 1, name: "Inactive",
             entities: [{ id: "inactive", name: "Inactive", active: false, children: [

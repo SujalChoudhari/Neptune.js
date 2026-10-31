@@ -547,7 +547,10 @@ export class EditorGameRunner {
         if (!this.currentScene) return false
         const update = (entity: Record<string, any>): boolean => {
             if (entity.id === id) {
-                if (component.toLowerCase() === "name") entity.name = data.value
+                if (component.toLowerCase() === "name") {
+                    if (typeof data.value !== "string" || !data.value.trim()) return false
+                    entity.name = data.value
+                }
                 else if (component.toLowerCase() === "active") entity.active = data.value
                 else if (component.toLowerCase() === "transform") {
                     const transformData = { ...data }
