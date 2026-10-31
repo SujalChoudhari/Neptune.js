@@ -589,10 +589,17 @@ export class EditorGameRunner {
 
     static async saveScene(writeFile: ProjectFileWriter, path = this.currentScenePath) {
         if (!this.currentScene || !path) throw new Error("No scene is open. Open a scene before saving it.")
-        const scene = this.validateScene(this.currentScene)
-        if (!await writeFile(path, JSON.stringify(scene, null, 2))) throw new Error(`The native file host could not save '${path}'.`)
-        this.currentScene = scene
-        this.isDirty = false
+        const source = this.currentScene
+        const original = JSON.stringify(source)
+        const scene = this.validateScene(source)
+        const content = JSON.stringify(scene, null, 2)
+        // The native write may finish after another edit (or even another scene open).
+        if (!await writeFile(path, content)) throw new Error(`The native file host could not save '${path}'.`)
+        if (this.currentScene === source && this.currentScenePath === path &&
+            JSON.stringify(source) === original) {
+            this.currentScene = scene
+            this.isDirty = false
+        }
         emit("editor:scene-saved", { path, scene })
         return scene
     }

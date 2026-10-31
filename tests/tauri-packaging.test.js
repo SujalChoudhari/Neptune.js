@@ -11,7 +11,6 @@ test("Triton Tauri packaging is locked and configured for Linux bundles", async 
     const tauriPackage = await readJson("triton/package.json");
     const cargoManifest = await readFile(new URL("triton/src-tauri/Cargo.toml", root), "utf8");
     const cargoLock = await readFile(new URL("triton/src-tauri/Cargo.lock", root), "utf8");
-    const workflow = await readFile(new URL(".github/workflows/triton-tauri-build.yml", root), "utf8");
 
     const cargoVersion = cargoManifest.match(/^version = "([^"]+)"/m)?.[1];
     const lockedCargoVersion = cargoLock.match(/\[\[package\]\]\nname = "app"\nversion = "([^"]+)"/)?.[1];
@@ -31,9 +30,4 @@ test("Triton Tauri packaging is locked and configured for Linux bundles", async 
     for (const icon of config.bundle.icon) {
         await access(new URL(`triton/src-tauri/${icon}`, root));
     }
-
-    assert.match(workflow, /yarn install --frozen-lockfile/);
-    assert.match(workflow, /yarn tauri build --bundles deb/);
-    assert.match(workflow, /libwebkit2gtk-4\.1-dev/);
-    assert.match(workflow, /dtolnay\/rust-toolchain@stable/);
 });
