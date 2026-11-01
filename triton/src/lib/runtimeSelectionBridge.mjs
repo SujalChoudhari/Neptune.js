@@ -82,16 +82,17 @@ export function pickRuntimeEntityAt(scene, screenX, screenY, pixelsPerMeter = 64
             if (!entity || visited.has(entity)) continue;
             visited.add(entity);
             if (entity.active === false) continue;
-            const worldMatrix = getWorldMatrix(entity, parentMatrix);
             const components = Array.isArray(entity.components) ? entity.components : [];
             const renderables = components.filter(component =>
                 component && Number.isFinite(component.renderOrder) && typeof component.draw === "function" &&
                 component?.properties?.enabled !== false && component?.enabled !== false);
             if (renderables.length > 0) {
+                const worldMatrix = getWorldMatrix(entity, parentMatrix);
                 renderables.forEach(component => roots.push({ entity, component, worldMatrix, insertionOrder: roots.length }));
                 continue;
             }
-            for (const child of [...(entity.children || [])].reverse()) stack.push({ entity: child, parentMatrix: worldMatrix });
+            // Non-renderable hierarchy nodes do not transform the canvas in the renderer.
+            for (const child of [...(entity.children || [])].reverse()) stack.push({ entity: child, parentMatrix });
         }
         return roots.sort((a, b) => {
             const orderA = Number.isFinite(a.component.renderOrder) ? a.component.renderOrder : 0;

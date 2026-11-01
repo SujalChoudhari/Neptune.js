@@ -25,7 +25,7 @@ function entity(id, sprite, children = []) {
 test('Game View picking skips disabled Sprites but retains enabled descendants and underlying Sprites', () => {
     const underneath = entity('underneath', new Sprite());
     const child = entity('child', new Sprite());
-    child.components[0].position.x = 3 / 64;
+    child.components[0].position.x = 3;
     child.components[1].properties.width = 0.02;
     const disabled = entity('disabled', new Sprite(false), [child]);
     const scene = { children: [underneath, disabled] };
@@ -37,4 +37,13 @@ test('Game View picking skips disabled Sprites but retains enabled descendants a
     disabled.components[1].properties.enabled = false;
     assert.equal(pickRuntimeEntityAt({ children: [disabled] }, 0, 0), null);
     assert.match(runtimeSelectionBridgeScript, /component\?\.properties\?\.enabled !== false/);
+});
+
+test('Game View picks a child Sprite at its rendered position beneath a non-renderable parent', () => {
+    const child = entity('child', new Sprite());
+    child.components[0].position.x = 2;
+    const layer = { id: 'layer', components: [new Transform()], children: [child] };
+    layer.components[0].position.x = 5;
+    assert.equal(pickRuntimeEntityAt({ children: [layer] }, 128, 0), 'child');
+    assert.equal(pickRuntimeEntityAt({ children: [layer] }, 448, 0), null);
 });
