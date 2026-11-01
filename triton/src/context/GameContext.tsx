@@ -5,6 +5,7 @@ import type { SceneEntity, EntityData } from "../types/engine";
 import type { VersionedScenePayload } from "./FileSystemContext";
 import { EditorGameRunner } from "../lib/editorGameRunner";
 import { getPlayAction } from "../lib/runtimeControlBridge.mjs";
+import { moveHierarchyEntities } from "../lib/moveHierarchyEntities.mjs";
 
 interface GameContextType {
     isPlaying: boolean;
@@ -598,7 +599,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
 
     const moveEntities = (ids: string[], targetParentId: string, index?: number) => {
-        // Optimistic update could happen here, but for now lets trust the game
+        setEntities(previous => moveHierarchyEntities(previous, ids, targetParentId, index));
         notifyGame('editor:move-entities', { ids, targetParentId, index });
     };
 
