@@ -1,10 +1,11 @@
 export function handleHierarchyShortcut(
-    event: Pick<KeyboardEvent, 'key' | 'preventDefault'>,
+    event: Pick<KeyboardEvent, 'key' | 'preventDefault'> & Partial<Pick<KeyboardEvent, 'ctrlKey' | 'metaKey' | 'altKey' | 'shiftKey'>>,
     focused: Element | null,
     selectedIds: string[],
     removeEntity: (id: string) => void,
     renameEntity: (id: string) => void
 ) {
+    if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return
     if (focused && (
         ['INPUT', 'TEXTAREA', 'SELECT'].includes(focused.tagName) ||
         (focused as HTMLElement).isContentEditable ||

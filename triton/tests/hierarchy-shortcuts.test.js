@@ -27,3 +27,16 @@ test("Delete and F2 do not mutate hierarchy while editing text", () => {
     assert.deepEqual(press("Delete", { tagName: "DIV" }).removed, ["hero"]);
     assert.deepEqual(press("F2", { tagName: "DIV" }).renamed, ["hero"]);
 });
+
+test("modified shortcuts do not delete or rename the selected entity", () => {
+    for (const modifier of ["ctrlKey", "metaKey", "altKey", "shiftKey"]) {
+        for (const key of ["Delete", "F2"]) {
+            const removed = [];
+            const renamed = [];
+            let prevented = false;
+            handleHierarchyShortcut({ key, [modifier]: true, preventDefault: () => { prevented = true; } },
+                { tagName: "DIV" }, ["hero"], id => removed.push(id), id => renamed.push(id));
+            assert.deepEqual({ removed, renamed, prevented }, { removed: [], renamed: [], prevented: false }, `${modifier}+${key}`);
+        }
+    }
+});
