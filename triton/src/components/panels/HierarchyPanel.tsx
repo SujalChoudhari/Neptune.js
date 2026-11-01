@@ -15,6 +15,7 @@ import { HierarchyToolbar } from "./hierarchy/HierarchyToolbar"
 import type { SceneEntity } from "@/types/engine"
 import { EditorGameRunner } from "@/lib/editorGameRunner"
 import { visibleHierarchyIds, hierarchySelectionForClick } from "../../lib/visibleHierarchyIds"
+import { handleHierarchyShortcut } from "../../lib/hierarchyShortcuts"
 
 export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     const {
@@ -161,16 +162,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     // Keyboard Shortcuts
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (document.activeElement?.tagName === 'INPUT') return
-
-            if (e.key === 'F2' && selectedIds.length === 1) {
-                setRenamingId(selectedIds[0])
-                e.preventDefault()
-            }
-
-            if (e.key === 'Delete') {
-                selectedIds.forEach(id => removeEntity(id))
-            }
+            handleHierarchyShortcut(e, document.activeElement, selectedIds, removeEntity, setRenamingId)
         }
 
         window.addEventListener('keydown', handleKeyDown)
