@@ -72,6 +72,18 @@ export class Transform extends Component {
         this._properties.scale = scale;
     }
 
+    deserialize(props) {
+        if (!props) return;
+        const { position, scale, ...rest } = props;
+        super.deserialize(rest);
+        for (const [key, value] of [["position", position], ["scale", scale]]) {
+            if (value && typeof value.x === "number" && typeof value.y === "number") {
+                this._properties[key].x = value.x;
+                this._properties[key].y = value.y;
+            }
+        }
+    }
+
     /**
      * Returns the forward vector of the entity.
      * @returns {Vector2} The forward vector of the entity.
