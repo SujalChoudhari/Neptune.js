@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import type { SceneEntity, EntityData } from "../types/engine";
 import type { VersionedScenePayload } from "./FileSystemContext";
 import { EditorGameRunner } from "../lib/editorGameRunner";
+import { getPlayAction } from "../lib/runtimeControlBridge.mjs";
 
 interface GameContextType {
     isPlaying: boolean;
@@ -552,9 +553,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
     // --- Actions ---
 
     const play = () => {
-        setIsPlaying(true);
-        notifyGame('editor:play');
-        window.dispatchEvent(new Event('editor:play'));
+        const action = getPlayAction(isPlaying, isPaused);
+        if (action.startsNewSession) {
+            setIsPlaying(true);
+            window.dispatchEvent(new Event('editor:play'));
+        } else {
+            setIsPaused(false);
+        }
+        notifyGame(action.type, action.payload);
     };
 
     const pause = () => {

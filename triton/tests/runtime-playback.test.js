@@ -23,6 +23,44 @@ test("Play resumes paused playback without starting a new session", () => {
     })
 })
 
+test("GameContext Play resumes a paused game without clearing the console or restarting the layout", () => {
+    const source = fs.readFileSync(path.resolve("triton/src/context/GameContext.tsx"), "utf8")
+    const playSource = source.match(/    const play = \(\) => \{[\s\S]*?\n    \};(?=\n\n    const pause)/)?.[0]
+    assert.ok(playSource, "exercise the actual GameContext play handler")
+    const events = []
+    const messages = []
+    const state = { isPlaying: true, isPaused: true }
+    const play = vm.runInNewContext(`${playSource}; play`, {
+        ...state,
+        getPlayAction,
+        setIsPlaying: value => { state.isPlaying = value },
+        setIsPaused: value => { state.isPaused = value },
+        notifyGame: (type, payload) => messages.push({ type, payload }),
+        window: { dispatchEvent: event => events.push(event.type) },
+        Event: class { constructor(type) { this.type = type } }
+    })
+    play()
+    assert.deepEqual(messages, [{ type: "editor:pause", payload: { paused: false } }])
+    assert.deepEqual(events, [])
+    assert.equal(state.isPaused, false)
+    const startEvents = []
+    const startMessages = []
+    const startState = { isPlaying: false, isPaused: false }
+    const start = vm.runInNewContext(`${playSource}; play`, {
+        ...startState,
+        getPlayAction,
+        setIsPlaying: value => { startState.isPlaying = value },
+        setIsPaused: value => { startState.isPaused = value },
+        notifyGame: (type, payload) => startMessages.push({ type, payload }),
+        window: { dispatchEvent: event => startEvents.push(event.type) },
+        Event: class { constructor(type) { this.type = type } }
+    })
+    start()
+    assert.deepEqual(startMessages, [{ type: "editor:play", payload: null }])
+    assert.deepEqual(startEvents, ["editor:play"])
+    assert.equal(startState.isPlaying, true)
+})
+
 const context = {
     clearRect() {},
     fillRect() {},
