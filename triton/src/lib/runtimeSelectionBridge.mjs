@@ -203,7 +203,9 @@ export const runtimeSelectionBridgeScript = `
             return;
         }
         const validIds = ids.filter(id => findEntity(game.scene, id));
-        pendingEditorSelection = null;
+        // A selection may arrive while the previous scene is still active. Retry
+        // unresolved IDs when the new scene reports that it has loaded.
+        pendingEditorSelection = validIds.length === ids.length ? null : ids;
         game.editorSelection = validIds;
         window.dispatchEvent(new CustomEvent("neptune:editor-selection-changed", {
             detail: { ids: validIds, entities: validIds.map(id => findEntity(game.scene, id)) }
