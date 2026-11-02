@@ -8,11 +8,14 @@ import { chromium } from "playwright";
 
 const scene = {
     type: "scene", version: "1.0.0", schemaVersion: 1, id: "browser-smoke-scene", name: "Browser Smoke Scene",
-    entities: [{ id: "player", name: "Player", active: true, transform: { pos: { x: 4, y: 8 }, rot: 0, scale: { x: 1, y: 1 } }, components: [] }]
+    entities: [
+        { id: "player", name: "Player", active: true, transform: { pos: { x: 4, y: 8 }, rot: 0, scale: { x: 1, y: 1 } }, components: [] },
+        { id: "companion", name: "Companion", active: true, components: [] }
+    ]
 };
 const project = { type: "project", version: "1.0.0", schemaVersion: 1, name: "Inspector Smoke", mainScene: "scenes/main.scene", scenes: [] };
 
-test("production Inspector edits and saves a selected project scene across reopen", async t => {
+test("editor hierarchy selection and CRUD persist across project scene reopen", async t => {
     const probe = createServer();
     probe.listen(0, "127.0.0.1");
     await once(probe, "listening");
@@ -33,7 +36,8 @@ test("production Inspector edits and saves a selected project scene across reope
     t.after(() => browser.close());
     const context = await browser.newContext();
     await context.addInitScript(({ initialScene, initialProject }) => {
-        window.__files = { "scenes/main.scene": structuredClone(initialScene), "project.npt": structuredClone(initialProject) };
+        window.__files = JSON.parse(localStorage.getItem("inspector_smoke_files") || "null") ||
+            { "scenes/main.scene": structuredClone(initialScene), "project.npt": structuredClone(initialProject) };
         window.__nativeCalls = [];
         window.__TAURI_INTERNALS__ = { metadata: { currentWindow: { label: "main" } }, transformCallback: () => 1, invoke: async (command, args = {}) => {
             window.__nativeCalls.push({ command, args });
@@ -45,7 +49,11 @@ test("production Inspector edits and saves a selected project scene across reope
             };
             if (command === "read_project") return JSON.stringify(window.__files["project.npt"]);
             if (command === "read_scene") return JSON.stringify(window.__files[args.path]);
-            if (command === "write_scene") { window.__files[args.path] = JSON.parse(args.content); return true; }
+            if (command === "write_scene") {
+                window.__files[args.path] = JSON.parse(args.content);
+                localStorage.setItem("inspector_smoke_files", JSON.stringify(window.__files));
+                return true;
+            }
             if (command === "write_project" || command === "sync_neptune_lib") return true;
             if (command === "read_file") return window.__files[args.path] ?? null;
             if (command === "write_file") { window.__files[args.path] = args.content; return true; }
@@ -63,16 +71,38 @@ test("production Inspector edits and saves a selected project scene across reope
     await page.getByText("Inspector Smoke", { exact: true }).click();
     await page.getByText("Edit", { exact: true }).click();
     await page.waitForFunction(() => window.__nativeCalls.some(call => call.command === "scan_project"));
-
     await page.getByText("Project", { exact: true }).click();
     await page.getByRole("treeitem", { name: "scenes, folder" }).click();
     await page.getByRole("gridcell", { name: "main.scene" }).dblclick();
     await page.getByText("Player", { exact: true }).click();
+    await page.getByText("Companion", { exact: true }).click({ modifiers: ["Control"] });
+    await page.getByText("2 Selected", { exact: true }).waitFor();
+    await page.evaluate(() => {
+        const frame = document.querySelector('iframe[title="Scene View"]');
+        frame.contentWindow.dispatchEvent(new frame.contentWindow.CustomEvent('neptune:selection-changed', { detail: { ids: ['companion'] } }));
+    });
+    await page.getByText("1 Selected", { exact: true }).waitFor();
+    const companionRow = page.getByText("Companion", { exact: true }).locator("xpath=ancestor::div[@draggable]");
+    await companionRow.evaluate(element => { if (!element.classList.contains('bg-primary/20')) throw new Error('Scene View selection did not reach the hierarchy'); });
+    await page.evaluate(() => window.postMessage({ type: 'game:selection-changed', payload: { ids: ['player'] } }, '*'));
+    await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 0)));
+    await companionRow.evaluate(element => { if (!element.classList.contains('bg-primary/20')) throw new Error('Foreign selection replaced the live selection'); });
+    await page.getByText("Player", { exact: true }).click();
+    await page.keyboard.press("F2");
+    await page.locator('[data-hierarchy-panel] input[type="text"]:not([placeholder])').fill("Hero");
+    await page.keyboard.press("Enter");
+    await page.getByText("Hero", { exact: true }).waitFor();
+    await page.getByText("Hero", { exact: true }).click({ button: "right" });
+    await page.getByRole("button", { name: "Duplicate", exact: true }).click();
+    await page.getByText("Companion", { exact: true }).locator("xpath=ancestor::div[@draggable]").getByRole("button", { name: "Delete entity" }).click();
     await page.getByRole("button", { name: "Save scene" }).click();
     await page.waitForFunction(() => window.__nativeCalls.some(call => call.command === "write_scene"));
     const saved = await page.evaluate(() => window.__files["scenes/main.scene"]);
     assert.equal(saved.entities[0].id, "player");
-    assert.equal(saved.entities[0].name, "Player");
+    assert.equal(saved.entities[0].name, "Hero");
+    assert.equal(saved.entities.length, 2);
+    assert.notEqual(saved.entities[1].id, saved.entities[0].id);
+    assert.equal(saved.entities[1].name, "Hero");
     await page.reload();
     await page.getByText("neptune-inspector-smoke", { exact: true }).click();
     await page.getByText("Edit", { exact: true }).click();
@@ -81,7 +111,8 @@ test("production Inspector edits and saves a selected project scene across reope
     await page.getByRole("treeitem", { name: "scenes, folder" }).click();
     await page.getByRole("gridcell", { name: "main.scene" }).dblclick();
     assert.ok(await page.evaluate(() => window.__nativeCalls.filter(call => call.command === "read_scene").length >= 2));
-    assert.equal(await page.evaluate(() => window.__files["scenes/main.scene"].entities[0].name), "Player");
+    assert.equal(await page.evaluate(() => window.__files["scenes/main.scene"].entities[0].name), "Hero");
+    assert.equal(await page.locator('[data-hierarchy-panel]').getByText("Hero", { exact: true }).count(), 2);
     assert.ok(await page.evaluate(() => window.__nativeCalls.some(call => call.command === "read_scene" && call.args.path === "scenes/main.scene")));
     assert.deepEqual(errors, [], `unexpected browser errors: ${errors.join("; ")}`);
 });

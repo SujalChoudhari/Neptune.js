@@ -6,6 +6,7 @@ import type { VersionedScenePayload } from "./FileSystemContext";
 import { EditorGameRunner } from "../lib/editorGameRunner";
 import { getPlayAction } from "../lib/runtimeControlBridge.mjs";
 import { moveHierarchyEntities } from "../lib/moveHierarchyEntities.mjs";
+import { isRuntimeViewMessageSource, readRuntimeMessage, readRuntimeSelection } from "../lib/runtimeSelectionBridge.mjs";
 
 interface GameContextType {
     isPlaying: boolean;
@@ -478,10 +479,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
-            // Validate origin if needed, but for local tool it's okay
-            const { type, payload } = event.data;
-
-            if (!type || !type.startsWith('game:')) return;
+            const frames = document.querySelectorAll<HTMLIFrameElement>('iframe[title="Game View"], iframe[title="Scene View"]');
+            if (!isRuntimeViewMessageSource(event.source, frames)) return;
+            const message = readRuntimeMessage(event.data);
+            if (!message) return;
+            const { type, payload } = message;
 
             // console.log("Bridge Message:", type, payload);
 
@@ -500,29 +502,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
                     setIsPlaying(payload.isPlaying);
                     setIsPaused(payload.isPaused);
                     break;
-                case 'game:hierarchy-update':
-                    // Payload should be Record<string, SceneEntity>
-                    setEntities(payload);
-                    break;
                 case 'game:selection-changed':
-                    const selectionIds: string[] = Array.isArray(payload.ids)
-                        ? [...new Set((payload.ids as unknown[]).filter((id): id is string => typeof id === 'string' && id.length > 0))]
-                        : [];
+                    const selection = readRuntimeSelection(payload);
+                    if (!selection) break;
+                    const selectionIds = selection.ids.filter(id => entities[id]);
                     setSelectedIds(selectionIds);
 
-                    console.log("Selection changed debug:", selectionIds, payload.data);
-
                     const newBinding: Record<string, EntityData> = {};
-                    if (payload.data) {
-                        if (Array.isArray(payload.data)) {
-                            payload.data.forEach((d: EntityData) => newBinding[d.id] = d);
-                        } else if (payload.data.id) {
-                            newBinding[payload.data.id] = payload.data;
-                        } else {
-                            // Map
-                            Object.assign(newBinding, payload.data);
-                        }
-                    }
+                    selectionIds.forEach(id => {
+                        if (selection.data[id]) newBinding[id] = selection.data[id] as EntityData;
+                    });
 
                     // Merge with cache if game sent incomplete data (or nothing)
                     selectionIds.forEach((id: string) => {
@@ -553,7 +542,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
-    }, [currentScenePath, entityDataCache, notifyGame, selectedEntitiesData, selectedIds]);
+    }, [currentScenePath, entities, entityDataCache, notifyGame, selectedEntitiesData, selectedIds]);
 
 
     // --- Actions ---
