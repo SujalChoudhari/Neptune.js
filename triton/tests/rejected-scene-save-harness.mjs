@@ -61,6 +61,7 @@ vm.runInNewContext(bundle.outputFiles[0].text, {
     document: { querySelectorAll: () => [runtimeFrame] },
     window: { addEventListener() {}, removeEventListener() {}, dispatchEvent() {} },
     Event,
+    CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options?.detail; } },
     Math,
     Promise,
     module,

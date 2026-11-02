@@ -103,12 +103,6 @@ export function SceneViewPanel() {
                 void invoke<string>(command, { path: payload.path })
                     .then(content => reply(content, null))
                     .catch(error => reply(null, String(error)));
-            } else if (type === 'editor:scene-loaded' && payload?.data) {
-                try {
-                    EditorGameRunner.openScene(payload.data, payload.path);
-                } catch {
-                    // openScene emits the actionable diagnostic for the Console panel.
-                }
             } else if (type === 'editor:scene-diagnostic' && payload) {
                 EditorGameRunner.report(payload);
             }

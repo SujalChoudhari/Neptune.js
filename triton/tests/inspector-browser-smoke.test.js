@@ -35,7 +35,7 @@ test("production Inspector edits and saves a selected project scene across reope
     await context.addInitScript(({ initialScene, initialProject }) => {
         window.__files = { "scenes/main.scene": structuredClone(initialScene), "project.npt": structuredClone(initialProject) };
         window.__nativeCalls = [];
-        window.__TAURI_INTERNALS__ = { invoke: async (command, args = {}) => {
+        window.__TAURI_INTERNALS__ = { metadata: { currentWindow: { label: "main" } }, transformCallback: () => 1, invoke: async (command, args = {}) => {
             window.__nativeCalls.push({ command, args });
             if (command === "open_existing_project") return true;
             if (command === "scan_project") return {
@@ -63,6 +63,8 @@ test("production Inspector edits and saves a selected project scene across reope
     await page.getByText("Inspector Smoke", { exact: true }).click();
     await page.getByText("Edit", { exact: true }).click();
     await page.waitForFunction(() => window.__nativeCalls.some(call => call.command === "scan_project"));
+
+    await page.getByText("Project", { exact: true }).click();
     await page.getByRole("treeitem", { name: "scenes, folder" }).click();
     await page.getByRole("gridcell", { name: "main.scene" }).dblclick();
     await page.getByText("Player", { exact: true }).click();
@@ -72,14 +74,14 @@ test("production Inspector edits and saves a selected project scene across reope
     assert.equal(saved.entities[0].id, "player");
     assert.equal(saved.entities[0].name, "Player");
     await page.reload();
-    await page.getByText("Inspector Smoke", { exact: true }).click();
+    await page.getByText("neptune-inspector-smoke", { exact: true }).click();
     await page.getByText("Edit", { exact: true }).click();
     await page.waitForFunction(() => window.__nativeCalls.some(call => call.command === "scan_project"));
+    await page.getByText("Project", { exact: true }).click();
     await page.getByRole("treeitem", { name: "scenes, folder" }).click();
     await page.getByRole("gridcell", { name: "main.scene" }).dblclick();
     assert.ok(await page.evaluate(() => window.__nativeCalls.filter(call => call.command === "read_scene").length >= 2));
     assert.equal(await page.evaluate(() => window.__files["scenes/main.scene"].entities[0].name), "Player");
     assert.ok(await page.evaluate(() => window.__nativeCalls.some(call => call.command === "read_scene" && call.args.path === "scenes/main.scene")));
-    assert.ok(await page.evaluate(() => window.__nativeCalls.some(call => call.command === "write_scene")));
-    assert.ok(errors.every(error => error.includes("transformCallback is not a function") || error.includes("currentWindow")), `unexpected browser errors: ${errors.join("; ")}`);
+    assert.deepEqual(errors, [], `unexpected browser errors: ${errors.join("; ")}`);
 });

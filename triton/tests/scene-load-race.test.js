@@ -30,7 +30,7 @@ test('a slower scene read cannot replace a newer opened scene or its save target
         useCallback: fn => fn,
         sceneLoadSequence: { current: 0 },
         readScene: path => reads.get(path).promise,
-        EditorGameRunner: { validateScene: value => value },
+        EditorGameRunner: { validateScene: value => value, openScene(value, path) { state.canonical = { value, path }; } },
         notifyGame: (type, payload) => notifications.push({ type, payload }),
         console: { log() {}, error: (...args) => errors.push(args) },
         ...setters
@@ -42,6 +42,7 @@ test('a slower scene read cannot replace a newer opened scene or its save target
     reads.get('old.scene').resolve({ name: 'Old', entities: [{ id: 'old-entity', name: 'Old entity' }] });
     await oldLoad;
     assert.equal(state.CurrentScenePath, 'new.scene');
+    assert.equal(state.canonical.path, 'new.scene');
     assert.equal(state.CurrentScenePayload.name, 'New');
     assert.ok(state.Entities['new-entity']);
     assert.equal(state.Entities['old-entity'], undefined);
@@ -58,7 +59,7 @@ test('an older rejected read cannot report an error after a newer scene opens', 
         useCallback: fn => fn,
         sceneLoadSequence: { current: 0 },
         readScene: path => path === 'old.scene' ? old.promise : Promise.resolve({ name: 'New', entities: [] }),
-        EditorGameRunner: { validateScene: value => value },
+        EditorGameRunner: { validateScene: value => value, openScene(value, path) { state.canonical = { value, path }; } },
         notifyGame() {},
         console: { log() {}, error: (...args) => errors.push(args) },
         ...Object.fromEntries(['CurrentSceneName', 'CurrentScenePath', 'CurrentScenePayload', 'Entities', 'EntityDataCache', 'SelectedIds', 'SelectedEntitiesData']
@@ -69,5 +70,38 @@ test('an older rejected read cannot report an error after a newer scene opens', 
     old.reject(new Error('stale read failed'));
     await oldLoad;
     assert.equal(state.CurrentScenePath, 'new.scene');
+    assert.equal(state.canonical.path, 'new.scene');
     assert.equal(errors.length, 0);
+});
+
+test('a remounted game view receives unsaved scene edits without rereading disk', async () => {
+    const state = {};
+    const runner = {
+        currentScene: null, currentScenePath: null,
+        validateScene: value => value,
+        openScene(value, path) { this.currentScene = structuredClone(value); this.currentScenePath = path; }
+    };
+    const notifications = [];
+    let reads = 0;
+    const loadScene = vm.runInNewContext(transformSync(`${handler}\nloadScene`, { loader: 'tsx', format: 'cjs' }).code, {
+        useCallback: fn => fn, sceneLoadSequence: { current: 0 }, EditorGameRunner: runner,
+        readScene: async () => { reads++; return { name: 'Main', entities: [{ id: 'hero', name: 'Hero' }] }; },
+        notifyGame: (type, payload) => notifications.push({ type, payload }),
+        console: { log() {}, error() {} },
+        ...Object.fromEntries(['CurrentSceneName', 'CurrentScenePath', 'CurrentScenePayload', 'Entities', 'EntityDataCache', 'SelectedIds', 'SelectedEntitiesData']
+            .map(name => [`set${name}`, value => { state[name] = value; }]))
+    });
+    await loadScene('scenes/main.scene');
+    runner.currentScene.entities[0].name = 'Unsaved Hero';
+    const ready = source.match(/                case 'game:ready':[\s\S]*?                    break;/)?.[0];
+    assert.ok(ready);
+    vm.runInNewContext(`switch ('game:ready') { ${ready} }`, {
+        notifyGame: (type, payload) => notifications.push({ type, payload }),
+        currentScenePath: state.CurrentScenePath, selectedIds: ['hero'], EditorGameRunner: runner
+    });
+    assert.equal(reads, 1);
+    assert.equal(notifications.at(-2).payload.data.entities[0].name, 'Unsaved Hero');
+    assert.equal(notifications.at(-2).payload.path, 'scenes/main.scene');
+    assert.deepEqual(Array.from(notifications.at(-1).payload.ids), ['hero']);
+    assert.equal(runner.currentScenePath, 'scenes/main.scene');
 });

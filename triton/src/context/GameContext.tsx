@@ -242,6 +242,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         try {
             const data = EditorGameRunner.validateScene(await readScene(path)) as unknown as VersionedScenePayload;
             if (sequence !== sceneLoadSequence.current) return;
+            EditorGameRunner.openScene(data, path);
             // A failed read must never turn an untrusted file path into the
             // current save target. Commit the scene identity only after the
             // versioned payload has been accepted by the native bridge.
@@ -488,10 +489,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
                 case 'game:ready':
                     // Game is ready, request initial state
                     notifyGame('editor:request-state');
-                    // Sync current scene
-                    if (currentScenePath) {
-                        // Reload scene (reads file and sends data)
-                        loadScene(currentScenePath);
+                    // A remounted iframe must receive the in-memory scene. Reading
+                    // from disk here would discard unsaved inspector/hierarchy edits.
+                    if (currentScenePath && EditorGameRunner.currentScenePath === currentScenePath && EditorGameRunner.currentScene) {
+                        notifyGame('editor:load-scene', { path: currentScenePath, data: EditorGameRunner.currentScene });
+                        notifyGame('editor:select', { ids: selectedIds });
                     }
                     break;
                 case 'game:state-update':
@@ -551,7 +553,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
-    }, [currentScenePath, entityDataCache, loadScene, notifyGame, selectedEntitiesData]);
+    }, [currentScenePath, entityDataCache, notifyGame, selectedEntitiesData, selectedIds]);
 
 
     // --- Actions ---
