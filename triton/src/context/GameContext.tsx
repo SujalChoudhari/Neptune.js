@@ -252,11 +252,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
             // Notify Game Engine
             // Send full data payload to avoid file:// access issues in iframe
             notifyGame('editor:load-scene', { path, data });
+            notifyGame('editor:select', { ids: [] });
 
             // Clear previous entities
             setEntities({});
             setEntityDataCache({});
             setSelectedIds([]);
+            setSelectedEntitiesData({});
 
             const newEntities: Record<string, SceneEntity> = {};
             const newDataCache: Record<string, EntityData> = {};

@@ -28,9 +28,9 @@ test('scene switch and reopen retain layer/entity hierarchy IDs and native save 
         useCallback: fn => fn, sceneLoadSequence: { current: 0 },
         readScene: async path => { if (!scenes.has(path)) throw Error('missing scene'); return scenes.get(path); },
         EditorGameRunner: Runner,
-        notifyGame: (type, payload) => notifications.push(payload.path),
+        notifyGame: (type, payload) => { if (type === 'editor:load-scene') notifications.push(payload.path); },
         console: { log() {}, error() {} },
-        ...Object.fromEntries(['CurrentSceneName', 'CurrentScenePath', 'CurrentScenePayload', 'Entities', 'EntityDataCache', 'SelectedIds']
+        ...Object.fromEntries(['CurrentSceneName', 'CurrentScenePath', 'CurrentScenePayload', 'Entities', 'EntityDataCache', 'SelectedIds', 'SelectedEntitiesData']
             .map(name => [`set${name}`, value => { state[name] = value; }]))
     });
     await loadScene('scenes/level.scene');

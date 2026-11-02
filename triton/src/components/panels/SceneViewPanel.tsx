@@ -4,6 +4,7 @@ import cameraUrl from "../../../../src/thalassa/camera.js?url";
 import scenePickingUrl from "@/lib/scenePicking.mjs?url";
 import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
 import { runtimeEntityBridgeScript } from "../../lib/runtimeEntityBridge.mjs";
+import { runtimeSelectionBridgeScript } from "../../lib/runtimeSelectionBridge.mjs";
 import { translateOnAxis, resizeColliderBounds, zoomAtPoint, getFramingCamera, getColliderOverlayBounds, getEntitySelectionBounds, hasCompleteGroupTransformSelection, isSceneViewBridgeMessageSource } from "@/lib/scenePicking.mjs";
 import { invoke } from "@tauri-apps/api/core";
 import { ThemedIconButton } from "@/components/library";
@@ -446,6 +447,7 @@ export function SceneViewPanel() {
         const engineModule = await import("${neptuneEntryUrl}");
         window.__neptuneEngineModule = engineModule;
         ${runtimeEntityBridgeScript}
+        ${runtimeSelectionBridgeScript}
         
         const findEntity = (root, id) => {
              if (!root) return null;
@@ -514,6 +516,7 @@ export function SceneViewPanel() {
                              }
                              window.parent.postMessage({ type: 'editor:scene-loaded', payload }, '*');
                              if(game.scene) game.scene.activeCamera = editorCamera; 
+                             window.dispatchEvent(new Event('neptune:editor-selection-ready'));
                          })
                          .catch((error) => {
                              window.parent.postMessage({

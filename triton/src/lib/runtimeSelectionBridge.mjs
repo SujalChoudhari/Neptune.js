@@ -218,6 +218,13 @@ export const runtimeSelectionBridgeScript = `
             applyEditorSelection(normalizeIds(event.data.payload?.ids));
             return;
         }
+        if (event.data?.type === "editor:rename") {
+            const { id, name } = event.data.payload || {};
+            if (typeof id !== "string" || typeof name !== "string" || !name.trim()) return;
+            const entity = findEntity(window.game?.scene, id);
+            if (entity) entity.name = name;
+            return;
+        }
         if (event.data?.type === "editor:delete") {
             const game = window.game;
             const id = event.data.payload?.id;

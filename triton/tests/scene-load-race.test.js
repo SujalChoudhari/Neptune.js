@@ -23,7 +23,7 @@ test('a slower scene read cannot replace a newer opened scene or its save target
     const errors = [];
     const setters = Object.fromEntries([
         'CurrentSceneName', 'CurrentScenePath', 'CurrentScenePayload',
-        'Entities', 'EntityDataCache', 'SelectedIds'
+        'Entities', 'EntityDataCache', 'SelectedIds', 'SelectedEntitiesData'
     ].map(name => [`set${name}`, value => { state[name] = value; }]));
     const code = transformSync(`${handler}\nloadScene`, { loader: 'tsx', format: 'cjs' }).code;
     const loadScene = vm.runInNewContext(code, {
@@ -45,7 +45,7 @@ test('a slower scene read cannot replace a newer opened scene or its save target
     assert.equal(state.CurrentScenePayload.name, 'New');
     assert.ok(state.Entities['new-entity']);
     assert.equal(state.Entities['old-entity'], undefined);
-    assert.deepEqual(notifications.map(message => message.payload.path), ['new.scene']);
+    assert.deepEqual(notifications.filter(message => message.type === 'editor:load-scene').map(message => message.payload.path), ['new.scene']);
     assert.equal(errors.length, 0);
 });
 
@@ -61,7 +61,7 @@ test('an older rejected read cannot report an error after a newer scene opens', 
         EditorGameRunner: { validateScene: value => value },
         notifyGame() {},
         console: { log() {}, error: (...args) => errors.push(args) },
-        ...Object.fromEntries(['CurrentSceneName', 'CurrentScenePath', 'CurrentScenePayload', 'Entities', 'EntityDataCache', 'SelectedIds']
+        ...Object.fromEntries(['CurrentSceneName', 'CurrentScenePath', 'CurrentScenePayload', 'Entities', 'EntityDataCache', 'SelectedIds', 'SelectedEntitiesData']
             .map(name => [`set${name}`, value => { state[name] = value; }]))
     });
     const oldLoad = loadScene('old.scene');
