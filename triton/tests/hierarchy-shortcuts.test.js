@@ -24,8 +24,9 @@ test("Delete and F2 do not mutate hierarchy while editing text", () => {
     }
     assert.deepEqual(press("Delete", { tagName: "DIV", isContentEditable: true }).removed, []);
     assert.deepEqual(press("F2", { tagName: "SPAN", closest: () => ({}) }).renamed, []);
-    assert.deepEqual(press("Delete", { tagName: "DIV" }).removed, ["hero"]);
-    assert.deepEqual(press("F2", { tagName: "DIV" }).renamed, ["hero"]);
+    const row = { tagName: "DIV", closest: selector => selector === '[data-hierarchy-panel]' ? {} : null };
+    assert.deepEqual(press("Delete", row).removed, ["hero"]);
+    assert.deepEqual(press("F2", row).renamed, ["hero"]);
 });
 
 test("modified shortcuts do not delete or rename the selected entity", () => {
@@ -35,8 +36,16 @@ test("modified shortcuts do not delete or rename the selected entity", () => {
             const renamed = [];
             let prevented = false;
             handleHierarchyShortcut({ key, [modifier]: true, preventDefault: () => { prevented = true; } },
-                { tagName: "DIV" }, ["hero"], id => removed.push(id), id => renamed.push(id));
+                { tagName: "DIV", closest: selector => selector === '[data-hierarchy-panel]' ? {} : null }, ["hero"], id => removed.push(id), id => renamed.push(id));
             assert.deepEqual({ removed, renamed, prevented }, { removed: [], renamed: [], prevented: false }, `${modifier}+${key}`);
         }
+    }
+});
+
+test("hierarchy shortcuts leave selections untouched when another panel has focus", () => {
+    for (const key of ["Delete", "F2"]) {
+        const result = press(key, { tagName: "DIV", closest: () => null });
+        assert.deepEqual(result, { removed: [], renamed: [], prevented: false });
+        assert.deepEqual(press(key, null), result);
     }
 });

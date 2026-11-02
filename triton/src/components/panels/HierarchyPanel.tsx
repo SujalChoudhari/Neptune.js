@@ -284,7 +284,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     }
 
     return (
-        <div className="h-full flex flex-col bg-background select-none">
+        <div data-hierarchy-panel className="h-full flex flex-col bg-background select-none">
             <HierarchyToolbar
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}

@@ -6,6 +6,7 @@ export function handleHierarchyShortcut(
     renameEntity: (id: string) => void
 ) {
     if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return
+    if (!focused?.closest?.('[data-hierarchy-panel]')) return
     if (focused && (
         ['INPUT', 'TEXTAREA', 'SELECT'].includes(focused.tagName) ||
         (focused as HTMLElement).isContentEditable ||

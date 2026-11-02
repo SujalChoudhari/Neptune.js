@@ -183,6 +183,7 @@ export const HierarchyItem = ({
 
     return (
         <div
+            tabIndex={0}
             draggable
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
@@ -202,6 +203,7 @@ export const HierarchyItem = ({
             )}
             onClick={(e) => {
                 e.stopPropagation()
+                e.currentTarget.focus()
                 onSelect(entity.id, e.ctrlKey || e.metaKey, e.shiftKey)
             }}
             onDoubleClick={(e) => {
