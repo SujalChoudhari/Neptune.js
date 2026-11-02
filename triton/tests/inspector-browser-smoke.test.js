@@ -88,6 +88,23 @@ test("editor hierarchy selection and CRUD persist across project scene reopen", 
     await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 0)));
     await companionRow.evaluate(element => { if (!element.classList.contains('bg-primary/20')) throw new Error('Foreign selection replaced the live selection'); });
     await page.getByText("Player", { exact: true }).click();
+    await page.getByText("Position", { exact: true }).locator("xpath=..").locator('input[type="number"]').first().fill("27");
+    await page.waitForFunction(() => {
+        const frame = document.querySelector('iframe[title="Scene View"]');
+        const player = frame?.contentWindow?.game?.scene?.children?.find(entity => entity.id === 'player');
+        return player?.components?.find(component => component.constructor.name === 'Transform')?.position?.x === 27;
+    });
+    await page.getByTitle("Disable entity").click();
+    await page.getByTitle("Enable entity").waitFor();
+    await page.waitForFunction(() => {
+        const frame = document.querySelector('iframe[title="Scene View"]');
+        return frame?.contentWindow?.game?.scene?.children?.find(entity => entity.id === 'player')?.active === false;
+    });
+    await page.getByRole("button", { name: "Save scene" }).click();
+    await page.waitForFunction(() => window.__files["scenes/main.scene"].entities[0].active === false);
+    assert.equal(await page.evaluate(() => window.__files["scenes/main.scene"].entities[0].active), false);
+    assert.equal(await page.evaluate(() => window.__files["scenes/main.scene"].entities[0].transform.pos.x), 27);
+    await page.getByText("Player", { exact: true }).click();
     await page.keyboard.press("F2");
     await page.locator('[data-hierarchy-panel] input[type="text"]:not([placeholder])').fill("Hero");
     await page.keyboard.press("Enter");
@@ -100,6 +117,7 @@ test("editor hierarchy selection and CRUD persist across project scene reopen", 
     const saved = await page.evaluate(() => window.__files["scenes/main.scene"]);
     assert.equal(saved.entities[0].id, "player");
     assert.equal(saved.entities[0].name, "Hero");
+    assert.equal(saved.entities[0].active, false);
     assert.equal(saved.entities.length, 2);
     assert.notEqual(saved.entities[1].id, saved.entities[0].id);
     assert.equal(saved.entities[1].name, "Hero");
@@ -113,6 +131,8 @@ test("editor hierarchy selection and CRUD persist across project scene reopen", 
     assert.ok(await page.evaluate(() => window.__nativeCalls.filter(call => call.command === "read_scene").length >= 2));
     assert.equal(await page.evaluate(() => window.__files["scenes/main.scene"].entities[0].name), "Hero");
     assert.equal(await page.locator('[data-hierarchy-panel]').getByText("Hero", { exact: true }).count(), 2);
+    await page.locator('[data-hierarchy-panel]').getByText("Hero", { exact: true }).first().click();
+    await page.getByTitle("Enable entity").waitFor();
     assert.ok(await page.evaluate(() => window.__nativeCalls.some(call => call.command === "read_scene" && call.args.path === "scenes/main.scene")));
     assert.deepEqual(errors, [], `unexpected browser errors: ${errors.join("; ")}`);
 });
