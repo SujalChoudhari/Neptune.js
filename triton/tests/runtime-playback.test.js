@@ -23,6 +23,35 @@ test("Play resumes paused playback without starting a new session", () => {
     })
 })
 
+test("a delayed pause command cannot leave a stopped game paused on next Play", async () => {
+    const previous = { document: globalThis.document, window: globalThis.window, requestAnimationFrame: globalThis.requestAnimationFrame }
+    const elements = new Map()
+    globalThis.document = {
+        body: { appendChild(element) { elements.set(element.attributes.id, element) } },
+        head: { appendChild() {} },
+        getElementById(id) { return elements.get(id) || null },
+        createElement
+    }
+    globalThis.window = { innerWidth: 640, innerHeight: 480, outerWidth: 640, outerHeight: 480, addEventListener() {}, removeEventListener() {} }
+    globalThis.requestAnimationFrame = () => 1
+    try {
+        const { Application } = await import("../../src/core/application.js")
+        const game = new Application()
+        const states = []
+        const control = (type, payload) => runRuntimeControl(game, type, payload, state => states.push(state))
+        control("editor:play")
+        control("editor:stop")
+        assert.equal(control("editor:pause", { paused: true }), false)
+        assert.equal(game.isPaused, false)
+        control("editor:play")
+        assert.deepEqual(states.at(-1), { isPlaying: true, isPaused: false })
+    } finally {
+        globalThis.document = previous.document
+        globalThis.window = previous.window
+        globalThis.requestAnimationFrame = previous.requestAnimationFrame
+    }
+})
+
 test("GameContext Play resumes a paused game without clearing the console or restarting the layout", () => {
     const source = fs.readFileSync(path.resolve("triton/src/context/GameContext.tsx"), "utf8")
     const playSource = source.match(/    const play = \(\) => \{[\s\S]*?\n    \};(?=\n\n    const pause)/)?.[0]

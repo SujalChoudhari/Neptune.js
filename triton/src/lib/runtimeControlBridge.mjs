@@ -21,7 +21,8 @@ export function runRuntimeControl(game, type, payload, reportState) {
         } else {
             game.start();
         }
-    } else if (type === "editor:pause" && typeof game.pause === "function" && typeof game.resume === "function") {
+    } else if (type === "editor:pause" && game.isRunning
+        && typeof game.pause === "function" && typeof game.resume === "function") {
         if (payload?.paused) game.pause();
         else game.resume();
     } else if (type === "editor:stop" && typeof game.stop === "function") {
