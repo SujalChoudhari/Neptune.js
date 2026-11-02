@@ -12,6 +12,7 @@ import { Transform } from "../../src/components/transform.js"
 import { Vector2 } from "../../src/math/vec2.js"
 import { getPlayAction, runRuntimeControl, runtimeControlBridgeScript } from "../src/lib/runtimeControlBridge.mjs"
 import { runtimeSelectionBridgeScript } from "../src/lib/runtimeSelectionBridge.mjs"
+import { runtimeComponentBridgeScript } from "../src/lib/runtimeComponentBridge.mjs"
 import { runtimeConsoleBridgeScript } from "../src/lib/runtimeConsoleBridge.mjs"
 
 test("Play resumes paused playback without starting a new session", () => {
@@ -345,7 +346,7 @@ test("Game View message bridge controls the real Application and forwards consol
         const sourcefile = path.resolve("triton/src/components/panels/GameViewPanel.tsx")
         const external = [
             "react", "@tauri-apps/api/core", "../../../../src/neptune.js?url", "@/lib/projectResourceBridge.mjs?url",
-            "@/lib/runtimeSelectionBridge.mjs", "@/lib/runtimeConsoleBridge.mjs", "@/lib/runtimeControlBridge.mjs"
+            "@/lib/runtimeSelectionBridge.mjs", "@/lib/runtimeComponentBridge.mjs", "@/lib/runtimeConsoleBridge.mjs", "@/lib/runtimeControlBridge.mjs"
         ]
         const bundle = buildSync({
             bundle: true,
@@ -369,6 +370,7 @@ test("Game View message bridge controls the real Application and forwards consol
             "../../../../src/neptune.js?url": "/assets/neptune.js",
             "@/lib/projectResourceBridge.mjs?url": "/assets/projectResourceBridge.mjs",
             "@/lib/runtimeSelectionBridge.mjs": { runtimeSelectionBridgeScript },
+            "@/lib/runtimeComponentBridge.mjs": { runtimeComponentBridgeScript },
             "@/lib/runtimeConsoleBridge.mjs": { runtimeConsoleBridgeScript },
             "@/lib/runtimeControlBridge.mjs": { runtimeControlBridgeScript }
         }

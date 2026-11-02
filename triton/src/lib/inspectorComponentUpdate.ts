@@ -22,9 +22,10 @@ export const applyInspectorComponentUpdate = ({
     currentScenePath,
     notifyGame
 }: InspectorComponentUpdate) => {
-    updateComponent(id, component, key, value)
     const changed = editorGameRunner.updateEntity(id, component, { [key]: value })
-    if (changed && component.toLowerCase() === 'tilemap' && currentScenePath) {
+    if (!changed) return false
+    updateComponent(id, component, key, value)
+    if (component.toLowerCase() === 'tilemap' && currentScenePath) {
         notifyGame('editor:load-scene', {
             path: currentScenePath,
             data: editorGameRunner.currentScene

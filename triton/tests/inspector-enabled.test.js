@@ -15,6 +15,9 @@ import { Behaviour } from '../../src/scripts/script.js';
 import { ScriptManager } from '../../src/scripts/scriptManager.js';
 import { Hitbox, Hurtbox } from '../../src/nereid/collider.js';
 import { CollisionSystem } from '../../src/nereid/collisionSystem.js';
+import { runtimeComponentBridgeScript } from '../src/lib/runtimeComponentBridge.mjs';
+import { applyInspectorComponentUpdate } from '../src/lib/inspectorComponentUpdate.ts';
+import fs from 'node:fs';
 
 const src = path.resolve('triton/src');
 const jsx = (type, props) => ({ type, props: props || {} });
@@ -40,12 +43,13 @@ function inspectorHarness(scene) {
     const game = {
         selectedEntityData: selected, selectedIds: ['sprite-1'], currentScenePath: 'scenes/main.scene',
         updateComponent(id, component, field, value) {
+            if (component === 'transform') selected.transform[field] = value;
             const key = Object.keys(selected.components).find(key => key.toLowerCase() === component.toLowerCase());
             if (key) selected.components[key] = { ...selected.components[key], [field]: value };
             notices.push(['editor:update-component', { id, component, data: { [field]: value } }]);
         },
         notifyGame: (...args) => notices.push(args),
-        renameEntityInHierarchy() {}, setEntityActiveInHierarchy() {}
+        renameEntityInHierarchy() {}, setEntityActiveInHierarchy(_, active) { selected.active = active; }
     };
     const modules = {
         react, 'react/jsx-runtime': { jsx, jsxs: jsx }, 'lucide-react': icon,
@@ -107,6 +111,22 @@ test('Inspector reflects mixed-case component state and saves toggles that disab
         globalThis.Image = previousImage;
         EditorGameRunner.closeScene();
     }
+});
+
+test('rejected Inspector component writes do not notify either view or corrupt the selected cache', () => {
+    EditorGameRunner.openScene(sceneFixture(), 'scenes/main.scene');
+    const updates = [];
+    const notifications = [];
+    assert.equal(applyInspectorComponentUpdate({
+        id: 'sprite-1', component: 'MissingComponent', key: 'enabled', value: false,
+        updateComponent: (...args) => updates.push(args),
+        editorGameRunner: EditorGameRunner, currentScenePath: 'scenes/main.scene',
+        notifyGame: (...args) => notifications.push(args)
+    }), false);
+    assert.deepEqual(updates, []);
+    assert.deepEqual(notifications, []);
+    assert.equal(EditorGameRunner.isDirty, false);
+    EditorGameRunner.closeScene();
 });
 
 test('Inspector resolves enabled for component names regardless of scene type casing', () => {
@@ -259,4 +279,58 @@ test('ScriptManager skips a disabled Behaviour and resumes after enabling', () =
     behaviour.deserialize({ enabled: true });
     ScriptManager.behaviourUpdate(0.1);
     assert.equal(updates, 1);
+});
+
+test('Inspector edits transform, active state, and sprite properties in both live views and saved scene', async () => {
+    for (const view of ['GameViewPanel.tsx', 'SceneViewPanel.tsx']) {
+        assert.match(fs.readFileSync(path.join(src, 'components/panels', view), 'utf8'), /\$\{runtimeComponentBridgeScript\}/);
+    }
+    ComponentRegistry.register('Transform', Transform);
+    ComponentRegistry.register('Sprite', Sprite);
+    const previousImage = globalThis.Image;
+    globalThis.Image = class { src = ''; };
+    try {
+        const harness = inspectorHarness(sceneFixture());
+        const runtimeViews = [SceneLoader.parse(EditorGameRunner.currentScene), SceneLoader.parse(EditorGameRunner.currentScene)]
+            .map(scene => ({ scene }));
+        const dispatchers = runtimeViews.map(game => {
+            const parent = {};
+            let listener;
+            vm.runInNewContext(runtimeComponentBridgeScript, { window: {
+                game, parent, addEventListener(_, callback) { listener = callback; }
+            } });
+            return (type, payload) => listener({ source: parent, data: { type, payload } });
+        });
+        const transform = harness.render().find(node => node.type?.name === 'TransformSection');
+        transform.props.onUpdate('position', { x: 4, y: 7 });
+        harness.section('Sprite').props.onUpdate('width', 3);
+        harness.section('Sprite').props.onToggleActive();
+        harness.render().find(node => node.props?.title === 'Disable entity').props.onClick();
+        assert.equal(harness.selected.active, false);
+        for (const dispatch of dispatchers) {
+            for (const [type, payload] of harness.notices) dispatch(type, payload);
+        }
+        for (const game of runtimeViews) {
+            const entity = game.scene.children[0];
+            assert.equal(entity.active, false);
+            assert.equal(entity.GetComponent(Transform).position.x, 4);
+            assert.equal(entity.GetComponent(Transform).position.y, 7);
+            assert.equal(entity.GetComponent(Sprite).width, 3);
+            assert.equal(entity.GetComponent(Sprite).properties.enabled, false);
+        }
+        let saved;
+        await EditorGameRunner.saveScene(async (file, content) => {
+            assert.equal(file, 'scenes/main.scene');
+            saved = content;
+            return true;
+        });
+        const reopened = SceneLoader.parse(EditorGameRunner.openScene(JSON.parse(saved), 'scenes/main.scene'));
+        assert.equal(reopened.children[0].active, false);
+        assert.equal(reopened.children[0].GetComponent(Transform).position.x, 4);
+        assert.equal(reopened.children[0].GetComponent(Sprite).width, 3);
+        assert.equal(reopened.children[0].GetComponent(Sprite).properties.enabled, false);
+    } finally {
+        globalThis.Image = previousImage;
+        EditorGameRunner.closeScene();
+    }
 });

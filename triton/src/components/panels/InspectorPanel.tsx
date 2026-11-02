@@ -67,8 +67,7 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
 
     const entity: EntityData = selectedEntityData
     const updateTransform = (key: string, value: any) => selectedIds.forEach(id => {
-        updateComponent(id, "transform", key, value)
-        EditorGameRunner.updateEntity(id, "transform", { [key]: value })
+        if (EditorGameRunner.updateEntity(id, "transform", { [key]: value })) updateComponent(id, "transform", key, value)
     })
     const applyComponentUpdate = (id: string, component: string, key: string, value: any) =>
         applyInspectorComponentUpdate({ id, component, key, value, updateComponent, editorGameRunner: EditorGameRunner, currentScenePath, notifyGame })
@@ -88,8 +87,7 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
     const toggleActive = (component: string) => {
         const enabled = !componentEnabled(component)
         selectedIds.forEach(id => {
-            updateComponent(id, component, "enabled", enabled)
-            EditorGameRunner.updateEntity(id, component, { enabled })
+            if (EditorGameRunner.updateEntity(id, component, { enabled })) updateComponent(id, component, "enabled", enabled)
         })
     }
     const handleRename = (name: string) => {

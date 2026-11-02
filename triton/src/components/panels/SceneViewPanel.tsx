@@ -5,6 +5,7 @@ import scenePickingUrl from "@/lib/scenePicking.mjs?url";
 import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
 import { runtimeEntityBridgeScript } from "../../lib/runtimeEntityBridge.mjs";
 import { runtimeSelectionBridgeScript } from "../../lib/runtimeSelectionBridge.mjs";
+import { runtimeComponentBridgeScript } from "../../lib/runtimeComponentBridge.mjs";
 import { translateOnAxis, resizeColliderBounds, zoomAtPoint, getFramingCamera, getColliderOverlayBounds, getEntitySelectionBounds, hasCompleteGroupTransformSelection, isSceneViewBridgeMessageSource } from "@/lib/scenePicking.mjs";
 import { invoke } from "@tauri-apps/api/core";
 import { ThemedIconButton } from "@/components/library";
@@ -448,6 +449,7 @@ export function SceneViewPanel() {
         window.__neptuneEngineModule = engineModule;
         ${runtimeEntityBridgeScript}
         ${runtimeSelectionBridgeScript}
+        ${runtimeComponentBridgeScript}
         
         const findEntity = (root, id) => {
              if (!root) return null;
@@ -530,20 +532,6 @@ export function SceneViewPanel() {
                                  }
                              }, '*');
                          });
-                 }
-                 else if (type === 'editor:update-component') {
-                     if (!game.scene) return;
-                     const ent = findEntity(game.scene, payload.id);
-                     if (ent) {
-                         const compName = payload.component;
-                         let comp = ent.components.find(c => c.constructor.name.toLowerCase() === compName.toLowerCase());
-                         if (!comp && compName.toLowerCase() === 'transform' && ent.transform) comp = ent.transform;
-                         
-                         if (comp) {
-                             if (comp.deserialize) comp.deserialize(payload.data);
-                             else Object.assign(comp, payload.data);
-                         }
-                     }
                  }
              });
              

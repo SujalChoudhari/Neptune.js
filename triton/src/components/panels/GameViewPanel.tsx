@@ -6,6 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 import neptuneEntryUrl from "../../../../src/neptune.js?url";
 import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
 import { runtimeSelectionBridgeScript } from "@/lib/runtimeSelectionBridge.mjs";
+import { runtimeComponentBridgeScript } from "@/lib/runtimeComponentBridge.mjs";
 import { runtimeConsoleBridgeScript } from "@/lib/runtimeConsoleBridge.mjs";
 import { runtimeControlBridgeScript } from "@/lib/runtimeControlBridge.mjs";
 
@@ -57,6 +58,7 @@ export function GameViewPanel() {
         import { installProjectResourceBridge } from "${projectResourceBridgeUrl}";
         installProjectResourceBridge();
         ${runtimeSelectionBridgeScript}
+        ${runtimeComponentBridgeScript}
         ${runtimeConsoleBridgeScript}
         ${runtimeControlBridgeScript}
 
@@ -125,27 +127,6 @@ export function GameViewPanel() {
                          if (typeof payload?.name !== 'string') return;
                          const entity = findEntity(game.scene, payload.id);
                          if (entity) entity.name = payload.name;
-                    }
-                    else if (type === 'editor:update-component') {
-                         // Inspector Update Logic
-                         const ent = findEntity(game.scene, payload.id);
-                         if (ent) {
-                             const compName = payload.component;
-                             let comp = ent.components.find(c => c.constructor.name.toLowerCase() === compName.toLowerCase());
-                             
-                             // Handle Transform special case
-                             if (!comp && compName.toLowerCase() === 'transform' && ent.transform) {
-                                 comp = ent.transform;
-                             }
-                             
-                             if (comp) {
-                                 if (comp.deserialize) {
-                                     comp.deserialize(payload.data);
-                                 } else {
-                                     Object.assign(comp, payload.data);
-                                 }
-                             }
-                         }
                     }
                 });
             } else {
