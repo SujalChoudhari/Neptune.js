@@ -44,3 +44,42 @@ test("completion of an old scene save cannot replace a newly opened scene", asyn
     assert.equal(runner.currentScenePath, "second.scene");
     assert.equal(runner.isDirty, true);
 });
+
+test("overlapping saves cannot overwrite the latest editor edit on disk", async () => {
+    runner.openScene(scene("First"), "first.scene");
+    let finishFirst;
+    const writes = [];
+    const write = (path, content) => {
+        writes.push(JSON.parse(content).entities[0].name);
+        if (writes.length === 1) return new Promise(resolve => { finishFirst = resolve; });
+        return Promise.resolve(true);
+    };
+    const first = runner.saveScene(write);
+    runner.updateEntity("hero", "name", { value: "Latest" });
+    const second = runner.saveScene(write);
+    await Promise.resolve();
+    assert.deepEqual(writes, ["Hero"], "second write must wait for the first native write");
+    finishFirst(true);
+    await Promise.all([first, second]);
+    assert.deepEqual(writes, ["Hero", "Latest"]);
+    assert.equal(runner.isDirty, false);
+});
+
+test("a failed native write does not block the next queued save", async () => {
+    runner.openScene(scene("Retry"), "retry.scene");
+    let rejectFirst;
+    const writes = [];
+    const write = (path, content) => {
+        writes.push(JSON.parse(content).entities[0].name);
+        if (writes.length === 1) return new Promise((resolve, reject) => { rejectFirst = reject; });
+        return Promise.resolve(true);
+    };
+    const first = runner.saveScene(write);
+    runner.updateEntity("hero", "name", { value: "Recovered" });
+    const retry = runner.saveScene(write);
+    rejectFirst(new Error("disk temporarily unavailable"));
+    await assert.rejects(first, /disk temporarily unavailable/);
+    await retry;
+    assert.deepEqual(writes, ["Hero", "Recovered"]);
+    assert.equal(runner.isDirty, false);
+});

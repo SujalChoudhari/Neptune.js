@@ -315,6 +315,8 @@ export class EditorGameRunner {
     static currentScene: ScenePayload | null = null
     static currentScenePath: string | null = null
     static isDirty = false
+    // Serialize writes per path so a slower earlier native save cannot replace a newer edit.
+    private static pendingSceneWrites = new Map<string, Promise<void>>()
 
     static async start() {
         if (this.isPlaying) return
@@ -596,8 +598,20 @@ export class EditorGameRunner {
         const original = JSON.stringify(source)
         const scene = this.validateScene(source)
         const content = JSON.stringify(scene, null, 2)
+        // Capture this snapshot now, but wait for any older write to the same file.
+        const previous = this.pendingSceneWrites.get(path)
+        const write = (async () => {
+            if (previous) await previous
+            if (!await writeFile(path, content)) throw new Error(`The native file host could not save '${path}'.`)
+        })()
+        const settled = write.then(() => {}, () => {})
+        this.pendingSceneWrites.set(path, settled)
+        try {
+            await write
+        } finally {
+            if (this.pendingSceneWrites.get(path) === settled) this.pendingSceneWrites.delete(path)
+        }
         // The native write may finish after another edit (or even another scene open).
-        if (!await writeFile(path, content)) throw new Error(`The native file host could not save '${path}'.`)
         if (this.currentScene === source && this.currentScenePath === path &&
             JSON.stringify(source) === original) {
             this.currentScene = scene
