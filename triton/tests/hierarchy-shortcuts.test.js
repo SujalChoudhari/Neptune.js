@@ -49,3 +49,18 @@ test("hierarchy shortcuts leave selections untouched when another panel has focu
         assert.deepEqual(press(key, null), result);
     }
 });
+
+test("Delete removes selected descendants before ancestors so each canonical deletion can succeed", () => {
+    const parents = { parent: "root", child: "parent", sibling: "root" };
+    const remaining = new Set(Object.keys(parents));
+    const deleted = [];
+    const row = { tagName: "DIV", closest: selector => selector === '[data-hierarchy-panel]' ? {} : null };
+    handleHierarchyShortcut({ key: "Delete", preventDefault() {} }, row, ["parent", "child", "sibling"], id => {
+        if (!remaining.has(id)) throw new Error(`Canonical entity ${id} was already deleted`);
+        deleted.push(id);
+        remaining.delete(id);
+        if (id === "parent") remaining.delete("child");
+    }, () => {}, parents);
+    assert.deepEqual(deleted, ["child", "parent", "sibling"]);
+    assert.equal(remaining.size, 0);
+});

@@ -149,6 +149,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
 
     // Helper to get flattened list of visible (expanded) entity IDs
     const getVisibleFlatList = useMemo(() => visibleHierarchyIds(entities, searchQuery), [entities, searchQuery])
+    const parentIds = useMemo(() => Object.fromEntries(Object.values(entities).map(entity => [entity.id, entity.parentId])), [entities])
 
     const handleSelect = (id: string, multi: boolean, shift?: boolean) => {
         if (shift && lastSelectedId) {
@@ -162,12 +163,12 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     // Keyboard Shortcuts
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            handleHierarchyShortcut(e, document.activeElement, selectedIds, removeEntity, setRenamingId)
+            handleHierarchyShortcut(e, document.activeElement, selectedIds, removeEntity, setRenamingId, parentIds)
         }
 
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [selectedIds, removeEntity])
+    }, [selectedIds, removeEntity, parentIds])
 
     const handleBackgroundClick = () => {
         selectEntity("", false) // clear
