@@ -415,6 +415,11 @@ function createGameContextHarness(scene) {
         },
         useCallback: callback => callback,
         useMemo: callback => callback(),
+        useRef(initial) {
+            const index = cursor++;
+            if (!(index in state)) state[index] = { current: initial };
+            return state[index];
+        },
         useEffect() {}
     };
     const jsx = (type, props) => ({ type, props: props || {} });

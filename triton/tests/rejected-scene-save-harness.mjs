@@ -46,6 +46,11 @@ const react = {
     },
     useCallback(callback) { hookIndex++; return callback; },
     useMemo(callback) { hookIndex++; return callback(); },
+    useRef(initialValue) {
+        const index = hookIndex++;
+        if (!slots[index]) slots[index] = { current: initialValue };
+        return slots[index];
+    },
     useEffect() { hookIndex++; }
 };
 

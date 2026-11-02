@@ -1,5 +1,5 @@
 
-import { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import type { ReactNode } from "react";
 import type { SceneEntity, EntityData } from "../types/engine";
 import type { VersionedScenePayload } from "./FileSystemContext";
@@ -85,6 +85,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const [currentScenePath, setCurrentScenePath] = useState<string | null>(null);
     const [mainScenePath, setMainScenePath] = useState<string | null>(null);
     const [currentScenePayload, setCurrentScenePayload] = useState<VersionedScenePayload | null>(null);
+    const sceneLoadSequence = useRef(0);
 
     // Hierarchy State
     const [entities, setEntities] = useState<Record<string, SceneEntity>>({});
@@ -231,6 +232,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const loadScene = useCallback(async (path: string) => {
+        const sequence = ++sceneLoadSequence.current;
         console.log("GameContext: Loading scene from", path);
 
         // 1. Notify Game (Visuals) - Initial notification REMOVED to avoid double-load error with file:// path
@@ -239,6 +241,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         // 2. Read File directly (Data)
         try {
             const data = EditorGameRunner.validateScene(await readScene(path)) as unknown as VersionedScenePayload;
+            if (sequence !== sceneLoadSequence.current) return;
             // A failed read must never turn an untrusted file path into the
             // current save target. Commit the scene identity only after the
             // versioned payload has been accepted by the native bridge.
@@ -428,6 +431,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             setEntities(newEntities);
             setEntityDataCache(newDataCache);
         } catch (e) {
+            if (sequence !== sceneLoadSequence.current) return;
             console.error("Failed to read/parse scene file", e);
         } // HMR Trigger
     }, [readScene, notifyGame]);
