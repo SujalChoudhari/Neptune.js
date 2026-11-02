@@ -95,9 +95,10 @@ test('a remounted game view receives unsaved scene edits without rereading disk'
     runner.currentScene.entities[0].name = 'Unsaved Hero';
     const ready = source.match(/                case 'game:ready':[\s\S]*?                    break;/)?.[0];
     assert.ok(ready);
-    vm.runInNewContext(`switch ('game:ready') { ${ready} }`, {
+    vm.runInNewContext(transformSync(`switch ('game:ready') { ${ready} }`, { loader: 'tsx', format: 'cjs' }).code, {
         notifyGame: (type, payload) => notifications.push({ type, payload }),
-        currentScenePath: state.CurrentScenePath, selectedIds: ['hero'], EditorGameRunner: runner
+        currentScenePath: state.CurrentScenePath, selectedIds: ['hero'], EditorGameRunner: runner,
+        isPlaying: false, document: { querySelector: () => null }, event: { source: null }
     });
     assert.equal(reads, 1);
     assert.equal(notifications.at(-2).payload.data.entities[0].name, 'Unsaved Hero');

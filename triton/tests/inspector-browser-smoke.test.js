@@ -15,7 +15,7 @@ const scene = {
 };
 const project = { type: "project", version: "1.0.0", schemaVersion: 1, name: "Inspector Smoke", mainScene: "scenes/main.scene", scenes: [] };
 
-test("editor hierarchy selection and CRUD persist across project scene reopen", async t => {
+test("editor scene edits persist and Game View playback and diagnostics use the live runtime", async t => {
     const probe = createServer();
     probe.listen(0, "127.0.0.1");
     await once(probe, "listening");
@@ -134,5 +134,26 @@ test("editor hierarchy selection and CRUD persist across project scene reopen", 
     await page.locator('[data-hierarchy-panel]').getByText("Hero", { exact: true }).first().click();
     await page.getByTitle("Enable entity").waitFor();
     assert.ok(await page.evaluate(() => window.__nativeCalls.some(call => call.command === "read_scene" && call.args.path === "scenes/main.scene")));
+    // Exercise the actual Game View iframe and toolbar, not a mocked control bridge.
+    await page.getByText("Game View", { exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('iframe[title="Game View"]')?.contentWindow?.game?.scene?.children?.some(entity => entity.id === 'player'));
+    await page.getByTitle("Play", { exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('iframe[title="Game View"]')?.contentWindow?.game?.isRunning === true);
+    await page.getByTitle("Pause", { exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('iframe[title="Game View"]')?.contentWindow?.game?.isPaused === true);
+    await page.getByTitle("Play", { exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('iframe[title="Game View"]')?.contentWindow?.game?.isPaused === false);
+    await page.getByTitle("Stop", { exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('iframe[title="Game View"]')?.contentWindow?.game?.isRunning === false);
+    await page.getByTitle("Play", { exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('iframe[title="Game View"]')?.contentWindow?.game?.isRunning === true);
+    await page.evaluate(() => document.querySelector('iframe[title="Game View"]').contentWindow.postMessage({
+        type: 'editor:load-scene', payload: { path: 'scenes/broken.scene', data: { schemaVersion: 999, entities: [] } }
+    }, '*'));
+    await page.getByText("Console", { exact: true }).click();
+    await page.getByText(/GAME_SCENE_LOAD_ERROR.*scenes\/broken.scene/).waitFor();
+    await page.evaluate(() => document.querySelector('iframe[title="Game View"]').contentWindow.console.warn('playback smoke warning'));
+    await page.getByText("playback smoke warning", { exact: true }).waitFor();
+    await page.getByTitle("Stop", { exact: true }).click();
     assert.deepEqual(errors, [], `unexpected browser errors: ${errors.join("; ")}`);
 });

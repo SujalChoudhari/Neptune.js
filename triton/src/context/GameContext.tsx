@@ -497,6 +497,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
                         notifyGame('editor:load-scene', { path: currentScenePath, data: EditorGameRunner.currentScene });
                         notifyGame('editor:select', { ids: selectedIds });
                     }
+                    // Dockview can remount Game View while Play is focusing it.
+                    // Restore controls after its asynchronous scene load, not on
+                    // the old iframe (which received the original Play command).
+                    if (isPlaying && event.source === document.querySelector<HTMLIFrameElement>('iframe[title="Game View"]')?.contentWindow) {
+                        (event.source as WindowProxy).postMessage({ type: 'editor:restore-playback', payload: { paused: isPaused } }, '*');
+                    }
                     break;
                 case 'game:state-update':
                     setIsPlaying(payload.isPlaying);
@@ -542,7 +548,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
-    }, [currentScenePath, entities, entityDataCache, notifyGame, selectedEntitiesData, selectedIds]);
+    }, [currentScenePath, entities, entityDataCache, notifyGame, selectedEntitiesData, selectedIds, isPlaying, isPaused]);
 
 
     // --- Actions ---

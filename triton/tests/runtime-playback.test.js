@@ -491,6 +491,20 @@ test("Game View message bridge controls the real Application and forwards consol
             { isPlaying: false, isPaused: false }
         ])
 
+        // A remounted frame may still be loading when Stop reaches it. Its
+        // deferred restore must not resurrect that already-ended session.
+        const originalLoadScene = app.loadScene
+        let finishLoad
+        app.loadScene = () => new Promise(resolve => { finishLoad = resolve })
+        send("editor:load-scene", { path: "scenes/slow.scene", data: {} })
+        send("editor:restore-playback", { paused: true })
+        send("editor:stop")
+        finishLoad()
+        await new Promise(resolve => setImmediate(resolve))
+        assert.equal(app.isRunning, false)
+        assert.equal(app.isPaused, false)
+        app.loadScene = originalLoadScene
+
         runtimeConsole.warn("runtime warning")
         runtimeConsole.error("runtime failure")
         for (const handler of listeners.get("error") || []) handler({ message: "uncaught", filename: "game.js", error: new Error("uncaught") })

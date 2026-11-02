@@ -109,9 +109,23 @@ export function GameViewPanel() {
                 window.parent.postMessage({ type: 'game:ready' }, '*');
                 
                 // Basic Listener for Scene Loading (Minimal Bridge)
+                let sceneLoad = Promise.resolve(true);
+                let playbackGeneration = 0;
                 window.addEventListener('message', (e) => {
                     const { type, payload } = e.data;
                     const game = window.game;
+
+                    if (type === 'editor:restore-playback') {
+                        const generation = ++playbackGeneration;
+                        sceneLoad.then(loaded => {
+                            if (!loaded || generation !== playbackGeneration) return;
+                            runRuntimeControl(game, 'editor:play', null, state => window.parent.postMessage({ type: 'game:state-update', payload: state }, '*'));
+                            if (payload?.paused) runRuntimeControl(game, 'editor:pause', { paused: true }, state => window.parent.postMessage({ type: 'game:state-update', payload: state }, '*'));
+                        });
+                        return;
+                    }
+
+                    if (type === 'editor:stop' || type === 'editor:play') playbackGeneration++;
 
                     const controlHandled = runRuntimeControl(game, type, payload, state => {
                         window.parent.postMessage({ type: 'game:state-update', payload: state }, '*');
@@ -119,9 +133,9 @@ export function GameViewPanel() {
                     if (controlHandled) return;
 
                     if (type === 'editor:load-scene' && game.loadScene) {
-                         game.loadScene(payload.data || payload.path)
-                             .then(() => window.dispatchEvent(new Event('neptune:editor-selection-ready')))
-                             .catch(error => reportRuntimeError('GAME_SCENE_LOAD_ERROR', describeRuntimeFailure(error), payload?.path));
+                         sceneLoad = game.loadScene(payload.data || payload.path)
+                             .then(() => { window.dispatchEvent(new Event('neptune:editor-selection-ready')); return true; })
+                             .catch(error => { reportRuntimeError('GAME_SCENE_LOAD_ERROR', describeRuntimeFailure(error), payload?.path); return false; });
                     }
                     else if (type === 'editor:rename') {
                          if (typeof payload?.name !== 'string') return;
