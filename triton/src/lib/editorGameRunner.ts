@@ -347,6 +347,19 @@ export class EditorGameRunner {
         const normalized = { ...clone(data), type: "scene" as const, version: SCENE_DATA_VERSION, schemaVersion: SCENE_SCHEMA_VERSION }
         ensureLayerIds(normalized)
         ensureEntityIds(normalized)
+        const hierarchyIds = new Set(["root", "camera-main"])
+        for (const layer of (normalized as Record<string, any>).layers || []) {
+            if (!isRecord(layer)) continue
+            if (hierarchyIds.has(layer.id)) throw new Error(`Duplicate hierarchy ID '${layer.id}'.`)
+            hierarchyIds.add(layer.id)
+        }
+        const checkHierarchyIds = (entities: unknown[]) => entities.forEach(entity => {
+            if (!isRecord(entity)) return
+            if (hierarchyIds.has(entity.id)) throw new Error(`Duplicate hierarchy ID '${entity.id}'.`)
+            hierarchyIds.add(entity.id)
+            if (Array.isArray(entity.children)) checkHierarchyIds(entity.children)
+        })
+        sceneEntityLists(normalized).forEach(checkHierarchyIds)
         return normalized
     }
 

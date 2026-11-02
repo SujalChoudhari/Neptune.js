@@ -261,9 +261,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
             const newEntities: Record<string, SceneEntity> = {};
             const newDataCache: Record<string, EntityData> = {};
 
-            // Helper to generate IDs
-            const generateId = () => Math.random().toString(36).substr(2, 9);
-
             // Root
             newEntities['root'] = {
                 id: 'root',
@@ -278,7 +275,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
             const parseEntityList = (list: any[], parentId: string) => {
                 list.forEach((entData: any) => {
-                    const id = entData.id || generateId();
+                    const id = entData.id;
                     const entity: SceneEntity = {
                         id: id,
                         parentId: parentId,
@@ -385,7 +382,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             // Handle Layers (demo.scn style)
             if (data.layers && Array.isArray(data.layers)) {
                 data.layers.forEach((layer: any) => {
-                    const layerId = generateId();
+                    const layerId = layer.id;
                     const layerType = layer.type || 'folder';
 
                     const layerEnt: SceneEntity = {
