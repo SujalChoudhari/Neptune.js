@@ -14,9 +14,9 @@
           "name": "Hero",
           "type": "entity",
           "active": true,
-          "transform": { "pos": { "x": 40, "y": 50 }, "rot": 0, "scale": { "x": 1, "y": 1 } },
+          "transform": { "pos": { "x": 2, "y": 2 }, "rot": 0, "scale": { "x": 1, "y": 1 } },
           "components": [
-            { "id": "smoke-shape", "type": "Shape", "props": { "width": 24, "height": 24, "color": "#48a8ff" } }
+            { "id": "smoke-shape", "type": "Shape", "props": { "geometry": 1, "param": { "width": 1, "height": 1, "thickness": 0.02, "fill": true, "color": { "r": 72, "g": 168, "b": 255, "a": 1 } } } }
           ],
           "children": []
         }

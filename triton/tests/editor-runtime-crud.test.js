@@ -4,7 +4,10 @@ import test from 'node:test';
 import vm from 'node:vm';
 import { buildSync } from 'esbuild';
 import { SceneLoader } from '../../src/core/sceneLoader.js';
-import { runtimeSelectionBridgeScript } from '../src/lib/runtimeSelectionBridge.mjs';
+import { ComponentRegistry } from '../../src/core/componentRegistry.js';
+import { Shape } from '../../src/rendering/shape.js';
+import { Transform } from '../../src/components/transform.js';
+import { runtimeSelectionBridgeScript, pickRuntimeEntityAt } from '../src/lib/runtimeSelectionBridge.mjs';
 
 const source = fs.readFileSync('triton/src/components/panels/SceneViewPanel.tsx', 'utf8');
 assert.match(source, /\$\{runtimeSelectionBridgeScript\}/, 'the real Scene View installs the CRUD/selection bridge');
@@ -18,16 +21,21 @@ const Runner = module.exports.EditorGameRunner;
 
 function connect(game) {
     const listeners = new Map();
-    const parent = { postMessage() {} };
+    const messages = [];
+    const parent = { postMessage(message) { messages.push(message); } };
+    const canvas = { width: 512, height: 512, getBoundingClientRect: () => ({ left: 0, top: 0, width: 512, height: 512 }) };
     const window = {
-        game, parent, document: { getElementById() { return null; } },
+        game, parent, document: { getElementById(id) { return id === 'neptune-canvas' ? canvas : null; } },
         addEventListener(type, listener) { listeners.set(type, listener); },
         dispatchEvent(event) { listeners.get(event.type)?.(event); }
     };
     vm.runInNewContext(runtimeSelectionBridgeScript, { window, CustomEvent: class {
         constructor(type, options) { this.type = type; this.detail = options.detail; }
     } });
-    return (type, payload) => listeners.get('message')({ source: parent, data: { type, payload } });
+    const send = (type, payload) => listeners.get('message')({ source: parent, data: { type, payload } });
+    send.pointer = (x, y) => listeners.get('pointerdown')({ target: canvas, button: 0, clientX: x, clientY: y });
+    send.messages = messages;
+    return send;
 }
 
 test('hierarchy selection and CRUD keep the live scene and saved/reopened scene in sync', async () => {
@@ -65,4 +73,34 @@ test('hierarchy selection and CRUD keep the live scene and saved/reopened scene 
     const hydrated = SceneLoader.parse(reopened).children.find(entity => entity.id === 'group');
     assert.deepEqual(hydrated.children.map(entity => entity.id), ['sibling', 'child', duplicate.id]);
     assert.equal(hydrated.children[2].name, 'Child');
+});
+
+test('versioned project Shape remains pickable after hierarchy rename, move, save and reopen', async () => {
+    ComponentRegistry.register('Shape', Shape);
+    ComponentRegistry.register('Transform', Transform);
+    const fixture = JSON.parse(fs.readFileSync('triton/tests/fixtures/native-smoke/scenes/main.scene', 'utf8'));
+    Runner.openScene(fixture, 'scenes/main.scene');
+    const game = { scene: SceneLoader.parse(Runner.currentScene) };
+    const send = connect(game);
+    assert.deepEqual(game.scene.children[0].children[0].components.map(component => component.constructor.name), ['Transform', 'Shape']);
+    assert.equal(game.scene.children[0].children[0].components[0].position.x, 2);
+    const hit = () => pickRuntimeEntityAt(game.scene, 128, 128);
+    assert.equal(hit(), 'smoke-hero');
+    send.pointer(128, 128);
+    assert.deepEqual(Array.from(send.messages.at(-1).payload.ids), ['smoke-hero']);
+    assert.deepEqual(Array.from(game.editorSelection), ['smoke-hero']);
+    assert.equal(Runner.updateEntity('smoke-hero', 'name', { value: 'Renamed Hero' }), true);
+    send('editor:rename', { id: 'smoke-hero', name: 'Renamed Hero' });
+    assert.equal(Runner.moveEntities(['smoke-hero'], 'root'), true);
+    send('editor:move-entities', { ids: ['smoke-hero'], targetParentId: 'root' });
+    assert.equal(hit(), 'smoke-hero');
+    assert.equal(game.scene.children.find(entity => entity.id === 'smoke-hero').name, 'Renamed Hero');
+    let content;
+    await Runner.saveScene(async (path, payload) => { assert.equal(path, 'scenes/main.scene'); content = payload; return true; });
+    Runner.closeScene();
+    Runner.openScene(JSON.parse(content), 'scenes/main.scene');
+    const reopened = SceneLoader.parse(Runner.currentScene);
+    assert.equal(reopened.children.at(-1).id, 'smoke-hero');
+    assert.equal(reopened.children.at(-1).name, 'Renamed Hero');
+    assert.equal(pickRuntimeEntityAt(reopened, 128, 128), 'smoke-hero');
 });

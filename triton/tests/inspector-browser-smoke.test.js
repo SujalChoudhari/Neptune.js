@@ -9,7 +9,9 @@ import { chromium } from "playwright";
 const scene = {
     type: "scene", version: "1.0.0", schemaVersion: 1, id: "browser-smoke-scene", name: "Browser Smoke Scene",
     entities: [
-        { id: "player", name: "Player", active: true, transform: { pos: { x: 4, y: 8 }, rot: 0, scale: { x: 1, y: 1 } }, components: [] },
+        { id: "player", name: "Player", active: true, transform: { pos: { x: 4, y: 8 }, rot: 0, scale: { x: 1, y: 1 } }, components: [
+            { type: "Shape", props: { geometry: 1, param: { width: 1, height: 1, thickness: 0.02, fill: true, color: { r: 72, g: 168, b: 255, a: 1 } } } }
+        ] },
         { id: "companion", name: "Companion", active: true, components: [] }
     ]
 };
@@ -134,9 +136,25 @@ test("editor scene edits persist and Game View playback and diagnostics use the 
     await page.locator('[data-hierarchy-panel]').getByText("Hero", { exact: true }).first().click();
     await page.getByTitle("Enable entity").waitFor();
     assert.ok(await page.evaluate(() => window.__nativeCalls.some(call => call.command === "read_scene" && call.args.path === "scenes/main.scene")));
+    await page.getByTitle("Enable entity").click();
+    const position = page.getByText("Position", { exact: true }).locator("xpath=..").locator('input[type="number"]');
+    await position.first().fill("2");
+    await position.nth(1).fill("2");
     // Exercise the actual Game View iframe and toolbar, not a mocked control bridge.
     await page.getByText("Game View", { exact: true }).click();
     await page.waitForFunction(() => document.querySelector('iframe[title="Game View"]')?.contentWindow?.game?.scene?.children?.some(entity => entity.id === 'player'));
+    await page.evaluate(() => {
+        const frame = document.querySelector('iframe[title="Game View"]');
+        const canvas = frame.contentWindow.document.getElementById('neptune-canvas');
+        const rect = canvas.getBoundingClientRect();
+        canvas.dispatchEvent(new frame.contentWindow.PointerEvent('pointerdown', {
+            bubbles: true, button: 0, clientX: rect.left + 128 * rect.width / canvas.width,
+            clientY: rect.top + 128 * rect.height / canvas.height
+        }));
+    });
+    await page.waitForFunction(() => document.querySelector('iframe[title="Game View"]')?.contentWindow?.game?.editorSelection?.includes('player'));
+    await page.locator('[data-hierarchy-panel]').getByText("Hero", { exact: true }).first().locator("xpath=ancestor::div[@draggable]")
+        .evaluate(element => { if (!element.classList.contains('bg-primary/20')) throw new Error('Game View Shape pick did not reach hierarchy'); });
     await page.getByTitle("Play", { exact: true }).click();
     await page.waitForFunction(() => document.querySelector('iframe[title="Game View"]')?.contentWindow?.game?.isRunning === true);
     await page.getByTitle("Pause", { exact: true }).click();

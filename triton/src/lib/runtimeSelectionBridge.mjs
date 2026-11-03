@@ -31,6 +31,42 @@ export function readRuntimeSelection(payload) {
     return { ids, data };
 }
 
+export function shapeContainsPoint(component, x, y) {
+    const param = component?._properties?.param;
+    if (!param || !Number.isFinite(x) || !Number.isFinite(y)) return false;
+    const geometry = component.geometry;
+    const width = Number(param.width);
+    const height = Number(param.height);
+    const radius = Number(param.radius);
+    const thickness = Number.isFinite(Number(param.thickness)) ? Math.max(0, Number(param.thickness)) : 1;
+    const distanceToSegment = (ax, ay, bx, by) => {
+        const lengthSquared = (bx - ax) ** 2 + (by - ay) ** 2;
+        const t = lengthSquared ? Math.max(0, Math.min(1, ((x - ax) * (bx - ax) + (y - ay) * (by - ay)) / lengthSquared)) : 0;
+        return Math.hypot(x - ax - t * (bx - ax), y - ay - t * (by - ay));
+    };
+    if (geometry === 0 && Number.isFinite(radius) && radius > 0) {
+        const distance = Math.hypot(x, y);
+        return param.fill !== false ? distance <= radius : Math.abs(distance - radius) <= thickness / 2;
+    }
+    if (geometry === 4 && !Array.isArray(param.points)) return false;
+    const points = geometry === 1 ? [[-width / 2, -height / 2], [width / 2, -height / 2], [width / 2, height / 2], [-width / 2, height / 2]]
+        : geometry === 2 ? [[0, 0], [width, height]]
+        : geometry === 3 ? [[0, -height / 2], [width / 2, height / 2], [-width / 2, height / 2]]
+        : geometry === 4 ? param.points.map(point => [Number(point?.x), Number(point?.y)]) : [];
+    if (points.length < 2 || points.some(point => !point.every(Number.isFinite))) return false;
+    if (geometry === 2) return distanceToSegment(...points[0], ...points[1]) <= thickness / 2;
+    if (points.length < 3) return false;
+    if (points.some((point, index) => distanceToSegment(...point, ...points[(index + 1) % points.length]) <= thickness / 2)) return true;
+    if (param.fill === false) return false;
+    let inside = false;
+    for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+        const [xi, yi] = points[i];
+        const [xj, yj] = points[j];
+        if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+    }
+    return inside;
+}
+
 export function pickRuntimeEntityAt(scene, screenX, screenY, pixelsPerMeter = 64) {
     if (!scene || !Number.isFinite(screenX) || !Number.isFinite(screenY)) return null;
     const camera = scene.activeCamera;
@@ -102,7 +138,7 @@ export function pickRuntimeEntityAt(scene, screenX, screenY, pixelsPerMeter = 64
     };
     const visitRenderable = ({ entity, component, worldMatrix }) => {
         const currentTraversalOrder = traversalOrder++;
-        if (component?.constructor?.name?.toLowerCase() === "sprite" && typeof entity.id === "string") {
+        if (["sprite", "shape"].includes(component?.constructor?.name?.toLowerCase()) && typeof entity.id === "string") {
             const [a, b, c, d, e, f] = worldMatrix;
             const determinant = a * d - b * c;
             if (Number.isFinite(determinant) && Math.abs(determinant) > Number.EPSILON) {
@@ -112,7 +148,10 @@ export function pickRuntimeEntityAt(scene, screenX, screenY, pixelsPerMeter = 64
                 const localY = (-b * translatedX + a * translatedY) / determinant;
                 const width = Number(component.width ?? component._properties?.width) || 0;
                 const height = Number(component.height ?? component._properties?.height) || 0;
-                if (Math.abs(localX) <= width / 2 && Math.abs(localY) <= height / 2 &&
+                const hit = component.constructor.name.toLowerCase() === "shape"
+                    ? shapeContainsPoint(component, localX, localY)
+                    : Math.abs(localX) <= width / 2 && Math.abs(localY) <= height / 2;
+                if (hit &&
                     currentTraversalOrder > pickedTraversalOrder) {
                     picked = entity.id;
                     pickedTraversalOrder = currentTraversalOrder;
@@ -129,6 +168,7 @@ export function pickRuntimeEntityAt(scene, screenX, screenY, pixelsPerMeter = 64
 
 export const runtimeSelectionBridgeScript = `
 (() => {
+    const shapeContainsPoint = ${shapeContainsPoint.toString()};
     const pickRuntimeEntityAt = ${pickRuntimeEntityAt.toString()};
     const findEntity = (root, id) => {
         if (!root || typeof root !== "object") return null;
