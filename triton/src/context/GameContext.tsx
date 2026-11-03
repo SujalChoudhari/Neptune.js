@@ -87,6 +87,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const [mainScenePath, setMainScenePath] = useState<string | null>(null);
     const [currentScenePayload, setCurrentScenePayload] = useState<VersionedScenePayload | null>(null);
     const sceneLoadSequence = useRef(0);
+    const projectSequence = useRef(0);
 
     // Hierarchy State
     const [entities, setEntities] = useState<Record<string, SceneEntity>>({});
@@ -671,9 +672,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     const loadMainScene = useCallback(async () => {
         if (!rootPath) return;
+        const sequence = projectSequence.current;
         try {
             console.log("Checking for main scene in: project.npt");
             const projectData = await readProject();
+            if (sequence !== projectSequence.current) return;
             if (projectData.mainScene) {
                     console.log("Auto-loading main scene:", projectData.mainScene);
                     const scenePath = toProjectRelativePath(projectData.mainScene);
@@ -689,10 +692,25 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     // Auto-load main scene
     useEffect(() => {
+        // A project switch (including a failed scan) invalidates pending reads
+        // and the previous project's save target before the new main scene loads.
+        projectSequence.current++;
+        sceneLoadSequence.current++;
+        EditorGameRunner.currentScene = null;
+        EditorGameRunner.currentScenePath = null;
+        setCurrentSceneName("Untitled");
+        setCurrentScenePath(null);
+        setCurrentScenePayload(null);
+        setMainScenePath(null);
+        setEntities({});
+        setEntityDataCache({});
+        setSelectedIds([]);
+        setSelectedEntitiesData({});
+        notifyGame('editor:select', { ids: [] });
         if (rootPath) {
-            loadMainScene();
+            void loadMainScene();
         }
-    }, [rootPath, loadMainScene]);
+    }, [rootPath, loadMainScene, notifyGame]);
 
     return (
         <GameContext.Provider value={{
