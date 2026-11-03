@@ -535,7 +535,7 @@ describe("Triton persistence bridge", () => {
                 : id === "react/jsx-runtime" ? { jsx: (type, props) => ({ type, props }), jsxs: (type, props) => ({ type, props }), Fragment: Symbol("Fragment") }
                     : id === "lucide-react" ? icons
                         : id === "@/context/FileSystemContext" ? { useFileSystem: () => filesystem }
-                            : id === "@/context/GameContext" ? { useGameContext: () => ({ loadScene: scenePath => { openedPath = scenePath; } }) }
+                            : id === "@/context/GameContext" ? { useGameContext: () => ({ loadScene: scenePath => { openedPath = scenePath; return Promise.resolve(); } }) }
                                 : library
         }).ProjectPanel;
         const tree = component({});

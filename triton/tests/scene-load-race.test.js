@@ -74,6 +74,33 @@ test('an older rejected read cannot report an error after a newer scene opens', 
     assert.equal(errors.length, 0);
 });
 
+test('a rejected scene read leaves the last valid save target intact and reports the failure', async () => {
+    const state = {};
+    const diagnostics = [];
+    const errors = [];
+    const code = transformSync(`${handler}\nloadScene`, { loader: 'tsx', format: 'cjs' }).code;
+    const loadScene = vm.runInNewContext(code, {
+        useCallback: fn => fn,
+        sceneLoadSequence: { current: 0 },
+        readScene: path => path === 'broken.scn' ? Promise.reject(new Error('bad scene')) : Promise.resolve({ name: 'Good', entities: [] }),
+        EditorGameRunner: {
+            validateScene: value => value,
+            openScene(value, path) { state.canonical = { value, path }; },
+            report(error) { diagnostics.push(error.message); }
+        },
+        notifyGame() {},
+        console: { log() {}, error: (...args) => errors.push(args) },
+        ...Object.fromEntries(['CurrentSceneName', 'CurrentScenePath', 'CurrentScenePayload', 'Entities', 'EntityDataCache', 'SelectedIds', 'SelectedEntitiesData']
+            .map(name => [`set${name}`, value => { state[name] = value; }]))
+    });
+    await loadScene('good.scn');
+    await assert.rejects(loadScene('broken.scn'), /bad scene/);
+    assert.equal(state.CurrentScenePath, 'good.scn');
+    assert.equal(state.canonical.path, 'good.scn');
+    assert.deepEqual(diagnostics, ['bad scene']);
+    assert.equal(errors.length, 1);
+});
+
 test('a remounted game view receives unsaved scene edits without rereading disk', async () => {
     const state = {};
     const runner = {

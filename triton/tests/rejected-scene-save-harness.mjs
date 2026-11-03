@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import vm from "node:vm";
+import assert from "node:assert/strict";
 import { buildSync } from "esbuild";
 
 const root = path.resolve("triton");
@@ -92,7 +93,7 @@ const render = () => {
 };
 
 render();
-await currentContext.loadScene("scenes/bad.scene");
+await assert.rejects(currentContext.loadScene("scenes/bad.scene"), /Invalid scene payload/);
 render();
 
 if (currentContext.currentScenePath !== null) {
@@ -121,7 +122,7 @@ scenePayload = {
     name: "Map-shaped entities",
     entities: { fake: { id: "fake", name: "Fake Runtime Entity", type: "entity" } }
 };
-await currentContext.loadScene("scenes/map-shaped.scene");
+await assert.rejects(currentContext.loadScene("scenes/map-shaped.scene"), /Scene entities must be an array/);
 render();
 
 if (currentContext.currentScenePath !== null) {

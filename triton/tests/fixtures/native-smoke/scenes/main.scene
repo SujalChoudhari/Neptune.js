@@ -1,0 +1,27 @@
+{
+  "type": "scene",
+  "schemaVersion": 1,
+  "version": "1.0.0",
+  "name": "Native Smoke Scene",
+  "layers": [
+    {
+      "id": "smoke-layer",
+      "name": "Gameplay",
+      "type": "main",
+      "entities": [
+        {
+          "id": "smoke-hero",
+          "name": "Hero",
+          "type": "entity",
+          "active": true,
+          "transform": { "pos": { "x": 40, "y": 50 }, "rot": 0, "scale": { "x": 1, "y": 1 } },
+          "components": [
+            { "id": "smoke-shape", "type": "Shape", "props": { "width": 24, "height": 24, "color": "#48a8ff" } }
+          ],
+          "children": []
+        }
+      ]
+    }
+  ],
+  "entities": []
+}

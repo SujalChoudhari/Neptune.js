@@ -434,6 +434,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
         } catch (e) {
             if (sequence !== sceneLoadSequence.current) return;
             console.error("Failed to read/parse scene file", e);
+            EditorGameRunner.report(e);
+            throw e;
         } // HMR Trigger
     }, [readScene, notifyGame]);
 

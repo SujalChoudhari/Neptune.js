@@ -1,0 +1,8 @@
+{
+  "type": "project",
+  "schemaVersion": 1,
+  "version": "1.0.0",
+  "name": "Triton Native Smoke",
+  "mainScene": "scenes/main.scene",
+  "scenes": []
+}

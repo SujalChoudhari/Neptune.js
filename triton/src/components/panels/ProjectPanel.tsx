@@ -16,6 +16,7 @@ import {
     ThemedIconButton
 } from "@/components/library"
 import { Search, ChevronRight, Home } from "lucide-react"
+import { isSceneAsset } from "../../lib/sceneAsset.mjs"
 
 export const ProjectPanel = (_props: IDockviewPanelProps) => {
     const {
@@ -40,6 +41,7 @@ export const ProjectPanel = (_props: IDockviewPanelProps) => {
     const [selectedIds, setSelectedIds] = useState<string[]>([])
     const [renamingId, setRenamingId] = useState<string | null>(null)
     const [lastSelectedId, setLastSelectedId] = useState<string | null>(null)
+    const [sceneError, setSceneError] = useState<string | null>(null)
 
     const currentFolderItems = getChildren(currentFolderId)
         .filter(item => item.name.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -60,10 +62,11 @@ export const ProjectPanel = (_props: IDockviewPanelProps) => {
             navigateTo(id)
         } else {
             // It's a file
-            if (node.name.endsWith('.scene') || node.name.endsWith('.npt') || node.name.endsWith('.scn')) {
+            if (isSceneAsset(node.name)) {
                 // scan_project IDs are project-relative paths and are the
                 // canonical paths accepted by read_scene/loadScene.
-                loadScene(id);
+                setSceneError(null)
+                void loadScene(id).catch(error => setSceneError(`Could not open scene '${node.name}': ${String(error)}`))
             }
         }
     }
@@ -228,6 +231,7 @@ export const ProjectPanel = (_props: IDockviewPanelProps) => {
             tabIndex={-1}
             onKeyDown={handleKeyDown}
         >
+            {sceneError && <div role="alert" className="px-2 py-1 text-xs text-destructive">{sceneError}</div>}
             {/* TOOLBAR */}
             <div className="h-8 border-b border-border flex items-center px-2 gap-2 bg-card shrink-0">
                 {/* Navigation Controls */}
