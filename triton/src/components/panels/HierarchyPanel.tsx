@@ -21,6 +21,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     const {
         entities,
         selectedIds,
+        currentScenePath,
         selectEntity,
         selectEntities,
         setEntityExpansion,
@@ -153,12 +154,21 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
 
     const handleSelect = (id: string, multi: boolean, shift?: boolean) => {
         if (shift && lastSelectedId) {
-            selectEntities(hierarchySelectionForClick(getVisibleFlatList, lastSelectedId, id));
+            const range = hierarchySelectionForClick(getVisibleFlatList, lastSelectedId, id);
+            selectEntities(multi ? [...new Set([...selectedIds, ...range])] : range);
         } else {
             selectEntity(id, multi)
         }
-        setLastSelectedId(id)
+        if (!shift || !lastSelectedId || !getVisibleFlatList.includes(lastSelectedId)) setLastSelectedId(id)
     }
+
+    useEffect(() => {
+        if (lastSelectedId && !entities[lastSelectedId]) setLastSelectedId(null)
+    }, [entities, lastSelectedId])
+
+    useEffect(() => {
+        setLastSelectedId(null)
+    }, [currentScenePath])
 
     // Keyboard Shortcuts
     useEffect(() => {

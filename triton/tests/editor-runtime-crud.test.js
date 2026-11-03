@@ -33,7 +33,7 @@ function connect(game) {
         constructor(type, options) { this.type = type; this.detail = options.detail; }
     } });
     const send = (type, payload) => listeners.get('message')({ source: parent, data: { type, payload } });
-    send.pointer = (x, y) => listeners.get('pointerdown')({ target: canvas, button: 0, clientX: x, clientY: y });
+    send.pointer = (x, y, modifiers = {}) => listeners.get('pointerdown')({ target: canvas, button: 0, clientX: x, clientY: y, ...modifiers });
     send.messages = messages;
     return send;
 }
@@ -103,4 +103,39 @@ test('versioned project Shape remains pickable after hierarchy rename, move, sav
     assert.equal(reopened.children.at(-1).id, 'smoke-hero');
     assert.equal(reopened.children.at(-1).name, 'Renamed Hero');
     assert.equal(pickRuntimeEntityAt(reopened, 128, 128), 'smoke-hero');
+});
+
+test('Game View additive pointer selection toggles rendered entities and survives hierarchy moves and reopen', async () => {
+    ComponentRegistry.register('Shape', Shape);
+    ComponentRegistry.register('Transform', Transform);
+    const fixture = JSON.parse(fs.readFileSync('triton/tests/fixtures/native-smoke/scenes/main.scene', 'utf8'));
+    const second = structuredClone(fixture.layers[0].entities[0]);
+    second.id = 'smoke-partner';
+    second.name = 'Partner';
+    second.components[0].id = 'partner-shape';
+    second.transform.pos.x = 4;
+    fixture.layers[0].entities.push(second);
+    Runner.openScene(fixture, 'scenes/main.scene');
+    const game = { scene: SceneLoader.parse(Runner.currentScene) };
+    const send = connect(game);
+    send('editor:select', { ids: ['smoke-hero'] });
+    send.pointer(256, 128, { ctrlKey: true });
+    assert.deepEqual(Array.from(game.editorSelection), ['smoke-hero', 'smoke-partner']);
+    assert.deepEqual(Array.from(send.messages.at(-1).payload.ids), ['smoke-hero', 'smoke-partner']);
+    send.pointer(128, 128, { metaKey: true });
+    assert.deepEqual(Array.from(game.editorSelection), ['smoke-partner']);
+    send.pointer(400, 400, { ctrlKey: true });
+    assert.deepEqual(Array.from(game.editorSelection), ['smoke-partner']);
+    assert.equal(Runner.moveEntities(['smoke-partner'], 'root'), true);
+    send('editor:move-entities', { ids: ['smoke-partner'], targetParentId: 'root' });
+    send.pointer(256, 128, { ctrlKey: true });
+    assert.deepEqual(Array.from(game.editorSelection), []);
+    send.pointer(256, 128);
+    assert.deepEqual(Array.from(game.editorSelection), ['smoke-partner']);
+    let saved;
+    await Runner.saveScene(async (_path, content) => { saved = content; return true; });
+    Runner.closeScene();
+    const reopened = SceneLoader.parse(Runner.openScene(JSON.parse(saved), 'scenes/main.scene'));
+    assert.equal(pickRuntimeEntityAt(reopened, 256, 128), 'smoke-partner');
+    assert.deepEqual(reopened.children.map(entity => entity.id), ['smoke-layer', 'smoke-partner']);
 });

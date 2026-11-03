@@ -598,7 +598,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
 
     const selectEntity = (id: string, multi: boolean) => {
-        selectEntities(multi ? [...selectedIds, id] : [id]);
+        selectEntities(multi && id
+            ? selectedIds.includes(id) ? selectedIds.filter(selectedId => selectedId !== id) : [...selectedIds, id]
+            : [id]);
     };
 
     const moveEntities = (ids: string[], targetParentId: string, index?: number) => {

@@ -314,7 +314,12 @@ export const runtimeSelectionBridgeScript = `
         const x = (event.clientX - rect.left) * ((canvas.width || rect.width) / rect.width);
         const y = (event.clientY - rect.top) * ((canvas.height || rect.height) / rect.height);
         const id = pickRuntimeEntityAt(window.game?.scene, x, y);
-        window.dispatchEvent(new CustomEvent("neptune:selection-changed", { detail: { ids: id ? [id] : [] } }));
+        const existing = normalizeIds(window.game?.editorSelection);
+        const multi = event.ctrlKey || event.metaKey || event.shiftKey;
+        const ids = !id ? (multi ? existing : [])
+            : !multi ? [id]
+            : existing.includes(id) ? existing.filter(selectedId => selectedId !== id) : [...existing, id];
+        window.dispatchEvent(new CustomEvent("neptune:selection-changed", { detail: { ids } }));
     });
 })();
 `;

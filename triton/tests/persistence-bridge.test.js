@@ -1191,7 +1191,7 @@ describe("Triton persistence bridge", () => {
         expect(pickEntityAt(runtime, 0, 0)?.id).toBe("nested");
     });
 
-    it("applies Hierarchy Shift-range selection as one ordered selection update", () => {
+    it("keeps the Hierarchy range anchor and combines Ctrl-Shift ranges without duplicates", () => {
         const harness = createMainHarness();
         harness.game.entities = {
             root: { id: "root", name: "Root", type: "group", parentId: null, children: ["first", "middle", "last"], expanded: true },
@@ -1202,7 +1202,11 @@ describe("Triton persistence bridge", () => {
 
         expect(harness.selectHierarchyEntity(harness.renderHierarchy(), "first")).toBe(true);
         expect(harness.selectHierarchyEntity(harness.renderHierarchy(), "last", false, true)).toBe(true);
-        expect(harness.game.selectionCalls).toEqual([["first"], ["first", "middle", "last"]]);
+        expect(harness.selectHierarchyEntity(harness.renderHierarchy(), "middle", false, true)).toBe(true);
+        expect(harness.selectHierarchyEntity(harness.renderHierarchy(), "last", true, true)).toBe(true);
+        expect(harness.game.selectionCalls).toEqual([
+            ["first"], ["first", "middle", "last"], ["first", "middle"], ["first", "middle", "last"]
+        ]);
     });
 
     it("expands and collapses the production hierarchy tree from its toolbar and row controls", () => {
@@ -1259,7 +1263,7 @@ describe("Triton persistence bridge", () => {
         expect(harness.bridgeMessages.some(message => message.type === "editor:set-expanded")).toBe(false);
     });
 
-    it("deduplicates additive GameProvider selection and synchronizes cached Inspector data to both runtime views", async () => {
+    it("toggles additive GameProvider selection and synchronizes cached Inspector data to both runtime views", async () => {
         const harness = createGameContextHarness({
             type: "scene",
             version: "1.0.0",
@@ -1277,6 +1281,9 @@ describe("Triton persistence bridge", () => {
 
         context.selectEntity("select-a", false);
         context = harness.render();
+        context.selectEntity("select-a", true);
+        context = harness.render();
+        expect(context.selectedIds).toEqual([]);
         context.selectEntity("select-a", true);
         context = harness.render();
         expect(context.selectedIds).toEqual(["select-a"]);
