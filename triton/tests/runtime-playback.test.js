@@ -345,7 +345,7 @@ test("Game View message bridge controls the real Application and forwards consol
     try {
         const sourcefile = path.resolve("triton/src/components/panels/GameViewPanel.tsx")
         const external = [
-            "react", "@tauri-apps/api/core", "../../../../src/neptune.js?url", "@/lib/projectResourceBridge.mjs?url",
+            "react", "@tauri-apps/api/core", "virtual:neptune-runtime-url", "@/lib/projectResourceBridge.mjs?url",
             "@/lib/runtimeSelectionBridge.mjs", "@/lib/runtimeComponentBridge.mjs", "@/lib/runtimeConsoleBridge.mjs", "@/lib/runtimeControlBridge.mjs"
         ]
         const bundle = buildSync({
@@ -367,7 +367,7 @@ test("Game View message bridge controls the real Application and forwards consol
         const modules = {
             react,
             "@tauri-apps/api/core": { invoke: async () => null },
-            "../../../../src/neptune.js?url": "/assets/neptune.js",
+            "virtual:neptune-runtime-url": "/assets/neptune.js",
             "@/lib/projectResourceBridge.mjs?url": "/assets/projectResourceBridge.mjs",
             "@/lib/runtimeSelectionBridge.mjs": { runtimeSelectionBridgeScript },
             "@/lib/runtimeComponentBridge.mjs": { runtimeComponentBridgeScript },
@@ -379,6 +379,8 @@ test("Game View message bridge controls the real Application and forwards consol
             module: componentModule,
             exports: componentModule.exports,
             React: react,
+            window: { location: { href: "http://localhost:5173/editor" } },
+            URL,
             require: specifier => {
                 if (!(specifier in modules)) throw new Error(`Unexpected GameViewPanel import: ${specifier}`)
                 return modules[specifier]

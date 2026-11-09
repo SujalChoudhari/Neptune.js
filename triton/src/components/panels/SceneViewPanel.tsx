@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
-import neptuneEntryUrl from "../../../../src/neptune.js?url";
+import neptuneEntryUrl from "virtual:neptune-runtime-url";
 import cameraUrl from "../../../../src/thalassa/camera.js?url";
 import scenePickingUrl from "@/lib/scenePicking.mjs?url";
 import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";

@@ -1,9 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { invoke } from "@tauri-apps/api/core";
-// We use the ?url suffix to get the URL of the module script
-// This requires Vite to solve the path.
-// Path: src/components/panels/GameViewPanel.tsx -> ../../../.. -> root
-import neptuneEntryUrl from "../../../../src/neptune.js?url";
+// Vite supplies a bundled runtime URL in production and a source URL in development.
+import neptuneEntryUrl from "virtual:neptune-runtime-url";
 import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
 import { runtimeSelectionBridgeScript } from "@/lib/runtimeSelectionBridge.mjs";
 import { runtimeComponentBridgeScript } from "@/lib/runtimeComponentBridge.mjs";
@@ -38,7 +36,10 @@ export function GameViewPanel() {
         return () => window.removeEventListener('message', handleResourceRequest);
     }, []);
 
-    const baseUrl = neptuneEntryUrl.substring(0, neptuneEntryUrl.lastIndexOf('/') + 1);
+    // Module imports in srcdoc resolve against an opaque document in WebKit,
+    // so use the editor's absolute origin rather than Vite's root-relative URL.
+    const runtimeUrl = new URL(neptuneEntryUrl, window.location.href).href;
+    const baseUrl = runtimeUrl.substring(0, runtimeUrl.lastIndexOf('/') + 1);
 
     const iframeContent = `
 <!DOCTYPE html>
@@ -147,7 +148,7 @@ export function GameViewPanel() {
                 requestAnimationFrame(wait);
             }
         };
-        import("${neptuneEntryUrl}").then(wait).catch((error) => {
+        import("${runtimeUrl}").then(wait).catch((error) => {
             reportRuntimeError('GAME_BOOT_ERROR', error instanceof Error ? error.message : String(error));
         });
     </script>

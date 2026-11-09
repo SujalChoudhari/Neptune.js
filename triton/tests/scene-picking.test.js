@@ -26,7 +26,7 @@ function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-
     const sourcefile = path.resolve('triton/src/components/panels/SceneViewPanel.tsx');
     const external = [
         'react', 'react/jsx-runtime', 'lucide-react', '@/components/library', '@/context/GameContext',
-        '@/lib/editorGameRunner', '@/lib/scenePicking.mjs', '../../../../src/neptune.js?url',
+        '@/lib/editorGameRunner', '@/lib/scenePicking.mjs', 'virtual:neptune-runtime-url',
         '../../../../src/thalassa/camera.js?url', '@/lib/scenePicking.mjs?url',
         '@/lib/projectResourceBridge.mjs?url', '@tauri-apps/api/core'
     ];
@@ -94,7 +94,7 @@ function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-
         } },
         '@/lib/scenePicking.mjs': { translateOnAxis, resizeColliderBounds, zoomAtPoint, getFramingCamera, getColliderOverlayBounds, getEntitySelectionBounds, hasCompleteGroupTransformSelection },
         '@tauri-apps/api/core': { invoke: async () => '' },
-        '../../../../src/neptune.js?url': '/neptune.js',
+        'virtual:neptune-runtime-url': '/neptune.js',
         '../../../../src/thalassa/camera.js?url': '/camera.js',
         '@/lib/scenePicking.mjs?url': '/scenePicking.js',
         '@/lib/projectResourceBridge.mjs?url': '/projectResourceBridge.js'

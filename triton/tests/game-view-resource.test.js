@@ -9,9 +9,9 @@ import { runtimeComponentBridgeScript } from "../src/lib/runtimeComponentBridge.
 import { runtimeConsoleBridgeScript } from "../src/lib/runtimeConsoleBridge.mjs";
 import { runtimeControlBridgeScript } from "../src/lib/runtimeControlBridge.mjs";
 
-function createGameView() {
+function createGameView(runtimeUrl = "/neptune.js") {
     const sourcefile = path.resolve("triton/src/components/panels/GameViewPanel.tsx");
-    const external = ["react", "react/jsx-runtime", "@tauri-apps/api/core", "@/lib/projectResourceBridge.mjs?url", "../../../../src/neptune.js?url", "@/lib/runtimeSelectionBridge.mjs", "@/lib/runtimeComponentBridge.mjs", "@/lib/runtimeConsoleBridge.mjs", "@/lib/runtimeControlBridge.mjs"];
+    const external = ["react", "react/jsx-runtime", "@tauri-apps/api/core", "@/lib/projectResourceBridge.mjs?url", "virtual:neptune-runtime-url", "@/lib/runtimeSelectionBridge.mjs", "@/lib/runtimeComponentBridge.mjs", "@/lib/runtimeConsoleBridge.mjs", "@/lib/runtimeControlBridge.mjs"];
     const bundle = buildSync({
         bundle: true,
         external,
@@ -42,7 +42,7 @@ function createGameView() {
             return "asset contents";
         } },
         "@/lib/projectResourceBridge.mjs?url": "/projectResourceBridge.js",
-        "../../../../src/neptune.js?url": "/neptune.js",
+        "virtual:neptune-runtime-url": runtimeUrl,
         "@/lib/runtimeSelectionBridge.mjs": { runtimeSelectionBridgeScript },
         "@/lib/runtimeComponentBridge.mjs": { runtimeComponentBridgeScript },
         "@/lib/runtimeConsoleBridge.mjs": { runtimeConsoleBridgeScript },
@@ -52,9 +52,11 @@ function createGameView() {
     vm.runInNewContext(bundle, {
         React: react,
         window: {
+            location: { href: "http://localhost:5173/editor" },
             addEventListener: (type, listener) => listeners.set(type, listener),
             removeEventListener: (type, listener) => listeners.delete(type)
         },
+        URL,
         module,
         exports: module.exports,
         require: id => {
@@ -89,11 +91,17 @@ test("Game View embeds runtime selection, console, and playback bridges", () => 
     const iframe = findNode(harness.tree, node => node.type === "iframe" && node.props?.title === "Game View");
     assert.ok(iframe);
     assert.ok(iframe.props.ref);
-    assert.match(iframe.props.srcDoc, /import \{ installProjectResourceBridge \} from "\/projectResourceBridge\.js";[\s\S]*import\("\/neptune\.js"\)/);
+    assert.match(iframe.props.srcDoc, /import \{ installProjectResourceBridge \} from "\/projectResourceBridge\.js";[\s\S]*import\("http:\/\/localhost:5173\/neptune\.js"\)/);
     assert.match(iframe.props.srcDoc, /window\.addEventListener\("pointerdown"/);
     assert.match(iframe.props.srcDoc, /type: "editor:log"/);
     assert.match(iframe.props.srcDoc, /const runRuntimeControl = function runRuntimeControl/);
     assert.match(iframe.props.srcDoc, /type: 'editor:diagnostic'/);
+});
+
+test("Game View resolves Vite's root-relative runtime URL for its srcdoc module", () => {
+    const harness = createGameView("/@fs/root/Neptune.js-m12-20261030/src/neptune.js");
+    const iframe = findNode(harness.tree, node => node.type === "iframe" && node.props?.title === "Game View");
+    assert.match(iframe.props.srcDoc, /import\("http:\/\/localhost:5173\/@fs\/root\/Neptune\.js-m12-20261030\/src\/neptune\.js"\)/);
 });
 
 test("Game View serves text and audio iframe resources through selected-project native readers", async () => {
