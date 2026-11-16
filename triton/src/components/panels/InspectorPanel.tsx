@@ -114,30 +114,30 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
     }
 
     return <div className="h-full flex flex-col bg-background overflow-hidden overflow-x-hidden select-none">
-        <div className={cn("shrink-0 p-2 border-b border-border", "bg-card/30")}>
-            <div className="flex items-center gap-3">
-                <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center", "bg-gradient-to-b from-[hsl(0,0%,28%)] to-[hsl(0,0%,22%)]", "border border-[hsl(0,0%,14%)] border-t-[hsl(0,0%,32%)]", "shadow-[0_2px_4px_rgba(0,0,0,0.3)] shrink-0")}>
+        <div className={cn("shrink-0 p-1.5 border-b border-border", "bg-card/30")}>
+            <div className="flex items-center gap-1.5 min-w-0">
+                <div className="triton-raised w-7 h-7 shrink-0 rounded-md flex items-center justify-center">
                     <Box className="w-4.5 h-4.5 text-foreground/90" />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <ThemedInput value={entity.name} onChange={(event: any) => handleRename(event.target.value)} className="font-bold text-[13px] h-8" disabled={selectedIds.length > 1} placeholder={selectedIds.length > 1 ? `${selectedIds.length} Entities Selected` : undefined} />
+                    <ThemedInput value={entity.name} onChange={(event: any) => handleRename(event.target.value)} className="font-bold text-[13px] h-7" disabled={selectedIds.length > 1} placeholder={selectedIds.length > 1 ? `${selectedIds.length} Entities Selected` : undefined} />
                 </div>
-                <button type="button" onClick={handleToggleActive} className={cn("w-8 h-8 flex items-center justify-center rounded transition-colors", entity.active ? "text-blue-400 hover:text-blue-300" : "text-muted-foreground/70 hover:text-foreground")} title={entity.active ? "Disable entity" : "Enable entity"}>
+                <button type="button" onClick={handleToggleActive} className={cn("w-6 h-6 flex shrink-0 items-center justify-center rounded transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-primary", entity.active ? "text-blue-400 hover:text-blue-300" : "text-muted-foreground/70 hover:text-foreground")} title={entity.active ? "Disable entity" : "Enable entity"} aria-label={entity.active ? "Disable entity" : "Enable entity"}>
                     {entity.active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                 </button>
-                <button type="button" onClick={() => void handleSave()} disabled={!currentScenePath || isSaving} className="w-8 h-8 flex items-center justify-center rounded text-muted-foreground hover:text-foreground disabled:opacity-40" title={currentScenePath ? "Save scene (Ctrl+S)" : "Open a scene before saving"} aria-label={currentScenePath ? "Save scene" : "Save scene unavailable"}>
+                <button type="button" onClick={() => void handleSave()} disabled={!currentScenePath || isSaving} className="w-6 h-6 flex shrink-0 items-center justify-center rounded text-muted-foreground hover:text-foreground disabled:opacity-40 focus-visible:outline focus-visible:outline-1 focus-visible:outline-primary" title={currentScenePath ? "Save scene (Ctrl+S)" : "Open a scene before saving"} aria-label={currentScenePath ? "Save scene" : "Save scene unavailable"}>
                     <Save className="w-4 h-4" />
                 </button>
             </div>
         </div>
-        <div className="flex-1 overflow-auto bg-[hsl(0,0%,14%)]">
+        <div className="flex-1 overflow-auto bg-background">
             {renderInspectorComponent({ compId: "transform", index: -1, entity, isActive: true, onToggleActive: undefined, updateHelpers, moveHelpers: {} })}
             {componentOrder.map((compId, index) => {
                 const canToggle = toggleableComponents.has(compId.toLowerCase()) || compId.toLowerCase().endsWith("behaviour")
                 return renderInspectorComponent({ compId, index, entity, isActive: canToggle ? componentEnabled(compId) : true, onToggleActive: canToggle ? () => toggleActive(compId) : undefined, updateHelpers, moveHelpers: { onMoveUp: () => {}, onMoveDown: () => {} } })
             })}
-            <div className="p-4 mt-2">
-                <button type="button" className={cn("w-full h-8 flex items-center justify-center gap-2 rounded-md", "bg-gradient-to-b from-[hsl(0,0%,25%)] to-[hsl(0,0%,20%)]", "border border-[hsl(0,0%,18%)] border-t-[hsl(0,0%,30%)]", "text-foreground/90 hover:text-foreground hover:from-[hsl(0,0%,28%)]", "shadow-[0_2px_4px_rgba(0,0,0,0.2)] transition-all active:translate-y-0.5")}>
+            <div className="p-2 mt-1">
+                <button type="button" disabled title="Adding components from the inspector is not available yet" className={cn("triton-raised w-full h-7 flex items-center justify-center gap-2 rounded-md px-2", "text-foreground/90 transition-all disabled:cursor-not-allowed disabled:opacity-50")}>
                     <Plus className="w-3.5 h-3.5" /><span className="text-xs font-medium">Add Component</span>
                 </button>
             </div>

@@ -116,7 +116,9 @@ test("editor scene edits persist and Game View playback and diagnostics use the 
     await page.getByText("Hero", { exact: true }).waitFor();
     await page.getByText("Hero", { exact: true }).click({ button: "right" });
     await page.getByRole("button", { name: "Duplicate", exact: true }).click();
-    await page.getByText("Companion", { exact: true }).locator("xpath=ancestor::div[@draggable]").getByRole("button", { name: "Delete entity" }).click();
+    const deleteCompanionRow = page.getByText("Companion", { exact: true }).locator("xpath=ancestor::div[@draggable]");
+    await deleteCompanionRow.hover();
+    await deleteCompanionRow.getByRole("button", { name: "Delete Companion", exact: true }).click();
     await page.getByRole("button", { name: "Save scene" }).click();
     await page.waitForFunction(() => window.__nativeCalls.some(call => call.command === "write_scene"));
     const saved = await page.evaluate(() => window.__files["scenes/main.scene"]);

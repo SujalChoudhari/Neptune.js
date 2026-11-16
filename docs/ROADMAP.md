@@ -96,6 +96,9 @@ These are dependency gates, not nine isolated waterfall projects. Keep a runnabl
 - [x] Fix Dockview color variables to receive valid CSS color values, not raw HSL component strings.
 - [x] Prioritize the viewport: starting sidebars around 220px/280px and bottom panels around 180px, with minimum-size constraints.
 - [ ] Finish native visual acceptance at multiple window sizes and display scales.
+- [x] Repair compact layout at 1024–1536px logical widths with 125% browser-scale checks: readable hierarchy names, usable position fields, viewport and live activity bar. Reapply panel constraints after restoring layouts; verify native maximized-window startup at this machine's 150% scale. Actual Windows 125% setting acceptance remains open.
+- [x] Replace static Ready/version filler with live property/value edits marked unsaved and real pending/success/failure file activity; ignore stale save completions after switching scenes.
+- [x] Draw root-level rotated rectangle selection as a thin unfilled oriented outline rather than a tinted world-axis bounding box.
 - [ ] Resolve flex overflow/clipping, coordinate offsets, resize behavior, contrast, focus rings and selected/hover/disabled states.
 - [x] Persist valid complete docked layouts per project and restore/reset them. Reject malformed, stale, floating/popout or incomplete records and use the default workspace.
 - [x] Remove or explicitly disable nonfunctional layouts; do not advertise fake specialized editors.

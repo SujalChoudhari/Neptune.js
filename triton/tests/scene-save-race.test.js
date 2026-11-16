@@ -10,7 +10,11 @@ const bundle = buildSync({ bundle: true, format: "cjs", platform: "node", write:
     stdin: { contents: fs.readFileSync(sourcefile, "utf8"), loader: "ts", sourcefile }
 }).outputFiles[0].text;
 const module = { exports: {} };
-vm.runInNewContext(bundle, { module, exports: module.exports, require: id => { throw new Error(`Unexpected import: ${id}`); } });
+const activities = [];
+vm.runInNewContext(bundle, { module, exports: module.exports, require: id => { throw new Error(`Unexpected import: ${id}`); },
+    window: { dispatchEvent: event => { if (event.type === "editor:activity") activities.push(event.detail); } },
+    CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } }
+});
 const runner = module.exports.EditorGameRunner;
 const scene = name => ({ type: "scene", version: "1.0.0", schemaVersion: 1, name,
     entities: [{ id: "hero", name: "Hero", children: [] }], layers: [] });
@@ -82,4 +86,47 @@ test("a failed native write does not block the next queued save", async () => {
     await retry;
     assert.deepEqual(writes, ["Hero", "Recovered"]);
     assert.equal(runner.isDirty, false);
+});
+
+test("save activity reports pending then ready only after the write resolves", async () => {
+    runner.openScene(scene("Activity"), "activity.scene");
+    activities.length = 0;
+    let finish;
+    const saving = runner.saveScene(() => new Promise(resolve => { finish = resolve; }));
+    assert.deepEqual(activities.map(item => item.type), ["pending"]);
+    assert.match(activities[0].message, /Saving scene/);
+    finish(true);
+    await saving;
+    assert.deepEqual(activities.map(item => item.type), ["pending", "ready"]);
+    assert.match(activities[1].message, /Scene saved/);
+});
+
+test("saving an older snapshot keeps newer edits explicitly unsaved in activity", async () => {
+    runner.openScene(scene("Snapshot"), "snapshot.scene");
+    activities.length = 0;
+    let finish;
+    const saving = runner.saveScene(() => new Promise(resolve => { finish = resolve; }));
+    runner.updateEntity("hero", "name", { value: "Newer edit" });
+    finish(true);
+    await saving;
+    assert.equal(runner.isDirty, true);
+    assert.equal(activities.at(-1).type, "info");
+    assert.match(activities.at(-1).message, /newer edits remain unsaved/);
+});
+
+test("failed save reports error and an old save completion cannot overwrite current activity", async () => {
+    runner.openScene(scene("Failure"), "failure.scene");
+    activities.length = 0;
+    await assert.rejects(runner.saveScene(async () => { throw new Error("disk unavailable"); }), /disk unavailable/);
+    assert.deepEqual(activities.map(item => item.type), ["pending", "error"]);
+
+    runner.openScene(scene("Old"), "old.scene");
+    activities.length = 0;
+    let finish;
+    const saving = runner.saveScene(() => new Promise(resolve => { finish = resolve; }));
+    runner.openScene(scene("Current"), "current.scene");
+    activities.push({ type: "info", message: "Current scene loaded" });
+    finish(true);
+    await saving;
+    assert.deepEqual(activities.map(item => item.type), ["pending", "info"]);
 });

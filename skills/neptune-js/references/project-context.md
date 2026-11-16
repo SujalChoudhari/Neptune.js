@@ -35,4 +35,16 @@ Updated 2026-11-16. Check git and the live roadmap before treating these notes a
 
 ## Continue
 
+### Compact UI follow-up, 2026-11-16
+
+- User clarified fullscreen means **maximized windowed**, retaining the ordinary title bar and taskbar. Do not enable exclusive fullscreen.
+- Optimize for 125% display scaling and smaller logical workspaces, not only large screens. Dock constraints must be reapplied after JSON restore; set default widths after all panels are added because later groups redistribute allocations.
+- Hierarchy actions must not permanently steal name width. Compact property labels and minimum-safe numeric fields keep both axes readable; preserve keyboard access and hover/focus actions.
+- Reapplying minimum constraints alone does not enlarge an already undersized restored panel; explicitly repair its current width as well. A regression now loads squeezed persisted sidebars and checks the labels and numeric fields.
+- Temporary native verification copies must not remain in the user's Recent Projects list. On this follow-up the user saw `p0-editor-project` alongside Emberfall; removed only that recent entry and reopened Emberfall. Use isolated profiles for future test projects, then clean their test recents before handing back the app. Never delete the actual game to clean recents.
+- Apply the neumorphic material/theme to all editor chrome, including dialogs, menus, console, hierarchy and Inspector. Do not leave old neutral hardcoded gray panels intermixed with the semantic theme. Keep diagnostic and game content colors meaningful.
+- Status must report real editor work, property/value changes as unsaved, and pending/resolved/rejected writes. Avoid static Ready, fake version labels, runtime log spam hiding save feedback or stale save completions overriding a different scene. A saved snapshot does not imply newer edits are saved.
+- Selection outlines should follow rotated rectangle geometry with a thin unfilled stroke, not an enlarged tinted AABB. Framing may still use the world AABB. Nested-parent editing remains unverified.
+- Browser checks cover 1024×640 through 1536×864 at emulated device scale 1.25. Actual native verification ran at the machine's 1.5 scale; do not label emulation as a Windows scale-setting test.
+
 Finish P0 nested transform/visual acceptance, then P1 authoring safety and P2 runtime contracts according to the live roadmap. Do not imply the whole P0 checklist or full engine/game is done. For each batch, keep changes isolated, run applicable checks, review native appearance, update honest TODOs, and complete requested main integration/push.

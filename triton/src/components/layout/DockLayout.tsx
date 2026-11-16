@@ -14,19 +14,38 @@ import { editorLayoutKey, readEditorLayout, serializeEditorLayout } from '@/lib/
 
 interface DockLayoutProps { onApiReady?: (api: DockviewApi) => void }
 
+function fitWorkspacePanels(api: DockviewApi, resetSizes = false) {
+    // Constraints are runtime state and are not preserved by Dockview JSON.
+    // Apply them after restoring as well as after creating the full split tree.
+    const hierarchy = api.getPanel('hierarchy');
+    const inspector = api.getPanel('inspector');
+    hierarchy?.api.setConstraints({ minimumWidth: 208 });
+    inspector?.api.setConstraints({ minimumWidth: 264 });
+    api.getPanel('scene')?.api.setConstraints({ minimumWidth: 280, minimumHeight: 180 });
+    api.getPanel('console')?.api.setConstraints({ minimumHeight: 100 });
+    if (resetSizes) {
+        // Adding later groups redistributes earlier initialWidth allocations.
+        hierarchy?.api.setSize({ width: 224 });
+        inspector?.api.setSize({ width: 288 });
+        api.getPanel('console')?.api.setSize({ height: 144 });
+    } else {
+        // A constraint change alone does not resize a restored group that is
+        // already smaller than its new minimum. Repair the current dimensions.
+        if (hierarchy && hierarchy.api.width < 208) hierarchy.api.setSize({ width: 208 });
+        if (inspector && inspector.api.width < 264) inspector.api.setSize({ width: 264 });
+    }
+}
+
 function createWorkspace(api: DockviewApi, debug = false) {
     api.clear();
     const scene = api.addPanel({ id: 'scene', component: 'scene', title: 'Scene View' });
     const game = api.addPanel({ id: 'game', component: 'game', title: 'Game View', position: { referencePanel: scene, direction: 'within' } });
-    const hierarchy = api.addPanel({ id: 'hierarchy', component: 'hierarchy', title: 'Hierarchy', position: { referencePanel: scene, direction: 'left' }, initialWidth: 220 });
-    const inspector = api.addPanel({ id: 'inspector', component: 'inspector', title: 'Inspector', position: { referencePanel: scene, direction: 'right' }, initialWidth: 280 });
+    api.addPanel({ id: 'hierarchy', component: 'hierarchy', title: 'Hierarchy', position: { referencePanel: scene, direction: 'left' }, initialWidth: 224 });
+    api.addPanel({ id: 'inspector', component: 'inspector', title: 'Inspector', position: { referencePanel: scene, direction: 'right' }, initialWidth: 288 });
     const consolePanel = api.addPanel({ id: 'console', component: 'console', title: 'Console', position: { referencePanel: scene, direction: 'below' }, initialHeight: 180 });
     const project = api.addPanel({ id: 'project', component: 'project', title: 'Project', position: { referencePanel: consolePanel, direction: 'within' } });
     api.addPanel({ id: 'tilemap', component: 'tilemap', title: 'Tilemap', position: { referencePanel: consolePanel, direction: 'within' } });
-    hierarchy.api.setConstraints({ minimumWidth: 160 });
-    inspector.api.setConstraints({ minimumWidth: 220 });
-    scene.api.setConstraints({ minimumWidth: 280, minimumHeight: 180 });
-    consolePanel.api.setConstraints({ minimumHeight: 100 });
+    fitWorkspacePanels(api, true);
     (debug ? consolePanel : project).api.setActive();
     (debug ? game : scene).api.setActive();
 }
@@ -57,7 +76,7 @@ export const DockLayout = ({ onApiReady }: DockLayoutProps) => {
             const record = storageKeyRef.current ? localStorage.getItem(storageKeyRef.current) : null;
             const layout = readEditorLayout(record);
             if (layout) {
-                try { api.fromJSON(layout); return; } catch { /* Default workspace repairs incompatible layouts. */ }
+                try { api.fromJSON(layout); fitWorkspacePanels(api); return; } catch { /* Default workspace repairs incompatible layouts. */ }
             }
             createWorkspace(api);
         } catch { createWorkspace(api); }

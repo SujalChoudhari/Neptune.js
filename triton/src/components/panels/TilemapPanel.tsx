@@ -336,13 +336,13 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
     };
 
     return (
-        <section className="h-full flex flex-col gap-2 bg-background p-3 text-foreground">
+        <section className="h-full flex flex-col gap-1.5 bg-background p-2 text-foreground">
             <div className="flex items-center gap-2">
                 <label className="text-xs shrink-0" htmlFor="tilemap-file">Map</label>
                 <select
                     id="tilemap-file"
                     aria-label="Tilemap file"
-                    className="min-w-0 flex-1 rounded border border-border bg-card px-2 py-1 text-xs"
+                    className="triton-inset min-w-0 flex-1 rounded px-2 py-1 text-xs"
                     value={mapPath}
                     onChange={(event) => setMapPath(event.target.value)}
                 >
@@ -352,7 +352,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                 <button
                     type="button"
                     aria-label="Create new tilemap"
-                    className="rounded border border-border px-2 py-1 text-xs disabled:opacity-50"
+                    className="triton-raised rounded px-2 py-1 text-xs disabled:opacity-50"
                     disabled={!rootPath}
                     onClick={() => setShowNewMap((visible) => !visible)}
                 >
@@ -360,12 +360,12 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                 </button>
             </div>
             {showNewMap && (
-                <div className="flex flex-wrap items-end gap-2 rounded border border-border bg-card/50 p-2" aria-label="New tilemap settings">
+                <div className="triton-inset flex flex-wrap items-end gap-1.5 rounded p-1.5" aria-label="New tilemap settings">
                     <label className="flex flex-col gap-1 text-xs">
                         Map filename
                         <input
                             aria-label="New tilemap filename"
-                            className="w-36 rounded border border-border bg-card px-2 py-1"
+                            className="triton-inset w-36 rounded px-2 py-1"
                             value={newMapName}
                             onChange={(event) => setNewMapName(event.target.value)}
                             placeholder="level.map"
@@ -373,31 +373,31 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                     </label>
                     <label className="flex flex-col gap-1 text-xs">
                         Width
-                        <input aria-label="New tilemap width" className="w-16 rounded border border-border bg-card px-2 py-1" type="number" min="1" max="256" value={newMapWidth} onChange={(event) => setNewMapWidth(Number(event.target.value))} />
+                        <input aria-label="New tilemap width" className="triton-inset w-16 rounded px-2 py-1" type="number" min="1" max="256" value={newMapWidth} onChange={(event) => setNewMapWidth(Number(event.target.value))} />
                     </label>
                     <label className="flex flex-col gap-1 text-xs">
                         Height
-                        <input aria-label="New tilemap height" className="w-16 rounded border border-border bg-card px-2 py-1" type="number" min="1" max="256" value={newMapHeight} onChange={(event) => setNewMapHeight(Number(event.target.value))} />
+                        <input aria-label="New tilemap height" className="triton-inset w-16 rounded px-2 py-1" type="number" min="1" max="256" value={newMapHeight} onChange={(event) => setNewMapHeight(Number(event.target.value))} />
                     </label>
                     <label className="flex flex-col gap-1 text-xs">
                         Atlas columns
-                        <input aria-label="New tilemap atlas columns" className="w-16 rounded border border-border bg-card px-2 py-1" type="number" min="1" max="64" value={newMapColumns} onChange={(event) => setNewMapColumns(Number(event.target.value))} />
+                        <input aria-label="New tilemap atlas columns" className="triton-inset w-16 rounded px-2 py-1" type="number" min="1" max="64" value={newMapColumns} onChange={(event) => setNewMapColumns(Number(event.target.value))} />
                     </label>
                     <label className="flex flex-col gap-1 text-xs">
                         Tile size (px)
-                        <input aria-label="New tilemap tile size" className="w-16 rounded border border-border bg-card px-2 py-1" type="number" min="1" max="256" value={newMapTileSize} onChange={(event) => setNewMapTileSize(Number(event.target.value))} />
+                        <input aria-label="New tilemap tile size" className="triton-inset w-16 rounded px-2 py-1" type="number" min="1" max="256" value={newMapTileSize} onChange={(event) => setNewMapTileSize(Number(event.target.value))} />
                     </label>
                     <label className="flex flex-col gap-1 text-xs">
                         Tileset
-                        <select aria-label="New tilemap tileset" className="max-w-40 rounded border border-border bg-card px-2 py-1" value={newMapTileset} onChange={(event) => setNewMapTileset(event.target.value)}>
+                        <select aria-label="New tilemap tileset" className="triton-inset max-w-40 rounded px-2 py-1" value={newMapTileset} onChange={(event) => setNewMapTileset(event.target.value)}>
                             <option value="">No tileset yet</option>
                             {tilesetFiles.map((file) => <option key={file.id} value={file.id}>{file.id}</option>)}
                         </select>
                     </label>
-                    <button type="button" className="rounded bg-primary px-3 py-1 text-xs text-primary-foreground disabled:opacity-50" disabled={isCreatingMap} onClick={() => void handleCreateMap()}>
+                    <button type="button" className="rounded bg-primary px-2 py-1 text-xs text-primary-foreground disabled:opacity-50" disabled={isCreatingMap} onClick={() => void handleCreateMap()}>
                         {isCreatingMap ? 'Creating…' : 'Create Map'}
                     </button>
-                    <button type="button" className="rounded border border-border px-3 py-1 text-xs" onClick={() => setShowNewMap(false)}>
+                    <button type="button" className="triton-raised rounded px-2 py-1 text-xs" onClick={() => setShowNewMap(false)}>
                         Cancel
                     </button>
                 </div>
@@ -408,7 +408,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                     <select
                         id="tilemap-tileset"
                         aria-label="Tileset asset"
-                        className="min-w-0 flex-1 rounded border border-border bg-card px-2 py-1 text-xs"
+                        className="min-w-0 flex-1 triton-inset rounded px-2 py-1 text-xs"
                         value={tilemap.tileset || ''}
                         onChange={(event) => {
                             setAvailableTileCount(null);
@@ -426,13 +426,13 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                 </div>
             )}
             {tilemap && (
-                <div className="flex flex-wrap items-center gap-3 rounded border border-border bg-card/50 px-2 py-1">
+                <div className="flex flex-wrap items-center gap-3 triton-inset rounded px-2 py-1">
                     <label className="flex items-center gap-2 text-xs" htmlFor="tilemap-atlas-columns">
                         Atlas columns
                         <input
                             id="tilemap-atlas-columns"
                             aria-label="Atlas columns"
-                            className="w-16 rounded border border-border bg-card px-2 py-1"
+                            className="w-16 triton-inset rounded px-2 py-1"
                             type="number"
                             min="1"
                             max={availableAtlasColumns ?? 64}
@@ -461,7 +461,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                         <input
                             id="tilemap-tile-size"
                             aria-label="Tile size in pixels"
-                            className="w-16 rounded border border-border bg-card px-2 py-1"
+                            className="w-16 triton-inset rounded px-2 py-1"
                             type="number"
                             min="1"
                             max="256"
@@ -499,7 +499,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                 <input
                     id="tilemap-paint-id"
                     aria-label="Tile ID to paint"
-                    className="w-20 rounded border border-border bg-card px-2 py-1 text-xs"
+                    className="w-20 triton-inset rounded px-2 py-1 text-xs"
                     type="number"
                     disabled={paintingBlocked}
                     min="0"
@@ -514,7 +514,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                 />
                 <button
                     type="button"
-                    className="ml-auto rounded bg-primary px-3 py-1 text-xs text-primary-foreground disabled:opacity-50"
+                    className="ml-auto rounded bg-primary px-2 py-1 text-xs text-primary-foreground disabled:opacity-50"
                     disabled={!tilemap || !isDirty || isSaving}
                     onClick={() => void handleSave()}
                 >
@@ -522,7 +522,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                 </button>
                 <button
                     type="button"
-                    className="rounded border border-border px-3 py-1 text-xs disabled:opacity-50"
+                    className="triton-raised rounded px-2 py-1 text-xs disabled:opacity-50"
                     aria-label="Add tilemap to active scene"
                     title={!currentScenePath
                         ? 'Open a scene before adding a tilemap'
@@ -541,7 +541,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                 </p>
             )}
             {tilemap && (
-                <div className="flex min-h-0 max-h-40 flex-col gap-1 overflow-auto rounded border border-border bg-card/50 p-2" aria-label="Tileset tile palette">
+                <div className="flex min-h-0 max-h-40 flex-col gap-1 overflow-auto triton-inset rounded p-1.5" aria-label="Tileset tile palette">
                     {tilemap.tileset?.trim() && availableTileCount === null && (
                         <p className="text-xs text-muted-foreground" role="status">Loading tileset dimensions; painting is paused.</p>
                     )}
@@ -580,7 +580,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                         <input
                             id="tileset-tile-count"
                             aria-label="Tileset palette tile count"
-                            className="w-16 rounded border border-border bg-card px-2 py-1 text-xs"
+                            className="w-16 triton-inset rounded px-2 py-1 text-xs"
                             type="number"
                             min="1"
                             max={availableTileCount ?? 4096}
@@ -642,12 +642,12 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                 </div>
             )}
             {tilemap && (
-                <div className="flex items-center gap-2 rounded border border-border bg-card/50 p-2">
+                <div className="flex items-center gap-2 triton-inset rounded p-1.5">
                     <label className="text-xs" htmlFor="tilemap-walkable">Tile {tileId} walkability</label>
                     <select
                         id="tilemap-walkable"
                         aria-label={`Tile ${tileId} walkability`}
-                        className="rounded border border-border bg-card px-2 py-1 text-xs"
+                        className="triton-inset rounded px-2 py-1 text-xs"
                         value={activeMetadata.walkable === undefined ? 'unset' : String(activeMetadata.walkable)}
                         onChange={(event) => updateMetadata(
                             'walkable',
@@ -662,7 +662,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                     <select
                         id="tilemap-collision"
                         aria-label={`Tile ${tileId} collision`}
-                        className="rounded border border-border bg-card px-2 py-1 text-xs"
+                        className="triton-inset rounded px-2 py-1 text-xs"
                         value={activeMetadata.collision === undefined ? 'unset' : String(activeMetadata.collision)}
                         onChange={(event) => updateMetadata(
                             'collision',
@@ -677,7 +677,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                     <input
                         id="tilemap-terrain"
                         aria-label={`Tile ${tileId} terrain`}
-                        className="min-w-0 flex-1 rounded border border-border bg-card px-2 py-1 text-xs"
+                        className="min-w-0 flex-1 triton-inset rounded px-2 py-1 text-xs"
                         value={activeMetadata.terrain || ''}
                         placeholder="e.g. water, stone"
                         onChange={(event) => updateMetadata('terrain', event.target.value || undefined)}
@@ -686,7 +686,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                     <input
                         id="tilemap-movement-cost"
                         aria-label={`Tile ${tileId} movement cost`}
-                        className="w-24 rounded border border-border bg-card px-2 py-1 text-xs"
+                        className="w-24 triton-inset rounded px-2 py-1 text-xs"
                         type="number"
                         min="0"
                         step="0.1"
@@ -697,12 +697,12 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                 </div>
             )}
             {tilemap && selectedCell && (
-                <div className="flex items-center gap-2 rounded border border-border bg-card/50 p-2">
+                <div className="flex items-center gap-2 triton-inset rounded p-1.5">
                     <label className="text-xs" htmlFor="cell-collision">Cell ({selectedCell.x}, {selectedCell.y}) collision</label>
                     <select
                         id="cell-collision"
                         aria-label={`Cell ${selectedCell.x}, ${selectedCell.y} collision`}
-                        className="rounded border border-border bg-card px-2 py-1 text-xs"
+                        className="triton-inset rounded px-2 py-1 text-xs"
                         value={tilemap.cellMetadata?.[String(selectedCell.y * tilemap.width + selectedCell.x)]?.collision === undefined
                             ? 'inherit' : String(tilemap.cellMetadata[String(selectedCell.y * tilemap.width + selectedCell.x)].collision)}
                         onChange={(event) => updateCellMetadata('collision',
@@ -717,7 +717,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                     <select
                         id="cell-walkable"
                         aria-label={`Cell ${selectedCell.x}, ${selectedCell.y} walkability`}
-                        className="rounded border border-border bg-card px-2 py-1 text-xs"
+                        className="triton-inset rounded px-2 py-1 text-xs"
                         value={tilemap.cellMetadata?.[String(selectedCell.y * tilemap.width + selectedCell.x)]?.walkable === undefined
                             ? 'inherit' : String(tilemap.cellMetadata[String(selectedCell.y * tilemap.width + selectedCell.x)].walkable)}
                         onChange={(event) => updateCellMetadata('walkable',
@@ -731,7 +731,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                     <input
                         id="cell-terrain"
                         aria-label={`Cell ${selectedCell.x}, ${selectedCell.y} terrain`}
-                        className="min-w-0 flex-1 rounded border border-border bg-card px-2 py-1 text-xs"
+                        className="min-w-0 flex-1 triton-inset rounded px-2 py-1 text-xs"
                         value={tilemap.cellMetadata?.[String(selectedCell.y * tilemap.width + selectedCell.x)]?.terrain || ''}
                         onChange={(event) => updateCellMetadata('terrain', event.target.value || undefined)}
                     />
@@ -739,7 +739,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                     <input
                         id="cell-slowdown"
                         aria-label={`Cell ${selectedCell.x}, ${selectedCell.y} slowdown`}
-                        className="w-24 rounded border border-border bg-card px-2 py-1 text-xs"
+                        className="w-24 triton-inset rounded px-2 py-1 text-xs"
                         type="number"
                         min="0"
                         step="0.1"
@@ -751,7 +751,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                     <input
                         id="cell-movement-cost"
                         aria-label={`Cell ${selectedCell.x}, ${selectedCell.y} movement cost`}
-                        className="w-24 rounded border border-border bg-card px-2 py-1 text-xs"
+                        className="w-24 triton-inset rounded px-2 py-1 text-xs"
                         type="number"
                         min="0"
                         step="0.1"
@@ -762,12 +762,12 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                 </div>
             )}
             {tilemap && (
-                <div role="group" aria-label="Tilemap brush controls" className="flex flex-wrap items-center gap-2 rounded border border-border bg-card/50 p-2">
+                <div role="group" aria-label="Tilemap brush controls" className="flex flex-wrap items-center gap-2 triton-inset rounded p-1.5">
                     <label className="text-xs" htmlFor="tilemap-brush-mode">Brush</label>
                     <select
                         id="tilemap-brush-mode"
                         aria-label="Tilemap brush mode"
-                        className="rounded border border-border bg-card px-2 py-1 text-xs"
+                        className="triton-inset rounded px-2 py-1 text-xs"
                         value={brushMode}
                         disabled={isPainting}
                         onChange={(event) => setBrushMode(event.target.value as TilemapBrushMode)}
@@ -785,7 +785,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                             <select
                                 id="collision-brush"
                                 aria-label="Collision brush"
-                                className="rounded border border-border bg-card px-2 py-1 text-xs"
+                                className="triton-inset rounded px-2 py-1 text-xs"
                                 value={collisionBrush}
                                 disabled={isPainting}
                                 onChange={(event) => setCollisionBrush(event.target.value)}
@@ -802,7 +802,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                             <select
                                 id="navigation-brush"
                                 aria-label="Navigation brush"
-                                className="rounded border border-border bg-card px-2 py-1 text-xs"
+                                className="triton-inset rounded px-2 py-1 text-xs"
                                 value={navigationBrush}
                                 disabled={isPainting}
                                 onChange={(event) => setNavigationBrush(event.target.value)}
@@ -819,7 +819,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                             <input
                                 id="terrain-brush"
                                 aria-label="Terrain brush"
-                                className="min-w-0 rounded border border-border bg-card px-2 py-1 text-xs"
+                                className="min-w-0 triton-inset rounded px-2 py-1 text-xs"
                                 value={terrainBrush}
                                 placeholder="Use tile default"
                                 disabled={isPainting}
@@ -833,7 +833,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                             <input
                                 id="slowdown-brush"
                                 aria-label="Slowdown brush"
-                                className="w-24 rounded border border-border bg-card px-2 py-1 text-xs"
+                                className="w-24 triton-inset rounded px-2 py-1 text-xs"
                                 type="number"
                                 min="0"
                                 step="0.1"
@@ -851,7 +851,7 @@ export function TilemapPanel(_props: IDockviewPanelProps) {
                             <input
                                 id="movement-cost-brush"
                                 aria-label="Movement cost brush"
-                                className="w-24 rounded border border-border bg-card px-2 py-1 text-xs"
+                                className="w-24 triton-inset rounded px-2 py-1 text-xs"
                                 type="number"
                                 min="0"
                                 step="0.1"

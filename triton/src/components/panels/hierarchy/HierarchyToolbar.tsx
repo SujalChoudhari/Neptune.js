@@ -19,19 +19,19 @@ export const HierarchyToolbar = ({
     onCollapseAll
 }: HierarchyToolbarProps) => {
     return (
-        <div className="h-9 border-b border-border flex items-center px-2 gap-1 bg-card shrink-0">
+        <div className="h-8 border-b border-border flex items-center px-1 gap-1 bg-card shrink-0">
             {/* Search */}
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
                 <ThemedInput
                     placeholder="Search scene..."
                     startIcon={<Search className="w-3.5 h-3.5" />}
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
-                    containerClassName="h-7"
+                    containerClassName="h-6 min-w-0"
                 />
             </div>
 
-            <div className="flex items-center gap-0.5 ml-1">
+            <div className="flex shrink-0 items-center gap-0.5">
                 <ThemedIconButton
                     size="sm"
                     title="Expand All"

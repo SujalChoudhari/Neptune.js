@@ -60,6 +60,7 @@ test("GameContext Play resumes a paused game without clearing the console or res
     const playSource = source.match(/    const play = \(\) => \{[\s\S]*?\n    \};(?=\n\n    const pause)/)?.[0]
     assert.ok(playSource, "exercise the actual GameContext play handler")
     const events = []
+    const activities = []
     const messages = []
     const state = { isPlaying: true, isPaused: true }
     const play = vm.runInNewContext(`${playSource}; play`, {
@@ -69,13 +70,16 @@ test("GameContext Play resumes a paused game without clearing the console or res
         setIsPaused: value => { state.isPaused = value },
         notifyGame: (type, payload) => messages.push({ type, payload }),
         window: { dispatchEvent: event => events.push(event.type) },
+        reportActivity: (message, type = 'info') => activities.push({ message, type }),
         Event: class { constructor(type) { this.type = type } }
     })
     play()
     assert.deepEqual(messages, [{ type: "editor:pause", payload: { paused: false } }])
     assert.deepEqual(events, [])
     assert.equal(state.isPaused, false)
+    assert.deepEqual(activities, [], 'resuming a paused game is not a new play session')
     const startEvents = []
+    const startActivities = []
     const startMessages = []
     const startState = { isPlaying: false, isPaused: false }
     const start = vm.runInNewContext(`${playSource}; play`, {
@@ -85,11 +89,13 @@ test("GameContext Play resumes a paused game without clearing the console or res
         setIsPaused: value => { startState.isPaused = value },
         notifyGame: (type, payload) => startMessages.push({ type, payload }),
         window: { dispatchEvent: event => startEvents.push(event.type) },
+        reportActivity: (message, type = 'info') => startActivities.push({ message, type }),
         Event: class { constructor(type) { this.type = type } }
     })
     start()
     assert.deepEqual(startMessages, [{ type: "editor:play", payload: null }])
     assert.deepEqual(startEvents, ["editor:play"])
+    assert.deepEqual(startActivities, [{ message: 'Play mode started', type: 'info' }])
     assert.equal(startState.isPlaying, true)
 })
 

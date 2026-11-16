@@ -614,9 +614,20 @@ export class EditorGameRunner {
     static async saveScene(writeFile: ProjectFileWriter, path = this.currentScenePath) {
         if (!this.currentScene || !path) throw new Error("No scene is open. Open a scene before saving it.")
         const source = this.currentScene
+        const project = this.currentProject
         const original = JSON.stringify(source)
-        const scene = this.validateScene(source)
+        let scene: ScenePayload
+        try {
+            scene = this.validateScene(source)
+        } catch (error) {
+            if (this.currentScene === source && this.currentScenePath === path && this.currentProject === project) {
+                emit("editor:activity", { message: `Scene save failed: ${error instanceof Error ? error.message : String(error)}`, type: "error" })
+            }
+            throw error
+        }
         const content = JSON.stringify(scene, null, 2)
+        const isCurrentSave = () => this.currentScene === source && this.currentScenePath === path && this.currentProject === project
+        emit("editor:activity", { message: `Saving scene: ${path}`, type: "pending" })
         // Capture this snapshot now, but wait for any older write to the same file.
         const previous = this.pendingSceneWrites.get(path)
         const write = (async () => {
@@ -627,16 +638,23 @@ export class EditorGameRunner {
         this.pendingSceneWrites.set(path, settled)
         try {
             await write
+        } catch (error) {
+            if (isCurrentSave()) emit("editor:activity", { message: `Scene save failed: ${error instanceof Error ? error.message : String(error)}`, type: "error" })
+            throw error
         } finally {
             if (this.pendingSceneWrites.get(path) === settled) this.pendingSceneWrites.delete(path)
         }
         // The native write may finish after another edit (or even another scene open).
-        if (this.currentScene === source && this.currentScenePath === path &&
-            JSON.stringify(source) === original) {
+        const isCurrentCompletion = isCurrentSave()
+        const snapshotStillCurrent = JSON.stringify(source) === original
+        if (isCurrentCompletion && snapshotStillCurrent) {
             this.currentScene = scene
             this.isDirty = false
         }
         emit("editor:scene-saved", { path, scene })
+        if (isCurrentCompletion) emit("editor:activity", snapshotStillCurrent
+            ? { message: `Scene saved: ${path}`, type: "ready" }
+            : { message: `Saved snapshot: ${path} · newer edits remain unsaved`, type: "info" })
         return scene
     }
 

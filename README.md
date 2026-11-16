@@ -118,4 +118,6 @@ Initial planning ranges: **4–8 focused development weeks for the polished vert
 
 The reusable [Neptune.js skill](skills/neptune-js/SKILL.md) stores project preferences, past corrections and the parallel TODO workflow. Its reference-driven design direction is compact dark neumorphism; preserve raised controls and inset fields. Keep the skill's dated context synchronized with verified changes.
 
+The compact editor is checked at 125% browser scaling across 1024–1536px logical window widths. It starts maximized in a normal Windows window, preserves readable hierarchy/Inspector widths after layout restore, and reports live unsaved edits and file save activity. See the [native and browser evidence](docs/windows-workflows.md); full nested-transform editing remains unfinished.
+
 Read [AGENTS.md](AGENTS.md) for architecture boundaries and verification guidance. `main` is the integration branch; use short-lived `codex/*` or other focused feature branches. Keep changes reviewable and preserve unrelated work. Source/API readiness, native acceptance, and publishing are distinct outcomes.

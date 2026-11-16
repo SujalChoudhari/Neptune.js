@@ -261,7 +261,7 @@ export const HierarchyItem = ({
             <EntityIcon type={entity.type} className={cn(isSelected ? "text-foreground" : "text-foreground/40")} />
 
             {/* Name */}
-            <div className="flex-1 truncate ml-1">
+            <div className="flex-1 min-w-0 truncate ml-1">
                 {isRenaming ? (
                     <input
                         ref={inputRef}
@@ -274,7 +274,7 @@ export const HierarchyItem = ({
                         onClick={(e) => e.stopPropagation()}
                     />
                 ) : (
-                    <span className="text-[11px] font-medium tracking-tight truncate">
+                    <span className="block text-[11px] font-medium tracking-tight truncate" title={entity.name}>
                         {entity.name}
                     </span>
                 )}
@@ -282,42 +282,49 @@ export const HierarchyItem = ({
 
             {/* Status Toggles (Visible on hover or when selected) */}
             <div className={cn(
-                "flex items-center gap-0.5 opacity-0 transition-opacity",
-                isSelected ? "opacity-100" : "group-hover:opacity-100"
+                "absolute right-0 top-0 bottom-0 flex items-center gap-0 opacity-0 pointer-events-none transition-opacity",
+                "bg-gradient-to-l from-background via-background to-transparent pl-2",
+                isSelected ? "opacity-100 pointer-events-auto" : "group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto"
             )}>
                 <button
+                    type="button"
                     onClick={(e) => {
                         e.stopPropagation()
                         onRemove(entity.id)
                     }}
-                    className="p-1 rounded-sm hover:bg-white/10 text-foreground/50 hover:text-foreground/90 transition-colors"
+                    className="w-6 h-6 flex items-center justify-center rounded-sm hover:bg-white/10 text-foreground/50 hover:text-foreground/90 transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-primary"
                     title="Delete entity"
+                    aria-label={`Delete ${entity.name}`}
                 >
                     <Trash2 className="w-3.5 h-3.5" />
                 </button>
                 <button
+                    type="button"
                     onClick={(e) => {
                         e.stopPropagation()
                         onToggleLock(entity.id)
                     }}
                     className={cn(
-                        "p-1 rounded-sm hover:bg-white/10 transition-colors",
+                        "w-6 h-6 flex items-center justify-center rounded-sm hover:bg-white/10 transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-primary",
                         entity.locked ? "text-foreground/90" : "text-foreground/30 hover:text-foreground/60"
                     )}
                     title={entity.locked ? "Unlock entity" : "Lock entity"}
+                    aria-label={entity.locked ? `Unlock ${entity.name}` : `Lock ${entity.name}`}
                 >
                     {entity.locked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
                 </button>
                 <button
+                    type="button"
                     onClick={(e) => {
                         e.stopPropagation()
                         onToggleActive(entity.id)
                     }}
                     className={cn(
-                        "p-1 rounded-sm hover:bg-white/10 transition-colors",
+                        "w-6 h-6 flex items-center justify-center rounded-sm hover:bg-white/10 transition-colors focus-visible:outline focus-visible:outline-1 focus-visible:outline-primary",
                         !entity.active ? "text-foreground/50" : "text-foreground/30 hover:text-foreground/60"
                     )}
                     title={entity.active ? "Hide entity" : "Show entity"}
+                    aria-label={entity.active ? `Hide ${entity.name}` : `Show ${entity.name}`}
                 >
                     {entity.active ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                 </button>

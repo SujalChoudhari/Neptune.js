@@ -272,7 +272,7 @@ export const ThemedVectorInput = ({
     const axisLabels = labels || defaultLabels
 
     return (
-        <div className={cn("w-full flex items-center gap-2", className)}>
+        <div className={cn("w-full min-w-0 flex items-center gap-1", className)}>
             {/* Optional Label */}
             {label && (
                 <span className="text-xs text-muted-foreground shrink-0 w-16 truncate">
@@ -310,7 +310,7 @@ export const ThemedVectorInput = ({
             </button>
 
             {/* Axis Inputs */}
-            <div className="flex gap-1 flex-1">
+            <div className="flex gap-0.5 flex-1 min-w-0">
                 {axes.map((axis) => (
                     <div key={axis} className="flex items-center gap-0.5 flex-1 min-w-0">
                         {/* Draggable Label */}
@@ -331,6 +331,7 @@ export const ThemedVectorInput = ({
                         {/* Number Input (simplified - no spinners for cleaner look) */}
                         <input
                             type="number"
+                            aria-label={axisLabels[axes.indexOf(axis)]}
                             value={value[axis]}
                             onChange={(e) => {
                                 const parsed = parseFloat(e.target.value)

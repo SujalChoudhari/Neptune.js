@@ -47,11 +47,11 @@ export const ThemedSlider = ({
         <div className={cn("flex items-center gap-2 w-full", className)}>
             <div className="relative flex-1 h-4 flex items-center">
                 {/* Track background */}
-                <div className="absolute inset-x-0 h-1.5 rounded-full bg-gradient-to-b from-[hsl(0,0%,12%)] to-[hsl(0,0%,16%)] shadow-[inset_0_1px_2px_rgba(0,0,0,0.4)]" />
+                <div className="triton-inset absolute inset-x-0 h-1.5 rounded-full" />
 
                 {/* Filled portion */}
                 <div
-                    className="absolute left-0 h-1.5 rounded-full bg-gradient-to-b from-[hsl(0,0%,45%)] to-[hsl(0,0%,35%)]"
+                    className="absolute left-0 h-1.5 rounded-full bg-gradient-to-b from-[hsl(var(--primary))] to-[hsl(var(--muted-foreground))]"
                     style={{ width: `${percentage}%` }}
                 />
 
@@ -71,8 +71,8 @@ export const ThemedSlider = ({
                 <div
                     className={cn(
                         "absolute w-3 h-3 -translate-x-1/2 rounded-full pointer-events-none",
-                        "bg-gradient-to-b from-[hsl(0,0%,55%)] to-[hsl(0,0%,40%)]",
-                        "border border-[hsl(0,0%,30%)] border-t-[hsl(0,0%,60%)]",
+                        "bg-gradient-to-b from-[hsl(var(--foreground))] to-[hsl(var(--primary))]",
+                        "border border-border border-t-foreground/40",
                         "shadow-[0_1px_3px_rgba(0,0,0,0.5)]",
                         disabled && "opacity-50"
                     )}
@@ -129,7 +129,7 @@ export const ThemedCheckbox = ({
                     "w-4 h-4 rounded flex items-center justify-center transition-all duration-150",
                     themedInputBase,
                     checked && "ring-1 ring-primary/50",
-                    "focus:outline-none focus:ring-1 focus:ring-[hsl(0,0%,40%)]"
+                    "focus:outline-none focus:ring-1 focus:ring-ring"
                 )}
             >
                 {checked && <Check className="w-3 h-3 text-foreground" strokeWidth={3} />}
@@ -179,13 +179,13 @@ export const ThemedToggle = ({
                     "w-8 h-4 rounded-full relative transition-all duration-200",
                     themedInputBase,
                     checked && "ring-1 ring-primary/50",
-                    "focus:outline-none focus:ring-1 focus:ring-[hsl(0,0%,40%)]"
+                    "focus:outline-none focus:ring-1 focus:ring-ring"
                 )}
             >
                 <div className={cn(
                     "absolute top-0.5 w-3 h-3 rounded-full transition-all duration-200",
-                    "bg-gradient-to-b from-[hsl(0,0%,55%)] to-[hsl(0,0%,40%)]",
-                    "border border-[hsl(0,0%,30%)] border-t-[hsl(0,0%,60%)]",
+                    "bg-gradient-to-b from-[hsl(var(--foreground))] to-[hsl(var(--primary))]",
+                    "border border-border border-t-foreground/40",
                     "shadow-[0_1px_2px_rgba(0,0,0,0.4)]",
                     checked ? "left-[calc(100%-14px)]" : "left-0.5"
                 )} />
@@ -263,7 +263,7 @@ export const ThemedSelect = ({
                     themedButtonBase,
                     "text-foreground/80 hover:text-foreground",
                     "disabled:opacity-50 disabled:cursor-not-allowed",
-                    "focus:outline-none focus:ring-1 focus:ring-[hsl(0,0%,40%)]"
+                    "focus:outline-none focus:ring-1 focus:ring-ring"
                 )}
             >
                 <span className="truncate">{selectedOption?.label ?? placeholder}</span>
@@ -333,7 +333,7 @@ export const ThemedCollapsible = ({
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
                     "w-full h-7 px-2 text-xs font-medium flex items-center gap-1",
-                    "bg-gradient-to-b from-[hsl(0,0%,24%)] to-[hsl(0,0%,20%)]",
+                    "bg-gradient-to-b from-[hsl(var(--muted))] to-[hsl(var(--background))]",
                     "border-b border-border",
                     "text-foreground/80 hover:text-foreground",
                     "focus:outline-none"
@@ -377,16 +377,16 @@ export const ThemedScrollArea = forwardRef<HTMLDivElement, ThemedScrollAreaProps
                 "overflow-auto",
                 // Themed scrollbar styles
                 "[&::-webkit-scrollbar]:w-2",
-                "[&::-webkit-scrollbar-track]:bg-[hsl(0,0%,14%)]",
+                "[&::-webkit-scrollbar-track]:bg-[hsl(var(--background))]",
                 "[&::-webkit-scrollbar-track]:rounded-full",
                 "[&::-webkit-scrollbar-thumb]:bg-gradient-to-b",
-                "[&::-webkit-scrollbar-thumb]:from-[hsl(0,0%,35%)]",
-                "[&::-webkit-scrollbar-thumb]:to-[hsl(0,0%,28%)]",
+                "[&::-webkit-scrollbar-thumb]:from-[hsl(var(--muted-foreground))]",
+                "[&::-webkit-scrollbar-thumb]:to-[hsl(var(--muted))]",
                 "[&::-webkit-scrollbar-thumb]:rounded-full",
                 "[&::-webkit-scrollbar-thumb]:border",
-                "[&::-webkit-scrollbar-thumb]:border-[hsl(0,0%,20%)]",
-                "[&::-webkit-scrollbar-thumb:hover]:from-[hsl(0,0%,40%)]",
-                "[&::-webkit-scrollbar-thumb:hover]:to-[hsl(0,0%,32%)]",
+                "[&::-webkit-scrollbar-thumb]:border-[hsl(var(--border))]",
+                "[&::-webkit-scrollbar-thumb:hover]:from-[hsl(var(--primary))]",
+                "[&::-webkit-scrollbar-thumb:hover]:to-[hsl(var(--muted-foreground))]",
                 className
             )}
             style={{ maxHeight }}
@@ -440,7 +440,7 @@ export const ThemedColorPicker = ({
             {/* Swatch with hidden native color input */}
             <div className={cn(
                 "relative w-7 h-7 rounded-md overflow-hidden",
-                "border border-[hsl(0,0%,14%)]",
+                "border border-border",
                 "shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)]",
                 disabled && "opacity-50 cursor-not-allowed"
             )}>
@@ -467,7 +467,7 @@ export const ThemedColorPicker = ({
                     "h-7 w-20 px-2 text-xs rounded-md font-mono",
                     "text-foreground/90",
                     themedInputBase,
-                    "focus:outline-none focus:ring-1 focus:ring-[hsl(0,0%,40%)]",
+                    "focus:outline-none focus:ring-1 focus:ring-ring",
                     "disabled:opacity-50 disabled:cursor-not-allowed"
                 )}
             />

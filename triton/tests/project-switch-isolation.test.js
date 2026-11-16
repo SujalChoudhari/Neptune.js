@@ -20,6 +20,7 @@ test('switching projects clears scene/save state and ignores the old pending pro
     const pending = deferred();
     const state = { CurrentScenePath: 'scenes/old.scene', Entities: { old: {} }, IsPlaying: true, IsPaused: true };
     const messages = [];
+    const activities = [];
     const runner = { currentScene: { name: 'Old' }, currentScenePath: 'scenes/old.scene' };
     const sequence = { current: 0 };
     const sceneSequence = { current: 4 };
@@ -35,6 +36,7 @@ test('switching projects clears scene/save state and ignores the old pending pro
         loadScene: async path => loads.push(path),
         toProjectRelativePath: path => path,
         notifyGame: type => messages.push(type),
+        reportActivity: (message, type) => activities.push({ message, type }),
         console: { log() {}, error() {} },
         ...Object.fromEntries(['IsPlaying', 'IsPaused', 'CurrentSceneName', 'CurrentScenePath', 'CurrentScenePayload', 'MainScenePath', 'Entities', 'EntityDataCache', 'SelectedIds', 'SelectedEntitiesData'].map(name => [`set${name}`, value => { state[name] = value; }]))
     };
@@ -48,6 +50,7 @@ test('switching projects clears scene/save state and ignores the old pending pro
     assert.ok(messages.includes('editor:stop'), 'the real runtime must stop, not just the toolbar');
     assert.ok(messages.includes('editor:reset-project'), 'project switches must invalidate pending runtime parses even without a new main scene');
     assert.equal(state.CurrentScenePath, null);
+    assert.deepEqual(activities.map(activity => activity.type), ['ready', 'ready']);
     assert.equal(state.CurrentScenePayload, null);
     assert.equal(state.MainScenePath, null);
     assert.deepEqual(Object.keys(state.Entities), []);

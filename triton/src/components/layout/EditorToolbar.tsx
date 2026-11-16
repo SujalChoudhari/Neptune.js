@@ -35,10 +35,10 @@ export function EditorToolbar() {
     };
 
     return (
-        <header className="h-9 border-b border-border flex items-center justify-between bg-card z-50 relative px-2 select-none">
+        <header className="h-8 border-b border-border flex items-center justify-between bg-card z-50 relative px-2 select-none">
             {/* LEFT: Scene Info */}
             <div className="flex-1 flex items-center gap-2 overflow-hidden">
-                <div className="flex items-center text-xs text-muted-foreground bg-background/50 px-2 py-1 rounded border border-border/50">
+                <div className="triton-inset flex items-center text-xs text-muted-foreground px-2 py-1 rounded">
                     <FileBox className="w-3 h-3 mr-1.5 opacity-70" />
                     <span className="font-medium text-foreground">{currentSceneName}</span>
                 </div>
@@ -58,13 +58,13 @@ export function EditorToolbar() {
             </div>
 
             {/* CENTER: Playback Controls */}
-            <div className="flex items-center bg-background/30 border border-border/40 rounded p-0.5 shadow-sm">
+            <div className="triton-inset flex items-center rounded p-0.5">
                 <ThemedIconButton
                     size="sm"
                     title="Play"
                     className={cn(
                         "border-none shadow-none transition-colors",
-                        isPlaying && !isPaused ? "text-green-400 bg-white/10" : "hover:text-green-400 hover:bg-white/5"
+                        isPlaying && !isPaused ? "text-green-400 bg-accent" : "hover:text-green-400 hover:bg-accent/50"
                     )}
                     onClick={play}
                     disabled={isPlaying && !isPaused}
@@ -76,7 +76,7 @@ export function EditorToolbar() {
                     title="Pause"
                     className={cn(
                         "border-none shadow-none transition-colors",
-                        isPaused ? "text-yellow-400 bg-white/10" : "hover:text-yellow-400 hover:bg-white/5"
+                        isPaused ? "text-yellow-400 bg-accent" : "hover:text-yellow-400 hover:bg-accent/50"
                     )}
                     onClick={pause}
                     disabled={!isPlaying}
@@ -86,7 +86,7 @@ export function EditorToolbar() {
                 <ThemedIconButton
                     size="sm"
                     title="Stop"
-                    className="hover:text-red-400 border-none bg-transparent shadow-none hover:bg-white/5"
+                    className="hover:text-red-400 border-none bg-transparent shadow-none hover:bg-accent/50"
                     onClick={stop}
                     disabled={!isPlaying}
                 >

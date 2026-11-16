@@ -31,6 +31,16 @@ Verified the restored original beveled controls in the native editor. New tool i
 
 The Windows product and window title are now **Neptune.js Triton**. Run `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/install-start-menu.ps1` from the checkout to create a per-user Start menu entry. This development shortcut starts the checkout through `scripts/start-editor.ps1`; it requires installed Node/Yarn/Rust/C++ prerequisites and is not a packaged release. Paths derive from the checkout. A minimized console keeps startup errors visible. Launched the installed shortcut and verified the real native window title plus scene editing and saving.
 
+## Compact editor and display scaling
+
+The editor now starts maximized in a normal decorated Windows window, not exclusive fullscreen. The native window reports maximized on this machine (1280×710 logical pixels, device scale 1.5). Opening Emberfall retains the Neptune.js Triton window name. Native picking, one-unit movement, cancellation through the asynchronous bridge and actual scene saving passed after the compact UI changes.
+
+Browser integration at device scale 1.25 tests logical workspaces of 1024×640, 1280×720 and 1536×864. It checks readable hierarchy names, both position fields fitting within Inspector, usable viewport width and an onscreen status bar. This is emulated display scaling; the machine's actual Windows display setting was not changed to 125%.
+
+Dock constraints are reapplied after restoring saved layouts; default widths are assigned after all groups exist. Hierarchy hover/focus actions overlay rows instead of permanently consuming label space. Inspector fields, toolbars, dialogs and shared controls use compact raised/inset styling with semantic colors. Rotated rectangle outlines follow the local visual frame with a thin unfilled stroke; nested-parent transform editing remains a separate open task.
+
+Live activity reports property/value edits as unsaved, scene loading, play/stop and real file writes as pending/success/failure. Tests delay a write, reject one and retry successfully through the editor Save button. Save-race tests keep completions from old scenes from replacing current activity. Add Component is explicitly disabled because its earlier visible button had no handler.
+
 ## Remaining game scope
 
 Emberfall is one room with placeholder shapes and three melee guardians. Multi-map progression, ranged abilities, dialogue, equipment UI and phased bosses remain on the README roadmap. Project modules use the injected engine API; relative imports from their Blob URLs are not supported. The current generic inspector preserves module/settings data but does not offer a specialized settings editor.

@@ -12,7 +12,7 @@ const scene = {
     type: 'scene', schemaVersion: 1, version: '1.0.0', id: 'viewport-tools-scene', name: 'Viewport Tools',
     entities: [
         { id: 'floor', name: 'Ruins floor', transform: { pos: { x: 6, y: 4 }, rot: 0, scale: { x: 1, y: 1 }, z: -10 }, components: [shape(12, 8, { r: 35, g: 58, b: 65, a: 1 })] },
-        { id: 'hero', name: 'Hero', transform: { pos: { x: 2, y: 4 }, rot: 0, scale: { x: 1, y: 1 }, z: 2 }, components: [shape(0.65, 0.65, { r: 124, g: 218, b: 194, a: 1 })] }
+        { id: 'hero', name: 'Hero', transform: { pos: { x: 2, y: 4 }, rot: Math.PI / 6, scale: { x: 1, y: 1 }, z: 2 }, components: [shape(0.65, 0.65, { r: 124, g: 218, b: 194, a: 1 })] }
     ]
 };
 const project = { type: 'project', schemaVersion: 1, version: '1.0.0', name: 'Viewport Tools', mainScene: 'scenes/main.scene', scenes: [] };
@@ -34,7 +34,9 @@ test('Scene View picks visible shapes and keeps focused tools, drags and overlay
     assert.ok(ready, 'Vite must serve the actual editor');
     const browser = await chromium.launch({ headless: true });
     t.after(() => browser.close());
-    const context = await browser.newContext({ viewport: { width: 1440, height: 960 } });
+    // 1600x900 physical display at Windows 125% scaling has a 1280x720
+    // logical workspace. DPR alone does not reduce CSS layout dimensions.
+    const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1.25 });
     await context.addInitScript(({ initialScene, initialProject }) => {
         window.__files = { 'scenes/main.scene': structuredClone(initialScene), 'project.npt': structuredClone(initialProject) };
         window.__nativeCalls = [];
@@ -50,7 +52,11 @@ test('Scene View picks visible shapes and keeps focused tools, drags and overlay
                 };
                 if (command === 'read_project') return JSON.stringify(window.__files['project.npt']);
                 if (command === 'read_scene') return JSON.stringify(window.__files[args.path]);
-                if (command === 'write_scene') { window.__files[args.path] = JSON.parse(args.content); return true; }
+                if (command === 'write_scene') {
+                    if (window.__holdWrites) await new Promise(resolve => { window.__releaseSave = resolve; });
+                    if (window.__failWrites) throw new Error('Test disk is unavailable');
+                    window.__files[args.path] = JSON.parse(args.content); return true;
+                }
                 if (command === 'write_project') { window.__files['project.npt'] = JSON.parse(args.content); return true; }
                 if (command === 'read_file') return window.__files[args.path] ?? null;
                 return null;
@@ -114,12 +120,18 @@ test('Scene View picks visible shapes and keeps focused tools, drags and overlay
     assert.equal(await viewport.locator('[data-selection-outline="floor"]').count(), 0, 'foreground hero wins over its large background without a gameplay collider');
     await assertOriginAligned();
 
+    const outline = viewport.locator('[data-selection-outline="hero"]');
+    assert.ok(Math.abs(Number((await outline.getAttribute('transform')).match(/^rotate\((\S+)/)[1]) - 30) < 0.001);
+    assert.ok(Math.abs(Number(await outline.getAttribute('width')) - 0.65 * 64) < 0.01, 'outline follows the rotated visual bounds, not its enlarged world AABB');
+    assert.equal(await outline.getAttribute('fill'), 'none', 'selection does not tint the selected artwork');
+
     const before = await heroPosition();
     await page.keyboard.press('w');
     assert.equal(await tool('move').getAttribute('aria-pressed'), 'true');
     await drag(handle('Translate on X axis'), 64, 0);
     await page.waitForFunction(x => Math.abs(document.querySelector('iframe[title="Scene View"]').contentWindow.game.scene.children.find(entity => entity.id === 'hero').components.find(component => component.constructor.name === 'Transform').position.x - x) < 0.03, before.x + 1);
     await assertOriginAligned();
+    assert.match(await page.locator('[data-editor-activity]').innerText(), /Hero: position = .*unsaved/, 'moving an entity reports its property and unsaved state');
 
     const saved = await heroPosition();
     const viewportBounds = await viewport.boundingBox();
@@ -173,5 +185,70 @@ test('Scene View picks visible shapes and keeps focused tools, drags and overlay
     await viewport.click({ position: { x: movedOrigin.x, y: movedOrigin.y } });
     await viewport.locator('[data-selection-outline="hero"]').waitFor();
     await assertOriginAligned();
+    const activity = page.locator('[data-editor-activity]');
+    const save = page.getByRole('button', { name: 'Save scene', exact: true });
+    await page.evaluate(() => { window.__holdWrites = true; });
+    await save.click();
+    await page.waitForFunction(() => document.querySelector('[data-editor-activity]')?.textContent.includes('Saving scene:'));
+    assert.equal(await activity.getAttribute('aria-busy'), 'true', 'pending file writes are reported as saving');
+    await page.evaluate(() => { window.__holdWrites = false; window.__releaseSave(); });
+    await page.waitForFunction(() => document.querySelector('[data-editor-activity]')?.textContent.includes('Scene saved:'));
+    assert.equal(await activity.getAttribute('aria-busy'), 'false');
+    await page.evaluate(() => { window.__failWrites = true; });
+    await save.click();
+    await page.waitForFunction(() => document.querySelector('[data-editor-activity]')?.textContent.includes('Scene save failed:'));
+    await page.evaluate(() => { window.__failWrites = false; });
+    await save.click();
+    await page.waitForFunction(() => document.querySelector('[data-editor-activity]')?.textContent.includes('Scene saved:'));
+    for (const size of [{ width: 1024, height: 640 }, { width: 1280, height: 720 }, { width: 1536, height: 864 }]) {
+        await page.setViewportSize(size);
+        await page.getByTitle('Restore the default panel arrangement').click();
+        await page.waitForFunction(() => {
+            const label = document.querySelector('[title="Ruins floor"]');
+            return label && label.clientWidth >= label.scrollWidth;
+        });
+        const dimensions = await page.evaluate(() => {
+            const workspace = document.querySelector('[data-workspace-layout]').getBoundingClientRect();
+            const label = document.querySelector('[title="Ruins floor"]');
+            return { workspace: workspace.width, scroll: document.documentElement.scrollWidth, width: innerWidth,
+                nameWidth: label.clientWidth, fullNameWidth: label.scrollWidth,
+                status: document.querySelector('[data-editor-activity]').getBoundingClientRect().bottom,
+                height: innerHeight };
+        });
+        assert.ok(dimensions.scroll <= dimensions.width, `no page overflow at ${size.width}`);
+        assert.ok(dimensions.nameWidth >= dimensions.fullNameWidth, 'hierarchy name is readable without hover');
+        assert.ok(dimensions.status <= dimensions.height, 'live activity stays inside the window');
+        assert.ok(await viewport.evaluate(el => el.clientWidth >= 280), 'viewport retains working space');
+        const fields = await page.getByRole('group', { name: 'Position', exact: true }).getByRole('spinbutton').evaluateAll(inputs => inputs.map(input => ({ width: input.clientWidth,
+            right: input.getBoundingClientRect().right, parentRight: input.closest('[role="group"]').getBoundingClientRect().right })));
+        assert.equal(fields.length, 2);
+        assert.ok(fields.every(field => field.width >= 40 && field.right <= field.parentRight + 1), 'both position values stay readable and inside the Inspector');
+    }
+    // Reproduce old saved layouts with squeezed sidebars. Constraints are not
+    // serialized by Dockview; they must be reapplied when loading its JSON.
+    await page.waitForFunction(() => Object.keys(localStorage).some(key => key.startsWith('neptune.editor.layout.')));
+    await page.evaluate(() => {
+        const key = Object.keys(localStorage).find(key => key.startsWith('neptune.editor.layout.'));
+        const record = JSON.parse(localStorage.getItem(key));
+        const squeeze = node => {
+            if (node.type === 'leaf') {
+                if (node.data.views.includes('hierarchy')) node.size = 96;
+                if (node.data.views.includes('inspector')) node.size = 120;
+            } else node.data.forEach(squeeze);
+        };
+        squeeze(record.layout.grid.root);
+        localStorage.setItem(key, JSON.stringify(record));
+    });
+    const recentName = await page.evaluate(() => JSON.parse(localStorage.getItem('triton_recent_projects')).find(item => item.path === '/tmp/neptune-viewport-tools').name);
+    await page.reload();
+    await page.getByText(recentName, { exact: true }).click();
+    await page.getByText('Edit', { exact: true }).click();
+    await page.getByText('Hero', { exact: true }).click();
+    await page.waitForFunction(() => {
+        const label = document.querySelector('[title="Ruins floor"]');
+        return label && label.clientWidth >= label.scrollWidth;
+    });
+    const restoredFields = await page.getByRole('group', { name: 'Position', exact: true }).getByRole('spinbutton').evaluateAll(inputs => inputs.map(input => input.clientWidth));
+    assert.ok(restoredFields.length === 2 && restoredFields.every(width => width >= 40), 'restored layouts reapply readable Inspector constraints');
     assert.deepEqual(errors, [], `unexpected editor page errors: ${errors.join('; ')}`);
 });

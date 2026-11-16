@@ -48,6 +48,10 @@ interface GameContextType {
 
 const GameContext = createContext<GameContextType | null>(null);
 
+function reportActivity(message: string, type: 'info' | 'error' | 'pending' | 'ready' = 'info') {
+    window.dispatchEvent(new CustomEvent('editor:activity', { detail: { message, type } }));
+}
+
 import { useFileSystem } from "./FileSystemContext";
 
 function hierarchyEntityData(entity: { id: string; name: string; active?: boolean; transform?: Record<string, any>; components?: Array<{ type: string; props?: Record<string, any> }> }): EntityData {
@@ -235,6 +239,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     const loadScene = useCallback(async (path: string) => {
         const sequence = ++sceneLoadSequence.current;
+        reportActivity(`Loading scene: ${path}`, 'pending');
         console.log("GameContext: Loading scene from", path);
 
         // 1. Notify Game (Visuals) - Initial notification REMOVED to avoid double-load error with file:// path
@@ -251,6 +256,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             setCurrentSceneName(path.split('/').pop() || "Scene");
             setCurrentScenePath(path);
             setCurrentScenePayload(data);
+            reportActivity(`Scene loaded: ${path}`);
 
             // Notify Game Engine
             // Send full data payload to avoid file:// access issues in iframe
@@ -433,6 +439,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             setEntities(newEntities);
             setEntityDataCache(newDataCache);
         } catch (e) {
+            if (sequence === sceneLoadSequence.current) reportActivity(`Scene load failed: ${e instanceof Error ? e.message : String(e)}`, 'error');
             if (sequence !== sceneLoadSequence.current) return;
             console.error("Failed to read/parse scene file", e);
             EditorGameRunner.report(e);
@@ -567,6 +574,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const play = () => {
         const action = getPlayAction(isPlaying, isPaused);
         if (action.startsNewSession) {
+            reportActivity('Play mode started');
             setIsPlaying(true);
             window.dispatchEvent(new Event('editor:play'));
         } else {
@@ -583,6 +591,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
 
     const stop = () => {
+        reportActivity('Play mode stopped');
         setIsPlaying(false);
         setIsPaused(false);
         notifyGame('editor:stop');
@@ -617,6 +626,17 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
 
     const updateComponent = (id: string, component: string, field: string, value: any) => {
+        const entityName = selectedEntitiesData[id]?.name || entityDataCache[id]?.name || entities[id]?.name || 'Entity';
+        const displayValue = (item: unknown) => {
+            let text: string;
+            try { text = typeof item === 'string' ? item : JSON.stringify(item); }
+            catch { text = String(item); }
+            return (text || String(item)).slice(0, 48);
+        };
+        const property = component.toLowerCase() === 'transform'
+            ? ({ position: 'position', rotation: 'rotation', scale: 'scale', z: 'depth' } as Record<string, string>)[field] || field
+            : `${component} ${field}`;
+        reportActivity(`${entityName}: ${property} = ${displayValue(value)} · unsaved`);
         if (selectedEntitiesData[id]) {
             const updateData = (previous: Record<string, EntityData>) => {
                 const selectedEntity = previous[id];
@@ -677,7 +697,21 @@ export function GameProvider({ children }: { children: ReactNode }) {
         if (!currentScenePath) {
             throw new Error("Cannot save scene: no scene is open.");
         }
-        return writeScene(currentScenePath, scene);
+        const path = currentScenePath;
+        const projectSequenceAtStart = projectSequence.current;
+        const sceneSequenceAtStart = sceneLoadSequence.current;
+        const isCurrentSave = () => projectSequence.current === projectSequenceAtStart &&
+            sceneLoadSequence.current === sceneSequenceAtStart && currentScenePath === path;
+        reportActivity(`Saving scene: ${path}`, 'pending');
+        try {
+            const saved = await writeScene(path, scene);
+            if (!saved) throw new Error(`Could not save scene: ${path}`);
+            if (isCurrentSave()) reportActivity(`Scene saved: ${path}`, 'ready');
+            return saved;
+        } catch (error) {
+            if (isCurrentSave()) reportActivity(`Scene save failed: ${error instanceof Error ? error.message : String(error)}`, 'error');
+            throw error;
+        }
     }, [currentScenePath, currentScenePayload, writeScene]);
 
     const loadMainScene = useCallback(async () => {
@@ -713,6 +747,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         EditorGameRunner.currentScene = null;
         EditorGameRunner.currentScenePath = null;
         setCurrentSceneName("Untitled");
+        reportActivity(rootPath ? 'Project opened' : 'Ready', 'ready');
         setCurrentScenePath(null);
         setCurrentScenePayload(null);
         setMainScenePath(null);

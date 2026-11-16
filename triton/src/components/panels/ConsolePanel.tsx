@@ -102,7 +102,7 @@ export const ConsolePanel = (_props: IDockviewPanelProps) => {
     return (
         <div className="h-full flex flex-col bg-background font-sans text-xs">
             {/* TOOLBAR */}
-            <div className="h-9 border-b border-border flex items-center px-2 gap-2 bg-card shrink-0">
+            <div className="h-8 border-b border-border flex items-center px-1.5 gap-1.5 bg-card shrink-0">
                 <div className="flex items-center gap-1">
                     <ThemedIconButton
                         size="sm"
@@ -131,13 +131,13 @@ export const ConsolePanel = (_props: IDockviewPanelProps) => {
                 <div className="flex-1" />
 
                 {/* Search */}
-                <div className="w-48">
+                <div className="w-40">
                     <ThemedInput
                         placeholder="Filter..."
                         startIcon={<Search />}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        containerClassName="h-7"
+                        containerClassName="h-6"
                     />
                 </div>
 
@@ -148,13 +148,8 @@ export const ConsolePanel = (_props: IDockviewPanelProps) => {
                     <button
                         onClick={() => setShowInfo(!showInfo)}
                         className={cn(
-                            "flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-all",
-                            // 3D Themed Button Base
-                            "border border-[hsl(0,0%,14%)] border-t-[hsl(0,0%,28%)]",
-                            "shadow-[0_1px_2px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.03)]",
-                            showInfo
-                                ? "bg-gradient-to-b from-[hsl(0,0%,30%)] to-[hsl(0,0%,24%)] text-foreground"
-                                : "bg-gradient-to-b from-[hsl(0,0%,22%)] to-[hsl(0,0%,18%)] text-muted-foreground hover:from-[hsl(0,0%,26%)] hover:to-[hsl(0,0%,22%)]"
+                            "triton-raised flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] transition-all",
+                            showInfo && "bg-[var(--triton-inset-fill)] text-foreground"
                         )}
                     >
                         <Info className="w-3 h-3 text-blue-400" />
@@ -163,12 +158,8 @@ export const ConsolePanel = (_props: IDockviewPanelProps) => {
                     <button
                         onClick={() => setShowWarn(!showWarn)}
                         className={cn(
-                            "flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-all",
-                            "border border-[hsl(0,0%,14%)] border-t-[hsl(0,0%,28%)]",
-                            "shadow-[0_1px_2px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.03)]",
-                            showWarn
-                                ? "bg-gradient-to-b from-[hsl(0,0%,30%)] to-[hsl(0,0%,24%)] text-foreground"
-                                : "bg-gradient-to-b from-[hsl(0,0%,22%)] to-[hsl(0,0%,18%)] text-muted-foreground hover:from-[hsl(0,0%,26%)] hover:to-[hsl(0,0%,22%)]"
+                            "triton-raised flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] transition-all",
+                            showWarn && "bg-[var(--triton-inset-fill)] text-foreground"
                         )}
                     >
                         <AlertTriangle className="w-3 h-3 text-yellow-400" />
@@ -177,12 +168,8 @@ export const ConsolePanel = (_props: IDockviewPanelProps) => {
                     <button
                         onClick={() => setShowError(!showError)}
                         className={cn(
-                            "flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-all",
-                            "border border-[hsl(0,0%,14%)] border-t-[hsl(0,0%,28%)]",
-                            "shadow-[0_1px_2px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.03)]",
-                            showError
-                                ? "bg-gradient-to-b from-[hsl(0,0%,30%)] to-[hsl(0,0%,24%)] text-foreground"
-                                : "bg-gradient-to-b from-[hsl(0,0%,22%)] to-[hsl(0,0%,18%)] text-muted-foreground hover:from-[hsl(0,0%,26%)] hover:to-[hsl(0,0%,22%)]"
+                            "triton-raised flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] transition-all",
+                            showError && "bg-[var(--triton-inset-fill)] text-foreground"
                         )}
                     >
                         <XCircle className="w-3 h-3 text-red-500" />
@@ -192,13 +179,13 @@ export const ConsolePanel = (_props: IDockviewPanelProps) => {
             </div>
 
             {/* LOG LIST */}
-            <div className="flex-1 bg-[#1a1a1a] overflow-auto">
+            <div className="triton-inset flex-1 overflow-auto">
                 <div className="flex flex-col min-w-max min-h-full">
                     {filteredLogs.map((log) => (
                         <div
                             key={log.id}
                             className={cn(
-                                "flex items-start gap-2 px-2 py-1.5 border-b border-white/5 font-mono text-[11px] hover:bg-white/5",
+                                "flex items-start gap-2 px-2 py-1 border-b border-border/50 font-mono text-[11px] hover:bg-accent/40",
                                 log.type === 'error' && "bg-red-500/5 hover:bg-red-500/10",
                                 log.type === 'warn' && "bg-yellow-500/5 hover:bg-yellow-500/10",
                             )}
@@ -223,7 +210,7 @@ export const ConsolePanel = (_props: IDockviewPanelProps) => {
 
                             {/* Collapse Count */}
                             {collapse && log.count > 1 && (
-                                <div className="shrink-0 bg-white/10 px-1.5 rounded-full text-[10px] min-w-[20px] text-center">
+                        <div className="shrink-0 bg-accent/70 px-1.5 rounded-full text-[10px] min-w-[20px] text-center">
                                     {log.count}
                                 </div>
                             )}

@@ -136,10 +136,7 @@ export const ThemedContextMenuContent = ({
         <div
             className={cn(
                 "fixed z-[9999] min-w-[10rem] overflow-hidden rounded-md p-1 text-popover-foreground animate-in fade-in-80 zoom-in-95 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-                // 3D Beveled Container - Matching Modal Style
-                "bg-gradient-to-b from-[hsl(0,0%,18%)] to-[hsl(0,0%,14%)]",
-                "border border-[hsl(0,0%,8%)] border-t-[hsl(0,0%,28%)]",
-                "shadow-[0_12px_24px_-4px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.05)]",
+                "triton-raised shadow-[0_12px_24px_-4px_rgba(0,0,0,0.55)]",
                 className
             )}
             style={{
@@ -188,15 +185,13 @@ export const ThemedContextMenuItem = ({
             disabled={disabled}
             onClick={handleClick}
             className={cn(
-                "relative flex cursor-default select-none items-center rounded px-2 py-1.5 text-[12px] outline-none transition-all duration-75",
+                "relative flex cursor-default select-none items-center rounded px-2 py-1 text-[12px] outline-none transition-all duration-75",
                 "text-foreground/70 hover:text-foreground",
                 // Reset default hover
                 "hover:bg-transparent",
 
-                // 3D Hover State (Monochrome Pressed Look)
-                "hover:bg-gradient-to-b hover:from-[hsl(0,0%,32%)] hover:to-[hsl(0,0%,25%)]",
-                "hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_1px_3px_rgba(0,0,0,0.4)]",
-                "hover:border-t hover:border-white/10",
+                "hover:bg-gradient-to-b hover:from-[hsl(var(--accent))] hover:to-[hsl(var(--muted))]",
+                "hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_1px_3px_rgba(0,0,0,0.3)]",
 
                 "focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-40",
                 inset && "pl-8",

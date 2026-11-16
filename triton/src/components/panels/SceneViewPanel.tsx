@@ -736,7 +736,17 @@ export function SceneViewPanel() {
                         aria-label="Selected entities"
                         className="absolute inset-0 w-full h-full overflow-visible pointer-events-none"
                     >
-                        {selectionOverlays.map(bounds => (
+                        {selectionOverlays.map(worldBounds => {
+                            const entity = selectedEntitiesData[worldBounds.id];
+                            const rotation = entity?.transform?.rotation || 0;
+                            // Frame Selection uses a world AABB; the visual outline
+                            // follows the actual oriented rectangle instead.
+                            const bounds = rotation ? getEntitySelectionBounds({ ...entity,
+                                transform: { ...entity.transform, rotation: 0 }
+                            }, 0.25) || worldBounds : worldBounds;
+                            const cx = ((bounds.x + bounds.width / 2) * pixelsPerMeter - pan.x) * zoom;
+                            const cy = ((bounds.y + bounds.height / 2) * pixelsPerMeter - pan.y) * zoom;
+                            return (
                             <rect
                                 key={bounds.id}
                                 aria-label={`Selected ${bounds.name || bounds.id}`}
@@ -745,13 +755,15 @@ export function SceneViewPanel() {
                                 y={(bounds.y * pixelsPerMeter - pan.y) * zoom}
                                 width={bounds.width * pixelsPerMeter * zoom}
                                 height={bounds.height * pixelsPerMeter * zoom}
-                                fill="rgba(56, 189, 248, 0.12)"
-                                stroke="#38bdf8"
-                                strokeWidth={2}
+                                transform={rotation ? `rotate(${rotation * 180 / Math.PI} ${cx} ${cy})` : undefined}
+                                fill="none"
+                                stroke="hsl(var(--selection, 199 89% 65%))"
+                                strokeWidth={1}
                                 strokeDasharray={selectedIds.length > 1 ? '5 3' : undefined}
                                 vectorEffect="non-scaling-stroke"
                             />
-                        ))}
+                            );
+                        })}
                     </svg>
                 )}
                 {selectedIds.length > 0 && activeGizmoPosition

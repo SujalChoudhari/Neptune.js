@@ -21,6 +21,7 @@ test('a slower scene read cannot replace a newer opened scene or its save target
     const state = {};
     const notifications = [];
     const errors = [];
+    const activities = [];
     const setters = Object.fromEntries([
         'CurrentSceneName', 'CurrentScenePath', 'CurrentScenePayload',
         'Entities', 'EntityDataCache', 'SelectedIds', 'SelectedEntitiesData'
@@ -32,6 +33,7 @@ test('a slower scene read cannot replace a newer opened scene or its save target
         readScene: path => reads.get(path).promise,
         EditorGameRunner: { validateScene: value => value, openScene(value, path) { state.canonical = { value, path }; } },
         notifyGame: (type, payload) => notifications.push({ type, payload }),
+        reportActivity: (message, type = 'info') => activities.push({ message, type }),
         console: { log() {}, error: (...args) => errors.push(args) },
         ...setters
     });
@@ -47,6 +49,8 @@ test('a slower scene read cannot replace a newer opened scene or its save target
     assert.ok(state.Entities['new-entity']);
     assert.equal(state.Entities['old-entity'], undefined);
     assert.deepEqual(notifications.filter(message => message.type === 'editor:load-scene').map(message => message.payload.path), ['new.scene']);
+    assert.deepEqual(activities.map(activity => activity.type), ['pending', 'pending', 'info']);
+    assert.equal(activities.at(-1).message, 'Scene loaded: new.scene');
     assert.equal(errors.length, 0);
 });
 
@@ -54,6 +58,7 @@ test('an older rejected read cannot report an error after a newer scene opens', 
     const old = deferred();
     const state = {};
     const errors = [];
+    const activities = [];
     const code = transformSync(`${handler}\nloadScene`, { loader: 'tsx', format: 'cjs' }).code;
     const loadScene = vm.runInNewContext(code, {
         useCallback: fn => fn,
@@ -61,6 +66,7 @@ test('an older rejected read cannot report an error after a newer scene opens', 
         readScene: path => path === 'old.scene' ? old.promise : Promise.resolve({ name: 'New', entities: [] }),
         EditorGameRunner: { validateScene: value => value, openScene(value, path) { state.canonical = { value, path }; } },
         notifyGame() {},
+        reportActivity: (message, type = 'info') => activities.push({ message, type }),
         console: { log() {}, error: (...args) => errors.push(args) },
         ...Object.fromEntries(['CurrentSceneName', 'CurrentScenePath', 'CurrentScenePayload', 'Entities', 'EntityDataCache', 'SelectedIds', 'SelectedEntitiesData']
             .map(name => [`set${name}`, value => { state[name] = value; }]))
@@ -72,12 +78,15 @@ test('an older rejected read cannot report an error after a newer scene opens', 
     assert.equal(state.CurrentScenePath, 'new.scene');
     assert.equal(state.canonical.path, 'new.scene');
     assert.equal(errors.length, 0);
+    assert.deepEqual(activities.map(activity => activity.type), ['pending', 'pending', 'info']);
+    assert.ok(!activities.some(activity => activity.message.includes('failed')));
 });
 
 test('a rejected scene read leaves the last valid save target intact and reports the failure', async () => {
     const state = {};
     const diagnostics = [];
     const errors = [];
+    const activities = [];
     const code = transformSync(`${handler}\nloadScene`, { loader: 'tsx', format: 'cjs' }).code;
     const loadScene = vm.runInNewContext(code, {
         useCallback: fn => fn,
@@ -89,6 +98,7 @@ test('a rejected scene read leaves the last valid save target intact and reports
             report(error) { diagnostics.push(error.message); }
         },
         notifyGame() {},
+        reportActivity: (message, type = 'info') => activities.push({ message, type }),
         console: { log() {}, error: (...args) => errors.push(args) },
         ...Object.fromEntries(['CurrentSceneName', 'CurrentScenePath', 'CurrentScenePayload', 'Entities', 'EntityDataCache', 'SelectedIds', 'SelectedEntitiesData']
             .map(name => [`set${name}`, value => { state[name] = value; }]))
@@ -99,6 +109,8 @@ test('a rejected scene read leaves the last valid save target intact and reports
     assert.equal(state.canonical.path, 'good.scn');
     assert.deepEqual(diagnostics, ['bad scene']);
     assert.equal(errors.length, 1);
+    assert.deepEqual(activities.map(activity => activity.type), ['pending', 'info', 'pending', 'error']);
+    assert.match(activities.at(-1).message, /Scene load failed: Error: bad scene/);
 });
 
 test('a remounted game view receives unsaved scene edits without rereading disk', async () => {
@@ -109,11 +121,13 @@ test('a remounted game view receives unsaved scene edits without rereading disk'
         openScene(value, path) { this.currentScene = structuredClone(value); this.currentScenePath = path; }
     };
     const notifications = [];
+    const activities = [];
     let reads = 0;
     const loadScene = vm.runInNewContext(transformSync(`${handler}\nloadScene`, { loader: 'tsx', format: 'cjs' }).code, {
         useCallback: fn => fn, sceneLoadSequence: { current: 0 }, EditorGameRunner: runner,
         readScene: async () => { reads++; return { name: 'Main', entities: [{ id: 'hero', name: 'Hero' }] }; },
         notifyGame: (type, payload) => notifications.push({ type, payload }),
+        reportActivity: (message, type = 'info') => activities.push({ message, type }),
         console: { log() {}, error() {} },
         ...Object.fromEntries(['CurrentSceneName', 'CurrentScenePath', 'CurrentScenePayload', 'Entities', 'EntityDataCache', 'SelectedIds', 'SelectedEntitiesData']
             .map(name => [`set${name}`, value => { state[name] = value; }]))
@@ -132,4 +146,5 @@ test('a remounted game view receives unsaved scene edits without rereading disk'
     assert.equal(notifications.at(-2).payload.path, 'scenes/main.scene');
     assert.deepEqual(Array.from(notifications.at(-1).payload.ids), ['hero']);
     assert.equal(runner.currentScenePath, 'scenes/main.scene');
+    assert.equal(activities.at(-1).message, 'Scene loaded: scenes/main.scene');
 });

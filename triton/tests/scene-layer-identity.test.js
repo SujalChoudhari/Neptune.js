@@ -26,11 +26,13 @@ test('scene switch and reopen retain layer/entity hierarchy IDs and native save 
     ]);
     const state = {};
     const notifications = [];
+    const activities = [];
     const loadScene = vm.runInNewContext(transformSync(`${handler}\nloadScene`, { loader: 'tsx', format: 'cjs' }).code, {
         useCallback: fn => fn, sceneLoadSequence: { current: 0 },
         readScene: async path => { if (!scenes.has(path)) throw Error('missing scene'); return scenes.get(path); },
         EditorGameRunner: Runner,
         notifyGame: (type, payload) => { if (type === 'editor:load-scene') notifications.push(payload.path); },
+        reportActivity: (message, type) => activities.push({ message, type }),
         console: { log() {}, error() {} },
         ...Object.fromEntries(['CurrentSceneName', 'CurrentScenePath', 'CurrentScenePayload', 'Entities', 'EntityDataCache', 'SelectedIds', 'SelectedEntitiesData']
             .map(name => [`set${name}`, value => { state[name] = value; }]))
@@ -49,6 +51,7 @@ test('scene switch and reopen retain layer/entity hierarchy IDs and native save 
     assert.deepEqual(Array.from(state.Entities.root.children), ['foreground']);
     assert.equal(state.CurrentScenePath, 'scenes/level.scene');
     assert.deepEqual(notifications, ['scenes/level.scene', 'scenes/other.scene', 'scenes/level.scene']);
+    assert.equal(activities.at(-1).message, 'Scene loaded: scenes/level.scene');
     Runner.openScene(state.CurrentScenePayload, state.CurrentScenePath);
     let savedPath;
     await Runner.saveScene(async (path, content) => {

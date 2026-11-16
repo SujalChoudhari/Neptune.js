@@ -33,7 +33,7 @@ export function Main() {
             const projectPath = path.replaceAll('\\', '/');
             // Extract folder name or use a default
             const projectName = projectPath.split('/').pop() || "Project";
-            const newTitle = `Neptune - ${projectName} - ${path}`;
+            const newTitle = `Neptune.js Triton — ${projectName}`;
             await getCurrentWindow().setTitle(newTitle);
         } catch (e) {
             console.error("Failed to set window title", e);
@@ -167,7 +167,7 @@ export function Main() {
 
 
             {/* DOCKING AREA */}
-            <div className="flex-1 w-full bg-background relative overflow-hidden">
+            <div className="flex-1 min-h-0 min-w-0 w-full bg-background relative overflow-hidden">
                 <DockLayout onApiReady={(api) => { dockApiRef.current = api as NeptuneDockApi }} />
             </div>
 

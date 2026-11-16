@@ -54,7 +54,7 @@ export const ComponentSection = ({
         )}>
             <div className={cn(
                 "h-6 px-1 text-[11px] font-medium flex items-center gap-1",
-                "bg-[hsl(0,0%,18%)] hover:bg-[hsl(0,0%,20%)]",
+                "bg-card hover:bg-card/80",
                 "text-foreground transition-colors"
             )}>
                 {/* Collapse/Expand Toggle */}
@@ -140,7 +140,7 @@ export const ComponentSection = ({
             </div>
 
             {isOpen && (
-                <div className="p-2 space-y-1.5 bg-[hsl(0,0%,16%)]">
+                <div className="min-w-0 p-1.5 space-y-1 bg-background/40">
                     {children}
                 </div>
             )}

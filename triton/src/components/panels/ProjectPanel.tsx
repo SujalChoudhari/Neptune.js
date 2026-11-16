@@ -233,7 +233,7 @@ export const ProjectPanel = (_props: IDockviewPanelProps) => {
         >
             {sceneError && <div role="alert" className="px-2 py-1 text-xs text-destructive">{sceneError}</div>}
             {/* TOOLBAR */}
-            <div className="h-8 border-b border-border flex items-center px-2 gap-2 bg-card shrink-0">
+            <div className="h-7 border-b border-border flex items-center px-1.5 gap-1.5 bg-card shrink-0">
                 {/* Navigation Controls */}
                 <div className="flex items-center gap-1 text-muted-foreground mr-2">
                     <ThemedIconButton
@@ -265,7 +265,7 @@ export const ProjectPanel = (_props: IDockviewPanelProps) => {
                 <div className="flex-1" />
 
                 {/* Search */}
-                <div className="w-48">
+                <div className="w-40">
                     <ThemedInput
                         placeholder="Search assets..."
                         value={searchQuery}

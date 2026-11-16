@@ -305,7 +305,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
             />
 
             <ThemedScrollArea
-                className="flex-1 bg-[#1a1a1a]/50"
+                className="flex-1 min-h-0 bg-background"
                 maxHeight="100%"
             >
                 <div
