@@ -35,6 +35,12 @@ Updated 2026-11-16. Check git and the live roadmap before treating these notes a
 
 ## Continue
 
+### Scene View and extensibility direction, 2026-11-16
+
+The next requested scope is a real world-unit grid that follows pan/zoom, per-object Scene View context menus, and previewing the game's UI in Scene View. The existing CSS grid is fixed at 50px; do not confuse it with an implemented world-unit grid. Keep the viewport quiet: no extra lighting/decorative features merely to make it look less bland. Retain undo/save safety, nested-transform correctness and functional Add Component in the editing work.
+
+After those essentials, user wants code-extensible editor behaviour: custom components/inspectors, scripts/tools/gizmos and editor-only scene objects that never enter the game. Familiar engine entities/components should underpin that authoring experience. The roadmap records a staged recommendation: engine-backed overlays plus an explicit editor extension API first, retain the existing shell, and assess a complete engine-rendered editor separately once engine UI can replace its workflows. Do not misrepresent that recommendation as the user abandoning the eventual engine-built editor goal. No extension API or UI preview is implemented by this planning update. Read the new next-delivery section in docs/ROADMAP.md before starting; update it at handoff so another session continues seamlessly.
+
 ### Compact UI follow-up, 2026-11-16
 
 - User clarified fullscreen means **maximized windowed**, retaining the ordinary title bar and taskbar. Do not enable exclusive fullscreen.

@@ -84,6 +84,8 @@ The target [product contract](docs/PRODUCT-CONTRACT.md) and [performance budgets
 
 ## TODO / next delivery
 
+**Immediate direction:** finish the Scene View's world-unit grid/panning, per-object context menus and authored game UI preview, together with safe undo/save/edit commands. Then add code-defined editor extensions for custom gizmos, inspectors and editor-only scene helpers. Keep the current shell during this work; a whole editor rewrite is not part of this batch. See [the ordered delivery details](docs/ROADMAP.md#next-delivery--scene-view-essentials-then-editor-extensibility).
+
 The [full engine, editor and game roadmap](docs/ROADMAP.md) is the active plan, with subsystem checklists, dependencies, estimates and observable acceptance. Existing code is reused and verified. Runtime capabilities and a working starter do not establish a finished authoring workflow or finished game.
 
 - [x] **Development baseline:** launcher, portable checks, contributor guidance and initial native workflows verified. See [Windows evidence](docs/windows-workflows.md).

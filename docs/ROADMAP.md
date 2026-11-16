@@ -107,6 +107,35 @@ Implemented and verified: root-level coordinate conversion, render-aware picking
 
 Acceptance: native screenshots at multiple window sizes; click Wanderer in the actual scene; its gizmo and outline align at different zoom/pan values; switch tools with keyboard; drag, cancel and save/reopen; verify typing and Game View input are unaffected. Theme review is performed in the running app, not from CSS alone.
 
+## Next delivery — Scene View essentials, then editor extensibility
+
+User direction recorded November 16, 2026. Keep Scene View focused on authoring the actual game; do not add decoration or speculative lighting, physics visualization or extra panels to make it look busy. This section defines planned work, not completed features.
+
+### A. Scene View essentials
+
+- [ ] Replace the current fixed 50px CSS grid with a world-unit grid using the same 64px/world-unit conversion as rendering and snapping. Grid lines must track camera pan and zoom, including negative coordinates, and align with object positions. One major cell is one world unit; adapt visible subdivisions/density at extreme zoom without changing the unit definition. Keep origin axes distinguishable and the background quiet.
+- [ ] Pan continuously across the grid with the existing Q/hand, middle-drag and Alt-drag interactions. Verify cursor-anchored zoom, high-DPI resize, object picking and snapping against the same coordinate contract. Panning does not move authored entities or dirty the scene.
+- [ ] Right-click an object in Scene View to select it and open its context menu. Preserve an existing group when right-clicking a member; respect selection locks and distinguish object actions from an empty-space menu. Reuse real hierarchy/edit commands for Frame, Rename, Duplicate, Delete, visibility and selection lock; unavailable actions are explicitly disabled. Opening/dismissing a menu must not initiate a transform drag. Clamp menus inside the available window and support keyboard dismissal.
+- [ ] Preview authored game UI in Scene View, including screen-space layout, anchors, stacking and visibility. Share the supported Canvas/HTML UI path with Game View, while keeping gameplay input and behaviours paused during authoring. Do not run the ARPG HUD's gameplay behaviour just to produce an edit-time preview; define a separate preview lifecycle where needed. Make UI edit/input capture explicit so ordinary scene selection remains usable.
+- [ ] Verify grid alignment at different pan/zoom values and 125% emulated scaling, right-click actions with save/reopen and undo integration, and UI preview agreement with Game View. Keep editor tools out of game saves/exports. Existing nested-transform correctness remains a prerequisite wherever these workflows use it.
+
+### B. Safe scene edits
+
+Complete P1 undo/redo, dirty/save safeguards, nested-transform editing and functional Add Component alongside the essentials above. Use one command path for hierarchy, Inspector, viewport and extension edits. One drag is one undo operation. A context menu must not become another independently implemented mutation path.
+
+### C. Editor scripting and custom authoring tools
+
+The desired direction is an editor that developers can extend in code using familiar engine entities/components and scripts: custom physics-component inspectors, gizmos, scene helpers and editor-only objects. Preserve this goal without turning the immediate grid/menu delivery into a whole-editor rewrite.
+
+- [ ] Define an explicit editor extension entry point separate from runtime project scripts. Opt-in project extensions register component/property metadata, custom Inspector drawers, context actions and Scene View tools. Keep serialized runtime component IDs stable; adding an editor tool must not change the runtime schema implicitly.
+- [ ] Expose a small versioned editor API for selection, scene queries, coordinate conversion, drawing/hit-testing handles, edit commands and undo transactions. Precise names/signatures are a design task, not an already supported API. Route scene mutations through the same validated commands used by built-in tools.
+- [ ] Provide enable/disable/reload/dispose hooks and clear diagnostics. Clean up event handlers, input capture, drawings and editor-only entities on reload, scene close and project switch. A broken extension should be diagnosable without losing scene edits.
+- [ ] Support custom gizmos and editor-only scene objects in an authoring overlay/world with explicit ownership. They can use engine drawing/components, but must never enter gameplay entity lists, physics, scripts, authored game scene serialization, gameplay saves or game exports. Persist optional tool preferences separately from game data.
+- [ ] Prove the extension contract with one small working example: a component-specific physics/area gizmo that can edit an existing supported component, with undo and save/reopen. Do not introduce another physics or collision subsystem for the example.
+- [ ] Keep the React/Dockview/Tauri shell while extracting these extension points; engine rendering powers the preview and authoring overlays. Reassess migrating editor panels themselves to engine UI only after the UI subsystem can support dense accessible controls, docking, text input and the existing workflows. A complete engine-rendered editor remains a longer-term direction requiring its own migration decision and compatibility checks.
+
+Suggested parallel ownership for the next implementation batch: grid/camera geometry; object menus using shared commands; undo/save safety; then UI preview and extension design after the shared command contracts settle. Prefer economical agents with bounded prompts and non-overlapping files. Review additions with the user through a concise progress note; do not silently expand Scene View beyond this scope.
+
 ## P1 — safe, productive editor authoring
 
 - [ ] Scene edit commands with undo/redo for transforms, properties, creation, duplication, deletion, reparenting and painting.
