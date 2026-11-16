@@ -14,8 +14,15 @@ test("docs generation preserves authored tutorials in its replacement output", t
     mkdirSync(generated);
     writeFileSync(join(source, "tutorials", "first-game.md"), "# First game\n");
     writeFileSync(join(source, "PRODUCT-CONTRACT.md"), "contract stays separately handled\n");
+    writeFileSync(join(source, "performance-budgets.md"), "# Authored performance budgets\n");
+    writeFileSync(join(source, "m12-acceptance.md"), "# Authored acceptance evidence\n");
+    writeFileSync(join(source, "index.html"), "stale generated API\n");
+    writeFileSync(join(generated, "index.html"), "fresh generated API\n");
 
     preserveAuthoredDocs(source, generated);
 
     assert.equal(readFileSync(join(generated, "tutorials", "first-game.md"), "utf8"), "# First game\n");
+    assert.equal(readFileSync(join(generated, "performance-budgets.md"), "utf8"), "# Authored performance budgets\n");
+    assert.equal(readFileSync(join(generated, "m12-acceptance.md"), "utf8"), "# Authored acceptance evidence\n");
+    assert.equal(readFileSync(join(generated, "index.html"), "utf8"), "fresh generated API\n");
 });
