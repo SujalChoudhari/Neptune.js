@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import type { SceneEntity, EntityData } from "../types/engine";
 import type { VersionedScenePayload } from "./FileSystemContext";
 import { EditorGameRunner } from "../lib/editorGameRunner";
-import { getPlayAction } from "../lib/runtimeControlBridge.mjs";
+import { getPlayAction, readRuntimeState } from "../lib/runtimeControlBridge.mjs";
 import { moveHierarchyEntities } from "../lib/moveHierarchyEntities.mjs";
 import { isRuntimeViewMessageSource, readRuntimeMessage, readRuntimeSelection } from "../lib/runtimeSelectionBridge.mjs";
 
@@ -228,7 +228,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         iframes.forEach((iframe) => {
             const frame = iframe as HTMLIFrameElement;
             if (frame.contentWindow) {
-                frame.contentWindow.postMessage({ type, payload }, '*');
+                frame.contentWindow.postMessage({ type, payload, projectSession: projectSequence.current }, '*');
             }
         });
     }, []);
@@ -298,16 +298,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
                     }
 
                     // Parse Components & Transform for Data Cache
-                    const transform = entData.transform || { pos: { x: 0, y: 0 }, rot: 0, scale: { x: 1, y: 1 } };
                     const componentsList = entData.components || [];
+                    const transform = entData.transform || componentsList.find((component: any) => component.type === 'Transform')?.props || {};
 
                     const fullData: EntityData = {
                         id: id,
                         name: entity.name,
                         active: entity.active,
                         transform: {
-                            position: transform.pos || { x: 0, y: 0 },
-                            rotation: transform.rot || 0,
+                            position: transform.position || transform.pos || { x: 0, y: 0 },
+                            rotation: transform.rotation ?? transform.rot ?? 0,
                             scale: transform.scale || { x: 1, y: 1 },
                             z: transform.z || 0
                         },
@@ -504,18 +504,26 @@ export function GameProvider({ children }: { children: ReactNode }) {
                     // Restore controls after its asynchronous scene load, not on
                     // the old iframe (which received the original Play command).
                     if (isPlaying && event.source === document.querySelector<HTMLIFrameElement>('iframe[title="Game View"]')?.contentWindow) {
-                        (event.source as WindowProxy).postMessage({ type: 'editor:restore-playback', payload: { paused: isPaused } }, '*');
+                        (event.source as WindowProxy).postMessage({ type: 'editor:restore-playback', payload: { paused: isPaused }, projectSession: projectSequence.current }, '*');
                     }
                     break;
                 case 'game:state-update':
-                    setIsPlaying(payload.isPlaying);
-                    setIsPaused(payload.isPaused);
+                    const state = readRuntimeState(payload);
+                    // Scene View has its own editing loop, not the play session.
+                    if (state && event.data.projectSession === projectSequence.current
+                        && event.source === Array.from(frames).find(frame => frame.title === 'Game View')?.contentWindow) {
+                        setIsPlaying(state.isPlaying);
+                        setIsPaused(state.isPaused);
+                    }
                     break;
                 case 'game:selection-changed':
                     const selection = readRuntimeSelection(payload);
                     if (!selection) break;
                     const selectionIds = selection.ids.filter(id => entities[id]);
                     setSelectedIds(selectionIds);
+                    // An editor-origin selection does not emit a runtime-origin
+                    // message, so relaying here synchronizes views without echo.
+                    notifyGame('editor:select', { ids: selectionIds });
 
                     const newBinding: Record<string, EntityData> = {};
                     selectionIds.forEach(id => {
@@ -698,6 +706,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
         // and the previous project's save target before the new main scene loads.
         projectSequence.current++;
         sceneLoadSequence.current++;
+        setIsPlaying(false);
+        setIsPaused(false);
+        notifyGame('editor:stop');
+        notifyGame('editor:reset-project');
         EditorGameRunner.currentScene = null;
         EditorGameRunner.currentScenePath = null;
         setCurrentSceneName("Untitled");

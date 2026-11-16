@@ -568,12 +568,18 @@ export class EditorGameRunner {
                 }
                 else if (component.toLowerCase() === "active") entity.active = data.value
                 else if (component.toLowerCase() === "transform") {
+                    const source = entity.transform || entity.components?.find((item: any) => item?.type === "Transform")?.props || {}
+                    const base = { ...source }
+                    if ("position" in base) base.pos = base.position
+                    if ("rotation" in base) base.rot = base.rotation
+                    delete base.position
+                    delete base.rotation
                     const transformData = { ...data }
                     if ("position" in transformData) transformData.pos = transformData.position
                     if ("rotation" in transformData) transformData.rot = transformData.rotation
                     delete transformData.position
                     delete transformData.rotation
-                    entity.transform = { ...(entity.transform || {}), ...transformData }
+                    entity.transform = { ...base, ...transformData }
                 }
                 else {
                     const target = Array.isArray(entity.components) ? entity.components.find((item: any) => item?.type?.toLowerCase() === component.toLowerCase()) : undefined

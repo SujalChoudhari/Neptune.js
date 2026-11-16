@@ -66,6 +66,15 @@ export const InspectorPanel = (_props: IDockviewPanelProps) => {
     }
 
     const entity: EntityData = selectedEntityData
+    // This hierarchy row represents top-level scene settings, not a serialized
+    // Entity. Entity update/rename/active commands cannot persist its values.
+    if (entity.id === 'camera-main' && EditorGameRunner.currentScene?.camera) {
+        return <div className="h-full overflow-auto p-4 bg-background">
+            <h3 className="text-sm font-medium">Main Camera</h3>
+            <p className="text-xs text-muted-foreground mt-2">Scene camera settings are read-only in this inspector.</p>
+            <pre className="text-xs mt-3 whitespace-pre-wrap">{JSON.stringify(entity.components.Camera, null, 2)}</pre>
+        </div>
+    }
     const updateTransform = (key: string, value: any) => selectedIds.forEach(id => {
         if (EditorGameRunner.updateEntity(id, "transform", { [key]: value })) updateComponent(id, "transform", key, value)
     })

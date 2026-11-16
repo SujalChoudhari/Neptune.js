@@ -70,6 +70,21 @@ test("runtime fetch resolves scene-relative parent paths inside the selected pro
     dispose();
 });
 
+test("resetting the scene base is explicit and does not loosen resource path validation", async () => {
+    const harness = createFrameWindow();
+    const bridge = installProjectResourceBridge(harness.frame);
+    bridge.setScenePath('scenes/nested/main.scene');
+    bridge.setScenePath('');
+    const responsePromise = harness.frame.fetch('assets/root.json');
+    const request = harness.requests[0];
+    assert.equal(request.payload.path, 'assets/root.json');
+    harness.respond(request.payload.id, '{}');
+    await responsePromise;
+    assert.throws(() => resolveProjectResourcePath(''), /non-empty/);
+    assert.throws(() => bridge.setScenePath('../outside.scene'), /inside the selected project/);
+    bridge();
+});
+
 test("relative image sources use the selected-project image reader", async () => {
     const harness = createFrameWindow();
     const dispose = installProjectResourceBridge(harness.frame);

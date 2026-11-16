@@ -18,7 +18,8 @@ function deferred() {
 
 test('switching projects clears scene/save state and ignores the old pending project read', async () => {
     const pending = deferred();
-    const state = { CurrentScenePath: 'scenes/old.scene', Entities: { old: {} } };
+    const state = { CurrentScenePath: 'scenes/old.scene', Entities: { old: {} }, IsPlaying: true, IsPaused: true };
+    const messages = [];
     const runner = { currentScene: { name: 'Old' }, currentScenePath: 'scenes/old.scene' };
     const sequence = { current: 0 };
     const sceneSequence = { current: 4 };
@@ -33,15 +34,19 @@ test('switching projects clears scene/save state and ignores the old pending pro
         readProject: () => pending.promise,
         loadScene: async path => loads.push(path),
         toProjectRelativePath: path => path,
-        notifyGame() {},
+        notifyGame: type => messages.push(type),
         console: { log() {}, error() {} },
-        ...Object.fromEntries(['CurrentSceneName', 'CurrentScenePath', 'CurrentScenePayload', 'MainScenePath', 'Entities', 'EntityDataCache', 'SelectedIds', 'SelectedEntitiesData'].map(name => [`set${name}`, value => { state[name] = value; }]))
+        ...Object.fromEntries(['IsPlaying', 'IsPaused', 'CurrentSceneName', 'CurrentScenePath', 'CurrentScenePayload', 'MainScenePath', 'Entities', 'EntityDataCache', 'SelectedIds', 'SelectedEntitiesData'].map(name => [`set${name}`, value => { state[name] = value; }]))
     };
     const code = compile(`{ ${main}\n${effect} }`);
     const run = () => vm.runInNewContext(code, context);
     run();
     rootPath = null;
     run();
+    assert.equal(state.IsPlaying, false, 'project switch must end the old play session');
+    assert.equal(state.IsPaused, false);
+    assert.ok(messages.includes('editor:stop'), 'the real runtime must stop, not just the toolbar');
+    assert.ok(messages.includes('editor:reset-project'), 'project switches must invalidate pending runtime parses even without a new main scene');
     assert.equal(state.CurrentScenePath, null);
     assert.equal(state.CurrentScenePayload, null);
     assert.equal(state.MainScenePath, null);

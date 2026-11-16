@@ -18,7 +18,9 @@ const Runner = module.exports.EditorGameRunner;
 test('scene switch and reopen retain layer/entity hierarchy IDs and native save path', async () => {
     const scenes = new Map([
         ['scenes/level.scene', { name: 'Level', layers: [{ id: 'foreground', name: 'Foreground', type: 'folder', entities: [
-            { id: 'actor', name: 'Actor', children: [{ id: 'child', name: 'Child' }] }
+            { id: 'actor', name: 'Actor', transform: { position: { x: 7, y: -2 }, rotation: 0.5 }, children: [
+                { id: 'child', name: 'Child', components: [{ type: 'Transform', props: { position: { x: 3, y: 4 }, rotation: 0.25, scale: { x: 2, y: 2 } } }] }
+            ] }
         ] }], entities: [] }],
         ['scenes/other.scene', { name: 'Other', layers: [{ id: 'background', name: 'Background' }], entities: [] }]
     ]);
@@ -37,6 +39,10 @@ test('scene switch and reopen retain layer/entity hierarchy IDs and native save 
     assert.deepEqual(Array.from(state.Entities.root.children), ['foreground']);
     assert.deepEqual(Array.from(state.Entities.foreground.children), ['actor']);
     assert.deepEqual(Array.from(state.Entities.actor.children), ['child']);
+    assert.deepEqual(JSON.parse(JSON.stringify(state.EntityDataCache.actor.transform.position)), { x: 7, y: -2 });
+    assert.equal(state.EntityDataCache.actor.transform.rotation, 0.5);
+    assert.deepEqual(JSON.parse(JSON.stringify(state.EntityDataCache.child.transform.position)), { x: 3, y: 4 });
+    assert.equal(state.EntityDataCache.child.transform.rotation, 0.25);
     await loadScene('scenes/other.scene');
     assert.equal(state.Entities.foreground, undefined);
     await loadScene('scenes/level.scene');
@@ -60,4 +66,18 @@ test('colliding layer and entity IDs reject before replacing the open scene', ()
     assert.throws(() => Runner.openScene({ layers: [{ id: 'same' }], entities: [{ id: 'same' }] }, 'scenes/bad.scene'), /Duplicate hierarchy ID/);
     assert.equal(Runner.currentScenePath, 'scenes/good.scene');
     assert.throws(() => Runner.validateScene({ entities: [{ id: 'root' }] }), /Duplicate hierarchy ID/);
+});
+
+test('Inspector transform writes retain component-only values and override position aliases', () => {
+    Runner.openScene({ entities: [
+        { id: 'component', components: [{ type: 'Transform', props: { position: { x: 3, y: 4 }, rotation: 0.25 } }] },
+        { id: 'alias', transform: { position: { x: 7, y: 8 }, rotation: 0.5 } }
+    ] }, 'scenes/transform.scene');
+    assert.equal(Runner.updateEntity('component', 'transform', { scale: { x: 2, y: 2 } }), true);
+    assert.equal(Runner.updateEntity('alias', 'transform', { position: { x: 9, y: 10 } }), true);
+    const [component, alias] = Runner.currentScene.entities;
+    assert.deepEqual(JSON.parse(JSON.stringify(component.transform.pos)), { x: 3, y: 4 });
+    assert.equal(component.transform.rot, 0.25);
+    assert.deepEqual(JSON.parse(JSON.stringify(alias.transform.pos)), { x: 9, y: 10 });
+    assert.equal(alias.transform.position, undefined, 'old position alias must not shadow the edited pos');
 });

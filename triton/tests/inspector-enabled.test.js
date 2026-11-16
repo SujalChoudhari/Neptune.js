@@ -13,6 +13,7 @@ import { Renderable, collectRenderableRoots } from '../../src/rendering/renderab
 import { Entity } from '../../src/core/entity.js';
 import { Behaviour } from '../../src/scripts/script.js';
 import { ScriptManager } from '../../src/scripts/scriptManager.js';
+import { SceneManager } from '../../src/core/sceneManager.js';
 import { Hitbox, Hurtbox } from '../../src/nereid/collider.js';
 import { CollisionSystem } from '../../src/nereid/collisionSystem.js';
 import { runtimeComponentBridgeScript } from '../src/lib/runtimeComponentBridge.mjs';
@@ -28,7 +29,7 @@ const icon = new Proxy({}, { get: (_, key) => key });
 const visit = node => Array.isArray(node) ? node.flatMap(visit) : node && typeof node === 'object'
     ? [node, ...visit(node.props?.children)] : [];
 
-function inspectorHarness(scene) {
+function inspectorHarness(scene, selection = {}) {
     const code = buildSync({
         entryPoints: [path.join(src, 'components/panels/InspectorPanel.tsx')],
         alias: { '@': src }, bundle: true, platform: 'node', format: 'cjs', write: false,
@@ -37,7 +38,7 @@ function inspectorHarness(scene) {
     }).outputFiles[0].text;
     const selected = { id: 'sprite-1', name: 'Sprite', active: true,
         transform: { position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 }, z: 0 },
-        components: Object.fromEntries(scene.entities[0].components.map(({ type, props }) => [type, { ...props }])) };
+        components: Object.fromEntries((scene.entities[0]?.components || []).map(({ type, props }) => [type, { ...props }])), ...selection };
     const notices = [];
     let saved;
     const game = {
@@ -76,6 +77,18 @@ function sceneFixture() {
         components: [{ type: 'Sprite', props: { path: 'assets/hero.png', enabled: true } },
             { type: 'EnemyConfig', props: { enabled: true } }] }] };
 }
+
+test('synthesized scene camera is explicitly read-only instead of exposing rejected entity edits', () => {
+    const scene = { entities: [], camera: { zoom: 2 } };
+    const harness = inspectorHarness(scene, { id: 'camera-main', name: 'Main Camera', components: { Camera: scene.camera } });
+    const nodes = harness.render();
+    assert.ok(nodes.some(node => node.props?.children === 'Scene camera settings are read-only in this inspector.'));
+    assert.equal(nodes.some(node => typeof node.props?.onUpdate === 'function'), false);
+    assert.equal(nodes.some(node => node.props?.title === 'Disable entity'), false);
+    assert.equal(EditorGameRunner.updateEntity('camera-main', 'Camera', { zoom: 3 }), false);
+    assert.equal(EditorGameRunner.currentScene.camera.zoom, 2);
+    EditorGameRunner.closeScene();
+});
 
 test('Inspector reflects mixed-case component state and saves toggles that disable rendering after reopen', async () => {
     ComponentRegistry.register('Transform', Transform);
@@ -203,6 +216,7 @@ test('serialized script enabled=false survives save/reopen and suppresses Behavi
     const reopened = EditorGameRunner.openScene(JSON.parse(saved), 'scenes/scripts.scene');
     const runtime = SceneLoader.parse(reopened);
     const behaviour = runtime.children[0].GetComponent(CounterBehaviour);
+    SceneManager.LoadScene(runtime.id);
     assert.equal(behaviour.properties.enabled, false);
     ScriptManager.behaviourUpdate(0.1);
     assert.equal(updates, 0);
@@ -234,6 +248,7 @@ test('Inspector toggles a registered Behaviour through save/reopen and runtime l
         const reopened = EditorGameRunner.openScene(JSON.parse(saved), 'scenes/main.scene');
         const runtime = SceneLoader.parse(reopened);
         assert.equal(runtime.children[0].GetComponent(InspectorCounterBehaviour).properties.enabled, false);
+        SceneManager.LoadScene(runtime.id);
         ScriptManager.behaviourInit();
         ScriptManager.behaviourUpdate(0.1);
         assert.equal(inits, 0);
@@ -244,6 +259,7 @@ test('Inspector toggles a registered Behaviour through save/reopen and runtime l
         assert.equal(reloaded.section('InspectorCounterBehaviour').props.isActive, true);
         const enabled = SceneLoader.parse(EditorGameRunner.currentScene);
         assert.equal(enabled.children[0].GetComponent(InspectorCounterBehaviour).properties.enabled, true);
+        SceneManager.LoadScene(enabled.id);
         ScriptManager.behaviourInit();
         ScriptManager.behaviourUpdate(0.1);
         assert.ok(inits > 0);

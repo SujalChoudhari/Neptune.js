@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
+import fs from 'node:fs';
+import { transformSync } from 'esbuild';
+import { readRuntimeSelection } from '../src/lib/runtimeSelectionBridge.mjs';
 import { runtimeSelectionBridgeScript } from '../src/lib/runtimeSelectionBridge.mjs';
 
 test('editor selection sent during a scene swap is restored when the new scene loads', () => {
@@ -25,4 +28,18 @@ test('editor selection sent during a scene swap is restored when the new scene l
     game.scene = { children: [{ id: 'missing', children: [] }] };
     window.dispatchEvent({ type: 'neptune:editor-selection-ready' });
     assert.deepEqual(Array.from(game.editorSelection), [], 'a later clear must cancel the pending selection');
+});
+
+test('runtime-origin selection is relayed to both runtime views', () => {
+    const source = fs.readFileSync('triton/src/context/GameContext.tsx', 'utf8');
+    const branch = source.match(/case 'game:selection-changed':[\s\S]*?break;\n                case 'game:component-updated'/)?.[0]
+        .replace(/\n                case 'game:component-updated'$/, '');
+    assert.ok(branch);
+    const notifications = [];
+    const code = transformSync(`switch ('game:selection-changed') { ${branch} }`, { loader: 'tsx' }).code;
+    vm.runInNewContext(code, { payload: { ids: ['hero'] }, readRuntimeSelection,
+        entities: { hero: {} }, entityDataCache: {},
+        setSelectedIds() {}, setSelectedEntitiesData() {},
+        notifyGame: (type, payload) => notifications.push({ type, ids: Array.from(payload.ids) }) });
+    assert.deepEqual(notifications, [{ type: 'editor:select', ids: ['hero'] }]);
 });

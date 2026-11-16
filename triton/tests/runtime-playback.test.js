@@ -10,9 +10,11 @@ import { SceneManager } from "../../src/core/sceneManager.js"
 import { Sprite } from "../../src/rendering/sprite.js"
 import { Transform } from "../../src/components/transform.js"
 import { Vector2 } from "../../src/math/vec2.js"
-import { getPlayAction, runRuntimeControl, runtimeControlBridgeScript } from "../src/lib/runtimeControlBridge.mjs"
+import { getPlayAction, readRuntimeState, runRuntimeControl, runtimeControlBridgeScript } from "../src/lib/runtimeControlBridge.mjs"
 import { runtimeSelectionBridgeScript } from "../src/lib/runtimeSelectionBridge.mjs"
 import { runtimeComponentBridgeScript } from "../src/lib/runtimeComponentBridge.mjs"
+import { runtimeEntityBridgeScript } from "../src/lib/runtimeEntityBridge.mjs"
+import { installProjectResourceBridge } from "../src/lib/projectResourceBridge.mjs"
 import { runtimeConsoleBridgeScript } from "../src/lib/runtimeConsoleBridge.mjs"
 
 test("Play resumes paused playback without starting a new session", () => {
@@ -89,6 +91,32 @@ test("GameContext Play resumes a paused game without clearing the console or res
     assert.deepEqual(startMessages, [{ type: "editor:play", payload: null }])
     assert.deepEqual(startEvents, ["editor:play"])
     assert.equal(startState.isPlaying, true)
+})
+
+test("GameContext ignores malformed playback reports and Scene View cannot control the toolbar", () => {
+    const source = fs.readFileSync("triton/src/context/GameContext.tsx", "utf8")
+    const branch = source.match(/case 'game:state-update':[\s\S]*?break;/)?.[0]
+    assert.ok(branch)
+    const gameWindow = {}, sceneWindow = {}
+    const state = { isPlaying: false, isPaused: false }
+    const handle = (payload, source = gameWindow, projectSession = 2) => vm.runInNewContext(`switch ('game:state-update') { ${branch} }`, {
+        payload, event: { source, data: { projectSession } }, readRuntimeState,
+        projectSequence: { current: 2 },
+        frames: [{ title: 'Game View', contentWindow: gameWindow }, { title: 'Scene View', contentWindow: sceneWindow }],
+        document: { querySelector: () => ({ contentWindow: gameWindow }) },
+        setIsPlaying: value => { state.isPlaying = value },
+        setIsPaused: value => { state.isPaused = value }
+    })
+    for (const payload of [null, {}, { isPlaying: 'yes', isPaused: false }]) {
+        assert.doesNotThrow(() => handle(payload))
+        assert.deepEqual(state, { isPlaying: false, isPaused: false })
+    }
+    handle({ isPlaying: true, isPaused: true }, sceneWindow)
+    assert.deepEqual(state, { isPlaying: false, isPaused: false })
+    handle({ isPlaying: true, isPaused: true }, gameWindow, 1)
+    assert.deepEqual(state, { isPlaying: false, isPaused: false }, 'old-project acknowledgements cannot restart the toolbar')
+    handle({ isPlaying: true, isPaused: true })
+    assert.deepEqual(state, { isPlaying: true, isPaused: true })
 })
 
 const context = {
@@ -170,11 +198,20 @@ test("Application playback controls pause, stop, and restart one frame loop", as
         assert.equal(sendControl("editor:play"), true)
         assert.equal(app.isRunning, true)
         assert.equal(frameQueue.length, 1)
+        // A rapid Stop/Play can precede the browser's delivery of the old RAF.
+        const previousSessionFrame = frameQueue.shift()
+        sendControl("editor:stop")
+        sendControl("editor:play")
+        const freshQueueLength = frameQueue.length
+        previousSessionFrame(32)
+        assert.equal(frameQueue.length, freshQueueLength, "old session must not fork a second animation loop")
         assert.equal(sendControl("editor:stop"), true)
         assert.deepEqual(reportedStates, [
             { isPlaying: true, isPaused: false },
             { isPlaying: true, isPaused: false },
             { isPlaying: true, isPaused: true },
+            { isPlaying: true, isPaused: false },
+            { isPlaying: false, isPaused: false },
             { isPlaying: true, isPaused: false },
             { isPlaying: false, isPaused: false },
             { isPlaying: true, isPaused: false },
@@ -346,7 +383,7 @@ test("Game View message bridge controls the real Application and forwards consol
         const sourcefile = path.resolve("triton/src/components/panels/GameViewPanel.tsx")
         const external = [
             "react", "@tauri-apps/api/core", "virtual:neptune-runtime-url", "@/lib/projectResourceBridge.mjs?url",
-            "@/lib/runtimeSelectionBridge.mjs", "@/lib/runtimeComponentBridge.mjs", "@/lib/runtimeConsoleBridge.mjs", "@/lib/runtimeControlBridge.mjs"
+            "@/lib/runtimeSelectionBridge.mjs", "@/lib/runtimeComponentBridge.mjs", "@/lib/runtimeConsoleBridge.mjs", "@/lib/runtimeControlBridge.mjs", "@/lib/runtimeEntityBridge.mjs"
         ]
         const bundle = buildSync({
             bundle: true,
@@ -372,7 +409,8 @@ test("Game View message bridge controls the real Application and forwards consol
             "@/lib/runtimeSelectionBridge.mjs": { runtimeSelectionBridgeScript },
             "@/lib/runtimeComponentBridge.mjs": { runtimeComponentBridgeScript },
             "@/lib/runtimeConsoleBridge.mjs": { runtimeConsoleBridgeScript },
-            "@/lib/runtimeControlBridge.mjs": { runtimeControlBridgeScript }
+            "@/lib/runtimeControlBridge.mjs": { runtimeControlBridgeScript },
+            "@/lib/runtimeEntityBridge.mjs": { runtimeEntityBridgeScript }
         }
         const componentModule = { exports: {} }
         vm.runInNewContext(bundle, {
@@ -398,13 +436,17 @@ test("Game View message bridge controls the real Application and forwards consol
         let script = iframe.props.srcDoc.match(/<script type="module">([\s\S]*?)<\/script>/)?.[1]
         assert.ok(script)
         script = script.replace(/^\s*import\s+\{\s*installProjectResourceBridge\s*\}\s+from\s+["'][^"']+["'];/m,
-            "const installProjectResourceBridge = () => {};")
-        script = script.replace(/import\(["'][^"']+["']\)\.then\(wait\)\.catch\(\(error\) => \{[\s\S]*?\n\s*\}\);/, "wait();")
+            "const installProjectResourceBridge = () => { const bridge = installActualProjectResourceBridge(window); const set = bridge.setScenePath; bridge.setScenePath = path => { resourcePaths.push(path); set(path); }; return bridge; };")
+        script = script.replace(/import\(["'][^"']+["']\)\.then\(engine => \{[^\n]+\}\)\.catch\(\(error\) => \{[\s\S]*?\n\s*\}\);/, "wait();")
         assert.ok(!script.includes("import("), "test must exercise the embedded bridge without leaving dynamic imports")
 
         const { Application } = await import("../../src/core/application.js")
         const app = new Application()
         fakeWindow.game = app
+        const { ComponentRegistry } = await import("../../src/core/componentRegistry.js")
+        ComponentRegistry.register('Transform', Transform)
+        fakeWindow.__neptuneEngineModule = { Entity, Transform, Vector2, ComponentRegistry }
+        const resourcePaths = []
         elements.set("neptune-canvas", {
             width: 640,
             height: 480,
@@ -425,13 +467,16 @@ test("Game View message bridge controls the real Application and forwards consol
             Event: class { constructor(type) { this.type = type } },
             CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options?.detail } },
             Promise,
-            requestAnimationFrame: globalThis.requestAnimationFrame
+            requestAnimationFrame: globalThis.requestAnimationFrame,
+            resourcePaths,
+            installActualProjectResourceBridge: installProjectResourceBridge
         })
-        const send = (type, payload) => {
-            for (const handler of listeners.get("message") || []) handler({ source: parent, data: { type, payload } })
+        const send = (type, payload, projectSession = 7) => {
+            for (const handler of listeners.get("message") || []) handler({ source: parent, data: { type, payload, projectSession } })
         }
         send("editor:load-scene", { path: "scenes/broken.scn", data: { schemaVersion: 999, entities: [] } })
         await new Promise(resolve => setImmediate(resolve))
+        assert.deepEqual(resourcePaths, ['scenes/broken.scn'])
         assert.ok(parentMessages.some(message => message.type === "editor:diagnostic"
             && message.payload.code === "GAME_SCENE_LOAD_ERROR"
             && message.payload.message.includes("Unsupported scene schema version '999'")
@@ -457,10 +502,13 @@ test("Game View message bridge controls the real Application and forwards consol
         assert.equal(transform.scale instanceof Vector2, true)
         transform.Scale(new Vector2(2, 2))
         assert.deepEqual([transform.scale.x, transform.scale.y], [4, 6])
+        send("editor:create-entity", { id: "created-live", name: "Created Live", parentId: "root", components: [] })
+        assert.ok(app.scene.children.some(entity => entity.id === "created-live"), "Game View must create hierarchy entities without reloading")
         assert.equal(app.isRunning, false)
         send("editor:play")
         assert.equal(app.isRunning, true)
         assert.equal(frameQueue.length, 1)
+        assert.equal(parentMessages.findLast(message => message.type === 'game:state-update').projectSession, 7)
         send("editor:pause", { paused: true })
         assert.equal(app.isPaused, true)
         send("editor:play")
@@ -506,6 +554,15 @@ test("Game View message bridge controls the real Application and forwards consol
         assert.equal(app.isRunning, false)
         assert.equal(app.isPaused, false)
         app.loadScene = originalLoadScene
+
+        send("editor:load-scene", { data: { id: 'duplicate-scene', entities: [{ id: 'duplicate-entity', name: 'Duplicate' }] } })
+        await new Promise(resolve => setImmediate(resolve))
+        assert.equal(app.scene.id, 'duplicate-scene', "data-only duplicate reload must reach the real Game View loader")
+
+        send("editor:reset-project")
+        assert.equal(app.scene, undefined, "project-reset message must clear the real Game View runtime")
+        assert.equal(app.isRunning, false)
+        assert.equal(resourcePaths.at(-1), '')
 
         runtimeConsole.warn("runtime warning")
         runtimeConsole.error("runtime failure")

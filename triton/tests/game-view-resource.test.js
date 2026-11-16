@@ -8,10 +8,11 @@ import { runtimeSelectionBridgeScript } from "../src/lib/runtimeSelectionBridge.
 import { runtimeComponentBridgeScript } from "../src/lib/runtimeComponentBridge.mjs";
 import { runtimeConsoleBridgeScript } from "../src/lib/runtimeConsoleBridge.mjs";
 import { runtimeControlBridgeScript } from "../src/lib/runtimeControlBridge.mjs";
+import { runtimeEntityBridgeScript } from "../src/lib/runtimeEntityBridge.mjs";
 
 function createGameView(runtimeUrl = "/neptune.js") {
     const sourcefile = path.resolve("triton/src/components/panels/GameViewPanel.tsx");
-    const external = ["react", "react/jsx-runtime", "@tauri-apps/api/core", "@/lib/projectResourceBridge.mjs?url", "virtual:neptune-runtime-url", "@/lib/runtimeSelectionBridge.mjs", "@/lib/runtimeComponentBridge.mjs", "@/lib/runtimeConsoleBridge.mjs", "@/lib/runtimeControlBridge.mjs"];
+    const external = ["react", "react/jsx-runtime", "@tauri-apps/api/core", "@/lib/projectResourceBridge.mjs?url", "virtual:neptune-runtime-url", "@/lib/runtimeSelectionBridge.mjs", "@/lib/runtimeComponentBridge.mjs", "@/lib/runtimeConsoleBridge.mjs", "@/lib/runtimeControlBridge.mjs", "@/lib/runtimeEntityBridge.mjs"];
     const bundle = buildSync({
         bundle: true,
         external,
@@ -46,7 +47,8 @@ function createGameView(runtimeUrl = "/neptune.js") {
         "@/lib/runtimeSelectionBridge.mjs": { runtimeSelectionBridgeScript },
         "@/lib/runtimeComponentBridge.mjs": { runtimeComponentBridgeScript },
         "@/lib/runtimeConsoleBridge.mjs": { runtimeConsoleBridgeScript },
-        "@/lib/runtimeControlBridge.mjs": { runtimeControlBridgeScript }
+        "@/lib/runtimeControlBridge.mjs": { runtimeControlBridgeScript },
+        "@/lib/runtimeEntityBridge.mjs": { runtimeEntityBridgeScript }
     };
     const module = { exports: {} };
     vm.runInNewContext(bundle, {

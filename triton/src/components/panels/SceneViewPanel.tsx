@@ -484,7 +484,12 @@ export function SceneViewPanel() {
              // Camera Update Listener
              window.addEventListener('message', (e) => {
                  const { type, payload } = e.data;
-                if (type === 'editor:select') {
+                if (type === 'editor:reset-project') {
+                    game.resetProject();
+                    editorSelection = [];
+                    projectResourceBridge.setScenePath('');
+                }
+                else if (type === 'editor:select') {
                     editorSelection = updateSelection(payload?.ids, null, true);
                 }
                 else if (type === 'editor:camera-update') {
@@ -504,7 +509,8 @@ export function SceneViewPanel() {
                  else if (type === 'editor:load-scene' && game.loadScene) {
                      if (typeof payload.path === 'string') projectResourceBridge.setScenePath(payload.path);
                      game.loadScene(payload.data || payload.path)
-                         .then(() => {
+                         .then(loaded => {
+                             if (loaded === false) return;
                              if (!game.isRunning && game.start) {
                                  // Start only after a scene exists, and keep gameplay behaviors paused in the editor preview.
                                  if (game.pause) game.pause();

@@ -124,6 +124,7 @@ export function installProjectResourceBridge(frameWindow = window) {
         for (const task of pending.values()) task.reject(new Error("Project resource bridge closed"));
         pending.clear();
     };
-    dispose.setScenePath = path => { currentScenePath = resolveProjectResourcePath(path); };
+    // Empty is an explicit project reset, not a valid resource reference.
+    dispose.setScenePath = path => { currentScenePath = path === "" ? "" : resolveProjectResourcePath(path); };
     return dispose;
 }

@@ -7,6 +7,7 @@ import { runtimeSelectionBridgeScript } from "@/lib/runtimeSelectionBridge.mjs";
 import { runtimeComponentBridgeScript } from "@/lib/runtimeComponentBridge.mjs";
 import { runtimeConsoleBridgeScript } from "@/lib/runtimeConsoleBridge.mjs";
 import { runtimeControlBridgeScript } from "@/lib/runtimeControlBridge.mjs";
+import { runtimeEntityBridgeScript } from "@/lib/runtimeEntityBridge.mjs";
 
 export function GameViewPanel() {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -57,11 +58,12 @@ export function GameViewPanel() {
     <canvas id="neptune-canvas"></canvas>
     <script type="module">
         import { installProjectResourceBridge } from "${projectResourceBridgeUrl}";
-        installProjectResourceBridge();
+        const projectResources = installProjectResourceBridge();
         ${runtimeSelectionBridgeScript}
         ${runtimeComponentBridgeScript}
         ${runtimeConsoleBridgeScript}
         ${runtimeControlBridgeScript}
+        ${runtimeEntityBridgeScript}
 
         const reportRuntimeError = (code, message, source) => {
             window.parent.postMessage({
@@ -113,15 +115,23 @@ export function GameViewPanel() {
                 let sceneLoad = Promise.resolve(true);
                 let playbackGeneration = 0;
                 window.addEventListener('message', (e) => {
-                    const { type, payload } = e.data;
+                    const { type, payload, projectSession } = e.data;
                     const game = window.game;
+
+                    if (type === 'editor:reset-project') {
+                        playbackGeneration++;
+                        sceneLoad = Promise.resolve(false);
+                        game.resetProject();
+                        projectResources.setScenePath('');
+                        return;
+                    }
 
                     if (type === 'editor:restore-playback') {
                         const generation = ++playbackGeneration;
                         sceneLoad.then(loaded => {
                             if (!loaded || generation !== playbackGeneration) return;
-                            runRuntimeControl(game, 'editor:play', null, state => window.parent.postMessage({ type: 'game:state-update', payload: state }, '*'));
-                            if (payload?.paused) runRuntimeControl(game, 'editor:pause', { paused: true }, state => window.parent.postMessage({ type: 'game:state-update', payload: state }, '*'));
+                            runRuntimeControl(game, 'editor:play', null, state => window.parent.postMessage({ type: 'game:state-update', payload: state, projectSession }, '*'));
+                            if (payload?.paused) runRuntimeControl(game, 'editor:pause', { paused: true }, state => window.parent.postMessage({ type: 'game:state-update', payload: state, projectSession }, '*'));
                         });
                         return;
                     }
@@ -129,13 +139,14 @@ export function GameViewPanel() {
                     if (type === 'editor:stop' || type === 'editor:play') playbackGeneration++;
 
                     const controlHandled = runRuntimeControl(game, type, payload, state => {
-                        window.parent.postMessage({ type: 'game:state-update', payload: state }, '*');
+                        window.parent.postMessage({ type: 'game:state-update', payload: state, projectSession }, '*');
                     });
                     if (controlHandled) return;
 
                     if (type === 'editor:load-scene' && game.loadScene) {
+                         if (typeof payload.path === 'string') projectResources.setScenePath(payload.path);
                          sceneLoad = game.loadScene(payload.data || payload.path)
-                             .then(() => { window.dispatchEvent(new Event('neptune:editor-selection-ready')); return true; })
+                             .then(loaded => { if (loaded === false) return false; window.dispatchEvent(new Event('neptune:editor-selection-ready')); return true; })
                              .catch(error => { reportRuntimeError('GAME_SCENE_LOAD_ERROR', describeRuntimeFailure(error), payload?.path); return false; });
                     }
                     else if (type === 'editor:rename') {
@@ -148,7 +159,7 @@ export function GameViewPanel() {
                 requestAnimationFrame(wait);
             }
         };
-        import("${runtimeUrl}").then(wait).catch((error) => {
+        import("${runtimeUrl}").then(engine => { window.__neptuneEngineModule = engine; wait(); }).catch((error) => {
             reportRuntimeError('GAME_BOOT_ERROR', error instanceof Error ? error.message : String(error));
         });
     </script>
