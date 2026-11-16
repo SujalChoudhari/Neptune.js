@@ -76,7 +76,7 @@ Important remaining integration work:
 
 - `Stats` and `Combatant` have overlapping health/damage responsibilities. Choose one authoritative ARPG state flow before expanding the game.
 - Legacy `BoxCollider`, Nereid physics, and the sample's custom collision handling need a documented supported movement path.
-- The existing sample player uses platformer movement. A top-down ARPG controller is planned; do not describe it as shipped.
+- The older debug sample uses platformer movement; Emberfall has a project-specific top-down controller. A configurable shared ARPG controller and a completed multi-map game remain planned.
 - The public browser entry performs DOM/application initialization on import. Make any future bootstrap changes compatible and explicit.
 - Tile rendering scans map cells, collision checks pairs, and some AI lookups scan occupants. Measure real workloads and optimize demonstrated limits; there is no established large-crowd FPS guarantee.
 
@@ -84,17 +84,23 @@ The target [product contract](docs/PRODUCT-CONTRACT.md) and [performance budgets
 
 ## TODO / next delivery
 
-This is the active backlog. Mark work complete only after implementation and relevant behavioral verification. Reconcile existing code before replacing it. Use small proof scenes throughout engine work, then assemble the demo from the verified systems.
+The [full engine, editor and game roadmap](docs/ROADMAP.md) is the active plan, with subsystem checklists, dependencies, estimates and observable acceptance. Existing code is reused and verified. Runtime capabilities and a working starter do not establish a finished authoring workflow or finished game.
 
-- [x] **Step 0 — development baseline:** portable tooling, editor launcher, contributor guide, cleanup and next-step backlog complete. Verified on Windows: 406 engine checks, 63 integration checks, final 102-test batch, docs generation/contract, editor build/lint and locked Rust compilation. Native compilation is verified; browser smoke tests use native-command stubs and do not claim a new native-window acceptance run.
-- [ ] **Step 1 — canonical 2D runtime:** define coordinate units; consolidate authoritative health/damage and collision/movement paths; add input actions; verify lifecycle, fixed simulation timing, pause and cleanup while retaining entity-component composition.
-- [ ] **Step 2 — world and authoring:** verify tile layers/collision/navigation, camera bounds, spawn points and transitions through real edit/save/reopen/play workflows.
-- [ ] **Step 3 — reusable ARPG systems:** compose attacks/projectiles, three enemy types, boss phases, loot/equipment, XP, quests and dialogue through public APIs and project data.
-- [ ] **Step 4 — UI and persistence:** coherent HUD/menus/pause, death/retry, checkpoints and complete world-state save/load across restarts.
-- [ ] **Step 5 — playable demo:** one safe hub, one dungeon, one quest and boss; a complete approximately 10–15 minute adventure with readable art, animation, sound and feedback.
-- [ ] **Step 6 — completion:** profile a documented workload on target hardware, address measured bottlenecks, run an endurance playtest, finish types/examples/templates and verify fresh-developer/AI modification tasks.
+- [x] **Development baseline:** launcher, portable checks, contributor guidance and initial native workflows verified. See [Windows evidence](docs/windows-workflows.md).
+- [x] **Emberfall starter:** a versioned `.npt` project with movement, melee combat, guardians, an altar objective and saves. Placeholder visuals and no proper menu flow; not the finished demo.
+- [ ] **P0 — viewport and visual foundation (next):** fix gizmo/overlay/drag coordinate conversions; accurate click selection; Q hand, W move, E rotate, R scale, T rect, Y combined tools; focus-safe shortcuts, snapping and drag cancellation. Polish docking/layout, colors, typography, shadows, borders, radii and control states in the native app.
+- [ ] **P1 — safe editor authoring:** undo/redo, save/recovery safeguards, functional Add Component, typed searchable Inspector, script settings, resource pickers, multi-edit, hierarchy and shortcut QoL.
+- [ ] **P2 — consistent runtime:** authoritative combat/collision paths, input actions, simulation timing, lifecycle, edit/play separation and versioned project/module contracts.
+- [ ] **P3 — asset and presentation pipeline:** spritesheet slicing/pivots/imports, real animation timeline/state tools, music/SFX buses/previews/settings, effects and camera feedback.
+- [ ] **P4 — world and reuse:** reusable entity/scene instances and overrides, viewport tile painting/terrain/layers, collision/navigation tools, spawns, transitions and reference repair.
+- [ ] **P5 — ARPG systems and data tools:** melee/ranged/dodge, enemies and phased boss, inventory/equipment/loot, progression, NPCs/dialogue/quests and validated authoring.
+- [ ] **P6 — complete UI and persistence:** title/new/continue/load/settings/credits, pause/HUD/inventory/quest/dialogue/death/victory flows, input navigation, checkpoints, slots and complete saved world state.
+- [ ] **P7 — the actual adventure:** first a polished 10–15 minute slice, then a bounded approximately 30–60 minute game with coherent sprites, animation, music, sound, onboarding, encounters and ending.
+- [ ] **P8 — hardening and delivery:** debugger/profiler tools, measured performance, native/browser/export tests, endurance playtests, packaged editor, game exports, templates/types/docs and fresh-developer usability.
 
-2D completion requires the demo to be authored, played, saved, reopened, modified and packaged through supported Neptune workflows with passing checks and recorded integration evidence. Only then consider 3D. No publication is implied by local preparation or packaging.
+Initial planning ranges: **4–8 focused development weeks for the polished vertical slice; approximately 12–22 weeks for the bounded engine/editor plus small complete game**. These are engineering-effort estimates with substantial uncertainty, not calendar promises or unattended work commitments. Original art/music production and larger content scope need separate estimates. Re-estimate after P1 and after the slice.
+
+2D completion requires the game to be authored, played, saved, reopened, modified and packaged through supported workflows, with passing checks, actual native evidence and release acceptance. Only then consider 3D. The roadmap update itself does not mark the planned enhancements complete.
 
 ## Tutorials
 

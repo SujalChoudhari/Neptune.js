@@ -2,6 +2,8 @@
 
 **Status:** M01 target contract. This document defines the intended first completion target; it does not claim that every capability below is already implemented or shipped.
 
+The current [delivery roadmap](ROADMAP.md) retains this initial 2D vertical-slice boundary and adds editor usability, asset/audio/UI pipelines and a separately scoped small-game release. Use that roadmap for current priorities and effort estimates; the checklist here remains an integration target, not completion evidence.
+
 ## Product goal and supported scope
 
 Neptune.js will support building a complete 2D action-RPG vertical slice for the browser. The first completion target brings together authored maps, player and enemy entities, combat, RPG progression, HTML user interfaces, and saved game/world state. The target includes 2D rendering, tilemaps and transitions, tile-aware navigation and collision, configurable encounters, dialogue or menus, and project data that can be used by both the game runtime and Triton.
