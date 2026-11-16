@@ -10,7 +10,12 @@ if (Test-Path -LiteralPath $nodePathFile) {
     $env:PLAYWRIGHT_BROWSERS_PATH = Join-Path $tools 'playwright'
 }
 Set-Location -LiteralPath $repo
+$node = Get-Command node.exe -ErrorAction Stop
 $yarn = Get-Command yarn.cmd -ErrorAction Stop
-Write-Host 'Starting Neptune editor...'
-& $yarn.Source --cwd (Join-Path $repo 'triton') tauri dev
+$yarnJs = Join-Path (Split-Path -Parent $yarn.Source) 'node_modules\yarn\bin\yarn.js'
+if (-not (Test-Path -LiteralPath $yarnJs)) {
+    throw 'Yarn Classic is missing. Install Yarn 1.22.x before starting the editor.'
+}
+Write-Host 'Starting Neptune.js Triton...'
+& $node.Source $yarnJs --cwd (Join-Path $repo 'triton') tauri dev
 exit $LASTEXITCODE

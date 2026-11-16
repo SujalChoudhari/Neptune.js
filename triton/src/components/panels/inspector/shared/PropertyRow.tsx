@@ -11,7 +11,7 @@ export const PropertyRow = ({ label, children, labelWidth = "w-20" }: PropertyRo
     <div className="flex items-center gap-1 group/row min-w-0 w-full px-1 py-0.5">
         <span
             className={cn(
-                "text-[10px] font-medium shrink-0 truncate transition-colors",
+                "text-[11px] font-medium shrink-0 truncate transition-colors",
                 "text-foreground/80 group-hover/row:text-foreground",
                 labelWidth
             )}

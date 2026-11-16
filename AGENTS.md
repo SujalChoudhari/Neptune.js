@@ -4,7 +4,13 @@
 
 Finish the 2D entity-component engine and prove it through a playable ARPG demo. The root README contains current status and ordered TODOs. No 3D, multiplayer, speculative renderer rewrite or unrelated feature expansion in this delivery.
 
-## Architecture
+## Editor design and working preferences
+
+- Preserve the raised/inset desktop control style. The user's reference is dark neumorphism: soft light/dark shadows, restrained gradients and rounded controls. Theme refinements must not flatten or replace this style.
+- Keep controls compact and content-sized: small toolbar icons are 24px squares; text buttons get only the padding their labels need. Do not copy the reference music player's large spacing into a dense editor.
+- The user prefers parallel agents for independent TODOs. Assign distinct file ownership, integrate and verify the combined result, and keep README/roadmap progress truthful. Do not substitute planning for implemented, tested changes.
+
+## Architecture boundaries
 
 - Preserve Entity -> components/children, Transform, Scene/SceneManager and Behaviour composition. This is an entity-component architecture, not a mandate to introduce a new data-oriented ECS framework.
 - Runtime code lives in src/. Triton is a separate authoring tool in triton/. Games must not import editor UI, Tauri or native filesystem dependencies.

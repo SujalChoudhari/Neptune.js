@@ -11,13 +11,8 @@ import { cn } from "@/lib/utils"
 
 // Shared base styles for the 3D themed effect
 const themedButtonBase = `
-    transition-all duration-150
-    bg-gradient-to-b from-[hsl(0,0%,28%)] to-[hsl(0,0%,22%)]
-    border border-[hsl(0,0%,14%)] border-t-[hsl(0,0%,32%)]
-    shadow-[0_1px_2px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.05)]
-    hover:from-[hsl(0,0%,32%)] hover:to-[hsl(0,0%,26%)]
-    active:from-[hsl(0,0%,20%)] active:to-[hsl(0,0%,18%)] active:shadow-inner
-    disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-[hsl(0,0%,28%)] disabled:hover:to-[hsl(0,0%,22%)]
+    triton-raised
+    disabled:opacity-50 disabled:cursor-not-allowed
 `
 
 const themedButtonMinimal = `
@@ -30,11 +25,7 @@ const themedButtonMinimal = `
 `
 
 const themedButtonTopbar = `
-    transition-all duration-150
-    bg-gradient-to-b from-[hsl(0,0%,24%)] to-[hsl(0,0%,18%)]
-    border border-[hsl(0,0%,10%)] border-t-[hsl(0,0%,28%)]
-    hover:from-[hsl(0,0%,28%)] hover:to-[hsl(0,0%,22%)]
-    active:from-[hsl(0,0%,16%)] active:to-[hsl(0,0%,14%)]
+    triton-raised
     disabled:opacity-50
 `
 
@@ -66,7 +57,7 @@ export const ThemedMenuButton = ({
     return (
         <button
             className={cn(
-                "px-2.5 py-1 text-[11px] font-medium rounded flex items-center gap-1.5",
+                "h-6 px-1.5 text-[11px] font-medium rounded flex items-center gap-1",
                 "text-foreground/70 hover:text-foreground transition-colors",
                 variantClasses[variant],
                 className
@@ -104,7 +95,7 @@ export const ThemedIconButton = ({
     return (
         <button
             className={cn(
-                "flex items-center justify-center rounded-md",
+                "flex shrink-0 items-center justify-center rounded p-0",
                 "text-foreground/70 hover:text-foreground",
                 sizeClasses[size],
                 themedButtonBase,

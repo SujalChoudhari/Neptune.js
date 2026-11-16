@@ -60,7 +60,10 @@ const batches = [
     "tests/dev-server.test.js",
     "tests/emberfall-browser.test.js",
     "tests/project-behaviour.test.js",
-    "triton/tests/frontend-watch.test.js"
+    "triton/tests/frontend-watch.test.js",
+    "triton/tests/scene-tools.test.js",
+    "triton/tests/editor-layout.test.js",
+    "triton/tests/viewport-tools-browser.test.js"
   ]
 ];
 const root = fileURLToPath(new URL("../", import.meta.url));

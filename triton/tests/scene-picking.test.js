@@ -6,6 +6,8 @@ import path from 'node:path';
 import { buildSync } from 'esbuild';
 import { pickEntityAt, translateOnAxis, resizeColliderBounds, zoomAtPoint, getFramingCamera, updateSelection, getEntitySelectionBounds, getColliderOverlayBounds, hasCompleteGroupTransformSelection, isSceneViewBridgeMessageSource } from '../src/lib/scenePicking.mjs';
 import { BoxCollider } from '../../src/components/boxCollider.js';
+import { pickRuntimeEntityAt } from '../src/lib/runtimeSelectionBridge.mjs';
+import * as sceneTools from '../src/lib/sceneTools.mjs';
 
 const entity = (id, x, y, children = []) => ({
     id,
@@ -22,13 +24,13 @@ test('Scene View bridge trusts only its own live iframe for all message types', 
     assert.match(source, /if \(!isSceneViewBridgeMessageSource\(event\.source, iframeRef\.current\?\.contentWindow\)\) return/);
 });
 
-function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-1']) {
+function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-1'], initialTool = 'transform') {
     const sourcefile = path.resolve('triton/src/components/panels/SceneViewPanel.tsx');
     const external = [
         'react', 'react/jsx-runtime', 'lucide-react', '@/components/library', '@/context/GameContext',
         '@/lib/editorGameRunner', '@/lib/scenePicking.mjs', 'virtual:neptune-runtime-url',
         '../../../../src/thalassa/camera.js?url', '@/lib/scenePicking.mjs?url',
-        '@/lib/projectResourceBridge.mjs?url', '@tauri-apps/api/core'
+        '@/lib/projectResourceBridge.mjs?url', '@tauri-apps/api/core', './SceneToolBar', '@/lib/sceneTools.mjs'
     ];
     const bundle = buildSync({
         bundle: true, format: 'cjs', platform: 'node', write: false,
@@ -37,6 +39,7 @@ function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-
     const slots = [];
     let hookIndex = 0;
     const notifications = [];
+    const viewportMessages = [];
     const canonicalEdits = [];
     const componentEdits = [];
     const react = {
@@ -56,6 +59,8 @@ function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-
     const jsx = (type, props) => ({ type, props: props || {} });
     const modules = {
         react,
+        './SceneToolBar': { SceneToolBar: 'SceneToolBar' },
+        '@/lib/sceneTools.mjs': sceneTools,
         'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' },
         'lucide-react': { ChevronDown: 'ChevronDown', ChevronLeft: 'ChevronLeft', ChevronRight: 'ChevronRight', ChevronUp: 'ChevronUp', Maximize: 'Maximize', ZoomIn: 'ZoomIn', ZoomOut: 'ZoomOut' },
         '@/components/library': { ThemedIconButton: 'ThemedIconButton' },
@@ -109,13 +114,22 @@ function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-
             return modules[id];
         }
     });
+    let firstRender = true;
     const render = () => {
         hookIndex = 0;
-        const tree = module.exports.SceneViewPanel();
+        let tree = module.exports.SceneViewPanel();
+        if (firstRender) {
+            firstRender = false;
+            const toolbar = findNode(tree, node => node.type === 'SceneToolBar');
+            toolbar.props.onToolChange(initialTool);
+            hookIndex = 0;
+            tree = module.exports.SceneViewPanel();
+        }
+        slots[1].current = { contentWindow: { postMessage(message) { viewportMessages.push(message); } } };
         tree.props.ref.current = { getBoundingClientRect: () => ({ left: 10, top: 20, width: 800, height: 600 }) };
         return tree;
     };
-    return { render, notifications, canonicalEdits, componentEdits, getSpawnPointOverlay: module.exports.getSpawnPointOverlay };
+    return { render, notifications, viewportMessages, canonicalEdits, componentEdits, getSpawnPointOverlay: module.exports.getSpawnPointOverlay };
 }
 
 function findNode(node, predicate) {
@@ -273,8 +287,8 @@ test('Scene View renders a separate outline for each selected entity without int
     const outlines = findNodes(tree, node => node.type === 'rect' && node.props['data-selection-outline']);
     assert.deepEqual(outlines.map(node => node.props['data-selection-outline']), ['entity-1', 'entity-2']);
     assert.deepEqual(outlines.map(node => [node.props.x, node.props.y, node.props.width, node.props.height]), [
-        [-3, -1, 10, 8],
-        [-9, 2, 8, 8]
+        [-192, -64, 640, 512],
+        [-576, 128, 512, 512]
     ]);
     const selectionSvg = findNode(tree, node => node.type === 'svg' && node.props['aria-label'] === 'Selected entities');
     assert.match(selectionSvg.props.className, /pointer-events-none/);
@@ -294,7 +308,7 @@ test('combat collider overlay bounds include the selected transform and authored
         { type: 'Hitbox', color: '#fb7185', x: 3, y: -1.5, width: 2, height: 1 },
         { type: 'Hurtbox', color: '#38bdf8', x: 4, y: -2, width: 1, height: 3 },
         { type: 'TriggerCollider', color: '#facc15', x: 6, y: -5, width: 4, height: 2 },
-        { type: 'BoxCollider', color: '#a78bfa', x: 5, y: 0, width: 100, height: 100 }
+        { type: 'BoxCollider', color: '#a78bfa', x: -45, y: -50, width: 100, height: 100 }
     ]);
     assert.deepEqual(getColliderOverlayBounds({ transform: { position: { x: 0, y: 0 } }, components: { Hitbox: { width: 0, height: 1 } } }), []);
     assert.deepEqual(getColliderOverlayBounds({
@@ -333,8 +347,8 @@ test('Scene View renders selected hitbox, hurtbox, and trigger bounds over the v
     assert.ok(hitbox, 'selected Hitbox overlay is rendered');
     assert.ok(hurtbox, 'selected Hurtbox overlay is rendered');
     assert.ok(trigger, 'selected TriggerCollider overlay is rendered');
-    assert.deepEqual([hitbox.props.x, hitbox.props.y, hitbox.props.width, hitbox.props.height], [1, 3.5, 2, 1]);
-    assert.deepEqual([hurtbox.props.x, hurtbox.props.y, hurtbox.props.width, hurtbox.props.height], [2.25, 2, 1, 2]);
+    assert.deepEqual([hitbox.props.x, hitbox.props.y, hitbox.props.width, hitbox.props.height], [64, 224, 128, 64]);
+    assert.deepEqual([hurtbox.props.x, hurtbox.props.y, hurtbox.props.width, hurtbox.props.height], [144, 128, 64, 128]);
     assert.equal(trigger.props.strokeDasharray, '5 3');
 });
 
@@ -354,14 +368,14 @@ test('Scene View renders an accessible, non-intercepting marker for each selecte
         assert.equal(marker.props['aria-label'], `Selected Spawn Point facing ${facing}`);
         assert.equal(marker.props.pointerEvents, 'none');
         assert.ok(shaft, `${facing} direction shaft is rendered`);
-        assert.deepEqual([shaft.props.x1, shaft.props.y1, shaft.props.x2, shaft.props.y2], [2, 3, 2 + direction.x * 24, 3 + direction.y * 24]);
+        assert.deepEqual([shaft.props.x1, shaft.props.y1, shaft.props.x2, shaft.props.y2], [128, 192, 128 + direction.x * 24, 192 + direction.y * 24]);
     }
 });
 
 test('Scene View SpawnPoint marker follows camera pan and zoom without capturing viewport input', () => {
     const harness = createSceneViewHarness('left');
     let tree = harness.render();
-    const viewport = findNode(tree, node => node.props?.className === 'flex-1 relative cursor-crosshair');
+    const viewport = findNode(tree, node => node.props?.['data-scene-viewport'] === true);
     viewport.props.onMouseDown({ button: 1, clientX: 0, clientY: 0, preventDefault() {} });
     tree = harness.render();
     tree.props.onMouseMove({ clientX: 10, clientY: 15 });
@@ -373,7 +387,7 @@ test('Scene View SpawnPoint marker follows camera pan and zoom without capturing
     const shaft = findNode(tree, node => node.props?.['data-spawn-facing-arrow'] === 'shaft');
     assert.deepEqual(
         [shaft.props.x1, shaft.props.y1, shaft.props.x2, shaft.props.y2].map(value => Number(value.toFixed(5))),
-        [-26.8, -10.2, -53.2, -10.2]
+        [111.8, 197.7, 85.4, 197.7]
     );
     const marker = findNode(tree, node => node.props?.['data-spawn-facing'] === 'left');
     assert.equal(marker.props.pointerEvents, 'none');
@@ -389,10 +403,10 @@ test('Scene View omits direction markers for absent or unsupported SpawnPoint fa
 
 test('Scene View resizes every collider shape and syncs Inspector, canonical scene, and runtime payloads', () => {
     const cases = [
-        ['Hitbox', { width: 12, height: 6 }],
-        ['Hurtbox', { width: 11, height: 7 }],
-        ['TriggerCollider', { width: 13, height: 6 }],
-        ['BoxCollider', { size: { x: 14, y: 8 } }]
+        ['Hitbox', { width: 2.15625, height: 1.078125 }],
+        ['Hurtbox', { width: 1.15625, height: 2.078125 }],
+        ['TriggerCollider', { width: 3.15625, height: 1.078125 }],
+        ['BoxCollider', { size: { x: 4.15625, y: 3.078125 } }]
     ];
 
     for (const [type, expected] of cases) {
@@ -414,7 +428,7 @@ test('Scene View resizes every collider shape and syncs Inspector, canonical sce
         const edits = harness.componentEdits.filter(edit => edit.component === type);
         const normalizedEdits = JSON.parse(JSON.stringify(edits.map(({ field, value }) => [field, value])));
         if (type === 'BoxCollider') {
-            assert.deepEqual(normalizedEdits, [['size', { x: 14, y: 8 }]]);
+            assert.deepEqual(normalizedEdits, [['size', { x: 4.15625, y: 3.078125 }]]);
         } else {
             assert.deepEqual(normalizedEdits, [['width', expected.width], ['height', expected.height]]);
         }
@@ -425,9 +439,9 @@ test('Scene View resizes every collider shape and syncs Inspector, canonical sce
 test('Scene View collider resize handles are focusable and resize all collider shapes with arrow keys', () => {
     const cases = [
         ['Hitbox', 'ArrowRight', false, { width: 2.1, height: 1 }],
-        ['Hurtbox', 'ArrowUp', false, { width: 1, height: 2.1 }],
+        ['Hurtbox', 'ArrowUp', false, { width: 1, height: 1.9 }],
         ['TriggerCollider', 'ArrowLeft', false, { width: 2.9, height: 1 }],
-        ['BoxCollider', 'ArrowDown', false, { size: { x: 4, y: 2.9 } }],
+        ['BoxCollider', 'ArrowDown', false, { size: { x: 4, y: 3.1 } }],
         ['Hitbox', 'ArrowRight', true, { width: 3, height: 1 }]
     ];
 
@@ -468,7 +482,7 @@ test('Scene View collider resize handles are focusable and resize all collider s
 
 test('Scene View UI emits viewport selection and cursor-anchored zoom updates', () => {
     const harness = createSceneViewHarness();
-    const viewport = findNode(harness.render(), node => node.props?.className === 'flex-1 relative cursor-crosshair');
+    const viewport = findNode(harness.render(), node => node.props?.['data-scene-viewport'] === true);
     viewport.props.onClick({ button: 0, altKey: false, clientX: 40, clientY: 70, currentTarget: {
         getBoundingClientRect: () => ({ left: 10, top: 20 })
     } });
@@ -476,14 +490,16 @@ test('Scene View UI emits viewport selection and cursor-anchored zoom updates', 
         getBoundingClientRect: () => ({ left: 10, top: 20 })
     } });
     viewport.props.onWheel({ clientX: 60, clientY: 80, deltaY: -1 });
+    assert.deepEqual(JSON.parse(JSON.stringify(harness.viewportMessages)), [
+        { type: 'editor:viewport-select', payload: { x: 30, y: 50, excludedIds: [], multi: false } },
+        { type: 'editor:viewport-select', payload: { x: 40, y: 55, excludedIds: [], multi: true } }
+    ]);
     assert.deepEqual(JSON.parse(JSON.stringify(harness.notifications)), [
-        { type: 'editor:viewport-select', payload: { x: 30, y: 50, multi: false } },
-        { type: 'editor:viewport-select', payload: { x: 40, y: 55, multi: true } },
         { type: 'editor:camera-update', payload: { zoom: 1.1, x: 4.545454545454547, y: 5.45454545454546 } }
     ]);
     const source = fs.readFileSync(path.resolve('triton/src/components/panels/SceneViewPanel.tsx'), 'utf8');
     assert.match(source, /type === 'editor:select'[\s\S]*editorSelection = updateSelection\(payload\?\.ids, null, true\)/);
-    assert.match(source, /editorSelection = updateSelection\(editorSelection, selected\?\.id, Boolean\(payload\.multi\)\)[\s\S]*type: 'game:selection-changed'[\s\S]*payload: \{ ids: editorSelection \}/);
+    assert.match(source, /editorSelection = updateSelection\(editorSelection, selectedId, Boolean\(payload\.multi\)\)[\s\S]*type: 'game:selection-changed'[\s\S]*payload: \{ ids: editorSelection \}/);
 });
 
 test('toolbar zoom preserves the viewport-center world point and clamps zoom', () => {
@@ -542,7 +558,7 @@ test('Frame Selection toolbar fits every selected entity and sends the runtime c
     assert.equal(button.props.disabled, false);
     button.props.onClick();
     assert.deepEqual(JSON.parse(JSON.stringify(harness.notifications)), [
-        { type: 'editor:camera-update', payload: { zoom: 5, x: -81, y: -55.5 } }
+        { type: 'editor:camera-update', payload: { zoom: 0.6875, x: -645.8181818181819, y: -148.36363636363637 } }
     ]);
 
     const empty = findNode(createSceneViewHarness(undefined, []).render(), node => node.props?.['aria-label'] === 'Frame Selection');
@@ -574,26 +590,26 @@ test('Scene View starts its paused editor preview only after loading a scene', (
 test('Scene View UI pans the camera and moves a selected entity on its gizmo axis', () => {
     const harness = createSceneViewHarness();
     let tree = harness.render();
-    const viewport = findNode(tree, node => node.props?.className === 'flex-1 relative cursor-crosshair');
+    const viewport = findNode(tree, node => node.props?.['data-scene-viewport'] === true);
     viewport.props.onMouseDown({ button: 1, altKey: false, clientX: 10, clientY: 20, preventDefault() {} });
     tree = harness.render();
     tree.props.onMouseMove({ clientX: 30, clientY: 50 });
     tree = harness.render();
-    const handle = findNode(tree, node => node.type === 'circle' && node.props?.cx === 78);
+    const handle = findNode(tree, node => node.props?.['aria-label'] === 'Translate on X axis');
     assert.ok(handle, 'selected entity x-axis handle is rendered');
     handle.props.onMouseDown({ button: 0, clientX: 58, clientY: 3, preventDefault() {}, stopPropagation() {} });
     tree.props.onMouseMove({ clientX: 78, clientY: 3 });
     assert.deepEqual(JSON.parse(JSON.stringify(harness.notifications)), [
         { type: 'editor:camera-update', payload: { zoom: 1, x: -20, y: -30 } },
         { type: 'editor:update-component', payload: {
-            id: 'entity-1', component: 'transform', data: { position: { x: 22, y: 3 } }
+            id: 'entity-1', component: 'transform', data: { position: { x: 2.3125, y: 3 } }
         } }
     ]);
     assert.deepEqual(JSON.parse(JSON.stringify(harness.canonicalEdits)), [
-        { id: 'entity-1', component: 'transform', data: { position: { x: 22, y: 3 } } }
+        { id: 'entity-1', component: 'transform', data: { position: { x: 2.3125, y: 3 } } }
     ]);
     assert.deepEqual(JSON.parse(JSON.stringify(harness.componentEdits)), [
-        { id: 'entity-1', component: 'transform', field: 'position', value: { x: 22, y: 3 } }
+        { id: 'entity-1', component: 'transform', field: 'position', value: { x: 2.3125, y: 3 } }
     ]);
 });
 
@@ -611,8 +627,8 @@ test('Scene View translates selected entities together and limits the group gizm
     xHandle.props.onMouseDown({ button: 0, clientX: 56, clientY: 5.5, preventDefault() {}, stopPropagation() {} });
     tree.props.onMouseMove({ clientX: 76, clientY: 5.5 });
     assert.deepEqual(JSON.parse(JSON.stringify(harness.canonicalEdits)), [
-        { id: 'entity-1', component: 'transform', data: { position: { x: 22, y: 3 } } },
-        { id: 'entity-2', component: 'transform', data: { position: { x: 15, y: 6 } } }
+        { id: 'entity-1', component: 'transform', data: { position: { x: 2.3125, y: 3 } } },
+        { id: 'entity-2', component: 'transform', data: { position: { x: -4.6875, y: 6 } } }
     ]);
 
     const keyboardHarness = createSceneViewHarness(undefined, ids);
@@ -620,8 +636,8 @@ test('Scene View translates selected entities together and limits the group gizm
     const yHandle = findNode(tree, node => node.props?.['aria-label'] === 'Translate on Y axis');
     yHandle.props.onKeyDown({ key: 'ArrowUp', shiftKey: false, preventDefault() {}, stopPropagation() {} });
     assert.deepEqual(JSON.parse(JSON.stringify(keyboardHarness.canonicalEdits)), [
-        { id: 'entity-1', component: 'transform', data: { position: { x: 2, y: 3.1 } } },
-        { id: 'entity-2', component: 'transform', data: { position: { x: -5, y: 6.1 } } }
+        { id: 'entity-1', component: 'transform', data: { position: { x: 2, y: 2.9 } } },
+        { id: 'entity-2', component: 'transform', data: { position: { x: -5, y: 5.9 } } }
     ]);
     assert.deepEqual(keyboardHarness.componentEdits.map(({ id, field }) => [id, field]), [
         ['entity-1', 'position'], ['entity-2', 'position']
@@ -651,8 +667,8 @@ test('Scene View transform gizmos are focusable and edit transforms with arrow-k
     const cases = [
         ['Translate on X axis', 'ArrowRight', false, { position: { x: 2.1, y: 3 } }],
         ['Translate on X axis', 'ArrowLeft', true, { position: { x: 1, y: 3 } }],
-        ['Translate on Y axis', 'ArrowDown', false, { position: { x: 2, y: 2.9 } }],
-        ['Translate on Y axis', 'ArrowUp', true, { position: { x: 2, y: 4 } }],
+        ['Translate on Y axis', 'ArrowDown', false, { position: { x: 2, y: 3.1 } }],
+        ['Translate on Y axis', 'ArrowUp', true, { position: { x: 2, y: 2 } }],
         ['Rotate selected entity', 'ArrowUp', true, { rotation: 1.5 }],
         ['Rotate selected entity', 'ArrowDown', false, { rotation: 0.4 }],
         ['Scale selected entity', 'ArrowLeft', false, { scale: { x: 0.9, y: 1.8 } }],
@@ -740,4 +756,46 @@ test('Scene View boots the engine runtime without loading the debug sample proje
     assert.match(iframe.props.srcDoc, /\/projectResourceBridge\.js/);
     assert.match(iframe.props.srcDoc, /projectResourceBridge\.setScenePath\(payload\.path\)/);
     assert.doesNotMatch(iframe.props.srcDoc, /debug_project|scenes\/demo\.scn/);
+});
+
+
+test('Scene View shape selection bounds follow authored rectangle and circle geometry', () => {
+    const rectangle = getEntitySelectionBounds({ id: 'hero', transform: { position: { x: 2, y: 4 }, scale: { x: 1, y: 1 } }, components: { Shape: { geometry: 1, param: { width: 0.65, height: 0.65 } } } });
+    assert.deepEqual(rectangle, { id: 'hero', name: '', x: 1.675, y: 3.675, width: 0.65, height: 0.65 });
+    const circle = getEntitySelectionBounds({ transform: { position: { x: 0, y: 0 }, scale: { x: 1, y: 1 }, rotation: Math.PI / 4 }, components: { Shape: { geometry: 0, param: { radius: 0.5 } } } });
+    assert.ok(Math.abs(circle.width - 1) < 1e-12);
+    assert.ok(Math.abs(circle.height - 1) < 1e-12);
+});
+
+test('Scene View render-aware picking follows pixels, pan, zoom, draw order and selection locks', () => {
+    class Transform { constructor(x, y) { this.position = { x, y }; this.scale = { x: 1, y: 1 }; this.rotation = 0; } }
+    class Shape { constructor(width, height, order) { this.geometry = 1; this._properties = { param: { width, height, fill: true } }; this.renderOrder = order; } draw() {} }
+    const floor = { id: 'floor', components: [new Transform(7, 4.5), new Shape(14, 9, 0)], children: [] };
+    const hero = { id: 'hero', components: [new Transform(2, 4), new Shape(0.65, 0.65, 2)], children: [] };
+    const scene = { children: [floor, hero], activeCamera: { screenToWorld(x, y) { return { x: x / 0.5 + 20, y: y / 0.5 + 40 }; } } };
+    assert.equal(pickRuntimeEntityAt(scene, 54, 108), 'hero');
+    assert.equal(pickRuntimeEntityAt(scene, 54, 108, 64, ['floor']), 'hero');
+    assert.equal(pickRuntimeEntityAt(scene, 54, 108, 64, ['hero', 'floor']), null);
+    assert.equal(pickRuntimeEntityAt(scene, 900, 900), null);
+});
+
+
+test('Scene View tool mode shows only the intended handles and can change through its toolbar', () => {
+    const harness = createSceneViewHarness(undefined, ['entity-1'], 'move');
+    let tree = harness.render();
+    assert.ok(findNode(tree, node => node.props?.['aria-label'] === 'Translate on X axis'));
+    assert.equal(findNode(tree, node => node.props?.['aria-label'] === 'Rotate selected entity'), null);
+    assert.equal(findNode(tree, node => node.props?.['aria-label'] === 'Scale selected entity'), null);
+    const modes = [
+        ['rotate', 'Rotate selected entity'], ['scale', 'Scale selected entity'], ['rect', 'Resize selected entity']
+    ];
+    for (const [tool, label] of modes) {
+        findNode(tree, node => node.type === 'SceneToolBar').props.onToolChange(tool);
+        tree = harness.render();
+        assert.ok(findNode(tree, node => node.props?.['aria-label'] === label));
+        assert.equal(findNode(tree, node => node.props?.['aria-label'] === 'Translate on X axis'), null);
+    }
+    findNode(tree, node => node.type === 'SceneToolBar').props.onToolChange('hand');
+    tree = harness.render();
+    assert.equal(findNode(tree, node => node.props?.['aria-label'] === 'Move selected entity'), null);
 });

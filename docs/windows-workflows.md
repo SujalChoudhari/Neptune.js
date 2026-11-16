@@ -25,6 +25,12 @@ This validates native file persistence and real editor controls. It is separate 
 
 The browser regression opens `examples/emberfall/index.html`, reads its `project.npt` and scene, starts the runtime, and exercises ordinary keyboard movement, collision, attacks and save/load. It reloads the runtime to verify persistent saves and resets the project to confirm project-owned UI is disposed. Additional tests cover quick key taps, repeat suppression, focus-loss cleanup, module path restrictions and behaviour destruction.
 
-## Remaining scope
+## Viewport and Windows launcher follow-up
+
+Verified the restored original beveled controls in the native editor. New tool icons are 24px squares; Snap and Reset layout fit their labels. Clicked Wanderer directly in Scene View and confirmed the gizmo origin matches its rendered position. W moved 64 screen pixels at 100% zoom to exactly one world unit; Escape restored the initial transform. E/R/T/Y switched handles. Save scene wrote the expected transform to the actual scene file. Browser regressions additionally cover pan/zoom, foreground selection without colliders, drag cancellation outside the viewport and typing-safe shortcuts. Full nested renderable-parent gizmo editing remains incomplete.
+
+The Windows product and window title are now **Neptune.js Triton**. Run `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/install-start-menu.ps1` from the checkout to create a per-user Start menu entry. This development shortcut starts the checkout through `scripts/start-editor.ps1`; it requires installed Node/Yarn/Rust/C++ prerequisites and is not a packaged release. Paths derive from the checkout. A minimized console keeps startup errors visible. Launched the installed shortcut and verified the real native window title plus scene editing and saving.
+
+## Remaining game scope
 
 Emberfall is one room with placeholder shapes and three melee guardians. Multi-map progression, ranged abilities, dialogue, equipment UI and phased bosses remain on the README roadmap. Project modules use the injected engine API; relative imports from their Blob URLs are not supported. The current generic inspector preserves module/settings data but does not offer a specialized settings editor.

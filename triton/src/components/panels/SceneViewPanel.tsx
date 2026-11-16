@@ -4,16 +4,31 @@ import cameraUrl from "../../../../src/thalassa/camera.js?url";
 import scenePickingUrl from "@/lib/scenePicking.mjs?url";
 import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
 import { runtimeEntityBridgeScript } from "../../lib/runtimeEntityBridge.mjs";
-import { runtimeSelectionBridgeScript } from "../../lib/runtimeSelectionBridge.mjs";
+import { runtimeSelectionBridgeScript, pickRuntimeEntityAt, shapeContainsPoint } from "../../lib/runtimeSelectionBridge.mjs";
 import { runtimeComponentBridgeScript } from "../../lib/runtimeComponentBridge.mjs";
-import { translateOnAxis, resizeColliderBounds, zoomAtPoint, getFramingCamera, getColliderOverlayBounds, getEntitySelectionBounds, hasCompleteGroupTransformSelection, isSceneViewBridgeMessageSource } from "@/lib/scenePicking.mjs";
+import { resizeColliderBounds, zoomAtPoint, getFramingCamera, getColliderOverlayBounds, getEntitySelectionBounds, hasCompleteGroupTransformSelection, isSceneViewBridgeMessageSource } from "@/lib/scenePicking.mjs";
 import { invoke } from "@tauri-apps/api/core";
 import { ThemedIconButton } from "@/components/library";
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Maximize, ZoomIn, ZoomOut } from "lucide-react";
 import { useGameContext } from '@/context/GameContext';
 import { EditorGameRunner } from '@/lib/editorGameRunner';
+import { SceneToolBar } from './SceneToolBar';
+import { getSceneToolShortcut, getSceneDragDelta, moveScenePosition, resizeSceneScale, captureTransformSnapshot, isSceneShortcutTargetBlocked } from '@/lib/sceneTools.mjs';
+import type { SceneTool, TransformSnapshot } from '@/lib/sceneTools.mjs';
+
+type GizmoOperation = 'translate' | 'translate-x' | 'translate-y' | 'rotate' | 'scale' | 'rect';
+
+function transformTransaction(phase: 'begin' | 'commit' | 'cancel', before: TransformSnapshot) {
+    if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('editor:transform-transaction', { detail: { phase, before } }));
+    }
+}
 
 type SpawnPointFacing = 'right' | 'down' | 'left' | 'up';
+
+// Transform/geometry values use metres; Camera positions and pan use render pixels.
+// Keep conversions at the viewport boundary, matching Maths.METER_TO_PIXEL.
+const pixelsPerMeter = 64;
 
 type SpawnPointOverlayEntity = {
     transform?: { position?: { x?: number; y?: number } };
@@ -39,10 +54,16 @@ export function getSpawnPointOverlay(entity: SpawnPointOverlayEntity) {
 export function SceneViewPanel() {
     const containerRef = useRef<HTMLDivElement>(null);
     const iframeRef = useRef<HTMLIFrameElement>(null);
-    const { notifyGame, updateComponent, selectedEntityData, selectedEntitiesData, selectedIds } = useGameContext();
+    const [tool, setTool] = useState<SceneTool>('move');
+    const [snapEnabled, setSnapEnabled] = useState(false);
+    const [snapStep, setSnapStep] = useState(0.25);
+    const [isTransformDragging, setIsTransformDragging] = useState(false);
+    const { notifyGame, updateComponent, selectedEntityData, selectedEntitiesData, selectedIds, entities } = useGameContext();
     const [gizmoPosition, setGizmoPosition] = useState<{ x: number; y: number } | null>(null);
     const gizmoDragRef = useRef<{
-        operation: 'translate-x' | 'translate-y' | 'rotate' | 'scale';
+        operation: GizmoOperation;
+        snapshot: TransformSnapshot;
+        size: { width: number; height: number };
         id: string;
         ids: string[];
         startPositions: Record<string, { x: number; y: number }>;
@@ -62,7 +83,7 @@ export function SceneViewPanel() {
     } | null>(null);
     const suppressClickRef = useRef(false);
     const selectionOverlays = useMemo(() => selectedIds
-        .map(id => getEntitySelectionBounds(selectedEntitiesData[id]))
+        .map(id => getEntitySelectionBounds(selectedEntitiesData[id], 0.25))
         .filter((bounds): bounds is NonNullable<typeof bounds> => bounds !== null), [selectedIds, selectedEntitiesData]);
     const canFrameSelection = selectedIds.length > 0 && selectionOverlays.length === selectedIds.length;
     const groupGizmoPosition = useMemo(() => selectionOverlays.length > 0 ? {
@@ -154,10 +175,12 @@ export function SceneViewPanel() {
         notifyGame('editor:camera-update', { zoom: newZoom, x: newPanX, y: newPanY });
     }, [zoom, pan, notifyGame]);
 
-    const beginGizmoDrag = (operation: 'translate-x' | 'translate-y' | 'rotate' | 'scale', event: React.MouseEvent<SVGCircleElement>) => {
+    const beginGizmoDrag = (operation: GizmoOperation, event: React.MouseEvent<SVGCircleElement>) => {
         if (event.button !== 0 || selectedIds.length === 0 || !selectedEntityData) return;
         if (selectedIds.length > 1 && !hasCompleteGroupTransform) return;
-        if (selectedIds.length > 1 && operation !== 'translate-x' && operation !== 'translate-y') return;
+        if (selectedIds.length > 1 && !operation.startsWith('translate')) return;
+        const snapshot = captureTransformSnapshot(selectedIds, selectedEntitiesData);
+        if (!snapshot) return;
         const startPositions: Record<string, { x: number; y: number }> = {};
         for (const id of selectedIds) {
             const start = selectedEntitiesData[id]?.transform.position;
@@ -170,6 +193,8 @@ export function SceneViewPanel() {
         if (!position) return;
         gizmoDragRef.current = {
             operation,
+            snapshot,
+            size: { width: selectionOverlays[0]?.width || 1, height: selectionOverlays[0]?.height || 1 },
             id: selectedIds[selectedIds.length - 1],
             ids: [...selectedIds],
             startPositions,
@@ -179,6 +204,8 @@ export function SceneViewPanel() {
             rotation: selectedEntityData.transform.rotation,
             scale: { ...selectedEntityData.transform.scale }
         };
+        setIsTransformDragging(true);
+        transformTransaction('begin', snapshot);
         event.preventDefault();
         event.stopPropagation();
     };
@@ -217,8 +244,8 @@ export function SceneViewPanel() {
         switch (event.key) {
             case 'ArrowLeft': deltaX = -step; break;
             case 'ArrowRight': deltaX = step; break;
-            case 'ArrowUp': deltaY = step; break;
-            case 'ArrowDown': deltaY = -step; break;
+            case 'ArrowUp': deltaY = -step; break;
+            case 'ArrowDown': deltaY = step; break;
             default: return;
         }
 
@@ -238,7 +265,7 @@ export function SceneViewPanel() {
             const isX = operation === 'translate-x';
             const validKeys = isX ? ['ArrowLeft', 'ArrowRight'] : ['ArrowUp', 'ArrowDown'];
             if (!validKeys.includes(event.key)) return;
-            const direction = event.key === 'ArrowRight' || event.key === 'ArrowUp' ? 1 : -1;
+            const direction = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1;
             const delta = direction * (event.shiftKey ? 1 : 0.1);
             event.preventDefault();
             event.stopPropagation();
@@ -268,7 +295,7 @@ export function SceneViewPanel() {
             data = { position: { ...transform.position, x: transform.position.x + direction * step } };
         } else if (operation === 'translate-y') {
             if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
-            const direction = event.key === 'ArrowUp' ? 1 : -1;
+            const direction = event.key === 'ArrowDown' ? 1 : -1;
             data = { position: { ...transform.position, y: transform.position.y + direction * step } };
         } else if (operation === 'rotate') {
             const direction = event.key === 'ArrowRight' || event.key === 'ArrowUp'
@@ -297,20 +324,21 @@ export function SceneViewPanel() {
         }
         if (e.button !== 0 || e.altKey) return;
         const rect = e.currentTarget.getBoundingClientRect();
-        notifyGame('editor:viewport-select', {
+        iframeRef.current?.contentWindow?.postMessage({ type: 'editor:viewport-select', payload: {
             x: e.clientX - rect.left,
             y: e.clientY - rect.top,
+            excludedIds: Object.values(entities || {}).filter(entity => entity.locked).map(entity => entity.id),
             multi: Boolean(e.shiftKey || e.ctrlKey || e.metaKey)
-        });
-    }, [notifyGame]);
+        } }, '*');
+    }, [entities]);
 
     const handleMouseDown = useCallback((e: React.MouseEvent) => {
-        if (e.button === 1 || (e.button === 0 && e.altKey)) { // Middle mouse or Alt+Left
+        if (e.button === 1 || (e.button === 0 && (e.altKey || tool === 'hand'))) {
             setIsPanning(true);
             setLastMousePos({ x: e.clientX, y: e.clientY });
             e.preventDefault();
         }
-    }, []);
+    }, [tool]);
 
     const handleMouseMove = (e: React.MouseEvent) => {
         const colliderDrag = colliderResizeDragRef.current;
@@ -319,7 +347,7 @@ export function SceneViewPanel() {
                 { width: colliderDrag.width, height: colliderDrag.height },
                 e.clientX - colliderDrag.startX,
                 e.clientY - colliderDrag.startY,
-                zoom
+                zoom * pixelsPerMeter
             );
             applyColliderResizeEdit(colliderDrag.id, colliderDrag.type, size.width, size.height);
             return;
@@ -337,7 +365,13 @@ export function SceneViewPanel() {
                 applyTransformEdit(drag.id, { scale: { x: drag.scale.x * factor, y: drag.scale.y * factor } });
                 return;
             }
-            const nextPosition = translateOnAxis(drag.position, deltaX, deltaY, zoom, drag.operation === 'translate-x' ? 'x' : 'y');
+            const delta = getSceneDragDelta(deltaX, deltaY, { zoom, pixelsPerUnit: pixelsPerMeter, fine: e.shiftKey });
+            if (drag.operation === 'rect') {
+                applyTransformEdit(drag.id, { scale: resizeSceneScale(drag.scale, drag.size, { x: delta.x * 2, y: delta.y * 2 }, { uniform: e.shiftKey }) });
+                return;
+            }
+            const axis = drag.operation === 'translate-x' ? 'x' : drag.operation === 'translate-y' ? 'y' : 'both';
+            const nextPosition = moveScenePosition(drag.position, delta, { axis, snapStep: snapEnabled || e.ctrlKey ? snapStep : null });
             setGizmoPosition(nextPosition);
             const moveX = nextPosition.x - drag.position.x;
             const moveY = nextPosition.y - drag.position.y;
@@ -348,6 +382,7 @@ export function SceneViewPanel() {
             return;
         }
         if (isPanning) {
+            suppressClickRef.current = true;
             const dx = e.clientX - lastMousePos.x;
             const dy = e.clientY - lastMousePos.y;
 
@@ -365,10 +400,12 @@ export function SceneViewPanel() {
 
     const handleMouseUp = () => {
         if (gizmoDragRef.current || colliderResizeDragRef.current) {
+            if (gizmoDragRef.current) transformTransaction('commit', gizmoDragRef.current.snapshot);
             gizmoDragRef.current = null;
             colliderResizeDragRef.current = null;
             suppressClickRef.current = true;
         }
+        setIsTransformDragging(false);
         setIsPanning(false);
     };
 
@@ -402,12 +439,72 @@ export function SceneViewPanel() {
         if (!canFrameSelection) return;
         const rect = containerRef.current?.getBoundingClientRect();
         if (!rect) return;
-        const camera = getFramingCamera(selectionOverlays, rect.width, rect.height);
+        const camera = getFramingCamera(selectionOverlays.map(bounds => ({
+            ...bounds, x: bounds.x * pixelsPerMeter, y: bounds.y * pixelsPerMeter,
+            width: bounds.width * pixelsPerMeter, height: bounds.height * pixelsPerMeter
+        })), rect.width, rect.height);
         if (!camera) return;
         setZoom(camera.zoom);
         setPan({ x: camera.x, y: camera.y });
         notifyGame('editor:camera-update', camera);
     };
+
+    const cancelDrag = () => {
+        const drag = gizmoDragRef.current;
+        if (drag) {
+            for (const [id, original] of Object.entries(drag.snapshot)) {
+                applyTransformEdit(id, { position: { ...original.position }, rotation: original.rotation, scale: { ...original.scale } });
+            }
+            setGizmoPosition(drag.position);
+            transformTransaction('cancel', drag.snapshot);
+        }
+        const collider = colliderResizeDragRef.current;
+        if (collider) applyColliderResizeEdit(collider.id, collider.type, collider.width, collider.height);
+        gizmoDragRef.current = null;
+        colliderResizeDragRef.current = null;
+        suppressClickRef.current = true;
+        setIsTransformDragging(false);
+        setIsPanning(false);
+    };
+
+    // Capture keeps one drag alive across dock/viewport boundaries. Mouse handlers
+    // remain for keyboard-accessibility harnesses and older pointer implementations.
+    const captureGizmo = (operation: GizmoOperation, event: React.PointerEvent<SVGCircleElement>) => {
+        if (event.button !== 0) return;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        beginGizmoDrag(operation, event);
+    };
+
+    useEffect(() => {
+        const move = (event: PointerEvent) => {
+            if (gizmoDragRef.current || colliderResizeDragRef.current || isPanning) handleMouseMove(event as unknown as React.MouseEvent);
+        };
+        const up = () => handleMouseUp();
+        const key = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && (gizmoDragRef.current || colliderResizeDragRef.current || isPanning)) {
+                event.preventDefault(); cancelDrag(); return;
+            }
+            const panel = containerRef.current;
+            if (!panel || panel.offsetParent === null) return;
+            const modalOpen = Boolean(document.querySelector('[role="dialog"], dialog[open]'));
+            const next = getSceneToolShortcut(event, { modalOpen, activeElement: document.activeElement });
+            if (next) { event.preventDefault(); setTool(next); }
+            else if (event.key.toLowerCase() === 'f' && !event.ctrlKey && !event.metaKey && !event.altKey && !modalOpen
+                && !isSceneShortcutTargetBlocked(event.target) && !isSceneShortcutTargetBlocked(document.activeElement)) {
+                event.preventDefault(); frameSelection();
+            }
+        };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+        window.addEventListener('pointercancel', cancelDrag);
+        window.addEventListener('keydown', key);
+        return () => {
+            window.removeEventListener('pointermove', move);
+            window.removeEventListener('pointerup', up);
+            window.removeEventListener('pointercancel', cancelDrag);
+            window.removeEventListener('keydown', key);
+        };
+    });
 
     // --- Bridge Script ---
     // Inject Editor Camera logic
@@ -443,6 +540,8 @@ export function SceneViewPanel() {
         window.__neptuneEngineModule = engineModule;
         ${runtimeEntityBridgeScript}
         ${runtimeSelectionBridgeScript}
+        const shapeContainsPoint = ${shapeContainsPoint.toString()};
+        const pickSceneEntityAt = ${pickRuntimeEntityAt.toString()};
         ${runtimeComponentBridgeScript}
         
         const findEntity = (root, id) => {
@@ -464,6 +563,7 @@ export function SceneViewPanel() {
 
         waitForEngine().then(game => {
              console.log("[SceneView] Game Connected");
+             game.clearColor = engineModule.Color.FromHex(0x20262d);
              window.parent.postMessage({ type: 'game:ready' }, '*');
              
              // Cleanup UI
@@ -498,9 +598,8 @@ export function SceneViewPanel() {
                      editorCamera.setZoom(payload.zoom);
                  }
                  else if (type === 'editor:viewport-select') {
-                     const world = editorCamera.screenToWorld(payload.x, payload.y);
-                     const selected = game.scene && pickEntityAt(game.scene, world.x, world.y);
-                     editorSelection = updateSelection(editorSelection, selected?.id, Boolean(payload.multi));
+                     const selectedId = game.scene && pickSceneEntityAt(game.scene, payload.x, payload.y, ${pixelsPerMeter}, payload.excludedIds || []);
+                     editorSelection = updateSelection(editorSelection, selectedId, Boolean(payload.multi));
                      window.parent.postMessage({
                          type: 'game:selection-changed',
                          payload: { ids: editorSelection }
@@ -558,10 +657,10 @@ export function SceneViewPanel() {
     const activeGizmoPosition = gizmoPosition || (selectedIds.length > 1
         ? groupGizmoPosition
         : selectedEntityData?.transform.position);
-    const gizmoX = activeGizmoPosition ? (activeGizmoPosition.x - pan.x) * zoom : 0;
-    const gizmoY = activeGizmoPosition ? (activeGizmoPosition.y - pan.y) * zoom : 0;
-    const spawnMarkerX = spawnFacingMarker ? (spawnFacingMarker.x - pan.x) * zoom : 0;
-    const spawnMarkerY = spawnFacingMarker ? (spawnFacingMarker.y - pan.y) * zoom : 0;
+    const gizmoX = activeGizmoPosition ? (activeGizmoPosition.x * pixelsPerMeter - pan.x) * zoom : 0;
+    const gizmoY = activeGizmoPosition ? (activeGizmoPosition.y * pixelsPerMeter - pan.y) * zoom : 0;
+    const spawnMarkerX = spawnFacingMarker ? (spawnFacingMarker.x * pixelsPerMeter - pan.x) * zoom : 0;
+    const spawnMarkerY = spawnFacingMarker ? (spawnFacingMarker.y * pixelsPerMeter - pan.y) * zoom : 0;
     const spawnMarkerTipX = spawnMarkerX + (spawnFacingMarker?.direction.x || 0) * 24 * zoom;
     const spawnMarkerTipY = spawnMarkerY + (spawnFacingMarker?.direction.y || 0) * 24 * zoom;
     const spawnArrowBaseX = spawnMarkerTipX - (spawnFacingMarker?.direction.x || 0) * 7 * zoom;
@@ -573,14 +672,17 @@ export function SceneViewPanel() {
     return (
         <div
             ref={containerRef}
-            className="w-full h-full bg-[#111] relative overflow-hidden flex flex-col"
+            className="w-full h-full min-w-0 min-h-0 bg-background relative overflow-hidden flex flex-col"
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
         >
+            <SceneToolBar tool={tool} onToolChange={setTool} snapEnabled={snapEnabled} onSnapChange={setSnapEnabled} snapStep={snapStep} onSnapStepChange={setSnapStep} />
+            {isTransformDragging && selectedEntityData && <div data-drag-feedback className="absolute bottom-3 left-3 z-30 rounded border border-border bg-card px-2 py-1 text-xs tabular-nums text-foreground">
+                X {selectedEntityData.transform.position.x.toFixed(2)} · Y {selectedEntityData.transform.position.y.toFixed(2)} · {tool}
+            </div>}
             {/* Floating Controls */}
-            <div className="absolute bottom-4 right-4 flex flex-row gap-2 z-20 pointer-events-auto items-center">
-                <div className="bg-black/50 backdrop-blur-md text-xs text-white px-2 py-1 rounded text-center select-none mr-2">
+            <div className="absolute bottom-2 right-2 flex flex-row gap-1 z-20 pointer-events-auto items-center">
+                <div className="bg-black/50 text-[11px] text-white px-1.5 py-0.5 rounded text-center select-none">
                     {Math.round(zoom * 100)}%
                 </div>
                 <ThemedIconButton size="sm" onClick={frameSelection} disabled={!canFrameSelection} title="Frame Selection" aria-label="Frame Selection">
@@ -610,7 +712,14 @@ export function SceneViewPanel() {
             </div>
 
             <div
-                className="flex-1 relative cursor-crosshair"
+                data-scene-viewport
+                className={`flex-1 min-h-0 relative ${tool === 'hand' ? 'cursor-grab' : 'cursor-crosshair'}`}
+                onPointerDown={event => {
+                    if (event.button === 1 || (event.button === 0 && (tool === 'hand' || event.altKey))) {
+                        event.currentTarget.setPointerCapture(event.pointerId);
+                        handleMouseDown(event);
+                    }
+                }}
                 onMouseDown={handleMouseDown}
                 onClick={handleViewportClick}
                 onWheel={handleWheel}
@@ -632,10 +741,10 @@ export function SceneViewPanel() {
                                 key={bounds.id}
                                 aria-label={`Selected ${bounds.name || bounds.id}`}
                                 data-selection-outline={bounds.id}
-                                x={(bounds.x - pan.x) * zoom}
-                                y={(bounds.y - pan.y) * zoom}
-                                width={bounds.width * zoom}
-                                height={bounds.height * zoom}
+                                x={(bounds.x * pixelsPerMeter - pan.x) * zoom}
+                                y={(bounds.y * pixelsPerMeter - pan.y) * zoom}
+                                width={bounds.width * pixelsPerMeter * zoom}
+                                height={bounds.height * pixelsPerMeter * zoom}
                                 fill="rgba(56, 189, 248, 0.12)"
                                 stroke="#38bdf8"
                                 strokeWidth={2}
@@ -646,7 +755,7 @@ export function SceneViewPanel() {
                     </svg>
                 )}
                 {selectedIds.length > 0 && activeGizmoPosition
-                    && (selectedIds.length === 1 || hasCompleteGroupTransform) && (
+                    && tool !== 'hand' && (selectedIds.length === 1 || hasCompleteGroupTransform) && (
                     <svg
                         aria-label={selectedIds.length > 1 ? 'Move selected entities' : 'Move selected entity'}
                         className="absolute inset-0 w-full h-full overflow-visible pointer-events-none"
@@ -678,15 +787,15 @@ export function SceneViewPanel() {
                                 <path d={spawnArrowPath} fill="#fbbf24" />
                             </g>
                         )}
-                        {selectedIds.length === 1 && colliderOverlays.map((bounds) => (
+                        {selectedIds.length === 1 && (tool === 'rect' || tool === 'transform') && colliderOverlays.map((bounds) => (
                             <g key={bounds.type}>
                                 <rect
                                     aria-label={`Selected ${bounds.type} bounds`}
                                     data-collider-role={bounds.type}
-                                    x={(bounds.x - pan.x) * zoom}
-                                    y={(bounds.y - pan.y) * zoom}
-                                    width={bounds.width * zoom}
-                                    height={bounds.height * zoom}
+                                    x={(bounds.x * pixelsPerMeter - pan.x) * zoom}
+                                    y={(bounds.y * pixelsPerMeter - pan.y) * zoom}
+                                    width={bounds.width * pixelsPerMeter * zoom}
+                                    height={bounds.height * pixelsPerMeter * zoom}
                                     fill={bounds.color}
                                     fillOpacity={0.12}
                                     stroke={bounds.color}
@@ -699,8 +808,8 @@ export function SceneViewPanel() {
                                     aria-label={`Resize ${bounds.type} bounds`}
                                     aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown"
                                     data-collider-resize-handle={bounds.type}
-                                    cx={(bounds.x + bounds.width - pan.x) * zoom}
-                                    cy={(bounds.y + bounds.height - pan.y) * zoom}
+                                    cx={((bounds.x + bounds.width) * pixelsPerMeter - pan.x) * zoom}
+                                    cy={((bounds.y + bounds.height) * pixelsPerMeter - pan.y) * zoom}
                                     r="5"
                                     fill={bounds.color}
                                     stroke="#111"
@@ -713,6 +822,8 @@ export function SceneViewPanel() {
                                 />
                             </g>
                         ))}
+                        <circle data-gizmo-origin cx={gizmoX} cy={gizmoY} r="3" fill="#e5edf5" />
+                        {(tool === 'move' || tool === 'transform') && <>
                         <line x1={gizmoX} y1={gizmoY} x2={gizmoX + 56} y2={gizmoY} stroke="#ff5b5b" strokeWidth="3" />
                         <line x1={gizmoX} y1={gizmoY} x2={gizmoX} y2={gizmoY + 56} stroke="#55c878" strokeWidth="3" />
                         <circle
@@ -727,6 +838,7 @@ export function SceneViewPanel() {
                             role="button"
                             tabIndex={0}
                             onMouseDown={(event) => beginGizmoDrag('translate-x', event)}
+                            onPointerDown={(event) => captureGizmo('translate-x', event)}
                             onKeyDown={(event) => adjustGizmoWithKeyboard('translate-x', event)}
                         />
                         <circle
@@ -741,14 +853,20 @@ export function SceneViewPanel() {
                             role="button"
                             tabIndex={0}
                             onMouseDown={(event) => beginGizmoDrag('translate-y', event)}
+                            onPointerDown={(event) => captureGizmo('translate-y', event)}
                             onKeyDown={(event) => adjustGizmoWithKeyboard('translate-y', event)}
                         />
+                        <circle cx={gizmoX} cy={gizmoY} r="9" fill="#e2eaf0" stroke="#28333d" strokeWidth="2"
+                            role="button" tabIndex={0} aria-label="Move selected entity freely" className="pointer-events-auto cursor-move"
+                            onMouseDown={event => beginGizmoDrag('translate', event)} onPointerDown={event => captureGizmo('translate', event)} />
+                        </>}
                         {selectedIds.length === 1 && (
                             <>
-                                <circle
+                                {(tool === 'rotate' || tool === 'transform') && <circle
                                     cx={gizmoX}
                                     cy={gizmoY}
                                     r="34"
+                                    style={{ pointerEvents: 'all' }}
                                     fill="none"
                                     stroke="#6e8bff"
                                     strokeWidth="3"
@@ -759,9 +877,10 @@ export function SceneViewPanel() {
                                     role="button"
                                     tabIndex={0}
                                     onMouseDown={(event) => beginGizmoDrag('rotate', event)}
+                            onPointerDown={(event) => captureGizmo('rotate', event)}
                                     onKeyDown={(event) => adjustGizmoWithKeyboard('rotate', event)}
-                                />
-                                <circle
+                                />}
+                                {(tool === 'scale' || tool === 'transform') && <circle
                                     cx={gizmoX + 48}
                                     cy={gizmoY + 48}
                                     r="7"
@@ -773,8 +892,16 @@ export function SceneViewPanel() {
                                     role="button"
                                     tabIndex={0}
                                     onMouseDown={(event) => beginGizmoDrag('scale', event)}
+                            onPointerDown={(event) => captureGizmo('scale', event)}
                                     onKeyDown={(event) => adjustGizmoWithKeyboard('scale', event)}
-                                />
+                                />}
+                                {tool === 'rect' && selectionOverlays[0] && <circle
+                                    cx={((selectionOverlays[0].x + selectionOverlays[0].width) * pixelsPerMeter - pan.x) * zoom}
+                                    cy={((selectionOverlays[0].y + selectionOverlays[0].height) * pixelsPerMeter - pan.y) * zoom}
+                                    r="8" fill="#63c6d2" stroke="#182027" strokeWidth="2" role="button" tabIndex={0}
+                                    aria-label="Resize selected entity" className="pointer-events-auto cursor-nwse-resize"
+                                    onMouseDown={event => beginGizmoDrag('rect', event)} onPointerDown={event => captureGizmo('rect', event)}
+                                    onKeyDown={event => adjustGizmoWithKeyboard('scale', event)} />}
                             </>
                         )}
                     </svg>

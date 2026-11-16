@@ -2,6 +2,8 @@ import { cn } from "@/lib/utils"
 import { Check, ChevronDown, ChevronRight } from "lucide-react"
 import { forwardRef, useState, useRef, useEffect } from "react"
 import { createPortal } from "react-dom"
+import { themedButtonBase } from "./ThemedButton"
+import { themedInputBase } from "./ThemedInput"
 
 /**
  * TRITON THEMED CONTROLS LIBRARY
@@ -125,10 +127,8 @@ export const ThemedCheckbox = ({
                 onClick={() => onChange?.(!checked)}
                 className={cn(
                     "w-4 h-4 rounded flex items-center justify-center transition-all duration-150",
-                    "bg-gradient-to-b from-[hsl(0,0%,14%)] to-[hsl(0,0%,18%)]",
-                    "border border-[hsl(0,0%,10%)] border-t-[hsl(0,0%,8%)]",
-                    "shadow-[inset_0_1px_3px_rgba(0,0,0,0.4),0_1px_0_rgba(255,255,255,0.03)]",
-                    checked && "from-[hsl(0,0%,35%)] to-[hsl(0,0%,28%)]",
+                    themedInputBase,
+                    checked && "ring-1 ring-primary/50",
                     "focus:outline-none focus:ring-1 focus:ring-[hsl(0,0%,40%)]"
                 )}
             >
@@ -177,10 +177,8 @@ export const ThemedToggle = ({
                 onClick={() => onChange?.(!checked)}
                 className={cn(
                     "w-8 h-4 rounded-full relative transition-all duration-200",
-                    "bg-gradient-to-b from-[hsl(0,0%,14%)] to-[hsl(0,0%,18%)]",
-                    "border border-[hsl(0,0%,10%)]",
-                    "shadow-[inset_0_1px_3px_rgba(0,0,0,0.4)]",
-                    checked && "from-[hsl(0,0%,35%)] to-[hsl(0,0%,28%)]",
+                    themedInputBase,
+                    checked && "ring-1 ring-primary/50",
                     "focus:outline-none focus:ring-1 focus:ring-[hsl(0,0%,40%)]"
                 )}
             >
@@ -262,10 +260,7 @@ export const ThemedSelect = ({
                 onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen) }}
                 className={cn(
                     "w-full h-7 px-2 text-xs rounded-md flex items-center justify-between gap-1",
-                    "bg-gradient-to-b from-[hsl(0,0%,28%)] to-[hsl(0,0%,22%)]",
-                    "border border-[hsl(0,0%,14%)] border-t-[hsl(0,0%,32%)]",
-                    "shadow-[0_1px_2px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.05)]",
-                    "hover:from-[hsl(0,0%,32%)] hover:to-[hsl(0,0%,26%)]",
+                    themedButtonBase,
                     "text-foreground/80 hover:text-foreground",
                     "disabled:opacity-50 disabled:cursor-not-allowed",
                     "focus:outline-none focus:ring-1 focus:ring-[hsl(0,0%,40%)]"
@@ -471,9 +466,7 @@ export const ThemedColorPicker = ({
                 className={cn(
                     "h-7 w-20 px-2 text-xs rounded-md font-mono",
                     "text-foreground/90",
-                    "bg-gradient-to-b from-[hsl(0,0%,14%)] to-[hsl(0,0%,18%)]",
-                    "border border-[hsl(0,0%,10%)] border-t-[hsl(0,0%,8%)]",
-                    "shadow-[inset_0_1px_3px_rgba(0,0,0,0.4)]",
+                    themedInputBase,
                     "focus:outline-none focus:ring-1 focus:ring-[hsl(0,0%,40%)]",
                     "disabled:opacity-50 disabled:cursor-not-allowed"
                 )}

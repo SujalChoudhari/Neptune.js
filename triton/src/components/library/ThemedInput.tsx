@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils"
 import { Minus, Plus, Search, FileCode, FileImage, FileAudio, File } from "lucide-react"
 import { forwardRef, useState, useCallback, useRef } from "react"
+import { themedButtonBase } from "./ThemedButton"
 
 /**
  * TRITON THEMED INPUT LIBRARY
@@ -11,12 +12,8 @@ import { forwardRef, useState, useCallback, useRef } from "react"
 
 // Shared base styles for inset inputs (opposite of buttons - looks recessed)
 const themedInputBase = `
-    transition-all duration-150
-    bg-gradient-to-b from-[hsl(0,0%,14%)] to-[hsl(0,0%,18%)]
-    border border-[hsl(0,0%,10%)] border-t-[hsl(0,0%,8%)]
-    shadow-[inset_0_1px_3px_rgba(0,0,0,0.4),0_1px_0_rgba(255,255,255,0.03)]
-    focus:outline-none focus:ring-1 focus:ring-[hsl(0,0%,40%)] focus:border-[hsl(0,0%,30%)]
-    placeholder:text-muted-foreground/50
+    triton-inset tabular-nums
+    placeholder:text-muted-foreground/70
     disabled:opacity-50 disabled:cursor-not-allowed
 `
 
@@ -108,10 +105,8 @@ export const ThemedNumberInput = forwardRef<HTMLInputElement, ThemedNumberInputP
 
         const spinnerButton = `
             w-5 h-full flex items-center justify-center
-            bg-gradient-to-b from-[hsl(0,0%,28%)] to-[hsl(0,0%,22%)]
+            ${themedButtonBase}
             border-l border-[hsl(0,0%,14%)]
-            hover:from-[hsl(0,0%,32%)] hover:to-[hsl(0,0%,26%)]
-            active:from-[hsl(0,0%,20%)] active:to-[hsl(0,0%,18%)]
             text-foreground/60 hover:text-foreground
             disabled:opacity-50 disabled:cursor-not-allowed
         `
@@ -452,10 +447,8 @@ export const ThemedReferenceInput = ({
                 disabled={disabled || !value}
                 className={cn(
                     "w-6 h-6 flex items-center justify-center rounded transition-all duration-150",
-                    "bg-gradient-to-b from-[hsl(0,0%,24%)] to-[hsl(0,0%,20%)]",
-                    "border border-[hsl(0,0%,12%)] border-t-[hsl(0,0%,28%)]",
-                    "shadow-[0_1px_2px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.03)]",
-                    "text-muted-foreground/80 hover:text-foreground hover:from-[hsl(0,0%,28%)]",
+                    themedButtonBase,
+                    "text-muted-foreground/80 hover:text-foreground",
                     "disabled:opacity-30 disabled:cursor-not-allowed"
                 )}
                 title="Find asset in project panel"

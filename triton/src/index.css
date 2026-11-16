@@ -8,7 +8,7 @@
   correct as you migrate.
 */
 @theme {
-  --font-sans: 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif', "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-sans: "Segoe UI", system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 @layer base {
@@ -23,69 +23,34 @@
 }
 
 @layer base {
-  :root {
-    /* HIGH-CONTRAST DARK MONOCHROME THEME */
-    --background: 0 0% 10%;
-    /* #1A1A1A - Darker Base matches Console */
-    --foreground: 0 0% 85%;
-    /* #D9D9D9 - High Readability Text */
-
-    --card: 0 0% 13%;
-    /* #212121 - Distinct Headers/Toolbars */
-    --card-foreground: 0 0% 85%;
-
-    --popover: 0 0% 8%;
-    /* #141414 - Menus are darker/focused */
-    --popover-foreground: 0 0% 90%;
-
-    --primary: 0 0% 60%;
-    /* #999999 - Gray accent */
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 0 0% 11%;
-    /* #1C1C1C */
-    --secondary-foreground: 0 0% 80%;
-
-    --muted: 0 0% 12%;
-    /* #1F1F1F */
-    --muted-foreground: 0 0% 50%;
-
-    --accent: 0 0% 25%;
-    /* #404040 */
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 60% 45%;
+  :root, .dark {
+    /* Dark neumorphism: compact raised controls and recessed working fields. */
+    --background: 210 12% 12%;
+    --foreground: 210 12% 88%;
+    --card: 210 11% 14%;
+    --card-foreground: 210 12% 88%;
+    --popover: 210 12% 13%;
+    --popover-foreground: 210 12% 92%;
+    --primary: 210 12% 72%;
+    --primary-foreground: 210 15% 10%;
+    --secondary: 210 11% 13%;
+    --secondary-foreground: 210 10% 82%;
+    --muted: 210 10% 16%;
+    --muted-foreground: 210 8% 65%;
+    --accent: 210 10% 23%;
+    --accent-foreground: 210 12% 96%;
+    --destructive: 0 65% 54%;
     --destructive-foreground: 0 0% 100%;
-
-    --border: 0 0% 6%;
-    /* #0F0F0F - Sharp Sharp Borders */
-    --input: 0 0% 11%;
-    --ring: 0 0% 50%;
-
+    --border: 210 13% 9%;
+    --input: 210 12% 11%;
+    --ring: 210 18% 68%;
     --radius: 0.25rem;
-  }
-
-  /* Dark mode matches root */
-  .dark {
-    --background: 0 0% 10%;
-    --foreground: 0 0% 85%;
-    --card: 0 0% 13%;
-    --card-foreground: 0 0% 85%;
-    --popover: 0 0% 8%;
-    --popover-foreground: 0 0% 90%;
-    --primary: 0 0% 60%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 11%;
-    --secondary-foreground: 0 0% 80%;
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 50%;
-    --accent: 0 0% 25%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 60% 45%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 6%;
-    --input: 0 0% 11%;
-    --ring: 0 0% 50%;
+    color-scheme: dark;
+    --triton-raised-fill: linear-gradient(145deg, #2b3035, #23282c);
+    --triton-raised-hover: linear-gradient(145deg, #333a40, #2a3035);
+    --triton-raised-shadow: 2px 2px 4px #101417, -1px -1px 3px #343b41, inset 0 1px 0 #ffffff08;
+    --triton-inset-fill: linear-gradient(145deg, #191e22, #20262a);
+    --triton-inset-shadow: inset 2px 2px 4px #111619, inset -1px -1px 3px #30373d, 0 1px 0 #ffffff05;
   }
 
   * {
@@ -124,34 +89,34 @@
 
 /* DOCKVIEW THEME OVERRIDES */
 .dockview-theme-dark {
-  --dv-pane-background-color: var(--background);
-  --dv-group-view-background-color: var(--background);
-  --dv-tabs-and-actions-container-background-color: var(--secondary);
-  --dv-active-tab-background-color: var(--background);
-  --dv-inactive-tab-background-color: var(--secondary);
-  --dv-tab-divider-color: var(--border);
-  --dv-separator-color: var(--border);
-  --dv-active-tab-color: var(--foreground);
-  --dv-inactive-tab-color: var(--muted-foreground);
+  --dv-pane-background-color: hsl(var(--background));
+  --dv-group-view-background-color: hsl(var(--background));
+  --dv-tabs-and-actions-container-background-color: hsl(var(--secondary));
+  --dv-active-tab-background-color: hsl(var(--background));
+  --dv-inactive-tab-background-color: hsl(var(--secondary));
+  --dv-tab-divider-color: hsl(var(--border));
+  --dv-separator-color: hsl(var(--border));
+  --dv-active-tab-color: hsl(var(--foreground));
+  --dv-inactive-tab-color: hsl(var(--muted-foreground));
 }
 
 .dockview-theme-dark .dv-tab {
   height: 28px !important;
   font-size: 11px !important;
   font-weight: 500 !important;
-  border-right: 1px solid var(--border) !important;
+  border-right: 1px solid hsl(var(--border)) !important;
   /* transition: all 0.2s ease; */
   /* DISABLED: Interferes with Drag & Drop */
   position: relative;
 }
 
 .dockview-theme-dark .dv-tab:hover {
-  background-color: var(--accent) !important;
+  background-color: hsl(var(--accent)) !important;
 }
 
 .dockview-theme-dark .dv-tab.dv-active-tab {
-  background: linear-gradient(to bottom, var(--muted), var(--background)) !important;
-  color: var(--foreground) !important;
+  background: linear-gradient(to bottom, hsl(var(--muted)), hsl(var(--background))) !important;
+  color: hsl(var(--foreground)) !important;
 }
 
 
@@ -183,3 +148,52 @@
 }
 
 /* ELECTRON WINDOW DRAG HELPERS REMOVED */
+/* Docked editors must shrink without clipping adjacent toolbars. */
+html, body, #root { min-width: 0; min-height: 0; }
+.dockview-theme-dark, .dockview-theme-dark .dv-content-container { min-width: 0; min-height: 0; }
+:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+
+/* One material vocabulary for buttons and fields, without changing control sizes. */
+.triton-raised {
+  background: var(--triton-raised-fill);
+  border: 1px solid #ffffff05;
+  border-bottom-color: #00000030;
+  box-shadow: var(--triton-raised-shadow);
+  transition: background 120ms ease, box-shadow 120ms ease, color 120ms ease;
+}
+.triton-raised:hover:not(:disabled) {
+  background: var(--triton-raised-hover);
+}
+.triton-raised:active:not(:disabled),
+.triton-raised[aria-pressed="true"] {
+  background: var(--triton-inset-fill);
+  box-shadow: var(--triton-inset-shadow);
+  border-color: #ffffff0a;
+  color: hsl(var(--foreground));
+}
+.triton-inset {
+  background: var(--triton-inset-fill);
+  border: 1px solid #00000026;
+  box-shadow: var(--triton-inset-shadow);
+  transition: border-color 120ms ease, color 120ms ease;
+}
+.triton-inset:focus {
+  outline: 1px solid hsl(var(--ring));
+  outline-offset: 1px;
+  border-color: hsl(var(--ring) / 0.35);
+}
+.dockview-theme-dark .dv-tabs-and-actions-container {
+  background: linear-gradient(180deg, #272d32, #20262a);
+  box-shadow: inset 0 1px 0 #ffffff06;
+}
+.dockview-theme-dark .dv-tab.dv-active-tab {
+  background: linear-gradient(180deg, #2c3339, #252b30) !important;
+  box-shadow: inset 1px 1px 0 #ffffff07;
+}
+.dockview-theme-dark .dv-tab.dv-active-tab::after {
+  background: hsl(var(--primary));
+  box-shadow: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .triton-raised, .triton-inset { transition: none; }
+}

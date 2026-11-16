@@ -82,23 +82,40 @@ export function getEntitySelectionBounds(entity, fallbackSize = 16) {
         || !Number.isFinite(fallbackSize) || fallbackSize <= 0) return null;
     const scale = entity.transform.scale || { x: 1, y: 1 };
     const components = entity.components && typeof entity.components === 'object' ? entity.components : {};
+    const dimensions = (component) => {
+        const param = component?.param ?? component?._properties?.param;
+        if ((component?.geometry ?? component?._properties?.geometry) === 0 && Number.isFinite(param?.radius)) {
+            return { width: param.radius * 2, height: param.radius * 2, circle: true };
+        }
+        return {
+            width: component?.width ?? component?._properties?.width ?? param?.width,
+            height: component?.height ?? component?._properties?.height ?? param?.height
+        };
+    };
     const sprite = Object.entries(components).find(([type, component]) => {
         if (/collider|hitbox|hurtbox/i.test(type)) return false;
-        const width = component?.width ?? component?._properties?.width;
-        const height = component?.height ?? component?._properties?.height;
+        const { width, height } = dimensions(component);
         return component?.enabled !== false && Number.isFinite(width) && width > 0 && Number.isFinite(height) && height > 0;
     })?.[1];
-    const width = sprite?.width ?? sprite?._properties?.width ?? fallbackSize;
-    const height = sprite?.height ?? sprite?._properties?.height ?? fallbackSize;
+    const width = dimensions(sprite).width ?? fallbackSize;
+    const height = dimensions(sprite).height ?? fallbackSize;
     const scaledWidth = width * Math.abs(Number.isFinite(scale.x) ? scale.x : 1);
     const scaledHeight = height * Math.abs(Number.isFinite(scale.y) ? scale.y : 1);
+    const angle = Number.isFinite(entity.transform.rotation) ? entity.transform.rotation : 0;
+    const circle = dimensions(sprite).circle;
+    const boundsWidth = circle
+        ? Math.hypot(Math.cos(angle) * scaledWidth, Math.sin(angle) * scaledHeight)
+        : Math.abs(Math.cos(angle)) * scaledWidth + Math.abs(Math.sin(angle)) * scaledHeight;
+    const boundsHeight = circle
+        ? Math.hypot(Math.sin(angle) * scaledWidth, Math.cos(angle) * scaledHeight)
+        : Math.abs(Math.sin(angle)) * scaledWidth + Math.abs(Math.cos(angle)) * scaledHeight;
     return {
         id: typeof entity.id === 'string' ? entity.id : '',
         name: typeof entity.name === 'string' ? entity.name : '',
-        x: position.x - scaledWidth / 2,
-        y: position.y - scaledHeight / 2,
-        width: scaledWidth,
-        height: scaledHeight
+        x: position.x - boundsWidth / 2,
+        y: position.y - boundsHeight / 2,
+        width: boundsWidth,
+        height: boundsHeight
     };
 }
 
@@ -198,7 +215,9 @@ export function getColliderOverlayBounds(entity) {
         const offsetX = collider.offsetX ?? collider.offset?.x ?? 0;
         const offsetY = collider.offsetY ?? collider.offset?.y ?? 0;
         if (![width, height, offsetX, offsetY].every(Number.isFinite) || width <= 0 || height <= 0) return [];
-        return [{ type, color, x: position.x + offsetX, y: position.y + offsetY, width, height }];
+        // Legacy BoxCollider size is centred on Transform; Nereid offsets are top-left based.
+        return [{ type, color, x: position.x + offsetX - (type === 'BoxCollider' ? width / 2 : 0),
+            y: position.y + offsetY - (type === 'BoxCollider' ? height / 2 : 0), width, height }];
     });
 }
 

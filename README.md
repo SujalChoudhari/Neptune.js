@@ -88,7 +88,7 @@ The [full engine, editor and game roadmap](docs/ROADMAP.md) is the active plan, 
 
 - [x] **Development baseline:** launcher, portable checks, contributor guidance and initial native workflows verified. See [Windows evidence](docs/windows-workflows.md).
 - [x] **Emberfall starter:** a versioned `.npt` project with movement, melee combat, guardians, an altar objective and saves. Placeholder visuals and no proper menu flow; not the finished demo.
-- [ ] **P0 — viewport and visual foundation (next):** fix gizmo/overlay/drag coordinate conversions; accurate click selection; Q hand, W move, E rotate, R scale, T rect, Y combined tools; focus-safe shortcuts, snapping and drag cancellation. Polish docking/layout, colors, typography, shadows, borders, radii and control states in the native app.
+- [ ] **P0 — viewport and visual foundation (in progress):** root-level coordinate conversion, direct picking, Q/W/E/R/T/Y tools, focus-safe shortcuts, snapping, drag cancellation and validated dock-layout persistence/reset are verified. Preserve compact raised/inset controls and refine the dark neumorphic style. Full nested-transform gizmo editing and remaining visual acceptance are still open; drag transaction events prepare P1 undo integration, but do not provide undo history.
 - [ ] **P1 — safe editor authoring:** undo/redo, save/recovery safeguards, functional Add Component, typed searchable Inspector, script settings, resource pickers, multi-edit, hierarchy and shortcut QoL.
 - [ ] **P2 — consistent runtime:** authoritative combat/collision paths, input actions, simulation timing, lifecycle, edit/play separation and versioned project/module contracts.
 - [ ] **P3 — asset and presentation pipeline:** spritesheet slicing/pivots/imports, real animation timeline/state tools, music/SFX buses/previews/settings, effects and camera feedback.
@@ -115,5 +115,7 @@ Initial planning ranges: **4–8 focused development weeks for the polished vert
 - [HTML UI](docs/tutorials/html-ui-bridge.md) and [Canvas UI](docs/tutorials/ui-layout.md)
 
 ## Contributing
+
+The reusable [Neptune.js skill](skills/neptune-js/SKILL.md) stores project preferences, past corrections and the parallel TODO workflow. Its reference-driven design direction is compact dark neumorphism; preserve raised controls and inset fields. Keep the skill's dated context synchronized with verified changes.
 
 Read [AGENTS.md](AGENTS.md) for architecture boundaries and verification guidance. `main` is the integration branch; use short-lived `codex/*` or other focused feature branches. Keep changes reviewable and preserve unrelated work. Source/API readiness, native acceptance, and publishing are distinct outcomes.

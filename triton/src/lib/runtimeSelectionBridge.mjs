@@ -67,7 +67,7 @@ export function shapeContainsPoint(component, x, y) {
     return inside;
 }
 
-export function pickRuntimeEntityAt(scene, screenX, screenY, pixelsPerMeter = 64) {
+export function pickRuntimeEntityAt(scene, screenX, screenY, pixelsPerMeter = 64, excludedIds = []) {
     if (!scene || !Number.isFinite(screenX) || !Number.isFinite(screenY)) return null;
     const camera = scene.activeCamera;
     const point = camera?.screenToWorld
@@ -138,7 +138,7 @@ export function pickRuntimeEntityAt(scene, screenX, screenY, pixelsPerMeter = 64
     };
     const visitRenderable = ({ entity, component, worldMatrix }) => {
         const currentTraversalOrder = traversalOrder++;
-        if (["sprite", "shape"].includes(component?.constructor?.name?.toLowerCase()) && typeof entity.id === "string") {
+        if (!excludedIds.includes(entity.id) && ["sprite", "shape"].includes(component?.constructor?.name?.toLowerCase()) && typeof entity.id === "string") {
             const [a, b, c, d, e, f] = worldMatrix;
             const determinant = a * d - b * c;
             if (Number.isFinite(determinant) && Math.abs(determinant) > Number.EPSILON) {

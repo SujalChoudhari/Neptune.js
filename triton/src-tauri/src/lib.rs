@@ -1298,7 +1298,7 @@ pub fn run() {
 
       // --- Layout Menu ---
       let layout_default = MenuItem::with_id(handle, "layout_default", "Default Layout", true, None::<&str>)?;
-      let layout_anim = MenuItem::with_id(handle, "layout_animation", "Animation Workspace", true, None::<&str>)?;
+      let layout_anim = MenuItem::with_id(handle, "layout_animation", "Animation Workspace (planned)", false, None::<&str>)?;
       let layout_debug = MenuItem::with_id(handle, "layout_debug", "Debug Workspace", true, None::<&str>)?;
       
       let layout_menu = Submenu::with_items(

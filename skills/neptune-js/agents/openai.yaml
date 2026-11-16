@@ -1,0 +1,4 @@
+interface:
+  display_name: "Neptune.js"
+  short_description: "Resume Neptune, Triton and ARPG work with context"
+  default_prompt: "Use $neptune-js to resume the Neptune.js roadmap, delegate independent TODOs, and verify the integrated result."

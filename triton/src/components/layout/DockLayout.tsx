@@ -1,229 +1,135 @@
-import { DockviewReact, type DockviewReadyEvent, type DockviewApi } from "dockview";
-import "dockview/dist/styles/dockview.css";
-import { themeDark } from "dockview";
-import { useRef, useEffect } from "react";
-import { StoryBook } from "@/components/panels/StoryBook";
-import { ProjectPanel } from "@/components/panels/ProjectPanel";
-import { InspectorPanel } from "@/components/panels/InspectorPanel";
-import { ConsolePanel } from "@/components/panels/ConsolePanel";
-import { HierarchyPanel } from "@/components/panels/HierarchyPanel";
-import { GameViewPanel } from "@/components/panels/GameViewPanel";
-import { SceneViewPanel } from "@/components/panels/SceneViewPanel";
-import { TilemapPanel } from "@/components/panels/TilemapPanel";
-import { useSettings } from "@/components/context/SettingsContext";
+import { DockviewReact, themeDark, type DockviewReadyEvent, type DockviewApi } from 'dockview';
+import 'dockview/dist/styles/dockview.css';
+import { useRef, useEffect, useCallback } from 'react';
+import { ProjectPanel } from '@/components/panels/ProjectPanel';
+import { InspectorPanel } from '@/components/panels/InspectorPanel';
+import { ConsolePanel } from '@/components/panels/ConsolePanel';
+import { HierarchyPanel } from '@/components/panels/HierarchyPanel';
+import { GameViewPanel } from '@/components/panels/GameViewPanel';
+import { SceneViewPanel } from '@/components/panels/SceneViewPanel';
+import { TilemapPanel } from '@/components/panels/TilemapPanel';
+import { useSettings } from '@/components/context/SettingsContext';
+import { useFileSystem } from '@/context/FileSystemContext';
+import { editorLayoutKey, readEditorLayout, serializeEditorLayout } from '@/lib/editorLayout.mjs';
 
-// --- MAIN LAYOUT ---
+interface DockLayoutProps { onApiReady?: (api: DockviewApi) => void }
 
-interface DockLayoutProps {
-    onApiReady?: (api: DockviewApi) => void;
+function createWorkspace(api: DockviewApi, debug = false) {
+    api.clear();
+    const scene = api.addPanel({ id: 'scene', component: 'scene', title: 'Scene View' });
+    const game = api.addPanel({ id: 'game', component: 'game', title: 'Game View', position: { referencePanel: scene, direction: 'within' } });
+    const hierarchy = api.addPanel({ id: 'hierarchy', component: 'hierarchy', title: 'Hierarchy', position: { referencePanel: scene, direction: 'left' }, initialWidth: 220 });
+    const inspector = api.addPanel({ id: 'inspector', component: 'inspector', title: 'Inspector', position: { referencePanel: scene, direction: 'right' }, initialWidth: 280 });
+    const consolePanel = api.addPanel({ id: 'console', component: 'console', title: 'Console', position: { referencePanel: scene, direction: 'below' }, initialHeight: 180 });
+    const project = api.addPanel({ id: 'project', component: 'project', title: 'Project', position: { referencePanel: consolePanel, direction: 'within' } });
+    api.addPanel({ id: 'tilemap', component: 'tilemap', title: 'Tilemap', position: { referencePanel: consolePanel, direction: 'within' } });
+    hierarchy.api.setConstraints({ minimumWidth: 160 });
+    inspector.api.setConstraints({ minimumWidth: 220 });
+    scene.api.setConstraints({ minimumWidth: 280, minimumHeight: 180 });
+    consolePanel.api.setConstraints({ minimumHeight: 100 });
+    (debug ? consolePanel : project).api.setActive();
+    (debug ? game : scene).api.setActive();
 }
 
 export const DockLayout = ({ onApiReady }: DockLayoutProps) => {
-    const dockApiRef = useRef<DockviewApi | null>(null);
+    const apiRef = useRef<DockviewApi | null>(null);
+    const storageKeyRef = useRef<string | null>(null);
+    const restoringRef = useRef(false);
+    const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const subscriptionRef = useRef<{ dispose(): void } | null>(null);
+    const { rootPath } = useFileSystem();
     const { focusGameOnPlay, focusConsoleOnPlay, maximizeGameOnPlay } = useSettings();
 
-    // Store layout state before maximizing to restore it later
+    const saveWorkspace = useCallback(() => {
+        const api = apiRef.current, key = storageKeyRef.current;
+        if (!api || !key || restoringRef.current) return;
+        try {
+            const record = serializeEditorLayout(api.toJSON());
+            if (record) localStorage.setItem(key, record);
+        } catch { /* A storage quota or unavailable storage must not break authoring. */ }
+    }, []);
+
+    const restoreWorkspace = useCallback((api: DockviewApi, path: string | null) => {
+        if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+        restoringRef.current = true;
+        storageKeyRef.current = editorLayoutKey(path);
+        try {
+            const record = storageKeyRef.current ? localStorage.getItem(storageKeyRef.current) : null;
+            const layout = readEditorLayout(record);
+            if (layout) {
+                try { api.fromJSON(layout); return; } catch { /* Default workspace repairs incompatible layouts. */ }
+            }
+            createWorkspace(api);
+        } catch { createWorkspace(api); }
+        finally { restoringRef.current = false; }
+    }, []);
+
+    const applyLayout = useCallback((type: 'default' | 'animation' | 'debug') => {
+        const api = apiRef.current;
+        if (!api) return;
+        if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+        restoringRef.current = true;
+        try {
+            if (storageKeyRef.current) localStorage.removeItem(storageKeyRef.current);
+        } catch { /* Reset remains usable when storage is unavailable. */ }
+        try {
+            // No fake Timeline/Atlas panels: legacy animation requests use the
+            // real authoring workspace until animation authoring is implemented.
+            createWorkspace(api, type === 'debug');
+        } finally { restoringRef.current = false; }
+        saveWorkspace();
+    }, [saveWorkspace]);
+
+    useEffect(() => {
+        if (apiRef.current) {
+            saveWorkspace();
+            restoreWorkspace(apiRef.current, rootPath);
+        }
+    }, [rootPath, restoreWorkspace, saveWorkspace]);
 
     useEffect(() => {
         const onPlay = () => {
-            const api = dockApiRef.current;
+            const api = apiRef.current;
             if (!api) return;
-
-            // 1. Focus Game Panel
-            if (focusGameOnPlay) {
-                const gamePanel = api.getPanel('game');
-                if (gamePanel) {
-                    gamePanel.api.setActive();
-                }
-            }
-
-            // 2. Focus Console Panel
-            if (focusConsoleOnPlay) {
-                const consolePanel = api.getPanel('console');
-                if (consolePanel) {
-                    consolePanel.api.setActive();
-                }
-            }
-
-            // 3. Maximize Game View
-            if (maximizeGameOnPlay) {
-                const gamePanel = api.getPanel('game');
-                if (gamePanel) {
-                    // There isn't a direct "maximize" API that hides others easily without extensive layout manipulation.
-                    // However, we can use `api.maximizeGroup(gamePanel.group)` if it exists, or simulated via CSS/Layout.
-                    // Dockview has `panel.api.maximize()` (if supported by the version) or we can just try to expand it.
-
-                    // Note: As of typical dockview versions, maximize is often a user interaction.
-                    // We can try: `gamePanel.group.api.maximize()`
-
-                    // Let's safe check
-                    const group = gamePanel.group;
-                    // @ts-ignore - API capability check
-                    if (group && group.api.maximize) {
-                        // @ts-ignore
-                        group.api.maximize();
-                    }
-                }
-            }
+            const game = api.getPanel('game');
+            if (focusGameOnPlay) game?.api.setActive();
+            if (focusConsoleOnPlay) api.getPanel('console')?.api.setActive();
+            if (maximizeGameOnPlay && game) api.maximizeGroup(game);
         };
-
-        const onStop = () => {
-            const api = dockApiRef.current;
-            if (!api) return;
-
-            // Restore if maximized (Dockview usually handles toggle)
-            if (maximizeGameOnPlay) {
-                const gamePanel = api.getPanel('game');
-                if (gamePanel) {
-                    const group = gamePanel.group;
-                    // @ts-ignore
-                    if (group && group.api.isMaximized && group.api.exitMaximized) {
-                        // @ts-ignore
-                        group.api.exitMaximized();
-                    }
-                }
-            }
-        };
-
+        const onStop = () => { if (maximizeGameOnPlay) apiRef.current?.exitMaximizedGroup(); };
         window.addEventListener('editor:play', onPlay);
         window.addEventListener('editor:stop', onStop);
-
-        return () => {
-            window.removeEventListener('editor:play', onPlay);
-            window.removeEventListener('editor:stop', onStop);
-        };
+        return () => { window.removeEventListener('editor:play', onPlay); window.removeEventListener('editor:stop', onStop); };
     }, [focusGameOnPlay, focusConsoleOnPlay, maximizeGameOnPlay]);
 
-    const applyLayout = (type: 'default' | 'animation' | 'debug') => {
-        const api = dockApiRef.current;
-        if (!api) return;
-
-        api.clear();
-
-        if (type === 'default') {
-            const mainPanel = api.addPanel({
-                id: 'scene',
-                component: 'scene',
-                title: 'Scene View'
-            });
-
-            api.addPanel({
-                id: 'game',
-                component: 'game',
-                title: 'Game View',
-                position: { referencePanel: mainPanel, direction: 'within' }
-            });
-
-            api.addPanel({
-                id: 'hierarchy',
-                component: 'hierarchy',
-                title: 'Hierarchy',
-                position: { referencePanel: mainPanel, direction: 'left' },
-                initialWidth: 250
-            });
-
-            api.addPanel({
-                id: 'inspector',
-                component: 'inspector',
-                title: 'Inspector',
-                position: { referencePanel: mainPanel, direction: 'right' },
-                initialWidth: 300
-            });
-
-            api.addPanel({
-                id: 'console',
-                component: 'console',
-                title: 'Console',
-                position: { referencePanel: mainPanel, direction: 'below' },
-                initialHeight: 300
-            });
-
-            api.addPanel({
-                id: 'project',
-                component: 'project',
-                title: 'Project',
-                position: { referencePanel: 'console', direction: 'within' }
-            });
-
-            api.addPanel({
-                id: 'tilemap',
-                component: 'tilemap',
-                title: 'Tilemap',
-                position: { referencePanel: 'console', direction: 'within' }
-            });
-
-            // Activate Scene View by default
-            mainPanel.api.setActive();
-
-        } else if (type === 'animation') {
-            // ... (Keep existing layouts)
-            const viewport = api.addPanel({
-                id: 'viewport',
-                component: 'viewport',
-                title: 'Scene View'
-            });
-
-            api.addPanel({
-                id: 'animator',
-                component: 'inspector',
-                title: 'Timeline',
-                position: { referencePanel: viewport, direction: 'below' },
-                initialHeight: 300
-            });
-
-            api.addPanel({
-                id: 'inspector',
-                component: 'inspector',
-                title: 'Inspector',
-                position: { referencePanel: viewport, direction: 'right' },
-                initialWidth: 300
-            });
-
-        } else if (type === 'debug') {
-            api.addPanel({
-                id: 'atlas',
-                component: 'atlas',
-                title: 'Atlas'
-            });
-        }
-    };
+    useEffect(() => () => {
+        if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+        saveWorkspace();
+        subscriptionRef.current?.dispose();
+    }, [saveWorkspace]);
 
     const onReady = (event: DockviewReadyEvent) => {
-        dockApiRef.current = event.api;
-
-        // Expose API to parent with Layout Switcher
-        if (onApiReady) {
-            const extendedApi = event.api as NeptuneDockApi;
-            extendedApi.applyLayout = applyLayout;
-            onApiReady(extendedApi);
-        }
-
-        applyLayout('default');
+        apiRef.current = event.api;
+        const api = event.api as NeptuneDockApi;
+        api.applyLayout = applyLayout;
+        restoreWorkspace(api, rootPath);
+        subscriptionRef.current?.dispose();
+        subscriptionRef.current = api.onDidLayoutChange(() => {
+            if (restoringRef.current) return;
+            if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+            saveTimerRef.current = setTimeout(saveWorkspace, 200);
+        });
+        onApiReady?.(api);
     };
 
     return (
-        <div className="h-full w-full border-t border-border">
-            <DockviewReact
-                components={componentMap}
-                onReady={onReady}
-                theme={themeDark}
-                className="dockview-theme-dark h-full w-full"
-            />
+        <div className="h-full w-full min-w-0 min-h-0 relative flex flex-col border-t border-border" data-workspace-layout>
+            <button type="button" className="absolute right-1 top-1 z-40 h-5 rounded-[3px] border border-border bg-card px-1 text-[10px] text-muted-foreground hover:text-foreground focus-visible:outline-primary" onClick={() => applyLayout('default')} title="Restore the default panel arrangement">Reset layout</button>
+            <DockviewReact components={componentMap} onReady={onReady} theme={themeDark} className="dockview-theme-dark flex-1 min-w-0 min-h-0" />
         </div>
     );
 };
 
-const componentMap = {
-    hierarchy: HierarchyPanel,
-    viewport: SceneViewPanel,
-    inspector: InspectorPanel,
-    console: ConsolePanel,
-    project: ProjectPanel,
-    atlas: StoryBook,
-    game: GameViewPanel,
-    scene: SceneViewPanel,
-    tilemap: TilemapPanel,
-};
-
+const componentMap = { hierarchy: HierarchyPanel, inspector: InspectorPanel, console: ConsolePanel, project: ProjectPanel, game: GameViewPanel, scene: SceneViewPanel, tilemap: TilemapPanel };
 export type NeptuneDockApi = DockviewApi & { applyLayout: (type: 'default' | 'animation' | 'debug') => void };
 export type { DockviewApi };

@@ -63,38 +63,44 @@ These are dependency gates, not nine isolated waterfall projects. Keep a runnabl
 
 ### Coordinate correctness and editor picking
 
-- [ ] Define one transform contract: entity/world units, rendering conversion, camera/pan units and viewport pixels. Convert at named boundaries.
-- [ ] Correct gizmo origins, selection outlines, collider overlays, drag deltas and Frame Selection together.
-- [ ] Derive drawing and picking from the same geometry/camera transforms, including zoom and pan.
-- [ ] Account for nested transforms and rotated/scaled objects; document any currently unsupported transform combination rather than silently misplace handles.
-- [ ] Click visible objects directly in Scene View. Respect draw order, active state and selection locks; support Shift/Ctrl additive selection and empty-space deselection.
-- [ ] Keep editor hit testing independent of gameplay physics. Objects can be selectable without having colliders.
-- [ ] Prevent a giant floor or background from unexpectedly stealing a foreground selection.
-- [ ] Keep selection synchronized between viewport, hierarchy and Inspector.
+- [x] Define the root-level conversion contract: transforms/bounds use world units; rendering and camera pan use pixels; convert at named boundaries with 64 pixels per world unit.
+- [x] Correct root-level gizmo origins, selection outlines, collider overlays, drag deltas and Frame Selection together.
+- [x] Derive picking from rendered geometry/camera transforms, including zoom and pan; verify the actual viewport against the runtime camera.
+- [ ] Complete nested renderable-parent gizmo/overlay editing and full rotated/scaled authoring acceptance. Picking accounts for render composition; overlays and edits still use local transforms for nested renderable parents.
+- [x] Click visible objects directly in Scene View. Respect draw order, active state and selection locks; support Shift/Ctrl additive selection and empty-space deselection.
+- [x] Keep editor hit testing independent of gameplay physics. Objects can be selectable without having colliders.
+- [x] Prevent a giant floor or background from unexpectedly stealing a foreground selection.
+- [x] Keep selection synchronized between viewport, hierarchy and Inspector.
 
 ### Tool interactions
 
-- [ ] Q: view/hand tool. W: move. E: rotate. R: scale. T: rect/resize. Y: combined transform.
-- [ ] Show a toolbar with active-tool state, labels/tooltips and shortcuts. Render the active tool's handles instead of every gizmo at once.
-- [ ] Ignore tool shortcuts while typing, editing a field, using a dialog or controlling Game View.
-- [ ] Support free movement and constrained X/Y movement; sensible positive-down behavior for the 2D coordinate system.
-- [ ] Keep handles at a usable screen size across zoom levels. Increase invisible hit areas without covering nearby objects.
-- [ ] Pointer capture keeps drags reliable across viewport boundaries; Escape cancels and restores the starting values.
-- [ ] Add numeric feedback, fine/coarse modifiers and configurable snapping increments.
-- [ ] Treat a drag as one edit transaction for P1 undo/redo.
+- [x] Q: view/hand tool. W: move. E: rotate. R: scale. T: center-based rect/resize. Y: combined transform.
+- [x] Show a compact toolbar with active-tool state, tooltips and shortcuts. Render the active tool's handles instead of every gizmo at once.
+- [x] Ignore tool shortcuts while typing, editing a field, using a dialog or controlling Game View.
+- [x] Support free movement and constrained X/Y movement; sensible positive-down behavior for the 2D coordinate system.
+- [x] Keep handles a fixed screen size across zoom levels.
+- [ ] Tune enlarged invisible hit areas around handles without covering nearby objects; verify dense scenes.
+- [x] Pointer capture keeps drags reliable across viewport boundaries; Escape cancels and restores the starting values.
+- [x] Add numeric feedback, Shift fine movement, configurable snapping increments and Ctrl temporary snapping.
+- [ ] Wire a coarse pointer-drag modifier; coarse delta calculation exists in the helper but is not exposed by Scene View yet.
+- [x] Emit begin/commit/cancel events with an immutable starting snapshot for one drag transaction.
+- [ ] Connect drag transactions to the P1 undo/redo history.
 
 ### Visual system and docking foundation
 
 - [ ] Keep a compact desktop editor direction, with a consistent spacing/type hierarchy rather than decorating every control separately.
-- [ ] Proposed tokens: canvas #20262D, panel #272F38, field #1B2128, divider #3A4652, text #DEE5EC, accent #63C6D2. Confirm in native screenshots before freezing them.
+- [ ] Refine a dark neumorphic desktop theme using the user's music-player reference: subtle paired light/dark shadows, raised controls and inset fields. Retain clear contrast and compact editor density. The earlier flat graphite/cyan palette proposal is withdrawn.
 - [ ] Use Segoe UI/system UI for Windows controls, approximately 12–13px body and 11–12px labels; use tabular numerals for numeric fields.
-- [ ] Use approximately 3px control corners, 6px menus/dialogs, square docking seams; reserve shadows for elevated menus/dialogs and subtle field depth.
-- [ ] Remove competing hardcoded gradients, bevels, border colors and oversized shadows from shared controls.
-- [ ] Fix Dockview color variables to receive valid CSS color values, not raw HSL component strings.
-- [ ] Prioritize the viewport: starting sidebars around 220px/280px and bottom panels around 180px, with sensible minimum sizes and responsive adjustments.
+- [ ] Use restrained control radii and square docking seams; use soft shadows to communicate raised/inset depth without making controls oversized or muddy.
+- [x] Preserve the original beveled desktop style: raised gradient buttons, inset fields and compact controls. New viewport icons use 24px square buttons; text buttons fit their labels.
+- [x] Fix Dockview color variables to receive valid CSS color values, not raw HSL component strings.
+- [x] Prioritize the viewport: starting sidebars around 220px/280px and bottom panels around 180px, with minimum-size constraints.
+- [ ] Finish native visual acceptance at multiple window sizes and display scales.
 - [ ] Resolve flex overflow/clipping, coordinate offsets, resize behavior, contrast, focus rings and selected/hover/disabled states.
-- [ ] Persist valid per-project dock layouts and restore/reset them. Never restore a layout that makes essential panels inaccessible.
-- [ ] Remove or explicitly disable nonfunctional layouts; do not advertise fake specialized editors.
+- [x] Persist valid complete docked layouts per project and restore/reset them. Reject malformed, stale, floating/popout or incomplete records and use the default workspace.
+- [x] Remove or explicitly disable nonfunctional layouts; do not advertise fake specialized editors.
+
+Implemented and verified: root-level coordinate conversion, render-aware picking, Q/W/E/R/T/Y tools, focus-safe shortcuts, drag capture/cancellation, snapping and validated dock persistence/reset. Native scene edits were saved to disk. Browser tests additionally cover pan/zoom and typing guards. Full P0 remains open: nested renderable-parent gizmo editing still uses local coordinates; complete rotated/nested editing and visual acceptance remain. Dock restoration currently accepts complete docked layouts only; floating/popout/incomplete layouts fall back to defaults. Drag transaction events prepare undo integration; they do not implement undo history.
 
 Acceptance: native screenshots at multiple window sizes; click Wanderer in the actual scene; its gizmo and outline align at different zoom/pan values; switch tools with keyboard; drag, cancel and save/reopen; verify typing and Game View input are unaffected. Theme review is performed in the running app, not from CSS alone.
 
@@ -230,4 +236,4 @@ Acceptance: clean-checkout verification; actual native filesystem/UI evidence; e
 - A native filesystem claim requires native evidence; stubbed Chromium tests are complementary.
 - Store progress under the phase IDs in README; split implementation work into reviewable changes with observable acceptance. GitHub issues are optional and must not become a duplicate conflicting backlog.
 - Re-estimate after P1, after the vertical slice and before expanding content. Cut optional scope openly when integration or asset work exceeds the budget.
-- The immediate next implementation is **P0: coordinate correctness, direct picking, Q/W/E/R/T/Y tools, then the first coherent layout/theme pass**. These tasks are planned; this roadmap update does not claim they have been implemented.
+- Complete the remaining P0 nested-transform editing and visual acceptance before closing this phase. Preserve the original beveled desktop style throughout theme refinements.
