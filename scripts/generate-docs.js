@@ -14,7 +14,7 @@ import { preserveAuthoredDocs } from "./preserve-authored-docs.js";
 const projectRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const docsDirectory = join(projectRoot, "docs");
 const productContractPath = join(docsDirectory, "PRODUCT-CONTRACT.md");
-const jsdocBinary = join(projectRoot, "node_modules", ".bin", "jsdoc");
+const jsdocBinary = join(projectRoot, "node_modules", "jsdoc", "jsdoc.js");
 const productContract = existsSync(productContractPath) ? readFileSync(productContractPath) : null;
 const temporaryDirectory = mkdtempSync(join(projectRoot, ".docs-generation-"));
 
@@ -22,8 +22,8 @@ let replacedDocumentation = false;
 try {
   // Generate outside docs/ so a failed run cannot leave the committed site partial.
   const result = spawnSync(
-    jsdocBinary,
-    ["--configure", "jsdoc.json", "--destination", temporaryDirectory, "--pedantic"],
+    process.execPath,
+    [jsdocBinary, "--configure", "jsdoc.json", "--destination", temporaryDirectory, "--pedantic"],
     { cwd: projectRoot, stdio: "inherit" },
   );
 

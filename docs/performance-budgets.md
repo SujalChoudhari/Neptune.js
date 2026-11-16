@@ -10,7 +10,7 @@ These are correctness and workload budgets, not frame-rate guarantees. Throughpu
 
 ## Navigation and rendering
 
-- `findPath` uses four-way breadth-first search; worst-case traversal is O(V + E), where V is the number of reachable cells and E is their cardinal adjacency edges. It allocates per-search queue and predecessor state, so callers should avoid requesting a new route every render frame.
+- `findPath` uses four-way minimum-cost navigation (Dijkstra with a binary heap), including authored movement costs. Its traversal is O((V + E) log V) on this grid, with per-search distance, predecessor, and queue state. Avoid requesting a new route every render frame.
 - Tilemap drawing currently visits every cell in each rendered layer (O(width × height)); viewport culling is not part of this budget and should be considered before substantially increasing map dimensions or layer count.
 
 The 10,000-actor test protects the occupancy complexity contract without imposing a machine-dependent wall-clock threshold. It is part of `npm test`.

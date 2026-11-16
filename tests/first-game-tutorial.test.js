@@ -25,7 +25,7 @@ test("first-game example loads its documented scene from a clean checkout", asyn
     const html = await readFile(new URL("index.html", exampleRoot), "utf8");
     const tutorial = await readFile(new URL("../docs/tutorials/first-game.md", import.meta.url), "utf8");
     assert.match(html, /src="\.\/main\.js"/);
-    assert.match(tutorial, /python3 -m http\.server 8000/);
+    assert.match(tutorial, /npm run serve/);
     assert.match(tutorial, /examples\/first-game/);
 
     const { scene, player } = await import("../examples/first-game/main.js");
@@ -51,7 +51,7 @@ test("documented root server serves the runnable first-game module graph", async
     const { port } = portProbe.address();
     await new Promise((resolve, reject) => portProbe.close(error => error ? reject(error) : resolve()));
 
-    const server = spawn("python3", ["-m", "http.server", String(port), "--bind", "127.0.0.1"], {
+    const server = spawn(process.execPath, [fileURLToPath(new URL("../scripts/serve.js", import.meta.url)), "--port", String(port)], {
         cwd: fileURLToPath(new URL("..", import.meta.url)),
         stdio: "ignore"
     });
@@ -86,7 +86,7 @@ test("first-game tutorial runs and renders in Chromium from the documented serve
     await once(portProbe, "listening");
     const { port } = portProbe.address();
     await new Promise((resolve, reject) => portProbe.close(error => error ? reject(error) : resolve()));
-    const server = spawn("python3", ["-m", "http.server", String(port), "--bind", "127.0.0.1"], {
+    const server = spawn(process.execPath, [fileURLToPath(new URL("../scripts/serve.js", import.meta.url)), "--port", String(port)], {
         cwd: fileURLToPath(new URL("..", import.meta.url)),
         stdio: "ignore"
     });

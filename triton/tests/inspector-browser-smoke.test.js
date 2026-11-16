@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { once } from "node:events";
 import { setTimeout as delay } from "node:timers/promises";
 import { createServer } from "node:net";
@@ -23,7 +24,7 @@ test("editor scene edits persist and Game View playback and diagnostics use the 
     await once(probe, "listening");
     const { port } = probe.address();
     await new Promise((resolve, reject) => probe.close(error => error ? reject(error) : resolve()));
-    const server = spawn("../triton/node_modules/.bin/vite", ["--host", "127.0.0.1", "--port", String(port), "--strictPort"], {
+    const server = spawn(process.execPath, [fileURLToPath(new URL("../node_modules/vite/bin/vite.js", import.meta.url)), "--host", "127.0.0.1", "--port", String(port), "--strictPort"], {
         cwd: new URL("..", import.meta.url), stdio: "ignore"
     });
     t.after(() => server.kill());
@@ -63,6 +64,8 @@ test("editor scene edits persist and Game View playback and diagnostics use the 
         }};
     }, { initialScene: scene, initialProject: project });
     const page = await context.newPage();
+    // Cold dependency optimization on Windows can exceed Playwright's 30s navigation default.
+    page.setDefaultNavigationTimeout(120_000);
     const errors = [];
     page.on("pageerror", error => errors.push(error.message));
     await page.goto(`http://127.0.0.1:${port}`);

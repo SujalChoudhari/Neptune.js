@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { once } from "node:events";
 import { setTimeout as delay } from "node:timers/promises";
 import { createServer } from "node:net";
@@ -12,7 +13,7 @@ test("WelcomeScreen opens a selected project and reopens it from Recent Projects
     await once(probe, "listening");
     const { port } = probe.address();
     await new Promise((resolve, reject) => probe.close(error => error ? reject(error) : resolve()));
-    const server = spawn("../triton/node_modules/.bin/vite", ["--host", "127.0.0.1", "--port", String(port), "--strictPort"], {
+    const server = spawn(process.execPath, [fileURLToPath(new URL("../node_modules/vite/bin/vite.js", import.meta.url)), "--host", "127.0.0.1", "--port", String(port), "--strictPort"], {
         cwd: new URL("..", import.meta.url), stdio: "ignore"
     });
     t.after(() => server.kill());
@@ -28,7 +29,7 @@ test("WelcomeScreen opens a selected project and reopens it from Recent Projects
     const context = await browser.newContext();
     await context.addInitScript(() => {
         window.__nativeCalls = [];
-        window.__TAURI_INTERNALS__ = { invoke: async (command, args) => {
+        window.__TAURI_INTERNALS__ = { metadata: { currentWindow: { label: "main" } }, transformCallback: () => 1, invoke: async (command, args) => {
             window.__nativeCalls.push({ command, args });
             if (command === "open_existing_project") { window.__nativeProjectRoot = args.path; return true; }
             if (command === "scan_project") return { root: { id: "root", parentId: null, name: "Browser Smoke Project", type: "folder", children: [] } };
@@ -38,6 +39,8 @@ test("WelcomeScreen opens a selected project and reopens it from Recent Projects
         }};
     });
     const page = await context.newPage();
+    // Cold dependency optimization on Windows can exceed Playwright's 30s navigation default.
+    page.setDefaultNavigationTimeout(120_000);
     const errors = [];
     page.on("pageerror", e => errors.push(e.message));
     await page.goto(`http://127.0.0.1:${port}`);
@@ -48,7 +51,7 @@ test("WelcomeScreen opens a selected project and reopens it from Recent Projects
     await page.getByText("Browser Smoke Project", { exact: true }).click();
     await page.getByText("Edit", { exact: true }).click();
     assert.equal(await page.evaluate(() => window.__nativeProjectRoot), "/tmp/neptune-browser-smoke");
-    assert.ok(await page.evaluate(() => document.querySelector("[data-testid='editor-root']") !== null || document.body.innerText.includes("Neptune Engine v")));
+    await page.getByText("Project", { exact: true }).waitFor();
     assert.ok(await page.evaluate(() => window.__nativeCalls.some(c => c.command === "scan_project" && c.args.path === ".")));
     assert.ok(await page.evaluate(() => localStorage.getItem("triton_recent_projects").includes("neptune-browser-smoke")));
     assert.ok(errors.every(error => error.includes("transformCallback is not a function") || error.includes("currentWindow")), `unexpected browser errors: ${errors.join("; ")}`);

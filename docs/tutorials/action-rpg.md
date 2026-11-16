@@ -8,7 +8,7 @@ From the repository root:
 
 ```sh
 npm ci --ignore-scripts --no-audit --no-fund
-python3 -m http.server 8000
+npm run serve
 ```
 
 Open `http://localhost:8000/debug_project/` and press **Play Game**. Use arrow keys to move; press **E** near the Town Guide to start the quest and receive a Training Blade. The purple stairs lead to the dungeon. There, **J** attacks, **K** fires a ranged attack, **U** equips the blade, **P** pauses, **S** saves, and **L** loads. Press **E** by the stairs to return to town.

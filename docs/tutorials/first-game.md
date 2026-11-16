@@ -5,7 +5,7 @@ This runnable example creates a scene with a floor and a player shape. It uses o
 ## Run it
 
 1. Install the repository dependencies from its root: `npm ci --ignore-scripts --no-audit --no-fund`.
-2. Start a static server from the repository root: `python3 -m http.server 8000`.
+2. Start a static server from the repository root: `npm run serve`.
 3. Open `http://localhost:8000/examples/first-game/` in a browser.
 4. Select **Play Game**. Neptune starts the main loop and renders the scene.
 

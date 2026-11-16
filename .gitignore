@@ -4,3 +4,10 @@ node_modules
 build
 
 pnpm-lock.yaml
+
+# Local verification, packaging and temporary output
+.docs-generation-*/
+*.tgz
+*.log
+playwright-report/
+test-results/

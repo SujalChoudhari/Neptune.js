@@ -4,11 +4,12 @@ import vm from 'node:vm';
 import { test } from 'node:test';
 import { buildSync } from 'esbuild';
 
-const src = path.resolve('triton/src');
+// esbuild external module patterns use forward slashes on every platform.
+const src = path.resolve('triton/src').replace(/\\/g, '/');
 const code = buildSync({
-    entryPoints: [path.join(src, 'components/panels/ConsolePanel.tsx')],
+    entryPoints: [path.posix.join(src, 'components/panels/ConsolePanel.tsx')],
     alias: { '@': src }, bundle: true, platform: 'node', format: 'cjs', write: false,
-    external: ['react', 'react/jsx-runtime', 'lucide-react', path.join(src, 'components/library'), path.join(src, 'lib/utils')]
+    external: ['react', 'react/jsx-runtime', 'lucide-react', path.posix.join(src, 'components/library'), path.posix.join(src, 'lib/utils')]
 }).outputFiles[0].text;
 
 function mountConsole() {

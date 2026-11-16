@@ -1,4 +1,4 @@
-import { defineConfig, type Plugin } from 'vite'
+import { defineConfig, normalizePath, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from "path"
 import { build as bundleEngine } from 'esbuild'
@@ -15,7 +15,7 @@ function neptuneRuntimeUrl(): Plugin {
     async load(source: string) {
       if (source !== id) return
       if (process.env.NODE_ENV !== 'production') {
-        return `export default ${JSON.stringify(`/@fs${engineEntry}`)}`
+        return `export default ${JSON.stringify(`/@fs/${normalizePath(engineEntry).replace(/^\/+/, "")}`)}`
       }
       const result = await bundleEngine({
         entryPoints: [engineEntry], bundle: true, write: false,

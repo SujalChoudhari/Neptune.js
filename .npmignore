@@ -17,3 +17,9 @@ CHANGELOG.md
 package-lock.json
 pnpm-lock.yaml
 *.tgz
+# Contributor tooling and archived work notes
+AGENTS.md
+notes/
+scripts/
+triton/
+debug_project/

@@ -20,7 +20,8 @@ import { runtimeComponentBridgeScript } from '../src/lib/runtimeComponentBridge.
 import { applyInspectorComponentUpdate } from '../src/lib/inspectorComponentUpdate.ts';
 import fs from 'node:fs';
 
-const src = path.resolve('triton/src');
+// esbuild external module patterns use forward slashes on every platform.
+const src = path.resolve('triton/src').replace(/\\/g, '/');
 const jsx = (type, props) => ({ type, props: props || {} });
 const react = { createElement: (type, props, ...children) => jsx(type, { ...(props || {}), children: children.length > 1 ? children : children[0] }),
     cloneElement: (element, props) => jsx(element.type, { ...element.props, ...props }),
@@ -31,10 +32,10 @@ const visit = node => Array.isArray(node) ? node.flatMap(visit) : node && typeof
 
 function inspectorHarness(scene, selection = {}) {
     const code = buildSync({
-        entryPoints: [path.join(src, 'components/panels/InspectorPanel.tsx')],
+        entryPoints: [path.posix.join(src, 'components/panels/InspectorPanel.tsx')],
         alias: { '@': src }, bundle: true, platform: 'node', format: 'cjs', write: false,
-        external: ['react', 'react/jsx-runtime', 'lucide-react', path.join(src, 'components/library'),
-            path.join(src, 'context/*'), path.join(src, 'lib/editorGameRunner')]
+        external: ['react', 'react/jsx-runtime', 'lucide-react', path.posix.join(src, 'components/library'),
+            path.posix.join(src, 'context/*'), path.posix.join(src, 'lib/editorGameRunner')]
     }).outputFiles[0].text;
     const selected = { id: 'sprite-1', name: 'Sprite', active: true,
         transform: { position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 }, z: 0 },
@@ -299,7 +300,7 @@ test('ScriptManager skips a disabled Behaviour and resumes after enabling', () =
 
 test('Inspector edits transform, active state, and sprite properties in both live views and saved scene', async () => {
     for (const view of ['GameViewPanel.tsx', 'SceneViewPanel.tsx']) {
-        assert.match(fs.readFileSync(path.join(src, 'components/panels', view), 'utf8'), /\$\{runtimeComponentBridgeScript\}/);
+        assert.match(fs.readFileSync(path.posix.join(src, 'components/panels', view), 'utf8'), /\$\{runtimeComponentBridgeScript\}/);
     }
     ComponentRegistry.register('Transform', Transform);
     ComponentRegistry.register('Sprite', Sprite);

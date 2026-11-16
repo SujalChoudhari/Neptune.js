@@ -19,7 +19,7 @@ const run = (command, args) => {
 
 // API pages are generated in the committed docs/ tree; the generator deliberately
 // refreshes them. PRODUCT-CONTRACT.md remains hand-authored and is restored.
-run(process.platform === "win32" ? "npm.cmd" : "npm", ["run", "docs"]);
+run(process.execPath, ["scripts/generate-docs.js"]);
 
 if (!existsSync(contractPath)) {
   console.error("Documentation generation removed docs/PRODUCT-CONTRACT.md");

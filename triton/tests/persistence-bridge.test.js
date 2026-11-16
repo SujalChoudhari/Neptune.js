@@ -659,7 +659,7 @@ describe("Triton persistence bridge", () => {
         expect(rust.includes("SCENE_SCHEMA_VERSION")).toBe(true);
         expect(rust.includes("RESOURCE_REFERENCE_INVALID")).toBe(true);
         expect(rust.includes("async fn read_audio_asset")).toBe(true);
-        expect(rust.includes("read_audio_asset,\n")).toBe(true);
+        expect(/read_audio_asset,\r?\n/.test(rust)).toBe(true);
         expect(game.includes("setCurrentScenePayload")).toBe(true);
     });
 
