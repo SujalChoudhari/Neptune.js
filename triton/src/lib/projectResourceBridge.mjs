@@ -38,6 +38,8 @@ export function installProjectResourceBridge(frameWindow = window) {
     const mediaSrcDescriptor = mediaPrototype && Object.getOwnPropertyDescriptor(mediaPrototype, "src");
     const originalAudio = frameWindow.Audio;
     let currentScenePath = "";
+    const previousProjectResources = frameWindow.__neptuneProjectResources;
+    frameWindow.__neptuneProjectResources = true;
 
     const request = (reference, kind) => new Promise((resolve, reject) => {
         let path;
@@ -116,6 +118,7 @@ export function installProjectResourceBridge(frameWindow = window) {
     }
 
     const dispose = () => {
+        frameWindow.__neptuneProjectResources = previousProjectResources;
         frameWindow.removeEventListener("message", handleResponse);
         if (originalFetch) frameWindow.fetch = originalFetch;
         if (imagePrototype && imageSrcDescriptor) Object.defineProperty(imagePrototype, "src", imageSrcDescriptor);

@@ -25,6 +25,7 @@ import * as UI from "./ui/ui.js"
 
 import { Script, Global, Behaviour } from "./scripts/script.js";
 import { ScriptManager } from "./scripts/scriptManager.js";
+import { ProjectBehaviour } from "./scripts/projectBehaviour.js";
 
 import { MouseInput } from "./input/mouseinput.js";
 import { KeyboardInput } from "./input/keyboardinput.js";
@@ -63,6 +64,7 @@ window.game = application;
 
 // Register Core Components
 ComponentRegistry.register("Transform", Transform);
+ComponentRegistry.register("ProjectBehaviour", ProjectBehaviour);
 ComponentRegistry.register("Sprite", Sprite);
 ComponentRegistry.register("BoxCollider", BoxCollider);
 ComponentRegistry.register("Shape", Shape);
@@ -83,7 +85,7 @@ export {
     Renderable, Shape, Sprite,
     Sound,
     UI,
-    Script, ScriptManager, Global, Behaviour,
+    Script, ScriptManager, Global, Behaviour, ProjectBehaviour,
     MouseInput, KeyboardInput, TouchInput,
     Maths, Vector2,
     Titan, Thalassa, Nereid, Proteus, Larissa, Galatea,

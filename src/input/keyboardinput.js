@@ -12,6 +12,10 @@ export class KeyboardInput {
     static #canvas;
     static #keyPressed = [];
     static #specialKeyPressed;
+    static #pressedThisFrame = new Set();
+
+    /** True for the simulation frame after a key goes down, even after a quick release. */
+    static IsKeyPressed(keyCode) { return KeyboardInput.#pressedThisFrame.has(keyCode); }
 
     /**
      * Checks if the key with the given keycode is pressed.
@@ -39,10 +43,12 @@ export class KeyboardInput {
         KeyboardInput.#canvas = canvas;
         KeyboardInput.#keyPressed = [];
         KeyboardInput.#specialKeyPressed = null;
+        KeyboardInput.#pressedThisFrame.clear();
 
         // Use window instead of canvas to ensure we catch keys even if canvas loses focus
         window.addEventListener("keydown", KeyboardInput.#keyDown);
         window.addEventListener("keyup", KeyboardInput.#keyUp);
+        window.addEventListener("blur", KeyboardInput.#blur);
     }
     /**@private */
     static #checkSpecialKey(event) {
@@ -58,6 +64,7 @@ export class KeyboardInput {
         if (!KeyboardInput.#keyPressed[event.keyCode]) {
             KeyboardInput.#checkSpecialKey(event);
             KeyboardInput.#keyPressed[event.keyCode] = true;
+            KeyboardInput.#pressedThisFrame.add(event.keyCode);
         }
     }
 
@@ -69,6 +76,13 @@ export class KeyboardInput {
 
     /**@private */
     static clear() {
+        KeyboardInput.#specialKeyPressed = null;
+        KeyboardInput.#pressedThisFrame.clear();
+    }
+
+    static #blur() {
+        KeyboardInput.#keyPressed = [];
+        KeyboardInput.#pressedThisFrame.clear();
         KeyboardInput.#specialKeyPressed = null;
     }
 }

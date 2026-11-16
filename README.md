@@ -24,6 +24,8 @@ npm run serve
 
 Open http://127.0.0.1:8000/debug_project/ and select **Play Game**. This preview server binds to localhost only and needs no Python installation. Use `npm run serve -- --port 8001` to choose another port. ES module examples must be served over HTTP rather than opened as local files.
 
+The new [Emberfall ARPG starter](examples/emberfall/README.md) uses a real `.npt` project and editable scene. Play at http://127.0.0.1:8000/examples/emberfall/, or open the `examples/emberfall` folder in Triton. It includes top-down movement, solid walls, three guardians, melee combat, an altar objective and save/load. It is a playable starter, not the completed multi-map ARPG demo.
+
 On Windows, double-click `Neptune.cmd` to start the desktop editor (`yarn --cwd triton tauri dev`). The launcher uses installed tools or the optional sibling `DevTools` folder.
 
 Run Triton's frontend with `npm run dev:editor`. This previews the UI; native filesystem operations require the desktop app. For that, install the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) (on Windows: Rust MSVC toolchain, Microsoft C++ Build Tools/Windows SDK, and WebView2), then run `npm run dev`.
@@ -67,6 +69,8 @@ Do not rename public modules or move runtime files solely for tidiness: games an
 ## Current capability and limits
 
 The codebase includes scene/entity serialization, Canvas 2D rendering, cameras/layers, tilemaps and minimum-cost grid navigation, animation, collision and trigger helpers, configurable combat and enemy AI, RPG progression/inventory, dialogue, audio, HTML UI, save/load, and editor authoring/persistence. See the tutorials for actual entry points and examples.
+
+`ProjectBehaviour` loads project-local gameplay modules in both the browser runtime and Triton Game View, without importing editor code into games. See Emberfall for its module/settings format and lifecycle contract. `KeyboardInput.IsKeyPressed` preserves quick taps until frame clear; focus loss clears held keys. Native opening, transform editing, save/reopen, activation, movement, gameplay saves and playback were exercised against the actual Windows editor; see [workflow evidence](docs/windows-workflows.md).
 
 Important remaining integration work:
 

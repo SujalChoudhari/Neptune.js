@@ -11,3 +11,4 @@ pnpm-lock.yaml
 *.log
 playwright-report/
 test-results/
+/work/

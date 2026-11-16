@@ -36,6 +36,11 @@ export default defineConfig({
     },
   },
   server: {
+    watch: {
+      // Tauri watches the native backend itself. Windows locks compiler DLLs
+      // in target/, which must never be opened by Vite's frontend watcher.
+      ignored: ['**/src-tauri/**'],
+    },
     fs: {
       // Allow serving files from one level up to the project root
       allow: ['..'],

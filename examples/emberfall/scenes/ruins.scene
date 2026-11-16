@@ -1,0 +1,565 @@
+{
+  "type": "scene",
+  "schemaVersion": 1,
+  "version": "1.0.0",
+  "id": "emberfall-ruins",
+  "name": "Emberfall Ruins",
+  "entities": [
+    {
+      "id": "ground",
+      "name": "Ruins floor",
+      "type": "entity",
+      "transform": {
+        "position": {
+          "x": 7,
+          "y": 4.5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": -10
+      },
+      "components": [
+        {
+          "id": "ground-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "width": 14,
+              "height": 9,
+              "color": {
+                "r": 36,
+                "g": 58,
+                "b": 64,
+                "a": 1
+              },
+              "fill": true,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "north",
+      "name": "North wall",
+      "type": "entity",
+      "transform": {
+        "position": {
+          "x": 7,
+          "y": 0.5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "north-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "width": 14,
+              "height": 1,
+              "color": {
+                "r": 83,
+                "g": 102,
+                "b": 101,
+                "a": 1
+              },
+              "fill": true,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "north-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 14,
+            "height": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "south",
+      "name": "South wall",
+      "type": "entity",
+      "transform": {
+        "position": {
+          "x": 7,
+          "y": 8.5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "south-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "width": 14,
+              "height": 1,
+              "color": {
+                "r": 83,
+                "g": 102,
+                "b": 101,
+                "a": 1
+              },
+              "fill": true,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "south-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 14,
+            "height": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "west",
+      "name": "West wall",
+      "type": "entity",
+      "transform": {
+        "position": {
+          "x": 0.5,
+          "y": 4.5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "west-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "width": 1,
+              "height": 7,
+              "color": {
+                "r": 83,
+                "g": 102,
+                "b": 101,
+                "a": 1
+              },
+              "fill": true,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "west-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 1,
+            "height": 7
+          }
+        }
+      ]
+    },
+    {
+      "id": "east",
+      "name": "East wall",
+      "type": "entity",
+      "transform": {
+        "position": {
+          "x": 13.5,
+          "y": 4.5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "east-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "width": 1,
+              "height": 7,
+              "color": {
+                "r": 83,
+                "g": 102,
+                "b": 101,
+                "a": 1
+              },
+              "fill": true,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "east-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 1,
+            "height": 7
+          }
+        }
+      ]
+    },
+    {
+      "id": "pillar1",
+      "name": "Broken column",
+      "type": "entity",
+      "transform": {
+        "position": {
+          "x": 6,
+          "y": 3
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "pillar1-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "width": 1,
+              "height": 2,
+              "color": {
+                "r": 83,
+                "g": 102,
+                "b": 101,
+                "a": 1
+              },
+              "fill": true,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "pillar1-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 1,
+            "height": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "pillar2",
+      "name": "Broken column II",
+      "type": "entity",
+      "transform": {
+        "position": {
+          "x": 9,
+          "y": 6.5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "pillar2-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "width": 2,
+              "height": 1,
+              "color": {
+                "r": 83,
+                "g": 102,
+                "b": 101,
+                "a": 1
+              },
+              "fill": true,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "pillar2-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 2,
+            "height": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "altar",
+      "name": "Ember altar",
+      "type": "entity",
+      "transform": {
+        "position": {
+          "x": 12,
+          "y": 2
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 1
+      },
+      "components": [
+        {
+          "id": "altar-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "width": 0.8,
+              "height": 0.8,
+              "color": {
+                "r": 230,
+                "g": 182,
+                "b": 94,
+                "a": 1
+              },
+              "fill": true,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "hero",
+      "name": "Wanderer",
+      "type": "entity",
+      "transform": {
+        "position": {
+          "x": 2,
+          "y": 4
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "hero-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "width": 0.65,
+              "height": 0.65,
+              "color": {
+                "r": 124,
+                "g": 218,
+                "b": 194,
+                "a": 1
+              },
+              "fill": true,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "hero-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/game.js",
+            "settings": {
+              "role": "player",
+              "health": 100,
+              "speed": 0,
+              "color": 8182466
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "guard-a",
+      "name": "Ash guardian",
+      "type": "entity",
+      "transform": {
+        "position": {
+          "x": 8,
+          "y": 2
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "guard-a-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "width": 0.65,
+              "height": 0.65,
+              "color": {
+                "r": 184,
+                "g": 103,
+                "b": 102,
+                "a": 1
+              },
+              "fill": true,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "guard-a-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/game.js",
+            "settings": {
+              "role": "enemy",
+              "health": 50,
+              "speed": 0.65,
+              "color": 12085094
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "guard-b",
+      "name": "Moss guardian",
+      "type": "entity",
+      "transform": {
+        "position": {
+          "x": 8,
+          "y": 6
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "guard-b-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "width": 0.65,
+              "height": 0.65,
+              "color": {
+                "r": 123,
+                "g": 166,
+                "b": 108,
+                "a": 1
+              },
+              "fill": true,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "guard-b-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/game.js",
+            "settings": {
+              "role": "enemy",
+              "health": 50,
+              "speed": 0.9,
+              "color": 8103532
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "warden",
+      "name": "Ember Warden",
+      "type": "entity",
+      "transform": {
+        "position": {
+          "x": 11,
+          "y": 4
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "warden-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "width": 0.65,
+              "height": 0.65,
+              "color": {
+                "r": 196,
+                "g": 138,
+                "b": 85,
+                "a": 1
+              },
+              "fill": true,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "warden-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/game.js",
+            "settings": {
+              "role": "enemy",
+              "health": 100,
+              "speed": 0.5,
+              "color": 12880469
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
