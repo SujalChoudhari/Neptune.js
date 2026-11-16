@@ -196,7 +196,11 @@ export const runtimeSelectionBridgeScript = `
         if (!Array.isArray(siblings)) return [];
         const index = siblings.indexOf(entity);
         if (index < 0) return [];
-        siblings.splice(index, 1);
+        // Destroy while still attached so the engine can clean components,
+        // descendant behaviours and the parent link through its lifecycle API.
+        if (typeof entity.destroy === 'function') entity.destroy();
+        const remainingIndex = siblings.indexOf(entity);
+        if (remainingIndex >= 0) siblings.splice(remainingIndex, 1);
         if (entity.parent) entity.parent = null;
         return removedIds;
     };

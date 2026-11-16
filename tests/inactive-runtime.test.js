@@ -16,7 +16,7 @@ test("behaviours pause under inactive ancestors and resume without reinitializin
     let inits = 0;
     const behaviour = new Behaviour("Counter", () => { inits++; }, () => { updates++; });
     child.AddComponent(behaviour);
-    behaviour.Init();
+    ScriptManager.behaviourInit();
     ScriptManager.behaviourUpdate(0.1);
     assert.equal(updates, 1);
     parent.active = false;

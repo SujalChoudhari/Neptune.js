@@ -7,6 +7,11 @@ import { SceneLoader } from '../../src/core/sceneLoader.js';
 import { ComponentRegistry } from '../../src/core/componentRegistry.js';
 import { Shape } from '../../src/rendering/shape.js';
 import { Transform } from '../../src/components/transform.js';
+import { Behaviour } from '../../src/scripts/script.js';
+import { ScriptManager } from '../../src/scripts/scriptManager.js';
+import { Entity } from '../../src/core/entity.js';
+import { Scene } from '../../src/core/scene.js';
+import { SceneManager } from '../../src/core/sceneManager.js';
 import { runtimeSelectionBridgeScript, pickRuntimeEntityAt } from '../src/lib/runtimeSelectionBridge.mjs';
 
 const source = fs.readFileSync('triton/src/components/panels/SceneViewPanel.tsx', 'utf8');
@@ -37,6 +42,89 @@ function connect(game) {
     send.messages = messages;
     return send;
 }
+
+test('deleting a live scripted subtree stops and destroys its behaviours without stopping siblings', () => {
+    const scene = new Scene('Delete lifecycle');
+    const parent = new Entity('Parent'), child = new Entity('Child'), sibling = new Entity('Sibling');
+    scene.AddChildren(parent, sibling);
+    parent.AddChild(child);
+    const ticks = [0, 0, 0];
+    const scripts = [parent, child, sibling].map((entity, index) => {
+        const script = new Behaviour('Delete counter', () => {}, () => ticks[index]++);
+        entity.AddComponent(script);
+        return script;
+    });
+    const send = connect({ scene });
+    SceneManager.LoadScene(scene.id);
+    ScriptManager.behaviourUpdate(1);
+    assert.deepEqual(ticks, [1, 1, 1]);
+    send('editor:delete', { id: parent.id });
+    ScriptManager.behaviourUpdate(1);
+    assert.deepEqual(ticks, [1, 1, 2]);
+    assert.equal(scripts[0].entity, null);
+    assert.equal(scripts[1].entity, null);
+    sibling.destroy();
+});
+
+test('navigating scenes stops unloaded behaviours while retaining additive scene behaviours', () => {
+    SceneManager.removeAllScenes();
+    const scenes = [new Scene('First'), new Scene('Second'), new Scene('Overlay')];
+    const ticks = [0, 0, 0];
+    const scripts = scenes.map((scene, index) => {
+        const entity = new Entity(`Actor ${index}`);
+        scene.AddChild(entity);
+        const script = new Behaviour('Navigation counter', () => {}, () => ticks[index]++);
+        entity.AddComponent(script);
+        return script;
+    });
+    SceneManager.LoadScene(scenes[0].id);
+    ScriptManager.behaviourUpdate(1);
+    assert.deepEqual(ticks, [1, 0, 0]);
+    SceneManager.LoadScene(scenes[1].id);
+    SceneManager.LoadSceneAdditive(scenes[2].id);
+    ScriptManager.behaviourUpdate(1);
+    assert.deepEqual(ticks, [1, 1, 1]);
+    scripts.forEach(script => script.destroy());
+    SceneManager.removeAllScenes();
+});
+
+test('late scene and newly created behaviours initialize exactly once before their first update', t => {
+    SceneManager.removeAllScenes();
+    const scene = new Scene('Late scene');
+    SceneManager.LoadScene(scene.id);
+    const events = [];
+    const actor = new Entity('Late actor');
+    scene.AddChild(actor);
+    const script = new Behaviour('Late script', () => events.push('init'), () => events.push('update'));
+    actor.AddComponent(script);
+    t.after(() => { actor.destroy(); SceneManager.removeAllScenes(); });
+    ScriptManager.behaviourUpdate(1);
+    assert.deepEqual(events, ['init', 'update'], 'new scripts must initialize even after Application startup');
+    ScriptManager.behaviourInit();
+    ScriptManager.behaviourInit();
+    ScriptManager.behaviourUpdate(1);
+    assert.deepEqual(events, ['init', 'update', 'update'], 'stop/restart must not rerun Init on the same script');
+    actor.destroy();
+    SceneManager.removeAllScenes();
+});
+
+test('lifecycle passes skip removed scripts and defer scripts created during the pass', t => {
+    const events = [];
+    let second, spawned;
+    const first = new Behaviour('First script', () => {}, () => {
+        events.push('first');
+        second.destroy();
+        if (!spawned) spawned = new Behaviour('Spawned script', () => events.push('spawn-init'), () => events.push('spawn-update'));
+    });
+    second = new Behaviour('Removed script', () => {}, () => events.push('removed'));
+    t.after(() => { first.destroy(); second.destroy(); spawned?.destroy(); });
+    ScriptManager.behaviourUpdate(1);
+    assert.deepEqual(events, ['first']);
+    ScriptManager.behaviourUpdate(1);
+    assert.deepEqual(events, ['first', 'first', 'spawn-init', 'spawn-update']);
+    first.destroy();
+    spawned.destroy();
+});
 
 test('hierarchy selection and CRUD keep the live scene and saved/reopened scene in sync', async () => {
     Runner.openScene({ id: 'scene-crud', name: 'CRUD', layers: [{ id: 'group', type: 'main', name: 'Group', entities: [

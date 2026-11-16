@@ -7,6 +7,8 @@ import { SceneManager } from "./sceneManager.js";
 import { ScriptManager } from "../scripts/scriptManager.js";
 import { DestroyQueue } from "./destroyQueue.js";
 
+const sceneLoadGenerations = new WeakMap();
+
 /**
  * @class Application
  * @description The main class of the engine. Inherit from this class to create your own game.
@@ -31,6 +33,8 @@ export class Application {
     #fps;
     #initialCanvasSize = { width: 0, height: 0 };
     #isRunning = false;
+    #playGeneration = 0;
+
     #isInitialized = false;
 
     /**
@@ -152,7 +156,7 @@ export class Application {
             this.#isInitialized = true;
         }
         this.#isRunning = true;
-        this.#gameloop(0);
+        this.#gameloop(0, ++this.#playGeneration);
     }
 
     /**
@@ -173,6 +177,7 @@ export class Application {
     stop() {
         this.isPaused = false;
         this.#isRunning = false;
+        this.#playGeneration++;
     }
 
 
@@ -183,11 +188,28 @@ export class Application {
         return SceneManager.GetActiveScene();
     }
 
+    /** Clear editor project state and invalidate asynchronous scene loads. */
+    resetProject() {
+        this.stop();
+        sceneLoadGenerations.set(this, (sceneLoadGenerations.get(this) || 0) + 1);
+        for (const scene of SceneManager.GetScenes()) {
+            scene.active = false;
+            // A scene may still be receiving asynchronous tilemap children.
+            // Leave its root destroyable for the superseded-load cleanup.
+            for (const child of [...scene.children]) child.destroy();
+            for (const component of scene.components) component.destroy();
+        }
+        SceneManager.removeAllScenes();
+        this.#ctx.clearRect(0, 0, this.#width, this.#height);
+    }
+
     /**
      * Load a scene via the application (editor helper).
      * @param {string} path 
      */
     async loadScene(pathOrData) {
+        const generation = (sceneLoadGenerations.get(this) || 0) + 1;
+        sceneLoadGenerations.set(this, generation);
         console.log("Application: Loading Scene", typeof pathOrData === 'string' ? pathOrData : "from Data");
 
         try {
@@ -203,10 +225,18 @@ export class Application {
 
             const newScene = await SceneLoader.parse(data);
 
+            if (generation !== sceneLoadGenerations.get(this)) {
+                SceneManager.removeScene(newScene);
+                newScene.destroy();
+                return false;
+            }
+
             SceneManager.replaceScene(newScene);
             SceneManager.LoadScene(newScene.id);
+            return true;
 
         } catch (e) {
+            if (generation !== sceneLoadGenerations.get(this)) return false;
             console.error("Application: Failed to load scene", e);
             throw e;
         }
@@ -220,8 +250,8 @@ export class Application {
         ScriptManager.behaviourUpdate(timeStamp);
     }
 
-    #gameloop(timeStamp) {
-        if (!this.#isRunning) return;
+    #gameloop(timeStamp, generation) {
+        if (!this.#isRunning || generation !== this.#playGeneration) return;
         // Calculate the time passed since the last frame
         this._deltaTime = (timeStamp - this.#currentTimeStamp) / 1000;  //in seconds
         // console.log("DT:", this._deltaTime);
@@ -249,7 +279,9 @@ export class Application {
         DestroyQueue.destroy();
 
         // Call the next frame
-        if (this.#isRunning) requestAnimationFrame(this.#gameloop.bind(this));
+        if (this.#isRunning && generation === this.#playGeneration) {
+            requestAnimationFrame(nextTimeStamp => this.#gameloop(nextTimeStamp, generation));
+        }
     }
 
     #pageSetup() {

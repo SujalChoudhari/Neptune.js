@@ -8,6 +8,11 @@ export class Script extends Component {
         this.name = name;
         ScriptManager.addScript(this);
     }
+
+    destroy() {
+        ScriptManager.removeScript(this);
+        super.destroy();
+    }
 }
 
 /**

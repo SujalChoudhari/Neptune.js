@@ -57,7 +57,7 @@ test("saved editor-authored scene loads through the Application runtime", async 
         },
         focus() {},
         remove() {},
-        getContext() { return {}; }
+        getContext() { return { clearRect() {} }; }
     });
     const originalDocument = globalThis.document;
     const originalWindow = globalThis.window;
@@ -355,6 +355,41 @@ test("saved editor-authored scene loads through the Application runtime", async 
         assert.equal(actor.GetComponent(Transform).rotation, Math.PI, "left-facing SpawnPoint sets actor orientation");
         assert.equal(SceneManager.GetScene(destinationScene.id), destinationScene);
         assert.equal(SceneManager.GetScenes().filter(scene => scene.id === destinationScene.id).length, 1);
+        // A tilemap parse may finish after the user has already opened another
+        // scene. The runtime must agree with the editor's latest save target.
+        let finishMap;
+        globalThis.fetch = () => new Promise(resolve => { finishMap = resolve; });
+        const slowLoad = application.loadScene({ id: 'slow-scene', name: 'Slow',
+            layers: [{ type: 'tilemap', src: 'maps/slow.map' }], entities: [] });
+        while (!finishMap) await new Promise(resolve => setImmediate(resolve));
+        await application.loadScene({ id: 'latest-scene', name: 'Latest', entities: [] });
+        finishMap({ ok: true, json: async () => JSON.parse(JSON.stringify(authoredMap)) });
+        await slowLoad;
+        assert.equal(application.scene.id, 'latest-scene', 'late tilemap completion must not replace the latest opened scene');
+        assert.equal(SceneManager.GetScene('slow-scene'), undefined, 'discarded runtime scenes must not remain registered');
+        finishMap = null;
+        const sameIdLoad = application.loadScene({ id: 'latest-scene', name: 'Superseded Revision',
+            layers: [{ type: 'tilemap', src: 'maps/slow.map' }], entities: [] });
+        while (!finishMap) await new Promise(resolve => setImmediate(resolve));
+        await application.loadScene({ id: 'latest-scene', name: 'Latest Revision', entities: [] });
+        finishMap({ ok: true, json: async () => JSON.parse(JSON.stringify(authoredMap)) });
+        assert.equal(await sameIdLoad, false);
+        assert.equal(application.scene.name, 'Latest Revision');
+        assert.equal(SceneManager.GetScenes().filter(scene => scene.id === 'latest-scene').length, 1);
+        // A new project may have no main scene, so no subsequent load can be
+        // relied on to invalidate the old project's asynchronous parse.
+        finishMap = null;
+        const oldProjectLoad = application.loadScene({ id: 'old-project', name: 'Old Project',
+            layers: [{ type: 'tilemap', src: 'maps/old.map' }], entities: [] });
+        while (!finishMap) await new Promise(resolve => setImmediate(resolve));
+        application.resetProject();
+        finishMap({ ok: true, json: async () => JSON.parse(JSON.stringify(authoredMap)) });
+        assert.equal(await oldProjectLoad, false);
+        assert.equal(application.scene, undefined, 'project reset cannot resurrect a pending old scene');
+        assert.deepEqual(SceneManager.GetScenes(), []);
+        const staleFailure = application.loadScene({ schemaVersion: 999, entities: [] });
+        application.resetProject();
+        assert.equal(await staleFailure, false, 'a superseded load must not surface old-project errors');
     } finally {
         SceneManager.removeAllScenes();
         if (originalDocument === undefined) delete globalThis.document;

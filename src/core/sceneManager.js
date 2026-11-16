@@ -39,6 +39,11 @@ export class SceneManager {
         return [...SceneManager.#scenes];
     }
 
+    /** Whether a scene participates in the current main/additive runtime pass. */
+    static isSceneLoaded(scene) {
+        return SceneManager.#loadedScenes.includes(scene);
+    }
+
     /** Remove a registered scene that is not currently active. */
     static removeScene(scene) {
         const index = SceneManager.#scenes.indexOf(scene);
