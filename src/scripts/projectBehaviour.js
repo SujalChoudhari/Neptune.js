@@ -1,6 +1,7 @@
 import { Behaviour } from './script.js';
 import { Transform } from '../components/transform.js';
 import { Shape } from '../rendering/shape.js';
+import { Sprite } from '../rendering/sprite.js';
 import { Color } from '../rendering/color.js';
 import { KeyboardInput } from '../input/keyboardinput.js';
 import { SceneManager } from '../core/sceneManager.js';
@@ -9,8 +10,10 @@ import { BoxCollider } from '../components/boxCollider.js';
 import { Camera } from '../thalassa/camera.js';
 import * as Larissa from '../larissa/index.js';
 import * as Nereid from '../nereid/index.js';
+import { InputActions } from '../input/actions.js';
+import { FixedStepper } from '../core/fixedStepper.js';
 
-const api = Object.freeze({ Transform, Shape, Color, KeyboardInput, SceneManager, SaveManager, BoxCollider, Camera, Larissa, Nereid });
+const api = Object.freeze({ Transform, Shape, Sprite, Color, KeyboardInput, InputActions, FixedStepper, SceneManager, SaveManager, BoxCollider, Camera, Larissa, Nereid });
 
 export function validateProjectModulePath(path) {
     if (typeof path !== 'string' || path !== path.trim() || !path.endsWith('.js') || /[:\\?#%\0]/.test(path) || path.split('/').some(part => !part || part === '.' || part === '..')) {

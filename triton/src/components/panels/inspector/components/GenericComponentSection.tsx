@@ -22,8 +22,10 @@ const PropertyField: React.FC<{
     onChange: (value: any) => void
     minimum?: number
     options?: { value: string; label: string }[]
+    resources?: { value: string; label: string }[]
+    resourceKind?: 'image' | 'audio' | 'script' | 'scene' | 'map' | 'any'
     depth?: number
-}> = ({ label, value, onChange, minimum, options, depth = 0 }) => {
+}> = ({ label, value, onChange, minimum, options, resources, resourceKind, depth = 0 }) => {
     const valueType = typeof value
     const [isExpanded, setIsExpanded] = useState(true)
     const [scenePathDraft, setScenePathDraft] = useState(typeof value === 'string' ? value : '')
@@ -155,35 +157,52 @@ const PropertyField: React.FC<{
 
         if (isPath || isFileValue) {
             const displayedValue = isSceneReference ? scenePathDraft : value;
+            const normalizedPath = String(displayedValue).replace(/\\/g, '/');
+            const extensionAllowed = !resourceKind || resourceKind === 'any' || ({
+                image: /\.(png|jpe?g|webp|svg)$/i,
+                audio: /\.(mp3|wav|ogg)$/i,
+                script: /\.(js|mjs|ts)$/i,
+                scene: /\.scene$/i,
+                map: /\.map$/i
+            }[resourceKind]?.test(normalizedPath) ?? true);
             const invalidSceneReference = isSceneReference && !!scenePathDraft && !isSafeSceneAssetPath(scenePathDraft);
+            const invalidResource = !!displayedValue && (!extensionAllowed || normalizedPath.startsWith('/') || normalizedPath.split('/').includes('..'));
             return (
                 <div style={indentStyle}>
                     <PropertyRow label={label}>
-                        <ThemedInput
-                            value={displayedValue}
-                            onChange={(e: any) => {
-                                const nextValue = e.target.value;
-                                if (!isSceneReference) {
-                                    onChange(nextValue);
-                                    return;
-                                }
-                                setScenePathDraft(nextValue);
-                                if (!nextValue || isSafeSceneAssetPath(nextValue)) onChange(nextValue);
-                            }}
-                            // Allow dragging file paths from Project Panel
-                            onDragOver={(e: any) => e.preventDefault()}
-                            onDrop={(e: any) => {
-                                e.preventDefault();
-                                const path = e.dataTransfer.getData('text/plain');
-                                if (!path || (isSceneReference && !isSafeSceneAssetPath(path))) return;
-                                if (isSceneReference) setScenePathDraft(path);
-                                onChange(path);
-                            }}
-                            className="font-mono text-[10px] text-blue-400"
-                            placeholder={isSceneReference ? "Drag a .scene file here..." : "Drag file here..."}
-                            title={invalidSceneReference ? "Use a safe project-relative .scene path" : isSceneReference ? "Drag a scene from the Project Panel" : "Drag asset from Project Panel"}
-                            aria-invalid={invalidSceneReference}
-                        />
+                        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                            {resources && resources.length > 0 && <ThemedSelect
+                                value={resources.some(option => option.value === displayedValue) ? displayedValue : ''}
+                                onChange={(path: string) => { if (isSceneReference) setScenePathDraft(path); onChange(path) }}
+                                options={[{ value: '', label: 'Choose project resource…' }, ...resources]}
+                            />}
+                            <ThemedInput
+                                value={displayedValue}
+                                onChange={(e: any) => {
+                                    const nextValue = e.target.value;
+                                    if (isSceneReference) {
+                                        setScenePathDraft(nextValue);
+                                        if (!nextValue || isSafeSceneAssetPath(nextValue)) onChange(nextValue);
+                                    } else onChange(nextValue);
+                                }}
+                                onDragOver={(e: any) => e.preventDefault()}
+                                onDrop={(e: any) => {
+                                    e.preventDefault();
+                                    const path = e.dataTransfer.getData('text/plain');
+                                    const normalized = path.replace(/\\/g, '/');
+                                    if (!path || normalized.startsWith('/') || normalized.split('/').includes('..')) return;
+                                    if (resourceKind && resourceKind !== 'any' && !({ image: /\.(png|jpe?g|webp|svg)$/i, audio: /\.(mp3|wav|ogg)$/i, script: /\.(js|mjs|ts)$/i, scene: /\.scene$/i, map: /\.map$/i }[resourceKind]?.test(normalized) ?? false)) return;
+                                    if (isSceneReference && !isSafeSceneAssetPath(path)) return;
+                                    if (isSceneReference) setScenePathDraft(path);
+                                    onChange(path);
+                                }}
+                                className="font-mono text-[10px] text-blue-400"
+                                placeholder={isSceneReference ? "Project-relative .scene path" : "Project-relative resource path"}
+                                title={invalidSceneReference ? "Use a safe project-relative .scene path" : invalidResource ? `Choose a valid project-relative ${resourceKind || 'resource'} path` : "Drag a resource from the Project Panel or choose one above"}
+                                aria-invalid={invalidSceneReference || invalidResource}
+                            />
+                            {(invalidSceneReference || invalidResource) && <span role="alert" className="text-[10px] text-red-400">{invalidSceneReference ? "Scene path must stay inside the project and end in .scene." : `Expected a project-relative ${resourceKind || 'resource'} path.`}</span>}
+                        </div>
                     </PropertyRow>
                 </div>
             );
@@ -307,6 +326,8 @@ interface GenericComponentSectionProps {
     isActive: boolean
     onToggleActive?: () => void
     onUpdate: (key: string, value: any) => void
+    onRemove?: () => void
+    resources?: { value: string; label: string }[]
 }
 
 export const GenericComponentSection: React.FC<GenericComponentSectionProps> = ({
@@ -314,7 +335,9 @@ export const GenericComponentSection: React.FC<GenericComponentSectionProps> = (
     data,
     isActive,
     onToggleActive,
-    onUpdate
+    onUpdate,
+    onRemove,
+    resources
 }) => {
     // If data is null or undefined, ensure it's an object to prevent crashes
     const safeData = data || {}
@@ -401,6 +424,7 @@ export const GenericComponentSection: React.FC<GenericComponentSectionProps> = (
             isActive={isActive}
             onToggleActive={onToggleActive}
             canReorder={false}
+            onRemove={onRemove}
         >
             {isEmpty && (
                 <div className="text-[10px] text-muted-foreground italic px-2 py-1">
@@ -436,6 +460,19 @@ export const GenericComponentSection: React.FC<GenericComponentSectionProps> = (
                                     : [])
                             ]
                         : undefined}
+                    resources={resources?.filter(resource => {
+                        const resourceKind = type === 'Sprite' && key.toLowerCase() === 'path' ? 'image'
+                            : ['Sound', 'Audio'].includes(type) && ['src', 'path'].includes(key.toLowerCase()) ? 'audio'
+                            : ['ProjectBehaviour'].includes(type) && key.toLowerCase() === 'path' ? 'script'
+                            : type === 'SceneTransition' && key.toLowerCase() === 'targetscene' ? 'scene'
+                            : key.toLowerCase().includes('map') ? 'map' : null
+                        return resourceKind ? new RegExp(resourceKind === 'image' ? '\\.(png|jpe?g|webp|svg)$' : resourceKind === 'audio' ? '\\.(mp3|wav|ogg)$' : resourceKind === 'script' ? '\\.(js|mjs|ts)$' : resourceKind === 'scene' ? '\\.scene$' : '\\.map$', 'i').test(resource.value) : false
+                    })}
+                    resourceKind={type === 'Sprite' && key.toLowerCase() === 'path' ? 'image'
+                        : ['Sound', 'Audio'].includes(type) && ['src', 'path'].includes(key.toLowerCase()) ? 'audio'
+                        : type === 'ProjectBehaviour' && key.toLowerCase() === 'path' ? 'script'
+                        : type === 'SceneTransition' && key.toLowerCase() === 'targetscene' ? 'scene'
+                        : key.toLowerCase().includes('map') ? 'map' : undefined}
                     onChange={(val) => handleUpdate(rootProps, key, val, rootVirtuals, false)}
                 />
             ))}

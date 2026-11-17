@@ -7,6 +7,8 @@ import { EditorGameRunner } from "../lib/editorGameRunner";
 import { getPlayAction, readRuntimeState } from "../lib/runtimeControlBridge.mjs";
 import { moveHierarchyEntities } from "../lib/moveHierarchyEntities.mjs";
 import { isRuntimeViewMessageSource, readRuntimeMessage, readRuntimeSelection } from "../lib/runtimeSelectionBridge.mjs";
+import { createEditHistory } from "../lib/editHistory.mjs";
+import { isSceneShortcutTargetBlocked } from "../lib/sceneTools.mjs";
 
 interface GameContextType {
     isPlaying: boolean;
@@ -25,13 +27,23 @@ interface GameContextType {
     selectEntities: (ids: string[]) => void;
     setEntityExpansion: (ids: string[], expanded: boolean) => void;
     moveEntities: (ids: string[], targetParentId: string, index?: number) => void;
-    addEntityToHierarchy: (entity: SceneEntity, components?: Array<{ type: string; props?: Record<string, any> }>) => void;
-    addEntityBranchToHierarchy: (branch: Record<string, any>, parentId: string, afterId?: string) => void;
+    addEntityToHierarchy: (entity: SceneEntity, components?: Array<{ type: string; props?: Record<string, any> }>) => boolean;
+    addEntityBranchToHierarchy: (branch: Record<string, any>, parentId: string, afterId?: string) => boolean;
     renameEntityInHierarchy: (id: string, name: string) => void;
     removeEntityFromHierarchy: (id: string) => void;
     setEntityActiveInHierarchy: (id: string, active: boolean) => void;
     setEntityLocked: (id: string, locked: boolean) => void;
     updateComponent: (id: string, component: string, field: string, value: any) => void;
+    addComponent: (id: string, type: string, props?: Record<string, unknown>) => boolean;
+    removeComponent: (id: string, type: string) => boolean;
+    runSceneEdit: (label: string, apply: () => void | boolean, revert: () => void | boolean) => boolean;
+    beginSceneEdit: (label: string) => { commit(): boolean; cancel(): boolean };
+    undoSceneEdit: () => boolean;
+    redoSceneEdit: () => boolean;
+    canUndo: boolean;
+    canRedo: boolean;
+    duplicateEntityInHierarchy: (id: string) => string | null;
+    deleteEntitiesInHierarchy: (ids: string[]) => boolean;
     markAsMainScene: () => void;
 
     // Internal Bridge
@@ -50,6 +62,14 @@ const GameContext = createContext<GameContextType | null>(null);
 
 function reportActivity(message: string, type: 'info' | 'error' | 'pending' | 'ready' = 'info') {
     window.dispatchEvent(new CustomEvent('editor:activity', { detail: { message, type } }));
+}
+
+function cloneEditValue<T>(value: T): T {
+    return value === undefined ? value : JSON.parse(JSON.stringify(value)) as T;
+}
+
+function normalizeComponentName(component: string) {
+    return component.toLowerCase() === 'collider' ? 'BoxCollider' : component;
 }
 
 import { useFileSystem } from "./FileSystemContext";
@@ -89,30 +109,81 @@ export function GameProvider({ children }: { children: ReactNode }) {
     const [currentSceneName, setCurrentSceneName] = useState("Untitled");
     const [currentScenePath, setCurrentScenePath] = useState<string | null>(null);
     const [mainScenePath, setMainScenePath] = useState<string | null>(null);
-    const [currentScenePayload, setCurrentScenePayload] = useState<VersionedScenePayload | null>(null);
     const sceneLoadSequence = useRef(0);
     const projectSequence = useRef(0);
 
     // Hierarchy State
     const [entities, setEntities] = useState<Record<string, SceneEntity>>({});
+    const entitiesRef = useRef(entities);
+    entitiesRef.current = entities;
     const [entityDataCache, setEntityDataCache] = useState<Record<string, EntityData>>({});
+    const entityDataCacheRef = useRef(entityDataCache);
+    entityDataCacheRef.current = entityDataCache;
 
     // Selection State
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [selectedEntitiesData, setSelectedEntitiesData] = useState<Record<string, EntityData>>({});
+    const [canUndo, setCanUndo] = useState(false);
+    const [canRedo, setCanRedo] = useState(false);
+    const historyRef = useRef<ReturnType<typeof createEditHistory> | null>(null);
+    if (!historyRef.current) historyRef.current = createEditHistory({ onChange: state => {
+        setCanUndo(state.canUndo);
+        setCanRedo(state.canRedo);
+    } });
+    const history = historyRef.current;
 
-    const addEntityToHierarchy = useCallback((entity: SceneEntity, components: Array<{ type: string; props?: Record<string, any> }> = []) => {
-        setEntities(previous => {
-            if (previous[entity.id]) return previous;
-            const parentId = entity.parentId && previous[entity.parentId] ? entity.parentId : 'root';
-            const parent = previous[parentId];
-            if (!parent) return previous;
-            return {
-                ...previous,
-                [parentId]: { ...parent, children: [...parent.children, entity.id] },
-                [entity.id]: { ...entity, parentId, children: [...(entity.children || [])] }
-            };
-        });
+    const runSceneEdit = useCallback((label: string, apply: () => void | boolean, revert: () => void | boolean) =>
+        isPlaying ? false : history.run(label, () => {
+            const changed = apply();
+            if (changed !== false) EditorGameRunner.refreshDirtyState();
+            return changed;
+        }, () => {
+            const restored = revert();
+            if (restored === false) return false;
+            EditorGameRunner.refreshDirtyState();
+            return true;
+        }), [history, isPlaying]);
+    const beginSceneEdit = useCallback((label: string) => isPlaying
+        ? { commit: () => false, cancel: () => false }
+        : history.begin(label), [history, isPlaying]);
+    const undoSceneEdit = useCallback(() => isPlaying ? false : history.undo(), [history, isPlaying]);
+    const redoSceneEdit = useCallback(() => isPlaying ? false : history.redo(), [history, isPlaying]);
+
+    const notifyGame = useCallback((type: string, payload?: any) => {
+        const iframes = document.querySelectorAll<HTMLIFrameElement>('iframe[title="Game View"], iframe[title="Scene View"]');
+        iframes.forEach(frame => frame.contentWindow?.postMessage({ type, payload, projectSession: projectSequence.current }, '*'));
+    }, []);
+
+    useEffect(() => {
+        const shortcut = (event: KeyboardEvent) => {
+            if (!(event.ctrlKey || event.metaKey) || event.altKey || isSceneShortcutTargetBlocked(event.target)
+                || isSceneShortcutTargetBlocked(document.activeElement) || document.querySelector('[role="dialog"], dialog[open]')) return;
+            const key = event.key.toLowerCase();
+            if (key === 'z' && event.shiftKey || key === 'y') {
+                event.preventDefault();
+                redoSceneEdit();
+            } else if (key === 'z' && !event.shiftKey) {
+                event.preventDefault();
+                undoSceneEdit();
+            }
+        };
+        window.addEventListener('keydown', shortcut);
+        return () => window.removeEventListener('keydown', shortcut);
+    }, [redoSceneEdit, undoSceneEdit]);
+
+    const projectEntityToHierarchy = useCallback((entity: SceneEntity, components: Array<{ type: string; props?: Record<string, any> }> = []) => {
+        const previous = entitiesRef.current;
+        if (previous[entity.id]) return;
+        const parentId = entity.parentId && previous[entity.parentId] ? entity.parentId : 'root';
+        const parent = previous[parentId];
+        if (!parent) return;
+        const next = {
+            ...previous,
+            [parentId]: { ...parent, children: [...parent.children, entity.id] },
+            [entity.id]: { ...entity, parentId, children: [...(entity.children || [])] }
+        };
+        entitiesRef.current = next;
+        setEntities(next);
         setEntityDataCache(previous => {
             if (previous[entity.id]) return previous;
             const data = hierarchyEntityData({ ...entity, components });
@@ -120,28 +191,120 @@ export function GameProvider({ children }: { children: ReactNode }) {
         });
     }, []);
 
-    const renameEntityInHierarchy = useCallback((id: string, name: string) => {
-        setEntities(previous => previous[id] ? { ...previous, [id]: { ...previous[id], name } } : previous);
-        setEntityDataCache(previous => previous[id] ? { ...previous, [id]: { ...previous[id], name } } : previous);
+    const projectDropBranch = useCallback((id: string) => {
+        const before = entitiesRef.current;
+        const removed = new Set<string>();
+        const collect = (entityId: string) => { if (removed.has(entityId)) return; removed.add(entityId); before[entityId]?.children.forEach(collect); };
+        collect(id);
+        const next = { ...before };
+        const parentId = before[id]?.parentId;
+        if (parentId && next[parentId]) next[parentId] = { ...next[parentId], children: next[parentId].children.filter(child => child !== id) };
+        removed.forEach(entityId => delete next[entityId]);
+        entitiesRef.current = next;
+        setEntities(next);
+        const without = <T,>(previous: Record<string, T>) => Object.fromEntries(Object.entries(previous).filter(([key]) => !removed.has(key)));
+        entityDataCacheRef.current = without(entityDataCacheRef.current);
+        setEntityDataCache(entityDataCacheRef.current);
+        setSelectedEntitiesData(without);
+        setSelectedIds(previous => previous.filter(selected => !removed.has(selected)));
+    }, []);
+
+    const addEntityToHierarchy = useCallback((entity: SceneEntity, components: Array<{ type: string; props?: Record<string, any> }> = []) => {
+        const parentId = entity.parentId && entities[entity.parentId] ? entity.parentId : 'root';
+        const persistenceParentId = EditorGameRunner.resolveHierarchyParentId(parentId, entities);
+        if (!persistenceParentId) return false;
+        const mutation = {
+            id: entity.id, name: entity.name, type: entity.type, active: entity.active,
+            transform: { pos: { x: 0, y: 0 }, rot: 0, scale: { x: 1, y: 1 } }, components
+        };
+        return runSceneEdit(`Create ${entity.name}`, () => {
+            if (!EditorGameRunner.createEntity(persistenceParentId, mutation)) return false;
+            projectEntityToHierarchy({ ...entity, parentId }, components);
+            notifyGame('editor:create-entity', { ...mutation, parentId: persistenceParentId });
+            return true;
+        }, () => {
+            EditorGameRunner.deleteEntity(entity.id);
+            projectDropBranch(entity.id);
+            notifyGame('editor:delete', { id: entity.id });
+        });
+    }, [entities, notifyGame, projectDropBranch, projectEntityToHierarchy, runSceneEdit]);
+
+    const projectRename = useCallback((id: string, name: string) => {
+        const previous = entitiesRef.current;
+        if (previous[id]) {
+            entitiesRef.current = { ...previous, [id]: { ...previous[id], name } };
+            setEntities(entitiesRef.current);
+        }
+        if (entityDataCacheRef.current[id]) {
+            entityDataCacheRef.current = { ...entityDataCacheRef.current, [id]: { ...entityDataCacheRef.current[id], name } };
+            setEntityDataCache(entityDataCacheRef.current);
+        }
         setSelectedEntitiesData(previous => previous[id] ? { ...previous, [id]: { ...previous[id], name } } : previous);
     }, []);
 
-    const setEntityActiveInHierarchy = useCallback((id: string, active: boolean) => {
-        setEntities(previous => previous[id] ? { ...previous, [id]: { ...previous[id], active } } : previous);
-        setEntityDataCache(previous => previous[id] ? { ...previous, [id]: { ...previous[id], active } } : previous);
+    const renameEntityInHierarchy = useCallback((id: string, name: string) => {
+        const oldName = entities[id]?.name;
+        if (!oldName || !name.trim() || oldName === name) return;
+        runSceneEdit(`Rename ${oldName}`, () => {
+            if (!EditorGameRunner.updateEntity(id, 'name', { value: name })) return false;
+            projectRename(id, name);
+            notifyGame('editor:rename', { id, name });
+            reportActivity(`${name}: renamed · unsaved`);
+            return true;
+        }, () => {
+            EditorGameRunner.updateEntity(id, 'name', { value: oldName });
+            projectRename(id, oldName);
+            notifyGame('editor:rename', { id, name: oldName });
+        });
+    }, [entities, notifyGame, projectRename, runSceneEdit]);
+
+    const projectActive = useCallback((id: string, active: boolean) => {
+        const previous = entitiesRef.current;
+        if (previous[id]) {
+            entitiesRef.current = { ...previous, [id]: { ...previous[id], active } };
+            setEntities(entitiesRef.current);
+        }
+        if (entityDataCacheRef.current[id]) {
+            entityDataCacheRef.current = { ...entityDataCacheRef.current, [id]: { ...entityDataCacheRef.current[id], active } };
+            setEntityDataCache(entityDataCacheRef.current);
+        }
         setSelectedEntitiesData(previous => previous[id] ? { ...previous, [id]: { ...previous[id], active } } : previous);
     }, []);
 
-    const setEntityLocked = useCallback((id: string, locked: boolean) => {
-        setEntities(previous => previous[id] && previous[id].locked !== locked
-            ? { ...previous, [id]: { ...previous[id], locked } } : previous);
-    }, []);
+    const setEntityActiveInHierarchy = useCallback((id: string, active: boolean) => {
+        const before = entities[id]?.active;
+        if (before === undefined || before === active) return;
+        runSceneEdit(`${active ? 'Activate' : 'Deactivate'} ${entities[id]?.name || 'entity'}`, () => {
+            if (!EditorGameRunner.updateEntity(id, 'active', { value: active })) return false;
+            projectActive(id, active);
+            notifyGame('editor:set-active', { id, active });
+            reportActivity(`${entities[id]?.name || 'Entity'}: ${active ? 'active' : 'inactive'} · unsaved`);
+            return true;
+        }, () => {
+            EditorGameRunner.updateEntity(id, 'active', { value: before });
+            projectActive(id, before);
+            notifyGame('editor:set-active', { id, active: before });
+        });
+    }, [entities, notifyGame, projectActive, runSceneEdit]);
 
-    const addEntityBranchToHierarchy = useCallback((branch: Record<string, any>, parentId: string, afterId?: string) => {
+    const setEntityLocked = useCallback((id: string, locked: boolean) => {
+        const before = entities[id]?.locked;
+        if (before === undefined || before === locked) return;
+        const update = (value: boolean) => {
+            const previous = entitiesRef.current;
+            if (previous[id] && previous[id].locked !== value) {
+                entitiesRef.current = { ...previous, [id]: { ...previous[id], locked: value } };
+                setEntities(entitiesRef.current);
+            }
+        };
+        runSceneEdit(`${locked ? 'Lock' : 'Unlock'} ${entities[id]?.name || 'entity'}`, () => { update(locked); return true; }, () => update(before));
+    }, [entities, runSceneEdit]);
+
+    const projectEntityBranch = useCallback((branch: Record<string, any>, parentId: string, afterId?: string) => {
         const additions: Record<string, SceneEntity> = {};
         const data: Record<string, EntityData> = {};
         const visit = (node: Record<string, any>, nodeParentId: string): boolean => {
-            if (typeof node?.id !== 'string' || entities[node.id] || additions[node.id]) return false;
+            if (typeof node?.id !== 'string' || additions[node.id]) return false;
             const children = Array.isArray(node.children) ? node.children : [];
             additions[node.id] = {
                 id: node.id, parentId: nodeParentId, name: node.name || 'Entity',
@@ -155,42 +318,122 @@ export function GameProvider({ children }: { children: ReactNode }) {
             }
             return true;
         };
-        if (!entities[parentId] || !visit(branch, parentId)) return;
-        setEntities(previous => {
-            const parent = previous[parentId];
-            if (!parent || previous[branch.id]) return previous;
-            const children = [...parent.children];
-            const sourceIndex = afterId ? children.indexOf(afterId) : -1;
-            children.splice(sourceIndex === -1 ? children.length : sourceIndex + 1, 0, branch.id);
-            return { ...previous, [parentId]: { ...parent, children }, ...additions };
+        if (!entitiesRef.current[parentId] || !visit(branch, parentId)) return;
+        const previous = entitiesRef.current;
+        if (Object.keys(additions).some(id => previous[id])) return;
+        const parent = previous[parentId];
+        if (!parent || previous[branch.id]) return;
+        const children = [...parent.children];
+        const sourceIndex = afterId ? children.indexOf(afterId) : -1;
+        children.splice(sourceIndex === -1 ? children.length : sourceIndex + 1, 0, branch.id);
+        const next = { ...previous, [parentId]: { ...parent, children }, ...additions };
+        entitiesRef.current = next;
+        setEntities(next);
+        entityDataCacheRef.current = { ...entityDataCacheRef.current, ...data };
+        setEntityDataCache(entityDataCacheRef.current);
+    }, []);
+
+    const projectRemoveEntityFromHierarchy = useCallback((id: string) => {
+        if (id === 'root' || !entitiesRef.current[id]) return;
+        projectDropBranch(id);
+    }, [projectDropBranch]);
+
+    const addEntityBranchToHierarchy = useCallback((branch: Record<string, any>, parentId: string, afterId?: string) => {
+        const persistenceParent = EditorGameRunner.resolveHierarchyParentId(parentId, entities);
+        if (!persistenceParent || !branch?.id) return false;
+        const siblings = entities[parentId]?.children || [];
+        const siblingIndex = afterId ? siblings.indexOf(afterId) + 1 : siblings.length;
+        const persist = () => EditorGameRunner.insertEntityBranch(persistenceParent, branch, siblingIndex);
+        return runSceneEdit(`Add ${branch.name || 'entity'} branch`, () => {
+            if (!persist()) return false;
+            projectEntityBranch(branch, parentId, afterId);
+            notifyGame('editor:load-scene', { data: EditorGameRunner.currentScene });
+            return true;
+        }, () => {
+            EditorGameRunner.deleteEntity(branch.id);
+            projectRemoveEntityFromHierarchy(branch.id);
+            notifyGame('editor:delete', { id: branch.id });
         });
-        setEntityDataCache(previous => ({ ...previous, ...data }));
-    }, [entities]);
+    }, [entities, notifyGame, projectEntityBranch, projectRemoveEntityFromHierarchy, runSceneEdit]);
 
     const removeEntityFromHierarchy = useCallback((id: string) => {
         if (id === 'root' || !entities[id]) return;
-        const removed = new Set<string>();
-        const collect = (entityId: string) => {
-            if (removed.has(entityId)) return;
-            removed.add(entityId);
-            entities[entityId]?.children.forEach(collect);
-        };
-        collect(id);
-        setEntities(previous => {
-            const next = { ...previous };
-            const parentId = previous[id]?.parentId;
-            if (parentId && next[parentId]) next[parentId] = {
-                ...next[parentId], children: next[parentId].children.filter(childId => childId !== id)
-            };
-            removed.forEach(entityId => delete next[entityId]);
-            return next;
+        const parentId = entities[id].parentId || 'root';
+        const persistenceParent = EditorGameRunner.resolveHierarchyParentId(parentId, entities);
+        const siblings = entities[parentId]?.children || [];
+        const index = siblings.indexOf(id);
+        const branch = EditorGameRunner.getEntityBranch(id);
+        if (!persistenceParent || !branch) return;
+        return runSceneEdit(`Delete ${entities[id].name}`, () => {
+            if (!EditorGameRunner.deleteEntity(id)) return false;
+            projectRemoveEntityFromHierarchy(id);
+            notifyGame('editor:delete', { id });
+            return true;
+        }, () => {
+            EditorGameRunner.insertEntityBranch(persistenceParent, branch, index);
+            projectEntityBranch(branch, parentId, siblings[index - 1]);
+            notifyGame('editor:load-scene', { data: EditorGameRunner.currentScene });
         });
-        const withoutBranch = <T,>(previous: Record<string, T>): Record<string, T> =>
-            Object.fromEntries(Object.entries(previous).filter(([entityId]) => !removed.has(entityId)));
-        setEntityDataCache(withoutBranch);
-        setSelectedEntitiesData(withoutBranch);
-        setSelectedIds(previous => previous.filter(selectedId => !removed.has(selectedId)));
-    }, [entities]);
+    }, [entities, notifyGame, projectEntityBranch, projectRemoveEntityFromHierarchy, runSceneEdit]);
+
+    const duplicateEntityInHierarchy = useCallback((id: string) => {
+        const source = entities[id];
+        if (!source) return null;
+        const parentId = source.parentId || 'root';
+        const persistenceParent = EditorGameRunner.resolveHierarchyParentId(parentId, entities);
+        if (!persistenceParent) return null;
+        const branchRef: { current: Record<string, any> | null } = { current: null };
+        const siblings = entities[parentId]?.children || [];
+        const index = siblings.indexOf(id) + 1;
+        const ok = runSceneEdit(`Duplicate ${source.name}`, () => {
+            if (!branchRef.current) branchRef.current = EditorGameRunner.duplicateEntity(id);
+            else if (!EditorGameRunner.insertEntityBranch(persistenceParent, branchRef.current, index)) return false;
+            if (!branchRef.current) return false;
+            projectEntityBranch(branchRef.current, parentId, id);
+            notifyGame('editor:load-scene', { data: EditorGameRunner.currentScene });
+            return true;
+        }, () => {
+            const branch = branchRef.current;
+            if (!branch || !EditorGameRunner.deleteEntity(branch.id)) return false;
+            projectDropBranch(branch.id);
+            notifyGame('editor:delete', { id: branch.id });
+            return true;
+        });
+        return ok ? branchRef.current?.id || null : null;
+    }, [entities, notifyGame, projectDropBranch, projectEntityBranch, runSceneEdit]);
+
+    const deleteEntitiesInHierarchy = useCallback((ids: string[]) => {
+        const selected = [...new Set(ids)].filter(id => entities[id] && id !== 'root');
+        const selectedSet = new Set(selected);
+        const topLevel = selected.filter(id => {
+            let parent = entities[id]?.parentId || null;
+            while (parent) { if (selectedSet.has(parent)) return false; parent = entities[parent]?.parentId || null; }
+            return true;
+        });
+        const items = topLevel.map(id => {
+            const parentId = entities[id]?.parentId || 'root';
+            return {
+                id, parentId,
+                parent: EditorGameRunner.resolveHierarchyParentId(parentId, entities),
+                index: (entities[parentId]?.children || []).indexOf(id),
+                branch: EditorGameRunner.getEntityBranch(id)
+            };
+        }).filter(item => item.parent && item.branch);
+        if (!items.length) return false;
+        const firstItem = items[0] as (typeof items)[number];
+        return runSceneEdit(`Delete ${items.length === 1 ? entities[firstItem.id].name : `${items.length} entities`}`, () => {
+            for (const item of items) if (!EditorGameRunner.deleteEntity(item.id)) return false;
+            items.forEach(item => projectDropBranch(item.id));
+            notifyGame('editor:load-scene', { data: EditorGameRunner.currentScene });
+            return true;
+        }, () => {
+            for (const item of [...items].sort((a, b) => a.index - b.index)) {
+                EditorGameRunner.insertEntityBranch(item.parent!, item.branch!, item.index);
+                projectEntityBranch(item.branch!, item.parentId, (entities[item.parentId]?.children || [])[item.index - 1]);
+            }
+            notifyGame('editor:load-scene', { data: EditorGameRunner.currentScene });
+        });
+    }, [entities, notifyGame, projectDropBranch, projectEntityBranch, runSceneEdit]);
 
     const setEntityExpansion = useCallback((ids: string[], expanded: boolean) => {
         const targetIds = new Set(ids);
@@ -223,20 +466,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     // --- Bridge Communication ---
 
-    const notifyGame = useCallback((type: string, payload?: any) => {
-        // Find all game iframes (Game View and Scene View)
-        const iframes = document.querySelectorAll('iframe[title="Game View"], iframe[title="Scene View"]');
-
-        console.log(`[GameContext] Sending '${type}' to ${iframes.length} targets. Payload:`, payload);
-
-        iframes.forEach((iframe) => {
-            const frame = iframe as HTMLIFrameElement;
-            if (frame.contentWindow) {
-                frame.contentWindow.postMessage({ type, payload, projectSession: projectSequence.current }, '*');
-            }
-        });
-    }, []);
-
     const loadScene = useCallback(async (path: string) => {
         const sequence = ++sceneLoadSequence.current;
         reportActivity(`Loading scene: ${path}`, 'pending');
@@ -249,13 +478,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
         try {
             const data = EditorGameRunner.validateScene(await readScene(path)) as unknown as VersionedScenePayload;
             if (sequence !== sceneLoadSequence.current) return;
+            history.clear();
             EditorGameRunner.openScene(data, path);
             // A failed read must never turn an untrusted file path into the
             // current save target. Commit the scene identity only after the
             // versioned payload has been accepted by the native bridge.
             setCurrentSceneName(path.split('/').pop() || "Scene");
             setCurrentScenePath(path);
-            setCurrentScenePayload(data);
             reportActivity(`Scene loaded: ${path}`);
 
             // Notify Game Engine
@@ -266,6 +495,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             // Clear previous entities
             setEntities({});
             setEntityDataCache({});
+            entityDataCacheRef.current = {};
             setSelectedIds([]);
             setSelectedEntitiesData({});
 
@@ -438,6 +668,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             console.log("Parsed Data Cache:", newDataCache);
             setEntities(newEntities);
             setEntityDataCache(newDataCache);
+            entityDataCacheRef.current = newDataCache;
         } catch (e) {
             if (sequence === sceneLoadSequence.current) reportActivity(`Scene load failed: ${e instanceof Error ? e.message : String(e)}`, 'error');
             if (sequence !== sceneLoadSequence.current) return;
@@ -445,7 +676,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             EditorGameRunner.report(e);
             throw e;
         } // HMR Trigger
-    }, [readScene, notifyGame]);
+    }, [readScene, notifyGame, history]);
 
     const addTilemapLayer = useCallback((path: string) => {
         if (!currentScenePath) return false;
@@ -482,7 +713,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
         }));
 
         const scene = EditorGameRunner.currentScene as VersionedScenePayload;
-        setCurrentScenePayload(JSON.parse(JSON.stringify(scene)) as VersionedScenePayload);
         notifyGame("editor:load-scene", { path: currentScenePath, data: scene });
         return true;
     }, [currentScenePath, notifyGame]);
@@ -532,6 +762,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
                     // message, so relaying here synchronizes views without echo.
                     notifyGame('editor:select', { ids: selectionIds });
 
+                    if (isPlaying) {
+                        const authoredBinding: Record<string, EntityData> = {};
+                        selectionIds.forEach(id => { if (entityDataCache[id]) authoredBinding[id] = entityDataCache[id]; });
+                        setSelectedEntitiesData(authoredBinding);
+                        break;
+                    }
+
                     const newBinding: Record<string, EntityData> = {};
                     selectionIds.forEach(id => {
                         if (selection.data[id]) newBinding[id] = selection.data[id] as EntityData;
@@ -547,6 +784,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
                     setSelectedEntitiesData(newBinding);
                     break;
                 case 'game:component-updated':
+                    if (isPlaying) break;
                     // Update local cache for ANY entity we have selected
                     if (selectedEntitiesData[payload.id]) {
                         setSelectedEntitiesData(prev => ({
@@ -620,12 +858,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
             : [id]);
     };
 
-    const moveEntities = (ids: string[], targetParentId: string, index?: number) => {
-        setEntities(previous => moveHierarchyEntities(previous, ids, targetParentId, index));
-        notifyGame('editor:move-entities', { ids, targetParentId, index });
-    };
-
-    const updateComponent = (id: string, component: string, field: string, value: any) => {
+    const applyComponentField = useCallback((id: string, component: string, field: string, value: any) => {
+        const canonicalComponent = normalizeComponentName(component);
+        if (!EditorGameRunner.updateEntity(id, canonicalComponent, { [field]: value })) return false;
         const entityName = selectedEntitiesData[id]?.name || entityDataCache[id]?.name || entities[id]?.name || 'Entity';
         const displayValue = (item: unknown) => {
             let text: string;
@@ -633,43 +868,120 @@ export function GameProvider({ children }: { children: ReactNode }) {
             catch { text = String(item); }
             return (text || String(item)).slice(0, 48);
         };
-        const property = component.toLowerCase() === 'transform'
+        const property = canonicalComponent.toLowerCase() === 'transform'
             ? ({ position: 'position', rotation: 'rotation', scale: 'scale', z: 'depth' } as Record<string, string>)[field] || field
             : `${component} ${field}`;
         reportActivity(`${entityName}: ${property} = ${displayValue(value)} · unsaved`);
-        if (selectedEntitiesData[id]) {
-            const updateData = (previous: Record<string, EntityData>) => {
-                const selectedEntity = previous[id];
-                if (!selectedEntity) return previous;
+        const updateData = (previous: Record<string, EntityData>) => {
+            const selectedEntity = previous[id];
+            if (!selectedEntity) return previous;
+            if (canonicalComponent.toLowerCase() === 'transform') return { ...previous, [id]: {
+                ...selectedEntity, transform: { ...selectedEntity.transform, [field]: value }
+            } };
+            const components = selectedEntity.components || {};
+            const componentKey = Object.keys(components).find(key => key.toLowerCase() === canonicalComponent.toLowerCase()) || canonicalComponent;
+            return { ...previous, [id]: { ...selectedEntity, components: {
+                ...components, [componentKey]: { ...(components[componentKey] || {}), [field]: value }
+            } } };
+        };
+        entityDataCacheRef.current = updateData(entityDataCacheRef.current);
+        setSelectedEntitiesData(updateData);
+        setEntityDataCache(updateData);
+        notifyGame('editor:update-component', { id, component: canonicalComponent, data: { [field]: value } });
+        return true;
+    }, [selectedEntitiesData, entityDataCache, entities, notifyGame]);
 
-                if (component.toLowerCase() === 'transform') {
-                    return {
-                        ...previous,
-                        [id]: {
-                            ...selectedEntity,
-                            transform: { ...selectedEntity.transform, [field]: value }
-                        }
-                    };
-                }
+    const updateComponent = useCallback((id: string, component: string, field: string, value: any) => {
+        const canonicalComponent = normalizeComponentName(component);
+        const data = entityDataCacheRef.current[id] || selectedEntitiesData[id];
+        if (!data) return;
+        const previous = cloneEditValue(canonicalComponent.toLowerCase() === 'transform'
+            ? (data.transform as unknown as Record<string, unknown>)[field]
+            : data.components?.[Object.keys(data.components || {}).find(key => key.toLowerCase() === canonicalComponent.toLowerCase()) || canonicalComponent]?.[field]);
+        if (JSON.stringify(previous) === JSON.stringify(value)) return;
+        runSceneEdit(`${data.name}: ${canonicalComponent} ${field}`,
+            () => applyComponentField(id, canonicalComponent, field, value),
+            () => applyComponentField(id, canonicalComponent, field, previous));
+    }, [entityDataCache, selectedEntitiesData, runSceneEdit, applyComponentField]);
 
-                const components = selectedEntity.components || {};
-                const componentKey = Object.keys(components).find(key => key.toLowerCase() === component.toLowerCase()) || component;
-                return {
-                    ...previous,
-                    [id]: {
-                        ...selectedEntity,
-                        components: {
-                            ...components,
-                            [componentKey]: { ...(components[componentKey] || {}), [field]: value }
-                        }
-                    }
-                };
+    const addComponent = useCallback((id: string, type: string, props: Record<string, unknown> = {}) => {
+        const data = entityDataCache[id];
+        if (!data || !type.trim() || Object.keys(data.components || {}).some(key => key.toLowerCase() === type.toLowerCase())) return false;
+        let applied = false;
+        const change = (add: boolean) => {
+            applied = add ? EditorGameRunner.addComponent(id, type, props) : EditorGameRunner.removeComponent(id, type);
+            if (!applied) return false;
+            const update = (previous: Record<string, EntityData>) => {
+                if (!previous[id]) return previous;
+                const components = { ...(previous[id].components || {}) };
+                if (add) components[type] = { ...props }; else delete components[type];
+                return { ...previous, [id]: { ...previous[id], components } };
             };
-            setSelectedEntitiesData(updateData);
-            setEntityDataCache(updateData);
-        }
-        notifyGame('editor:update-component', { id, component, data: { [field]: value } });
-    };
+            entityDataCacheRef.current = update(entityDataCacheRef.current);
+            setEntityDataCache(update);
+            setSelectedEntitiesData(update);
+            notifyGame('editor:load-scene', { data: EditorGameRunner.currentScene });
+            reportActivity(`${data.name}: ${add ? 'added' : 'removed'} ${type} · unsaved`);
+            return true;
+        };
+        return runSceneEdit(`Add ${type} to ${data.name}`, () => change(true), () => { change(false); });
+    }, [entityDataCache, notifyGame, runSceneEdit]);
+
+    const removeComponent = useCallback((id: string, type: string) => {
+        const data = entityDataCache[id];
+        const key = Object.keys(data?.components || {}).find(name => name.toLowerCase() === type.toLowerCase());
+        if (!data || !key || key.toLowerCase() === 'transform') return false;
+        const props = data.components[key];
+        const change = (add: boolean) => {
+            const changed = add ? EditorGameRunner.addComponent(id, key, props) : EditorGameRunner.removeComponent(id, key);
+            if (!changed) return false;
+            const update = (previous: Record<string, EntityData>) => {
+                if (!previous[id]) return previous;
+                const components = { ...(previous[id].components || {}) };
+                if (add) components[key] = props; else delete components[key];
+                return { ...previous, [id]: { ...previous[id], components } };
+            };
+            entityDataCacheRef.current = update(entityDataCacheRef.current);
+            setEntityDataCache(update);
+            setSelectedEntitiesData(update);
+            notifyGame('editor:load-scene', { data: EditorGameRunner.currentScene });
+            reportActivity(`${data.name}: ${add ? 'added' : 'removed'} ${key} · unsaved`);
+            return true;
+        };
+        return runSceneEdit(`Remove ${key} from ${data.name}`, () => change(false), () => { change(true); });
+    }, [entityDataCache, notifyGame, runSceneEdit]);
+
+    const moveEntities = useCallback((ids: string[], targetParentId: string, index?: number) => {
+        const before = entitiesRef.current;
+        const next = moveHierarchyEntities(before, ids, targetParentId, index);
+        if (next === before || next === null) return;
+        const sourceParents = [...new Set(ids.map(id => before[id]?.parentId).filter((id): id is string => Boolean(id)))];
+        const sourceGroups = sourceParents.map(parentId => {
+            const orderedIds = (before[parentId]?.children || []).filter(id => ids.includes(id));
+            return { parentId, orderedIds, index: Math.min(...orderedIds.map(id => before[parentId].children.indexOf(id))),
+                persistenceParent: EditorGameRunner.resolveHierarchyParentId(parentId, before) };
+        }).filter(group => group.orderedIds.length > 0 && group.persistenceParent);
+        const targetChildren = next[targetParentId]?.children || [];
+        const actualIndex = Math.min(...ids.map(id => targetChildren.indexOf(id)).filter(value => value >= 0));
+        const persistenceTarget = EditorGameRunner.resolveHierarchyParentId(targetParentId, before);
+        if (!persistenceTarget || sourceGroups.length === 0) return;
+        runSceneEdit('Reparent entities', () => {
+            if (!EditorGameRunner.moveEntities(ids, persistenceTarget, Number.isFinite(actualIndex) ? actualIndex : index)) return false;
+            entitiesRef.current = next;
+            setEntities(next);
+            notifyGame('editor:move-entities', { ids, targetParentId: persistenceTarget, index: actualIndex });
+            return true;
+        }, () => {
+            let restored = entitiesRef.current;
+            sourceGroups.forEach(group => {
+                EditorGameRunner.moveEntities(group.orderedIds, group.persistenceParent!, group.index);
+                restored = moveHierarchyEntities(restored, group.orderedIds, group.parentId, group.index);
+                notifyGame('editor:move-entities', { ids: group.orderedIds, targetParentId: group.persistenceParent, index: group.index });
+            });
+            entitiesRef.current = restored;
+            setEntities(restored);
+        });
+    }, [notifyGame, runSceneEdit]);
 
     const markAsMainScene = useCallback(async () => {
         if (!rootPath || !currentScenePath) {
@@ -693,7 +1005,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         }
     }, [rootPath, currentScenePath, currentSceneName, readProject, writeProject]);
 
-    const saveScene = useCallback(async (scene = currentScenePayload || {}) => {
+    const saveScene = useCallback(async (scene?: VersionedScenePayload) => {
         if (!currentScenePath) {
             throw new Error("Cannot save scene: no scene is open.");
         }
@@ -704,15 +1016,18 @@ export function GameProvider({ children }: { children: ReactNode }) {
             sceneLoadSequence.current === sceneSequenceAtStart && currentScenePath === path;
         reportActivity(`Saving scene: ${path}`, 'pending');
         try {
-            const saved = await writeScene(path, scene);
+            const saved = scene
+                ? await writeScene(path, scene)
+                : await EditorGameRunner.saveScene(async (targetPath, content) =>
+                    writeScene(targetPath, JSON.parse(content) as VersionedScenePayload), path);
             if (!saved) throw new Error(`Could not save scene: ${path}`);
             if (isCurrentSave()) reportActivity(`Scene saved: ${path}`, 'ready');
-            return saved;
+            return true;
         } catch (error) {
             if (isCurrentSave()) reportActivity(`Scene save failed: ${error instanceof Error ? error.message : String(error)}`, 'error');
             throw error;
         }
-    }, [currentScenePath, currentScenePayload, writeScene]);
+    }, [currentScenePath, writeScene]);
 
     const loadMainScene = useCallback(async () => {
         if (!rootPath) return;
@@ -744,15 +1059,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
         setIsPaused(false);
         notifyGame('editor:stop');
         notifyGame('editor:reset-project');
-        EditorGameRunner.currentScene = null;
-        EditorGameRunner.currentScenePath = null;
+        history.clear();
+        EditorGameRunner.closeScene();
         setCurrentSceneName("Untitled");
         reportActivity(rootPath ? 'Project opened' : 'Ready', 'ready');
         setCurrentScenePath(null);
-        setCurrentScenePayload(null);
         setMainScenePath(null);
         setEntities({});
         setEntityDataCache({});
+        entityDataCacheRef.current = {};
         setSelectedIds([]);
         setSelectedEntitiesData({});
         notifyGame('editor:select', { ids: [] });
@@ -760,6 +1075,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
             void loadMainScene();
         }
     }, [rootPath, loadMainScene, notifyGame]);
+
+    useEffect(() => {
+        const warnOnClose = (event: BeforeUnloadEvent) => {
+            if (!EditorGameRunner.isDirty) return;
+            event.preventDefault();
+            event.returnValue = '';
+        };
+        window.addEventListener('beforeunload', warnOnClose);
+        return () => window.removeEventListener('beforeunload', warnOnClose);
+    }, []);
 
     return (
         <GameContext.Provider value={{
@@ -784,6 +1109,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
             setEntityActiveInHierarchy,
             setEntityLocked,
             updateComponent,
+            addComponent,
+            removeComponent,
+            runSceneEdit,
+            beginSceneEdit,
+            undoSceneEdit,
+            redoSceneEdit,
+            canUndo,
+            canRedo,
+            duplicateEntityInHierarchy,
+            deleteEntitiesInHierarchy,
             markAsMainScene,
             notifyGame,
             loadScene,

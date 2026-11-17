@@ -114,12 +114,24 @@ export function GameViewPanel() {
                 // Basic Listener for Scene Loading (Minimal Bridge)
                 let sceneLoad = Promise.resolve(true);
                 let playbackGeneration = 0;
+                let projectGeneration = 0;
+                let playbackRestore = null;
+                let authoredSceneSnapshot = null;
+                const cloneScene = game => {
+                    const scene = game.scene;
+                    if (!scene || typeof scene.serialize !== 'function') return null;
+                    return JSON.parse(JSON.stringify(scene.serialize()));
+                };
                 window.addEventListener('message', (e) => {
                     const { type, payload, projectSession } = e.data;
                     const game = window.game;
+                    const reportControlState = state => window.parent.postMessage({ type: 'game:state-update', payload: state, projectSession }, '*');
 
                     if (type === 'editor:reset-project') {
                         playbackGeneration++;
+                        projectGeneration++;
+                        playbackRestore = null;
+                        authoredSceneSnapshot = null;
                         sceneLoad = Promise.resolve(false);
                         game.resetProject();
                         projectResources.setScenePath('');
@@ -130,13 +142,62 @@ export function GameViewPanel() {
                         const generation = ++playbackGeneration;
                         sceneLoad.then(loaded => {
                             if (!loaded || generation !== playbackGeneration) return;
-                            runRuntimeControl(game, 'editor:play', null, state => window.parent.postMessage({ type: 'game:state-update', payload: state, projectSession }, '*'));
-                            if (payload?.paused) runRuntimeControl(game, 'editor:pause', { paused: true }, state => window.parent.postMessage({ type: 'game:state-update', payload: state, projectSession }, '*'));
+                            if (!game.isRunning) authoredSceneSnapshot = cloneScene(game);
+                            runRuntimeControl(game, 'editor:play', null, reportControlState);
+                            if (payload?.paused) runRuntimeControl(game, 'editor:pause', { paused: true }, reportControlState);
                         });
                         return;
                     }
 
-                    if (type === 'editor:stop' || type === 'editor:play') playbackGeneration++;
+                    if (type === 'editor:stop') {
+                        playbackGeneration++;
+                        runRuntimeControl(game, type, payload, reportControlState);
+                        if (!playbackRestore && authoredSceneSnapshot) {
+                            const generation = projectGeneration;
+                            const snapshot = authoredSceneSnapshot;
+                            const restore = sceneLoad.then(async loaded => {
+                                if (!loaded || generation !== projectGeneration) return false;
+                                try {
+                                    const restored = await game.loadScene(snapshot);
+                                    if (restored && generation === projectGeneration) {
+                                        window.dispatchEvent(new Event('neptune:editor-selection-ready'));
+                                    }
+                                    return restored;
+                                } catch (error) {
+                                    reportRuntimeError('GAME_SCENE_RESTORE_ERROR', describeRuntimeFailure(error));
+                                    return false;
+                                }
+                            });
+                            playbackRestore = restore;
+                            sceneLoad = restore;
+                            void restore.finally(() => { if (playbackRestore === restore) playbackRestore = null; });
+                        }
+                        return;
+                    }
+
+                    if (type === 'editor:play') {
+                        playbackGeneration++;
+                        if (game.isRunning) {
+                            runRuntimeControl(game, type, payload, reportControlState);
+                            return;
+                        }
+                        if (playbackRestore) {
+                            const generation = playbackGeneration;
+                            const project = projectGeneration;
+                            const restore = playbackRestore;
+                            void restore.then(loaded => {
+                                if (!loaded || generation !== playbackGeneration || project !== projectGeneration || game.isRunning) return;
+                                authoredSceneSnapshot = cloneScene(game);
+                                runRuntimeControl(game, 'editor:play', payload, reportControlState);
+                            });
+                            return;
+                        }
+                        authoredSceneSnapshot = cloneScene(game);
+                    } else if (type === 'editor:load-scene') {
+                        projectGeneration++;
+                        playbackRestore = null;
+                        authoredSceneSnapshot = null;
+                    }
 
                     const controlHandled = runRuntimeControl(game, type, payload, state => {
                         window.parent.postMessage({ type: 'game:state-update', payload: state, projectSession }, '*');
@@ -147,7 +208,7 @@ export function GameViewPanel() {
                          if (typeof payload.path === 'string') projectResources.setScenePath(payload.path);
                          sceneLoad = game.loadScene(payload.data || payload.path)
                              .then(loaded => { if (loaded === false) return false; window.dispatchEvent(new Event('neptune:editor-selection-ready')); return true; })
-                             .catch(error => { reportRuntimeError('GAME_SCENE_LOAD_ERROR', describeRuntimeFailure(error), payload?.path); return false; });
+                             .catch(error => { reportRuntimeError('GAME_SCENE_LOAD_ERROR', describeRuntimeFailure(error), payload?.path); return Boolean(game.scene); });
                     }
                     else if (type === 'editor:rename') {
                          if (typeof payload?.name !== 'string') return;

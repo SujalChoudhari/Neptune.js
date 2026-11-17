@@ -94,7 +94,7 @@ if (typeof global.document === 'undefined') {
 
         removeEventListener() {}
     };
-    global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
+    global.requestAnimationFrame = (cb) => setTimeout(() => cb(performance.now()), 16);
 
     const createStorage = () => {
         const store = new Map();

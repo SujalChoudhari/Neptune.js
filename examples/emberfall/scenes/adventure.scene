@@ -1,0 +1,1091 @@
+{
+  "type": "scene",
+  "schemaVersion": 1,
+  "version": "1.0.0",
+  "id": "emberfall-adventure",
+  "name": "Emberfall — The First Ember",
+  "entities": [
+    {
+      "type": "entity",
+      "id": "world-floor",
+      "name": "Hollow to the Old Keep",
+      "transform": {
+        "position": {
+          "x": 15,
+          "y": 4.5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "world-floor-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 38,
+                "g": 58,
+                "b": 50,
+                "a": 1
+              },
+              "fill": true,
+              "width": 30,
+              "height": 9,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "hollow-ground",
+      "name": "Briar Hollow",
+      "transform": {
+        "position": {
+          "x": 5,
+          "y": 4.5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "hollow-ground-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 53,
+                "g": 81,
+                "b": 61,
+                "a": 1
+              },
+              "fill": true,
+              "width": 10,
+              "height": 8,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "keep-ground",
+      "name": "The Drowned Keep",
+      "transform": {
+        "position": {
+          "x": 22.5,
+          "y": 4.5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "keep-ground-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 52,
+                "g": 57,
+                "b": 58,
+                "a": 1
+              },
+              "fill": true,
+              "width": 15,
+              "height": 8,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "north-wall",
+      "name": "North boundary",
+      "transform": {
+        "position": {
+          "x": 15,
+          "y": 0.5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "north-wall-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 86,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 30,
+              "height": 1,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "north-wall-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 30,
+            "height": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "south-wall",
+      "name": "South boundary",
+      "transform": {
+        "position": {
+          "x": 15,
+          "y": 8.5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "south-wall-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 86,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 30,
+              "height": 1,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "south-wall-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 30,
+            "height": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "west-wall",
+      "name": "West boundary",
+      "transform": {
+        "position": {
+          "x": 0.5,
+          "y": 4.5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "west-wall-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 86,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 1,
+              "height": 7,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "west-wall-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 1,
+            "height": 7
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "east-wall",
+      "name": "East boundary",
+      "transform": {
+        "position": {
+          "x": 29.5,
+          "y": 4.5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "east-wall-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 86,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 1,
+              "height": 7,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "east-wall-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 1,
+            "height": 7
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "gate-north",
+      "name": "Broken gate north post",
+      "transform": {
+        "position": {
+          "x": 14,
+          "y": 2
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "gate-north-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 104,
+                "g": 115,
+                "b": 99,
+                "a": 1
+              },
+              "fill": true,
+              "width": 1,
+              "height": 2,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "gate-north-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 1,
+            "height": 2
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "gate-south",
+      "name": "Broken gate south post",
+      "transform": {
+        "position": {
+          "x": 14,
+          "y": 7
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "gate-south-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 104,
+                "g": 115,
+                "b": 99,
+                "a": 1
+              },
+              "fill": true,
+              "width": 1,
+              "height": 2,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "gate-south-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 1,
+            "height": 2
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "lantern-tree",
+      "name": "Lantern tree",
+      "transform": {
+        "position": {
+          "x": 5,
+          "y": 2.2
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "lantern-tree-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 145,
+                "g": 111,
+                "b": 66,
+                "a": 1
+              },
+              "fill": true,
+              "width": 1.8,
+              "height": 2,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "lantern-glow",
+      "name": "Lantern glow",
+      "transform": {
+        "position": {
+          "x": 5,
+          "y": 2.2
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "lantern-glow-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 241,
+                "g": 206,
+                "b": 118,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.65,
+              "height": 0.65,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "mira",
+      "name": "Mira · keeper of the hollow",
+      "transform": {
+        "position": {
+          "x": 5,
+          "y": 4.5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "mira-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 224,
+                "g": 191,
+                "b": 131,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.7,
+              "height": 0.8,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "mira-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "npc",
+              "health": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "hero",
+      "name": "Wanderer",
+      "transform": {
+        "position": {
+          "x": 3.2,
+          "y": 4.5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "hero-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 139,
+                "g": 212,
+                "b": 171,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.62,
+              "height": 0.76,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "hero-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "player",
+              "health": 125
+            }
+          }
+        },
+        {
+          "id": "hero-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "assets/wanderer-rest.svg",
+            "width": 0.9,
+            "height": 1.05,
+            "renderOrder": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "briar-scout",
+      "name": "Briar raider",
+      "transform": {
+        "position": {
+          "x": 9,
+          "y": 4.5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "briar-scout-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 197,
+                "g": 118,
+                "b": 97,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.72,
+              "height": 0.8,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "briar-scout-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "raider",
+              "health": 45
+            }
+          }
+        },
+        {
+          "id": "briar-scout-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "assets/sentinel.svg",
+            "width": 0.82,
+            "height": 0.9,
+            "renderOrder": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "bridge-pillar-a",
+      "name": "Bridge marker",
+      "transform": {
+        "position": {
+          "x": 11.5,
+          "y": 3.1
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "bridge-pillar-a-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 101,
+                "g": 116,
+                "b": 108,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.5,
+              "height": 1.5,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "bridge-pillar-b",
+      "name": "Bridge marker",
+      "transform": {
+        "position": {
+          "x": 11.5,
+          "y": 5.9
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "bridge-pillar-b-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 101,
+                "g": 116,
+                "b": 108,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.5,
+              "height": 1.5,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "keep-sconce-a",
+      "name": "Drowned sconce",
+      "transform": {
+        "position": {
+          "x": 17.5,
+          "y": 2.3
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "keep-sconce-a-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 193,
+                "g": 150,
+                "b": 95,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.45,
+              "height": 0.8,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "keep-sconce-b",
+      "name": "Drowned sconce",
+      "transform": {
+        "position": {
+          "x": 17.5,
+          "y": 6.7
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "keep-sconce-b-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 193,
+                "g": 150,
+                "b": 95,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.45,
+              "height": 0.8,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "stone-a",
+      "name": "Sunken memorial",
+      "transform": {
+        "position": {
+          "x": 19,
+          "y": 3.1
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "stone-a-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 94,
+                "g": 101,
+                "b": 96,
+                "a": 1
+              },
+              "fill": true,
+              "width": 1.1,
+              "height": 1.6,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "stone-a-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 1.1,
+            "height": 1.6
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "stone-b",
+      "name": "Sunken memorial",
+      "transform": {
+        "position": {
+          "x": 21,
+          "y": 6
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "stone-b-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 94,
+                "g": 101,
+                "b": 96,
+                "a": 1
+              },
+              "fill": true,
+              "width": 1.2,
+              "height": 1.4,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "stone-b-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 1.2,
+            "height": 1.4
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "keep-raider",
+      "name": "Hollow sentinel",
+      "transform": {
+        "position": {
+          "x": 18.5,
+          "y": 4.5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "keep-raider-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 165,
+                "g": 120,
+                "b": 98,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.8,
+              "height": 0.9,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "keep-raider-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "sentinel",
+              "health": 65
+            }
+          }
+        },
+        {
+          "id": "keep-raider-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "assets/sentinel.svg",
+            "width": 0.9,
+            "height": 1,
+            "renderOrder": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "keeper",
+      "name": "Ashbound Keeper",
+      "transform": {
+        "position": {
+          "x": 25.3,
+          "y": 4.5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "keeper-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 184,
+                "g": 110,
+                "b": 74,
+                "a": 1
+              },
+              "fill": true,
+              "width": 1.2,
+              "height": 1.4,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "keeper-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "boss",
+              "health": 135
+            }
+          }
+        },
+        {
+          "id": "keeper-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "assets/keeper.svg",
+            "width": 1.4,
+            "height": 1.55,
+            "renderOrder": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "old-coffer",
+      "name": "Old coffer",
+      "transform": {
+        "position": {
+          "x": 23,
+          "y": 2.5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 1
+      },
+      "components": [
+        {
+          "id": "coffer-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 199,
+                "g": 155,
+                "b": 84,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.9,
+              "height": 0.65,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "coffer-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "chest",
+              "health": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "ember-altar",
+      "name": "Heartstone altar",
+      "transform": {
+        "position": {
+          "x": 27.2,
+          "y": 4.5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "ember-altar-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 218,
+                "g": 169,
+                "b": 87,
+                "a": 1
+              },
+              "fill": true,
+              "width": 1.4,
+              "height": 1.1,
+              "outline": null
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

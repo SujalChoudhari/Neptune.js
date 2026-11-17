@@ -451,6 +451,8 @@ test("Game View message bridge controls the real Application and forwards consol
         fakeWindow.game = app
         const { ComponentRegistry } = await import("../../src/core/componentRegistry.js")
         ComponentRegistry.register('Transform', Transform)
+        const { Sprite } = await import("../../src/rendering/sprite.js")
+        ComponentRegistry.register('Sprite', Sprite)
         fakeWindow.__neptuneEngineModule = { Entity, Transform, Vector2, ComponentRegistry }
         const resourcePaths = []
         elements.set("neptune-canvas", {
@@ -524,13 +526,21 @@ test("Game View message bridge controls the real Application and forwards consol
         assert.equal(app.isPaused, true)
         send("editor:pause", { paused: false })
         assert.equal(app.isPaused, false)
+        transform.position.x = 99
         send("editor:stop")
         assert.equal(app.isRunning, false)
         frameQueue.shift()(16)
         assert.equal(frameQueue.length, 0)
+        await new Promise(resolve => setImmediate(resolve))
+        const restoredHero = app.scene.children.find(entity => entity.id === hero.id)
+        assert.ok(restoredHero && restoredHero !== hero, "Stop must reinstantiate the immutable authored scene");
+        assert.deepEqual([restoredHero.GetComponent(Transform).position.x, restoredHero.GetComponent(Transform).position.y], [5, 7]);
+        assert.equal(hero.GetComponent(Transform), undefined, "the prior play-session entity must be destroyed");
         send("editor:play")
+        await new Promise(resolve => setImmediate(resolve))
         assert.equal(app.isRunning, true)
         send("editor:stop")
+        await new Promise(resolve => setImmediate(resolve))
 
         const states = parentMessages.filter(message => message.type === "game:state-update").map(message => ({
             isPlaying: message.payload.isPlaying,

@@ -14,6 +14,7 @@ import { Sprite } from "../rendering/sprite.js";
 import { Tileset } from "../thalassa/tileset.js";
 import { Tilemap } from "../thalassa/tilemap.js";
 import { SceneTransition } from "../components/sceneTransition.js";
+import { validateAuthoredUI } from "../ui/authoredUi.js";
 
 export {
     SCENE_SCHEMA_VERSION,
@@ -84,6 +85,7 @@ export class SceneLoader {
         const sceneName = data.name || "Untitled Scene";
         const scene = new Scene(sceneName);
         if (data.id !== undefined && data.id !== null) scene.id = data.id;
+        scene.ui = validateAuthoredUI(data.ui);
 
         try {
             // 1. Configure Global Scene properties (Camera, etc.)
@@ -122,6 +124,7 @@ export class SceneLoader {
     /** Validate a scene payload without constructing or registering a Scene. */
     static validate(data) {
         SceneLoader.#assertSupportedVersion(data);
+        if (data.ui !== undefined) validateAuthoredUI(data.ui);
         return validateSceneResourceReferences(data);
     }
 

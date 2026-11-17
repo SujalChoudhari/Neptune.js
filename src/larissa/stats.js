@@ -11,8 +11,10 @@ export class Stats extends Component {
         super();
 
         // Base stats
-        this.maxHealth = config.maxHealth ?? 100;
-        this.health = this.maxHealth;
+        this._maxHealth = config.maxHealth ?? 100;
+        this._health = config.health ?? this._maxHealth;
+        this._combatant = null;
+        this._unsubscribeCombatant = null;
         this.maxStamina = config.maxStamina ?? 100;
         this.stamina = this.maxStamina;
 
@@ -30,12 +32,63 @@ export class Stats extends Component {
         this.onHeal = null;
     }
 
+    /** Maximum health mirrors Combatant while explicitly bound; standalone Stats retains legacy ownership. */
+    get maxHealth() { return this._combatant?.maxHealth ?? this._maxHealth; }
+    set maxHealth(value) {
+        if (this._combatant) {
+            if (!Number.isFinite(value) || value <= 0) throw new TypeError("maxHealth must be a positive finite number");
+            this._combatant.maxHealth = value;
+            this._combatant.setHealth(Math.min(this._combatant.health, value));
+        } else this._maxHealth = value;
+    }
+
+    /** Health reads the authoritative Combatant after binding and writes through its validated health path. */
+    get health() { return this._combatant?.health ?? this._health; }
+    set health(value) {
+        if (this._combatant) this._combatant.setHealth(value);
+        else this._health = value;
+    }
+
+    /** Bind this legacy stat component to the authoritative Combatant health state. */
+    bindCombatant(combatant) {
+        if (!combatant || typeof combatant.setHealth !== "function" || typeof combatant.receiveDamage !== "function" || !Number.isFinite(combatant.health)) {
+            throw new TypeError("Stats.bindCombatant requires a Combatant-compatible instance");
+        }
+        this.unbindCombatant();
+        this._health = combatant.health;
+        this._maxHealth = combatant.maxHealth;
+        this._combatant = combatant;
+        this._unsubscribeCombatant = combatant.onHealthChanged?.(({ type, amount, killed }) => {
+            if (type === "destroy") { this.unbindCombatant(); return; }
+            if (type === "damage" && amount > 0) this.onDamage?.(amount);
+            if (type === "heal" && amount > 0) this.onHeal?.(amount);
+            if (killed) this.onDeath?.();
+        }) ?? null;
+        return this;
+    }
+
+    /** Stop mirroring a Combatant, retaining the last authoritative health value. */
+    unbindCombatant() {
+        if (!this._combatant) return false;
+        this._health = this._combatant.health;
+        this._maxHealth = this._combatant.maxHealth;
+        this._unsubscribeCombatant?.();
+        this._unsubscribeCombatant = null;
+        this._combatant = null;
+        return true;
+    }
+
     /**
      * Take damage (reduced by defense).
      * @param {number} amount - Raw damage amount.
      * @returns {number} Actual damage taken.
      */
     takeDamage(amount) {
+        if (this._combatant) {
+            const effectiveDefense = this.getModifiedStat('defense');
+            const result = this._combatant.receiveDamage({ amount: Math.max(1, amount - effectiveDefense), type: "physical" });
+            return result.damage;
+        }
         const effectiveDefense = this.getModifiedStat('defense');
         const actualDamage = Math.max(1, amount - effectiveDefense);
         this.health = Math.max(0, this.health - actualDamage);
@@ -51,6 +104,7 @@ export class Stats extends Component {
      * @param {number} amount 
      */
     heal(amount) {
+        if (this._combatant) return this._combatant.heal(amount);
         const oldHealth = this.health;
         this.health = Math.min(this.maxHealth, this.health + amount);
         if (this.onHeal) this.onHeal(this.health - oldHealth);
@@ -123,5 +177,10 @@ export class Stats extends Component {
      */
     get isAlive() {
         return this.health > 0;
+    }
+
+    destroy() {
+        this.unbindCombatant();
+        super.destroy();
     }
 }

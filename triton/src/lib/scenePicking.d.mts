@@ -39,6 +39,11 @@ export interface EntitySelectionBounds {
     height: number;
 }
 export function getEntitySelectionBounds(entity: unknown, fallbackSize?: number): EntitySelectionBounds | null;
+export interface SceneAffineMatrix { a: number; b: number; c: number; d: number; e: number; f: number }
+export interface EntityWorldSelectionGeometry { id: string; name: string; matrix: SceneAffineMatrix; corners: Array<{ x: number; y: number }>; bounds: EntitySelectionBounds }
+export function getEntityWorldMatrix(id: string, hierarchy: Record<string, any>, data: Record<string, any>, includeSelf?: boolean): SceneAffineMatrix | null;
+export function getEntityWorldSelectionGeometry(id: string, hierarchy: Record<string, any>, data: Record<string, any>, fallbackSize?: number): EntityWorldSelectionGeometry | null;
+export function worldDeltaToEntityLocal(id: string, delta: { x: number; y: number }, hierarchy: Record<string, any>, data: Record<string, any>): { x: number; y: number } | null;
 export interface ColliderOverlayBounds {
     type: 'Hitbox' | 'Hurtbox' | 'TriggerCollider' | 'BoxCollider';
     color: string;

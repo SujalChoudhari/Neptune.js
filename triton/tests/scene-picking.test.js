@@ -4,10 +4,11 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import path from 'node:path';
 import { buildSync } from 'esbuild';
-import { pickEntityAt, translateOnAxis, resizeColliderBounds, zoomAtPoint, getFramingCamera, updateSelection, getEntitySelectionBounds, getColliderOverlayBounds, hasCompleteGroupTransformSelection, isSceneViewBridgeMessageSource } from '../src/lib/scenePicking.mjs';
+import { pickEntityAt, translateOnAxis, resizeColliderBounds, zoomAtPoint, getFramingCamera, updateSelection, getEntitySelectionBounds, getColliderOverlayBounds, getEntityWorldMatrix, getEntityWorldSelectionGeometry, worldDeltaToEntityLocal, hasCompleteGroupTransformSelection, isSceneViewBridgeMessageSource } from '../src/lib/scenePicking.mjs';
 import { BoxCollider } from '../../src/components/boxCollider.js';
 import { pickRuntimeEntityAt } from '../src/lib/runtimeSelectionBridge.mjs';
 import * as sceneTools from '../src/lib/sceneTools.mjs';
+import { sceneContextSelection } from '../src/lib/sceneContextMenu.mjs';
 
 const entity = (id, x, y, children = []) => ({
     id,
@@ -30,7 +31,8 @@ function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-
         'react', 'react/jsx-runtime', 'lucide-react', '@/components/library', '@/context/GameContext',
         '@/lib/editorGameRunner', '@/lib/scenePicking.mjs', 'virtual:neptune-runtime-url',
         '../../../../src/thalassa/camera.js?url', '@/lib/scenePicking.mjs?url',
-        '@/lib/projectResourceBridge.mjs?url', '@tauri-apps/api/core', './SceneToolBar', '@/lib/sceneTools.mjs'
+        '../../../../src/ui/authoredUi.js?url', '@/lib/projectResourceBridge.mjs?url', '@tauri-apps/api/core',
+        './SceneToolBar', './SceneContextMenu', '@/lib/sceneContextMenu.mjs', '@/components/editor/ProjectExtensionLayer', '@/lib/sceneTools.mjs'
     ];
     const bundle = buildSync({
         bundle: true, format: 'cjs', platform: 'node', write: false,
@@ -42,6 +44,7 @@ function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-
     const viewportMessages = [];
     const canonicalEdits = [];
     const componentEdits = [];
+    const transactions = { begun: 0, committed: 0, cancelled: 0 };
     const react = {
         createElement: (type, props, ...children) => ({ type, props: { ...(props || {}), children: children.length > 1 ? children : children[0] } }),
         useRef(initial) { const index = hookIndex++; return slots[index] ||= { current: initial }; },
@@ -60,6 +63,9 @@ function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-
     const modules = {
         react,
         './SceneToolBar': { SceneToolBar: 'SceneToolBar' },
+        './SceneContextMenu': { SceneContextMenu: 'SceneContextMenu' },
+        '@/lib/sceneContextMenu.mjs': { sceneContextSelection },
+        '@/components/editor/ProjectExtensionLayer': { ProjectExtensionLayer: 'ProjectExtensionLayer' },
         '@/lib/sceneTools.mjs': sceneTools,
         'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' },
         'lucide-react': { ChevronDown: 'ChevronDown', ChevronLeft: 'ChevronLeft', ChevronRight: 'ChevronRight', ChevronUp: 'ChevronUp', Maximize: 'Maximize', ZoomIn: 'ZoomIn', ZoomOut: 'ZoomOut' },
@@ -68,7 +74,20 @@ function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-
             notifyGame: (type, payload) => notifications.push({ type, payload }),
             updateComponent: (id, component, field, value) => {
                 componentEdits.push({ id, component, field, value });
+                canonicalEdits.push({ id, component, data: { [field]: value } });
                 notifications.push({ type: 'editor:update-component', payload: { id, component, data: { [field]: value } } });
+            },
+            beginSceneEdit: () => { transactions.begun += 1; return {
+                commit() { transactions.committed += 1; return true; },
+                cancel() { transactions.cancelled += 1; return true; }
+            }; },
+            canUndo: false, canRedo: false, undoSceneEdit() {}, redoSceneEdit() {},
+            selectEntities() {}, addEntityToHierarchy() { return true; }, duplicateEntityInHierarchy() { return 'duplicate'; },
+            deleteEntitiesInHierarchy() { return true; }, setEntityActiveInHierarchy() {}, setEntityLocked() {},
+            entities: {
+                root: { id: 'root', parentId: null, children: ['entity-1', 'entity-2'] },
+                'entity-1': { id: 'entity-1', parentId: 'root', children: [] },
+                'entity-2': { id: 'entity-2', parentId: 'root', children: [] }
             },
             selectedEntityData: {
                 transform: { position: { x: 2, y: 3 }, rotation: 0.5, scale: { x: 1, y: 2 } },
@@ -97,12 +116,14 @@ function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-
         '@/lib/editorGameRunner': { EditorGameRunner: {
             updateEntity: (id, component, data) => canonicalEdits.push({ id, component, data })
         } },
-        '@/lib/scenePicking.mjs': { translateOnAxis, resizeColliderBounds, zoomAtPoint, getFramingCamera, getColliderOverlayBounds, getEntitySelectionBounds, hasCompleteGroupTransformSelection },
+        '@/lib/scenePicking.mjs': { translateOnAxis, resizeColliderBounds, zoomAtPoint, getFramingCamera, getColliderOverlayBounds,
+            getEntityWorldMatrix, getEntityWorldSelectionGeometry, worldDeltaToEntityLocal, hasCompleteGroupTransformSelection, isSceneViewBridgeMessageSource },
         '@tauri-apps/api/core': { invoke: async () => '' },
         'virtual:neptune-runtime-url': '/neptune.js',
         '../../../../src/thalassa/camera.js?url': '/camera.js',
         '@/lib/scenePicking.mjs?url': '/scenePicking.js',
         '@/lib/projectResourceBridge.mjs?url': '/projectResourceBridge.js'
+        ,'../../../../src/ui/authoredUi.js?url': '/authoredUi.js'
     };
     const module = { exports: {} };
     vm.runInNewContext(bundle, {
@@ -129,7 +150,7 @@ function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-
         tree.props.ref.current = { getBoundingClientRect: () => ({ left: 10, top: 20, width: 800, height: 600 }) };
         return tree;
     };
-    return { render, notifications, viewportMessages, canonicalEdits, componentEdits, getSpawnPointOverlay: module.exports.getSpawnPointOverlay };
+    return { render, notifications, viewportMessages, canonicalEdits, componentEdits, transactions, getSpawnPointOverlay: module.exports.getSpawnPointOverlay };
 }
 
 function findNode(node, predicate) {
@@ -284,11 +305,11 @@ test('selection bounds use scaled sprite geometry and a fallback marker without 
 
 test('Scene View renders a separate outline for each selected entity without intercepting input', () => {
     const tree = createSceneViewHarness(undefined, ['entity-1', 'entity-2']).render();
-    const outlines = findNodes(tree, node => node.type === 'rect' && node.props['data-selection-outline']);
+    const outlines = findNodes(tree, node => node.type === 'polygon' && node.props['data-selection-outline']);
     assert.deepEqual(outlines.map(node => node.props['data-selection-outline']), ['entity-1', 'entity-2']);
-    assert.deepEqual(outlines.map(node => [node.props.x, node.props.y, node.props.width, node.props.height]), [
-        [-192, -64, 640, 512],
-        [-576, 128, 512, 512]
+    assert.deepEqual(outlines.map(node => node.props.points), [
+        '-192,-64 448,-64 448,448 -192,448',
+        '-576,128 -64,128 -64,640 -576,640'
     ]);
     const selectionSvg = findNode(tree, node => node.type === 'svg' && node.props['aria-label'] === 'Selected entities');
     assert.match(selectionSvg.props.className, /pointer-events-none/);
@@ -424,7 +445,8 @@ test('Scene View resizes every collider shape and syncs Inspector, canonical sce
         tree.props.onMouseMove({ clientX: 110, clientY: 205 });
         tree.props.onMouseUp();
 
-        assert.deepEqual(JSON.parse(JSON.stringify(harness.canonicalEdits.at(-1))), { id: 'entity-1', component: type, data: expected });
+        const canonicalPatch = Object.assign({}, ...harness.canonicalEdits.filter(edit => edit.id === 'entity-1' && edit.component === type).map(edit => edit.data));
+        assert.deepEqual(JSON.parse(JSON.stringify(canonicalPatch)), expected);
         const edits = harness.componentEdits.filter(edit => edit.component === type);
         const normalizedEdits = JSON.parse(JSON.stringify(edits.map(({ field, value }) => [field, value])));
         if (type === 'BoxCollider') {
@@ -465,9 +487,8 @@ test('Scene View collider resize handles are focusable and resize all collider s
 
         assert.equal(defaultPrevented, true, `${key} is handled by the resize control`);
         assert.equal(propagationStopped, true, `${key} does not bubble into viewport shortcuts`);
-        assert.deepEqual(JSON.parse(JSON.stringify(harness.canonicalEdits.at(-1))), {
-            id: 'entity-1', component: type, data: expected
-        });
+        const canonicalPatch = Object.assign({}, ...harness.canonicalEdits.filter(edit => edit.id === 'entity-1' && edit.component === type).map(edit => edit.data));
+        assert.deepEqual(JSON.parse(JSON.stringify(canonicalPatch)), expected);
         const edits = harness.componentEdits.filter(edit => edit.component === type);
         assert.deepEqual(edits.map(edit => edit.field), type === 'BoxCollider' ? ['size'] : ['width', 'height']);
         assert.equal(harness.notifications.filter(item => item.type === 'editor:update-component' && item.payload.id === 'entity-1').length, edits.length);
@@ -611,6 +632,19 @@ test('Scene View UI pans the camera and moves a selected entity on its gizmo axi
     assert.deepEqual(JSON.parse(JSON.stringify(harness.componentEdits)), [
         { id: 'entity-1', component: 'transform', field: 'position', value: { x: 2.3125, y: 3 } }
     ]);
+});
+
+test('one transform drag records one committed history transaction', () => {
+    const harness = createSceneViewHarness();
+    const tree = harness.render();
+    const handle = findNode(tree, node => node.props?.['aria-label'] === 'Translate on X axis');
+    handle.props.onMouseDown({ button: 0, clientX: 10, clientY: 10, preventDefault() {}, stopPropagation() {} });
+    tree.props.onMouseMove({ clientX: 74, clientY: 10 });
+    tree.props.onMouseUp();
+    assert.equal(harness.transactions.begun, 1);
+    assert.equal(harness.transactions.committed, 1);
+    assert.equal(harness.transactions.cancelled, 0);
+    assert.ok(harness.componentEdits.some(edit => edit.component === 'transform' && edit.field === 'position'));
 });
 
 test('Scene View translates selected entities together and limits the group gizmo to translation', () => {

@@ -119,6 +119,93 @@ export function getEntitySelectionBounds(entity, fallbackSize = 16) {
     };
 }
 
+const matrixProduct = (left, right) => ({
+    a: left.a * right.a + left.c * right.b,
+    b: left.b * right.a + left.d * right.b,
+    c: left.a * right.c + left.c * right.d,
+    d: left.b * right.c + left.d * right.d,
+    e: left.a * right.e + left.c * right.f + left.e,
+    f: left.b * right.e + left.d * right.f + left.f
+});
+
+const isRenderableEntity = entity => Object.entries(entity?.components || {}).some(([type, component]) =>
+    component?.enabled !== false && /^(sprite|shape|text|bitmaptext|animatedsprite|particleemitter)$/i.test(type));
+
+/** Canvas affine matrix for the transforms actually nested by Renderable.drawChildren. */
+export function getEntityWorldMatrix(id, hierarchy, data, includeSelf = true) {
+    const entity = hierarchy?.[id];
+    if (!entity || !data?.[id]) return null;
+    const chain = [];
+    let current = entity;
+    while (current && current.id !== 'root') {
+        chain.push(current);
+        current = current.parentId ? hierarchy[current.parentId] : null;
+    }
+    chain.reverse();
+    let matrix = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 };
+    for (let index = 0; index < chain.length; index += 1) {
+        const item = chain[index];
+        const isSelf = index === chain.length - 1;
+        if (!isSelf && !isRenderableEntity(data[item.id])) continue;
+        if (isSelf && !includeSelf && !isRenderableEntity(data[item.id])) continue;
+        const transform = data[item.id]?.transform;
+        const position = transform?.position;
+        const scale = transform?.scale || { x: 1, y: 1 };
+        const rotation = transform?.rotation || 0;
+        if (!position || ![position.x, position.y, scale.x, scale.y, rotation].every(Number.isFinite)) return null;
+        const cos = Math.cos(rotation);
+        const sin = Math.sin(rotation);
+        matrix = matrixProduct(matrix, {
+            a: cos * scale.x * 64, b: sin * scale.x * 64,
+            c: -sin * scale.y * 64, d: cos * scale.y * 64,
+            e: position.x * 64, f: position.y * 64
+        });
+    }
+    return Object.values(matrix).every(Number.isFinite) ? matrix : null;
+}
+
+export function getEntityWorldSelectionGeometry(id, hierarchy, data, fallbackSize = 16) {
+    const entity = data?.[id];
+    const matrix = getEntityWorldMatrix(id, hierarchy, data);
+    if (!entity || !matrix || !Number.isFinite(fallbackSize) || fallbackSize <= 0) return null;
+    const components = entity.components || {};
+    const component = Object.entries(components).find(([type, value]) => isRenderableEntity({ components: { [type]: value } })
+        && value?.enabled !== false);
+    const props = component?.[1] || {};
+    const param = props.param || props._properties?.param || {};
+    const pixelWidth = props.width ?? props._properties?.width ?? param.width ?? (Number.isFinite(param.radius) ? param.radius * 2 : fallbackSize);
+    const pixelHeight = props.height ?? props._properties?.height ?? param.height ?? (Number.isFinite(param.radius) ? param.radius * 2 : fallbackSize);
+    if (![pixelWidth, pixelHeight].every(Number.isFinite) || pixelWidth <= 0 || pixelHeight <= 0) return null;
+    const halfWidth = pixelWidth / 2;
+    const halfHeight = pixelHeight / 2;
+    const corners = [[-halfWidth, -halfHeight], [halfWidth, -halfHeight], [halfWidth, halfHeight], [-halfWidth, halfHeight]]
+        .map(([x, y]) => ({ x: (matrix.a * x + matrix.c * y + matrix.e) / 64,
+            y: (matrix.b * x + matrix.d * y + matrix.f) / 64 }));
+    const bounds = {
+        x: Math.min(...corners.map(point => point.x)), y: Math.min(...corners.map(point => point.y)),
+        width: Math.max(...corners.map(point => point.x)) - Math.min(...corners.map(point => point.x)),
+        height: Math.max(...corners.map(point => point.y)) - Math.min(...corners.map(point => point.y))
+    };
+    return { id, name: entity.name || hierarchy[id]?.name || id, matrix, corners, bounds };
+}
+
+/** Convert a world-space pixel delta to the selected child's local translation. */
+export function worldDeltaToEntityLocal(id, delta, hierarchy, data) {
+    if (!delta || ![delta.x, delta.y].every(Number.isFinite)) return null;
+    const parentId = hierarchy?.[id]?.parentId;
+    if (!parentId || parentId === 'root') return { ...delta };
+    const parent = getEntityWorldMatrix(parentId, hierarchy, data, false);
+    if (!parent) return null;
+    const determinant = parent.a * parent.d - parent.b * parent.c;
+    if (!Number.isFinite(determinant) || Math.abs(determinant) < 1e-10) return null;
+    const x = delta.x * 64;
+    const y = delta.y * 64;
+    return {
+        x: (parent.d * x - parent.c * y) / determinant / 64,
+        y: (-parent.b * x + parent.a * y) / determinant / 64
+    };
+}
+
 export function pickEntityAt(root, x, y, tolerance = 12) {
     if (!root || !Number.isFinite(x) || !Number.isFinite(y)) return null;
 

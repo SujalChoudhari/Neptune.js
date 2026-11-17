@@ -62,6 +62,16 @@ const batches = [
     "tests/project-behaviour.test.js",
     "triton/tests/frontend-watch.test.js",
     "triton/tests/scene-tools.test.js",
+    "triton/tests/edit-history.test.js",
+    "triton/tests/scene-grid.test.js",
+    "triton/tests/scene-world-transform.test.js",
+    "triton/tests/authoring-component-catalog.test.js",
+    "triton/tests/scene-context-menu.test.js",
+    "tests/editor-extension-api.test.mjs",
+    "tests/runtime-foundations.test.mjs",
+    "tests/emberfall-adventure-browser.test.js",
+    "tests/authored-ui-browser.test.mjs",
+    "triton/tests/editor-extensions-browser.test.js",
     "triton/tests/editor-layout.test.js",
     "triton/tests/viewport-tools-browser.test.js"
   ]

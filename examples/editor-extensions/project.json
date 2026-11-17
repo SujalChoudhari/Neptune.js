@@ -1,0 +1,8 @@
+{
+  "editorExtensions": {
+    "version": 1,
+    "entries": [
+      { "id": "neptune.box-collider-area", "path": "examples/editor-extensions/box-collider-area.mjs", "enabled": true }
+    ]
+  }
+}

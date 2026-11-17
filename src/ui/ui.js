@@ -8,6 +8,7 @@ import { HBoxContainer } from "./containers/hbox.js";
 import { VBoxContainer } from "./containers/vbox.js";
 import { MarginContainer } from "./containers/margin.js";
 import { createHTMLUIClient, createUIBridge, installHTMLUI, installUINavigation } from "./bridge.js";
+import { AUTHORED_UI_VERSION, mountAuthoredUI, validateAuthoredUI } from "./authoredUi.js";
 
 export {
     Transform as UITransform,
@@ -22,5 +23,8 @@ export {
     createHTMLUIClient,
     createUIBridge,
     installHTMLUI,
-    installUINavigation
+    installUINavigation,
+    AUTHORED_UI_VERSION,
+    mountAuthoredUI,
+    validateAuthoredUI
 };

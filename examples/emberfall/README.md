@@ -1,12 +1,12 @@
 # Emberfall — The First Ember
 
-A small playable top-down ARPG starter using a versioned `project.npt`, an editable scene, ordinary entities/components and project-local gameplay code. It is a foundation for the demo, not the completed engine roadmap.
+A two-area top-down ARPG slice using a versioned `project.npt`, editable scenes, ordinary entities/components and project-local gameplay code. The classic single-room starter remains available for regression and quick engine examples.
 
 ## Play
 
-From the Neptune repository root, run `npm run serve`, then open http://127.0.0.1:8000/examples/emberfall/ and select **Play Game**.
+From the Neptune repository root, run `npm run serve`, then open http://127.0.0.1:8000/examples/emberfall/adventure.html. Choose **Begin journey** or **Continue** at the title screen. The older one-room sample remains at http://127.0.0.1:8000/examples/emberfall/ (**Play Game**).
 
-WASD/arrows move, J attacks in your facing direction, E interacts, O saves, L loads, and R revives/repositions the player. Defeat the three guardians, then approach the golden altar in the northeast and press E. Saves use the browser's local storage; browser and desktop editor saves are separate. R preserves defeated guardians and rewards; reload the page for a fresh encounter.
+WASD/arrows move, J strikes, Space dodges, E interacts, Esc pauses, O saves, L loads, and R rises after death at the last lantern. Speak to Mira in Briar Hollow, cross the bridge, search the coffer, defeat the sentinel and the Keeper, then use the heartstone and return to Mira. The Keeper's yellow wind-up cues a heavy attack; step out before it lands. Settings and the world save use browser local storage. A fresh game resets world progress while keeping sound settings. Browser and desktop editor saves are separate.
 
 ## Open in Triton
 
@@ -17,9 +17,12 @@ Start `Neptune.cmd`, import/open the `examples/emberfall` folder and choose Edit
 ## Project structure
 
 - `project.npt`: schema version, project name, and main scene path. `scenes` is reserved for embedded scene objects; it is not an array of filenames.
-- `scenes/ruins.scene`: floor, solid walls/columns, altar, player and guardians with stable IDs.
+- `scenes/ruins.scene`: preserved original classic starter scene.
+- `scenes/adventure.scene`: Briar Hollow, the bridge and the Drowned Keep, with a coffer, sentinel and phased Keeper.
 - `scripts/game.js`: project behaviours using existing Combatant/CombatSystem, Inventory, SaveManager, KeyboardInput and collider helpers. No Triton or Tauri imports.
+- `scripts/adventure-game.js`: bundled Blob-loaded adventure module; uses Combatant/CombatSystem, Inventory, SaveManager and Nereid overlap helpers.
 - `main.js`: browser bootstrap that reads the same `.npt` and scene.
+- `adventure.html`, `adventure.js`, `adventure.css`: title, Continue, pause and sound settings flow.
 
 ## Project modules
 
@@ -27,6 +30,6 @@ A `ProjectBehaviour` component has `{ "module": "scripts/game.js", "settings": {
 
 The injected API includes Transform, Shape, Color, KeyboardInput, Camera, SceneManager, SaveManager, BoxCollider, Larissa and Nereid. Destroy must release project-owned listeners and DOM nodes. Invalid module paths and loading errors appear as `PROJECT_BEHAVIOUR_LOAD_FAILED` in the game/editor console.
 
-## Current limits
+## Slice scope and limits
 
-This is one room, three melee guardians and an altar objective, with placeholder shapes. It does not yet include a village, multiple maps, ranged skills, quest dialogue, equipment UI or a phased boss. Current settings are authored in scene JSON; the general inspector does not yet provide a specialized behaviour-settings form. Gameplay geometry is editable; keep the room's 14×9 world bounds and altar at (12, 2) while using the starter script.
+The adventure covers two connected areas in one editable scene, one main objective, one optional coffer, a sentinel and a three-phase boss with telegraphed melee attacks. The game saves position, health, reward currency, enemy health/positions/phases, coffer state, quest and ending state with strict scene-reference validation. Settings are stored separately. Character presentation is original shape-based artwork with a small idle bob and combat color feedback; this is not a finished sprite-sheet animation or authored audio pipeline. Music and sound feedback are synthesized at runtime. The old ruins sample remains a separate classic regression path. No measured completion duration is published yet, so this should be treated as a bounded slice implementation awaiting a playtest for the 10–15 minute quality target.

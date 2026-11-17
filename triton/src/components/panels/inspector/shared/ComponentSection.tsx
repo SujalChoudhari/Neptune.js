@@ -116,23 +116,19 @@ export const ComponentSection = ({
                                 <MoreVertical className="w-3 h-3" />
                             </ThemedContextMenuTrigger>
                             <ThemedContextMenuContent>
-                                <ThemedContextMenuItem onClick={onCopyValues}>
-                                    <Copy className="w-3 h-3 mr-2" />
-                                    Copy Values
-                                </ThemedContextMenuItem>
-                                <ThemedContextMenuItem onClick={onPasteValues}>
-                                    <Clipboard className="w-3 h-3 mr-2" />
-                                    Paste Values
-                                </ThemedContextMenuItem>
-                                <ThemedContextMenuSeparator />
-                                <ThemedContextMenuItem onClick={onDuplicate}>
-                                    <Plus className="w-3 h-3 mr-2" />
-                                    Duplicate
-                                </ThemedContextMenuItem>
-                                <ThemedContextMenuItem onClick={onRemove} className="text-red-400 focus:text-red-400">
-                                    <Trash2 className="w-3 h-3 mr-2" />
-                                    Remove
-                                </ThemedContextMenuItem>
+                                {onCopyValues && <ThemedContextMenuItem onClick={onCopyValues}>
+                                    <Copy className="w-3 h-3 mr-2" />Copy Values
+                                </ThemedContextMenuItem>}
+                                {onPasteValues && <ThemedContextMenuItem onClick={onPasteValues}>
+                                    <Clipboard className="w-3 h-3 mr-2" />Paste Values
+                                </ThemedContextMenuItem>}
+                                {(onCopyValues || onPasteValues) && (onDuplicate || onRemove) && <ThemedContextMenuSeparator />}
+                                {onDuplicate && <ThemedContextMenuItem onClick={onDuplicate}>
+                                    <Plus className="w-3 h-3 mr-2" />Duplicate
+                                </ThemedContextMenuItem>}
+                                {onRemove && <ThemedContextMenuItem onClick={onRemove} className="text-red-400 focus:text-red-400">
+                                    <Trash2 className="w-3 h-3 mr-2" />Remove
+                                </ThemedContextMenuItem>}
                             </ThemedContextMenuContent>
                         </ThemedContextMenu>
                     </div>

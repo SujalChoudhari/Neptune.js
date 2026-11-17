@@ -84,6 +84,8 @@ The target [product contract](docs/PRODUCT-CONTRACT.md) and [performance budgets
 
 ## TODO / next delivery
 
+November 17 checkpoint: implementation across the next five batches is saved as work in progress. Focused editor/runtime checks pass, but integrated baseline, native acceptance and the adventure remain unfinished. See [checkpoint evidence and remaining work](docs/five-batch-tsd.md#paused-implementation-checkpoint--november-17-2026). No milestone is closed by this checkpoint.
+
 **Immediate direction:** finish the Scene View's world-unit grid/panning, per-object context menus and authored game UI preview, together with safe undo/save/edit commands. Then add code-defined editor extensions for custom gizmos, inspectors and editor-only scene helpers. Keep the current shell during this work; a whole editor rewrite is not part of this batch. See [the ordered delivery details](docs/ROADMAP.md#next-delivery--scene-view-essentials-then-editor-extensibility).
 
 The [full engine, editor and game roadmap](docs/ROADMAP.md) is the active plan, with subsystem checklists, dependencies, estimates and observable acceptance. Existing code is reused and verified. Runtime capabilities and a working starter do not establish a finished authoring workflow or finished game.

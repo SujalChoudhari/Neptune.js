@@ -3,26 +3,25 @@ import neptuneEntryUrl from "virtual:neptune-runtime-url";
 import cameraUrl from "../../../../src/thalassa/camera.js?url";
 import scenePickingUrl from "@/lib/scenePicking.mjs?url";
 import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
+import authoredUiUrl from "../../../../src/ui/authoredUi.js?url";
 import { runtimeEntityBridgeScript } from "../../lib/runtimeEntityBridge.mjs";
 import { runtimeSelectionBridgeScript, pickRuntimeEntityAt, shapeContainsPoint } from "../../lib/runtimeSelectionBridge.mjs";
 import { runtimeComponentBridgeScript } from "../../lib/runtimeComponentBridge.mjs";
-import { resizeColliderBounds, zoomAtPoint, getFramingCamera, getColliderOverlayBounds, getEntitySelectionBounds, hasCompleteGroupTransformSelection, isSceneViewBridgeMessageSource } from "@/lib/scenePicking.mjs";
+import { resizeColliderBounds, zoomAtPoint, getFramingCamera, getColliderOverlayBounds, getEntityWorldMatrix, getEntityWorldSelectionGeometry, worldDeltaToEntityLocal, hasCompleteGroupTransformSelection, isSceneViewBridgeMessageSource } from "@/lib/scenePicking.mjs";
 import { invoke } from "@tauri-apps/api/core";
 import { ThemedIconButton } from "@/components/library";
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Maximize, ZoomIn, ZoomOut } from "lucide-react";
 import { useGameContext } from '@/context/GameContext';
 import { EditorGameRunner } from '@/lib/editorGameRunner';
 import { SceneToolBar } from './SceneToolBar';
+import { SceneContextMenu } from './SceneContextMenu';
+import type { SceneContextAction, SceneContextMenuRequest } from './SceneContextMenu';
+import { sceneContextSelection } from '@/lib/sceneContextMenu.mjs';
+import { ProjectExtensionLayer } from '@/components/editor/ProjectExtensionLayer';
 import { getSceneToolShortcut, getSceneDragDelta, moveScenePosition, resizeSceneScale, captureTransformSnapshot, isSceneShortcutTargetBlocked } from '@/lib/sceneTools.mjs';
 import type { SceneTool, TransformSnapshot } from '@/lib/sceneTools.mjs';
 
 type GizmoOperation = 'translate' | 'translate-x' | 'translate-y' | 'rotate' | 'scale' | 'rect';
-
-function transformTransaction(phase: 'begin' | 'commit' | 'cancel', before: TransformSnapshot) {
-    if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('editor:transform-transaction', { detail: { phase, before } }));
-    }
-}
 
 type SpawnPointFacing = 'right' | 'down' | 'left' | 'up';
 
@@ -58,11 +57,18 @@ export function SceneViewPanel() {
     const [snapEnabled, setSnapEnabled] = useState(false);
     const [snapStep, setSnapStep] = useState(0.25);
     const [isTransformDragging, setIsTransformDragging] = useState(false);
-    const { notifyGame, updateComponent, selectedEntityData, selectedEntitiesData, selectedIds, entities } = useGameContext();
+    const [contextMenu, setContextMenu] = useState<SceneContextMenuRequest | null>(null);
+    const pendingContextRef = useRef<{ x: number; y: number } | null>(null);
+    const { notifyGame, updateComponent, beginSceneEdit, selectEntities, addEntityToHierarchy,
+        duplicateEntityInHierarchy, deleteEntitiesInHierarchy,
+        setEntityActiveInHierarchy, setEntityLocked, selectedEntityData, selectedEntitiesData,
+        selectedIds, entities, canUndo, canRedo, undoSceneEdit, redoSceneEdit } = useGameContext();
+    const [uiCapture, setUiCapture] = useState(false);
     const [gizmoPosition, setGizmoPosition] = useState<{ x: number; y: number } | null>(null);
     const gizmoDragRef = useRef<{
         operation: GizmoOperation;
         snapshot: TransformSnapshot;
+        transaction: { commit(): boolean; cancel(): boolean };
         size: { width: number; height: number };
         id: string;
         ids: string[];
@@ -80,11 +86,14 @@ export function SceneViewPanel() {
         startY: number;
         width: number;
         height: number;
+        transaction: { commit(): boolean; cancel(): boolean };
     } | null>(null);
     const suppressClickRef = useRef(false);
     const selectionOverlays = useMemo(() => selectedIds
-        .map(id => getEntitySelectionBounds(selectedEntitiesData[id], 0.25))
-        .filter((bounds): bounds is NonNullable<typeof bounds> => bounds !== null), [selectedIds, selectedEntitiesData]);
+        .map(id => getEntityWorldSelectionGeometry(id, entities, selectedEntitiesData, pixelsPerMeter / 4))
+        .filter((geometry): geometry is NonNullable<typeof geometry> => geometry !== null)
+        .map(geometry => ({ ...geometry.bounds, id: geometry.id, name: geometry.name, corners: geometry.corners })),
+    [selectedIds, selectedEntitiesData, entities]);
     const canFrameSelection = selectedIds.length > 0 && selectionOverlays.length === selectedIds.length;
     const groupGizmoPosition = useMemo(() => selectionOverlays.length > 0 ? {
         x: (Math.min(...selectionOverlays.map(bounds => bounds.x))
@@ -93,23 +102,42 @@ export function SceneViewPanel() {
             + Math.max(...selectionOverlays.map(bounds => bounds.y + bounds.height))) / 2
     } : null, [selectionOverlays]);
     const hasCompleteGroupTransform = hasCompleteGroupTransformSelection(selectedIds, selectedEntitiesData);
+    const canTransformSelection = selectedIds.length > 0 && selectedIds.every(id => {
+        const matrix = getEntityWorldMatrix(id, entities, selectedEntitiesData);
+        return matrix !== null && Math.abs(matrix.a * matrix.d - matrix.b * matrix.c) >= 1e-10;
+    });
 
     useEffect(() => {
         const position = selectedIds.length > 1
             ? groupGizmoPosition
-            : selectedEntityData?.transform.position;
+            : selectionOverlays.length === 1
+                ? { x: selectionOverlays[0].x + selectionOverlays[0].width / 2, y: selectionOverlays[0].y + selectionOverlays[0].height / 2 }
+                : selectedEntityData?.transform.position;
         setGizmoPosition(current => {
             if (!position) return current === null ? current : null;
             if (current?.x === position.x && current.y === position.y) return current;
             return { x: position.x, y: position.y };
         });
-    }, [selectedEntityData, selectedIds, selectedEntitiesData, groupGizmoPosition]);
+    }, [selectedEntityData, selectedIds, selectedEntitiesData, groupGizmoPosition, selectionOverlays]);
 
     useEffect(() => {
         const handleBridgeMessage = (event: MessageEvent) => {
             if (!isSceneViewBridgeMessageSource(event.source, iframeRef.current?.contentWindow)) return;
             const { type, payload } = event.data || {};
-            if (type === 'editor:project-resource-request' && payload?.id) {
+            if (type === 'game:viewport-picked' && pendingContextRef.current) {
+                const point = pendingContextRef.current;
+                pendingContextRef.current = null;
+                const targetId = typeof payload?.id === 'string' ? payload.id : null;
+                if (targetId && entities[targetId]?.locked) {
+                    setContextMenu({ x: point.x, y: point.y, targetId, selectedIds: [targetId] });
+                    return;
+                }
+                const picked = targetId ? sceneContextSelection(targetId, selectedIds, entities)
+                    .filter(id => !entities[id]?.locked) : [];
+                if (targetId && !picked.length) { setContextMenu(null); return; }
+                if (targetId && !selectedIds.includes(targetId)) selectEntities(picked);
+                setContextMenu({ x: point.x, y: point.y, targetId, selectedIds: targetId ? picked : selectedIds });
+            } else if (type === 'editor:project-resource-request' && payload?.id) {
                 const command = payload.kind === 'image' ? 'read_image_asset' : payload.kind === 'audio' ? 'read_audio_asset' : payload.kind === 'text' ? 'read_file' : null;
                 const reply = (content: string | null, error: string | null) => {
                     (event.source as WindowProxy | null)?.postMessage({
@@ -131,7 +159,7 @@ export function SceneViewPanel() {
 
         window.addEventListener('message', handleBridgeMessage);
         return () => window.removeEventListener('message', handleBridgeMessage);
-    }, []);
+    }, [entities, selectedIds, selectEntities]);
 
     // Editor Camera State
     const [zoom, setZoom] = useState(1);
@@ -141,15 +169,32 @@ export function SceneViewPanel() {
 
     const baseUrl = neptuneEntryUrl.substring(0, neptuneEntryUrl.lastIndexOf('/') + 1);
 
+    useEffect(() => () => {
+        const frameWindow = iframeRef.current?.contentWindow as (Window & { __NEPTUNE_EDITOR_DISPOSE__?: () => void }) | null;
+        frameWindow?.__NEPTUNE_EDITOR_DISPOSE__?.();
+    }, []);
+
+    useEffect(() => {
+        notifyGame('editor:camera-update', { zoom, x: pan.x, y: pan.y });
+    }, [zoom, pan, notifyGame]);
+
+    useEffect(() => {
+        const handleFrameRequest = (event: Event) => {
+            const ids = (event as CustomEvent<{ ids?: string[] }>).detail?.ids;
+            if (Array.isArray(ids)) selectEntities(ids);
+            requestAnimationFrame(frameSelection);
+        };
+        window.addEventListener('editor:frame-selection', handleFrameRequest);
+        return () => window.removeEventListener('editor:frame-selection', handleFrameRequest);
+    });
+
     const applyTransformEdit = useCallback((id: string, data: Record<string, unknown>) => {
         Object.entries(data).forEach(([field, value]) => updateComponent(id, 'transform', field, value));
-        EditorGameRunner.updateEntity(id, 'transform', data);
     }, [updateComponent]);
 
     const applyColliderResizeEdit = useCallback((id: string, type: 'Hitbox' | 'Hurtbox' | 'TriggerCollider' | 'BoxCollider', width: number, height: number) => {
         const data = type === 'BoxCollider' ? { size: { x: width, y: height } } : { width, height };
         Object.entries(data).forEach(([field, value]) => updateComponent(id, type, field, value));
-        EditorGameRunner.updateEntity(id, type, data);
     }, [updateComponent]);
 
     const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -181,19 +226,23 @@ export function SceneViewPanel() {
         if (selectedIds.length > 1 && !operation.startsWith('translate')) return;
         const snapshot = captureTransformSnapshot(selectedIds, selectedEntitiesData);
         if (!snapshot) return;
+        const matrices = selectedIds.map(id => getEntityWorldMatrix(id, entities, selectedEntitiesData));
+        if (matrices.some(matrix => !matrix || Math.abs(matrix.a * matrix.d - matrix.b * matrix.c) < 1e-10)) return;
         const startPositions: Record<string, { x: number; y: number }> = {};
         for (const id of selectedIds) {
             const start = selectedEntitiesData[id]?.transform.position;
             if (!start || !Number.isFinite(start.x) || !Number.isFinite(start.y)) return;
             startPositions[id] = { x: start.x, y: start.y };
         }
-        const position = selectedIds.length > 1
-            ? groupGizmoPosition
-            : gizmoPosition || selectedEntityData.transform.position;
+        const position = selectedIds.length > 1 ? groupGizmoPosition
+            : selectionOverlays[0]
+                ? { x: selectionOverlays[0].x + selectionOverlays[0].width / 2, y: selectionOverlays[0].y + selectionOverlays[0].height / 2 }
+                : gizmoPosition || selectedEntityData.transform.position;
         if (!position) return;
         gizmoDragRef.current = {
             operation,
             snapshot,
+            transaction: beginSceneEdit('Transform drag'),
             size: { width: selectionOverlays[0]?.width || 1, height: selectionOverlays[0]?.height || 1 },
             id: selectedIds[selectedIds.length - 1],
             ids: [...selectedIds],
@@ -205,7 +254,6 @@ export function SceneViewPanel() {
             scale: { ...selectedEntityData.transform.scale }
         };
         setIsTransformDragging(true);
-        transformTransaction('begin', snapshot);
         event.preventDefault();
         event.stopPropagation();
     };
@@ -222,7 +270,8 @@ export function SceneViewPanel() {
             startX: event.clientX,
             startY: event.clientY,
             width,
-            height
+            height,
+            transaction: beginSceneEdit(`Resize ${type}`)
         };
         event.preventDefault();
         event.stopPropagation();
@@ -252,7 +301,9 @@ export function SceneViewPanel() {
         event.preventDefault();
         event.stopPropagation();
         const size = resizeColliderBounds({ width, height }, deltaX, deltaY, 1);
+        const transaction = beginSceneEdit(`Resize ${type}`);
         applyColliderResizeEdit(selectedIds[0], type, size.width, size.height);
+        transaction.commit();
     };
 
     const adjustGizmoWithKeyboard = (
@@ -269,13 +320,14 @@ export function SceneViewPanel() {
             const delta = direction * (event.shiftKey ? 1 : 0.1);
             event.preventDefault();
             event.stopPropagation();
+            const transaction = beginSceneEdit('Move selection');
             selectedIds.forEach(id => {
                 const position = selectedEntitiesData[id]?.transform.position;
                 if (!position) return;
-                applyTransformEdit(id, {
-                    position: { ...position, [isX ? 'x' : 'y']: position[isX ? 'x' : 'y'] + delta }
-                });
+                const localDelta = worldDeltaToEntityLocal(id, { x: isX ? delta : 0, y: isX ? 0 : delta }, entities, selectedEntitiesData);
+                if (localDelta) applyTransformEdit(id, { position: { x: position.x + localDelta.x, y: position.y + localDelta.y } });
             });
+            transaction.commit();
             if (groupGizmoPosition) {
                 setGizmoPosition({
                     x: groupGizmoPosition.x + (isX ? delta : 0),
@@ -288,15 +340,16 @@ export function SceneViewPanel() {
 
         const transform = selectedEntityData.transform;
         const step = event.shiftKey ? 1 : 0.1;
-        let data: Record<string, unknown>;
+        let data: Record<string, unknown> = {};
+        let worldMove: { x: number; y: number } | null = null;
         if (operation === 'translate-x') {
             if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
             const direction = event.key === 'ArrowRight' ? 1 : -1;
-            data = { position: { ...transform.position, x: transform.position.x + direction * step } };
+            worldMove = { x: direction * step, y: 0 };
         } else if (operation === 'translate-y') {
             if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
             const direction = event.key === 'ArrowDown' ? 1 : -1;
-            data = { position: { ...transform.position, y: transform.position.y + direction * step } };
+            worldMove = { x: 0, y: direction * step };
         } else if (operation === 'rotate') {
             const direction = event.key === 'ArrowRight' || event.key === 'ArrowUp'
                 ? 1
@@ -314,7 +367,14 @@ export function SceneViewPanel() {
 
         event.preventDefault();
         event.stopPropagation();
+        const transaction = beginSceneEdit(operation === 'rotate' ? 'Rotate entity' : operation === 'scale' ? 'Scale entity' : 'Move entity');
+        if (worldMove) {
+            const localDelta = worldDeltaToEntityLocal(selectedIds[0], worldMove, entities, selectedEntitiesData);
+            if (!localDelta) { transaction.cancel(); return; }
+            data = { position: { x: transform.position.x + localDelta.x, y: transform.position.y + localDelta.y } };
+        }
         applyTransformEdit(selectedIds[0], data);
+        transaction.commit();
     };
 
     const handleViewportClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -373,11 +433,12 @@ export function SceneViewPanel() {
             const axis = drag.operation === 'translate-x' ? 'x' : drag.operation === 'translate-y' ? 'y' : 'both';
             const nextPosition = moveScenePosition(drag.position, delta, { axis, snapStep: snapEnabled || e.ctrlKey ? snapStep : null });
             setGizmoPosition(nextPosition);
-            const moveX = nextPosition.x - drag.position.x;
-            const moveY = nextPosition.y - drag.position.y;
+            const worldDelta = { x: nextPosition.x - drag.position.x, y: nextPosition.y - drag.position.y };
             drag.ids.forEach(id => {
                 const start = drag.startPositions[id];
-                applyTransformEdit(id, { position: { x: start.x + moveX, y: start.y + moveY } });
+                const localDelta = worldDeltaToEntityLocal(id, worldDelta, entities, selectedEntitiesData);
+                if (!localDelta) return;
+                applyTransformEdit(id, { position: { x: start.x + localDelta.x, y: start.y + localDelta.y } });
             });
             return;
         }
@@ -400,7 +461,8 @@ export function SceneViewPanel() {
 
     const handleMouseUp = () => {
         if (gizmoDragRef.current || colliderResizeDragRef.current) {
-            if (gizmoDragRef.current) transformTransaction('commit', gizmoDragRef.current.snapshot);
+            gizmoDragRef.current?.transaction.commit();
+            colliderResizeDragRef.current?.transaction.commit();
             gizmoDragRef.current = null;
             colliderResizeDragRef.current = null;
             suppressClickRef.current = true;
@@ -449,17 +511,54 @@ export function SceneViewPanel() {
         notifyGame('editor:camera-update', camera);
     };
 
+    const handleViewportContextMenu = (event: React.MouseEvent<HTMLDivElement>) => {
+        event.preventDefault();
+        if (gizmoDragRef.current || colliderResizeDragRef.current || isTransformDragging) return;
+        const rect = event.currentTarget.getBoundingClientRect();
+        pendingContextRef.current = { x: event.clientX, y: event.clientY };
+        iframeRef.current?.contentWindow?.postMessage({ type: 'editor:viewport-pick', payload: {
+            x: event.clientX - rect.left, y: event.clientY - rect.top,
+            clientX: event.clientX, clientY: event.clientY,
+            excludedIds: Object.values(entities).filter(entity => entity.locked).map(entity => entity.id)
+        } }, '*');
+    };
+
+    const handleContextAction = (action: SceneContextAction, request: SceneContextMenuRequest) => {
+        const ids = request.selectedIds.length ? request.selectedIds : request.targetId ? [request.targetId] : [];
+        if (action === 'select' && request.targetId) selectEntities(ids);
+        else if (action === 'frame') window.dispatchEvent(new CustomEvent('editor:frame-selection', { detail: { ids } }));
+        else if (action === 'rename' && request.targetId) window.dispatchEvent(new CustomEvent('editor:rename-selection', { detail: { id: request.targetId } }));
+        else if (action === 'duplicate') {
+            const transaction = beginSceneEdit('Duplicate selection');
+            for (const id of ids) duplicateEntityInHierarchy(id);
+            transaction.commit();
+        } else if (action === 'delete') deleteEntitiesInHierarchy(ids);
+        else if (action === 'toggle-active' && request.targetId) {
+            const next = entities[request.targetId]?.active === false;
+            const transaction = beginSceneEdit(next ? 'Activate selection' : 'Deactivate selection');
+            ids.forEach(id => setEntityActiveInHierarchy(id, next));
+            transaction.commit();
+        } else if (action === 'toggle-lock') {
+            const next = ids.some(id => entities[id]?.locked === false);
+            const transaction = beginSceneEdit(next ? 'Lock selection' : 'Unlock selection');
+            ids.forEach(id => setEntityLocked(id, next));
+            transaction.commit();
+        } else if (action === 'create-empty') {
+            const id = globalThis.crypto?.randomUUID?.() || `entity-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            if (addEntityToHierarchy({ id, parentId: 'root', name: 'Entity', type: 'entity', children: [], active: true, locked: false, expanded: false })) {
+                selectEntities([id]);
+            }
+        }
+    };
+
     const cancelDrag = () => {
         const drag = gizmoDragRef.current;
         if (drag) {
-            for (const [id, original] of Object.entries(drag.snapshot)) {
-                applyTransformEdit(id, { position: { ...original.position }, rotation: original.rotation, scale: { ...original.scale } });
-            }
+            drag.transaction.cancel();
             setGizmoPosition(drag.position);
-            transformTransaction('cancel', drag.snapshot);
         }
         const collider = colliderResizeDragRef.current;
-        if (collider) applyColliderResizeEdit(collider.id, collider.type, collider.width, collider.height);
+        collider?.transaction.cancel();
         gizmoDragRef.current = null;
         colliderResizeDragRef.current = null;
         suppressClickRef.current = true;
@@ -519,22 +618,29 @@ export function SceneViewPanel() {
         body { margin: 0; overflow: hidden; background-color: #000; width: 100vw; height: 100vh; }
         canvas { display: block; width: 100%; height: 100%; }
         .grid {
-            position: absolute; top:0; left:0; right:0; bottom:0; pointer-events:none; opacity:0.5;
-            background-image: linear-gradient(to right, #222 1px, transparent 1px), linear-gradient(to bottom, #222 1px, transparent 1px);
-            background-size: 50px 50px;
+            position: absolute; inset:0; pointer-events:none; opacity:0.45; z-index:1;
+            background-repeat: repeat; background-position: 0 0;
         }
+        .axis-x,.axis-y { position:absolute; pointer-events:none; z-index:2; background:rgba(238,91,91,.45); }
+        .axis-x { width:1px; top:0; bottom:0; }
+        .axis-y { height:1px; left:0; right:0; background:rgba(91,197,126,.45); }
         #neptune-play, #neptune-gamepage { display: none !important; }
         #neptune-canvas { display: block !important; }
     </style>
 </head>
 <body>
     <div class="grid"></div>
+    <div class="axis-x"></div><div class="axis-y"></div>
     <canvas id="neptune-canvas"></canvas>
     
     <script type="module">
         import { Camera } from "${cameraUrl}";
         import { pickEntityAt, updateSelection } from "${scenePickingUrl}";
         import { installProjectResourceBridge } from "${projectResourceBridgeUrl}";
+        window.__NEPTUNE_EDITOR_PREVIEW__ = true;
+        const { mountAuthoredUI } = await import("${authoredUiUrl}");
+        let authoredUIHandle = null;
+        let uiCaptureEnabled = false;
         const projectResourceBridge = installProjectResourceBridge();
         const engineModule = await import("${neptuneEntryUrl}");
         window.__neptuneEngineModule = engineModule;
@@ -580,6 +686,34 @@ export function SceneViewPanel() {
             const editorCamera = new Camera(window.innerWidth, window.innerHeight);
             editorCamera.zoom = 1;
             let editorSelection = [];
+             const grid = document.querySelector('.grid');
+             const axisX = document.querySelector('.axis-x');
+             const axisY = document.querySelector('.axis-y');
+             const updateGrid = () => {
+                 const zoom = editorCamera.zoom || 1;
+                 const major = 64 * zoom;
+                 const subdivisions = zoom >= 2.5 ? 4 : zoom >= 1.25 ? 2 : 1;
+                 const minor = major / subdivisions;
+                 const majorColor = 'rgba(220,230,238,.16)';
+                 const minorColor = 'rgba(220,230,238,.075)';
+                 const layers = [
+                     'linear-gradient(to right, ' + majorColor + ' 1px, transparent 1px)',
+                     'linear-gradient(to bottom, ' + majorColor + ' 1px, transparent 1px)'
+                 ];
+                 const sizes = [major + 'px ' + major + 'px', major + 'px ' + major + 'px'];
+                 if (subdivisions > 1) {
+                     layers.push('linear-gradient(to right, ' + minorColor + ' 1px, transparent 1px)',
+                         'linear-gradient(to bottom, ' + minorColor + ' 1px, transparent 1px)');
+                     sizes.push(minor + 'px ' + minor + 'px', minor + 'px ' + minor + 'px');
+                 }
+                 grid.style.backgroundImage = layers.join(',');
+                 grid.style.backgroundSize = sizes.join(',');
+                 grid.style.backgroundPosition = new Array(layers.length).fill((-editorCamera.position.x * zoom) + 'px ' + (-editorCamera.position.y * zoom) + 'px').join(',');
+                 axisX.style.left = (-editorCamera.position.x * zoom) + 'px';
+                 axisY.style.top = (-editorCamera.position.y * zoom) + 'px';
+             };
+             const disposeAuthoredUI = () => { authoredUIHandle?.dispose(); authoredUIHandle = null; };
+             window.__NEPTUNE_EDITOR_DISPOSE__ = () => { disposeAuthoredUI(); projectResourceBridge.dispose?.(); };
              
              // Camera Update Listener
              window.addEventListener('message', (e) => {
@@ -588,6 +722,16 @@ export function SceneViewPanel() {
                     game.resetProject();
                     editorSelection = [];
                     projectResourceBridge.setScenePath('');
+                    disposeAuthoredUI();
+                }
+                else if (type === 'editor:ui-capture') {
+                    uiCaptureEnabled = Boolean(payload?.enabled);
+                    authoredUIHandle?.setCapture(uiCaptureEnabled);
+                    window.dispatchEvent(new CustomEvent('neptune:ui-capture', { detail: { enabled: uiCaptureEnabled } }));
+                }
+                else if (type === 'editor:viewport-pick') {
+                    const selectedId = game.scene && pickSceneEntityAt(game.scene, payload.x, payload.y, ${pixelsPerMeter}, payload.excludedIds || []);
+                    window.parent.postMessage({ type: 'game:viewport-picked', payload: { id: selectedId || null, x: payload.clientX, y: payload.clientY } }, '*');
                 }
                 else if (type === 'editor:select') {
                     editorSelection = updateSelection(payload?.ids, null, true);
@@ -596,6 +740,7 @@ export function SceneViewPanel() {
                      editorCamera.position.x = payload.x;
                      editorCamera.position.y = payload.y;
                      editorCamera.setZoom(payload.zoom);
+                     updateGrid();
                  }
                  else if (type === 'editor:viewport-select') {
                      const selectedId = game.scene && pickSceneEntityAt(game.scene, payload.x, payload.y, ${pixelsPerMeter}, payload.excludedIds || []);
@@ -606,6 +751,7 @@ export function SceneViewPanel() {
                      }, '*');
                  }
                  else if (type === 'editor:load-scene' && game.loadScene) {
+                     disposeAuthoredUI();
                      if (typeof payload.path === 'string') projectResourceBridge.setScenePath(payload.path);
                      game.loadScene(payload.data || payload.path)
                          .then(loaded => {
@@ -617,6 +763,9 @@ export function SceneViewPanel() {
                              }
                              window.parent.postMessage({ type: 'editor:scene-loaded', payload }, '*');
                              if(game.scene) game.scene.activeCamera = editorCamera; 
+                             try { authoredUIHandle = mountAuthoredUI(document.body, game.scene?.ui, { mode: 'scene-preview', captureInput: uiCaptureEnabled }); }
+                             catch (error) { window.parent.postMessage({ type: 'editor:scene-diagnostic', payload: { severity: 'error', message: error?.message || String(error), action: 'Fix scene.ui and reopen the scene.' } }, '*'); }
+                             updateGrid();
                              window.dispatchEvent(new Event('neptune:editor-selection-ready'));
                          })
                          .catch((error) => {
@@ -639,6 +788,7 @@ export function SceneViewPanel() {
                  if (game.scene) game.scene.activeCamera = editorCamera;
                  requestAnimationFrame(hook);
              };
+            updateGrid();
              hook();
              
              // Resize
@@ -656,7 +806,9 @@ export function SceneViewPanel() {
     const spawnFacingMarker = getSpawnPointOverlay(selectedEntityData);
     const activeGizmoPosition = gizmoPosition || (selectedIds.length > 1
         ? groupGizmoPosition
-        : selectedEntityData?.transform.position);
+        : selectionOverlays[0]
+            ? { x: selectionOverlays[0].x + selectionOverlays[0].width / 2, y: selectionOverlays[0].y + selectionOverlays[0].height / 2 }
+            : selectedEntityData?.transform.position);
     const gizmoX = activeGizmoPosition ? (activeGizmoPosition.x * pixelsPerMeter - pan.x) * zoom : 0;
     const gizmoY = activeGizmoPosition ? (activeGizmoPosition.y * pixelsPerMeter - pan.y) * zoom : 0;
     const spawnMarkerX = spawnFacingMarker ? (spawnFacingMarker.x * pixelsPerMeter - pan.x) * zoom : 0;
@@ -676,12 +828,23 @@ export function SceneViewPanel() {
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
         >
-            <SceneToolBar tool={tool} onToolChange={setTool} snapEnabled={snapEnabled} onSnapChange={setSnapEnabled} snapStep={snapStep} onSnapStepChange={setSnapStep} />
+            <SceneToolBar tool={tool} onToolChange={setTool} snapEnabled={snapEnabled} onSnapChange={setSnapEnabled} snapStep={snapStep} onSnapStepChange={setSnapStep}
+                canUndo={canUndo} canRedo={canRedo} onUndo={undoSceneEdit} onRedo={redoSceneEdit} />
             {isTransformDragging && selectedEntityData && <div data-drag-feedback className="absolute bottom-3 left-3 z-30 rounded border border-border bg-card px-2 py-1 text-xs tabular-nums text-foreground">
                 X {selectedEntityData.transform.position.x.toFixed(2)} · Y {selectedEntityData.transform.position.y.toFixed(2)} · {tool}
             </div>}
+            {selectedIds.length > 0 && !canTransformSelection && <div role="status" className="absolute bottom-3 left-3 z-30 rounded border border-border bg-card px-2 py-1 text-[11px] text-muted-foreground">
+                Transform handles are disabled for a zero-scale parent.
+            </div>}
             {/* Floating Controls */}
             <div className="absolute bottom-2 right-2 flex flex-row gap-1 z-20 pointer-events-auto items-center">
+                <ThemedIconButton size="sm" aria-label="Capture game UI input" aria-pressed={uiCapture}
+                    title={uiCapture ? 'UI input captured; click to return to scene editing' : 'Allow authored UI preview to receive input'}
+                    onClick={() => {
+                        const enabled = !uiCapture;
+                        setUiCapture(enabled);
+                        iframeRef.current?.contentWindow?.postMessage({ type: 'editor:ui-capture', payload: { enabled } }, '*');
+                    }} className={uiCapture ? 'ring-1 ring-primary text-foreground' : ''}>UI</ThemedIconButton>
                 <div className="bg-black/50 text-[11px] text-white px-1.5 py-0.5 rounded text-center select-none">
                     {Math.round(zoom * 100)}%
                 </div>
@@ -722,14 +885,19 @@ export function SceneViewPanel() {
                 }}
                 onMouseDown={handleMouseDown}
                 onClick={handleViewportClick}
+                onContextMenu={handleViewportContextMenu}
                 onWheel={handleWheel}
             >
                 <iframe
                     ref={iframeRef}
-                    className="w-full h-full border-0 block pointer-events-none select-none"
+                    className={`w-full h-full border-0 block select-none ${uiCapture ? 'pointer-events-auto' : 'pointer-events-none'}`}
                     srcDoc={iframeContent}
                     title="Scene View"
                     sandbox="allow-scripts allow-same-origin allow-modals"
+                />
+                <ProjectExtensionLayer
+                    worldToScreen={point => ({ x: (point.x * pixelsPerMeter - pan.x) * zoom, y: (point.y * pixelsPerMeter - pan.y) * zoom })}
+                    screenToWorld={point => ({ x: (point.x / zoom + pan.x) / pixelsPerMeter, y: (point.y / zoom + pan.y) / pixelsPerMeter })}
                 />
                 {selectionOverlays.length > 0 && (
                     <svg
@@ -737,25 +905,13 @@ export function SceneViewPanel() {
                         className="absolute inset-0 w-full h-full overflow-visible pointer-events-none"
                     >
                         {selectionOverlays.map(worldBounds => {
-                            const entity = selectedEntitiesData[worldBounds.id];
-                            const rotation = entity?.transform?.rotation || 0;
-                            // Frame Selection uses a world AABB; the visual outline
-                            // follows the actual oriented rectangle instead.
-                            const bounds = rotation ? getEntitySelectionBounds({ ...entity,
-                                transform: { ...entity.transform, rotation: 0 }
-                            }, 0.25) || worldBounds : worldBounds;
-                            const cx = ((bounds.x + bounds.width / 2) * pixelsPerMeter - pan.x) * zoom;
-                            const cy = ((bounds.y + bounds.height / 2) * pixelsPerMeter - pan.y) * zoom;
+                            const points = worldBounds.corners.map(point => `${(point.x * pixelsPerMeter - pan.x) * zoom},${(point.y * pixelsPerMeter - pan.y) * zoom}`).join(' ');
                             return (
-                            <rect
-                                key={bounds.id}
-                                aria-label={`Selected ${bounds.name || bounds.id}`}
-                                data-selection-outline={bounds.id}
-                                x={(bounds.x * pixelsPerMeter - pan.x) * zoom}
-                                y={(bounds.y * pixelsPerMeter - pan.y) * zoom}
-                                width={bounds.width * pixelsPerMeter * zoom}
-                                height={bounds.height * pixelsPerMeter * zoom}
-                                transform={rotation ? `rotate(${rotation * 180 / Math.PI} ${cx} ${cy})` : undefined}
+                            <polygon
+                                key={worldBounds.id}
+                                aria-label={`Selected ${worldBounds.name || worldBounds.id}`}
+                                data-selection-outline={worldBounds.id}
+                                points={points}
                                 fill="none"
                                 stroke="hsl(var(--selection, 199 89% 65%))"
                                 strokeWidth={1}
@@ -766,7 +922,15 @@ export function SceneViewPanel() {
                         })}
                     </svg>
                 )}
-                {selectedIds.length > 0 && activeGizmoPosition
+                <SceneContextMenu
+                    request={contextMenu}
+                    targetName={contextMenu?.targetId ? entities[contextMenu.targetId]?.name : undefined}
+                    isActive={contextMenu?.targetId ? entities[contextMenu.targetId]?.active : true}
+                    isLocked={contextMenu?.targetId ? entities[contextMenu.targetId]?.locked : false}
+                    onAction={handleContextAction}
+                    onClose={() => setContextMenu(null)}
+                />
+                {selectedIds.length > 0 && canTransformSelection && activeGizmoPosition
                     && tool !== 'hand' && (selectedIds.length === 1 || hasCompleteGroupTransform) && (
                     <svg
                         aria-label={selectedIds.length > 1 ? 'Move selected entities' : 'Move selected entity'}

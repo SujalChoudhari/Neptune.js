@@ -29,12 +29,13 @@ test("editor scene edits persist and Game View playback and diagnostics use the 
     });
     t.after(() => server.kill());
     let ready = false;
+    let readinessError = '';
     for (let attempt = 0; attempt < 80; attempt++) {
         if (server.exitCode !== null) throw new Error(`Vite exited with ${server.exitCode}`);
-        try { if ((await fetch(`http://127.0.0.1:${port}`)).ok) { ready = true; break; } } catch { /* wait */ }
+        try { if ((await fetch(`http://127.0.0.1:${port}`)).ok) { ready = true; break; } } catch (error) { readinessError = String(error); }
         await delay(100);
     }
-    assert.ok(ready, "Vite should become ready");
+    assert.ok(ready, `Vite should become ready (${readinessError})`);
     const browser = await chromium.launch({ headless: true });
     t.after(() => browser.close());
     const context = await browser.newContext();
@@ -93,6 +94,14 @@ test("editor scene edits persist and Game View playback and diagnostics use the 
     await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 0)));
     await companionRow.evaluate(element => { if (!element.classList.contains('bg-primary/20')) throw new Error('Foreign selection replaced the live selection'); });
     await page.getByText("Player", { exact: true }).click();
+    await page.getByRole("button", { name: "Add Component" }).click();
+    await page.getByRole("button", { name: /Dialogue/ }).click();
+    await page.getByRole("group", { name: "speaker" }).locator("input").fill("Mira");
+    await page.getByRole("group", { name: "text" }).locator("input").fill("The gate is open.");
+    await page.getByText("Dialogue", { exact: true }).locator("xpath=ancestor::div[contains(@class,'group flex flex-col')]").getByRole("button").last().click();
+    await page.getByText("Remove", { exact: true }).click();
+    await page.keyboard.press("Control+z");
+    await page.getByRole("group", { name: "speaker" }).locator("input").waitFor();
     await page.getByText("Position", { exact: true }).locator("xpath=..").locator('input[type="number"]').first().fill("27");
     await page.waitForFunction(() => {
         const frame = document.querySelector('iframe[title="Scene View"]');
@@ -125,6 +134,9 @@ test("editor scene edits persist and Game View playback and diagnostics use the 
     assert.equal(saved.entities[0].id, "player");
     assert.equal(saved.entities[0].name, "Hero");
     assert.equal(saved.entities[0].active, false);
+    assert.deepEqual(saved.entities[0].components.find(component => component.type === "Dialogue").props, {
+        speaker: "Mira", text: "The gate is open.", next: ""
+    });
     assert.equal(saved.entities.length, 2);
     assert.notEqual(saved.entities[1].id, saved.entities[0].id);
     assert.equal(saved.entities[1].name, "Hero");

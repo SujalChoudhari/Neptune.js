@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import path from 'node:path';
 import test from 'node:test';
 import vm from 'node:vm';
 import { buildSync } from 'esbuild';
@@ -18,7 +19,7 @@ const source = fs.readFileSync('triton/src/components/panels/SceneViewPanel.tsx'
 assert.match(source, /\$\{runtimeSelectionBridgeScript\}/, 'the real Scene View installs the CRUD/selection bridge');
 assert.match(source, /new Event\('neptune:editor-selection-ready'\)/, 'scene reload retries selection');
 const module = { exports: {} };
-vm.runInNewContext(buildSync({ stdin: { contents: fs.readFileSync('triton/src/lib/editorGameRunner.ts', 'utf8'), loader: 'ts' }, bundle: true, format: 'cjs', platform: 'node', write: false }).outputFiles[0].text, {
+vm.runInNewContext(buildSync({ stdin: { contents: fs.readFileSync('triton/src/lib/editorGameRunner.ts', 'utf8'), loader: 'ts', resolveDir: path.resolve('triton/src/lib') }, bundle: true, format: 'cjs', platform: 'node', write: false }).outputFiles[0].text, {
     module, exports: module.exports, console, window: { dispatchEvent() {} },
     CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options?.detail; } }
 });
@@ -226,4 +227,28 @@ test('Game View additive pointer selection toggles rendered entities and survive
     const reopened = SceneLoader.parse(Runner.openScene(JSON.parse(saved), 'scenes/main.scene'));
     assert.equal(pickRuntimeEntityAt(reopened, 256, 128), 'smoke-partner');
     assert.deepEqual(reopened.children.map(entity => entity.id), ['smoke-layer', 'smoke-partner']);
+});
+
+test('canonical component add/remove commands preserve IDs, save/reopen data, and recompute dirty state', async () => {
+    const fixture = JSON.parse(fs.readFileSync('triton/tests/fixtures/native-smoke/scenes/main.scene', 'utf8'));
+    Runner.openScene(fixture, 'scenes/main.scene');
+    assert.equal(Runner.isDirty, false);
+    assert.equal(Runner.addComponent('smoke-hero', 'BoxCollider', { size: { x: 0.75, y: 1.25 } }), true);
+    assert.equal(Runner.isDirty, true);
+    const added = Runner.getEntityBranch('smoke-hero').components.find(component => component.type === 'BoxCollider');
+    assert.match(added.id, /^component-/);
+    assert.deepEqual(JSON.parse(JSON.stringify(added.props.size)), { x: 0.75, y: 1.25 });
+    assert.equal(Runner.addComponent('smoke-hero', 'boxcollider', {}), false, 'component names are unique case-insensitively');
+    assert.equal(Runner.removeComponent('smoke-hero', 'BoxCollider'), true);
+    Runner.refreshDirtyState();
+    assert.equal(Runner.isDirty, false, 'undoing back to the saved document clears dirty state');
+    let content;
+    Runner.addComponent('smoke-hero', 'BoxCollider', { size: { x: 0.75, y: 1.25 } });
+    await Runner.saveScene(async (_path, payload) => { content = payload; return true; });
+    assert.equal(Runner.isDirty, false);
+    Runner.closeScene();
+    const reopened = Runner.openScene(JSON.parse(content), 'scenes/main.scene');
+    const persisted = Runner.getEntityBranch('smoke-hero').components.find(component => component.type === 'BoxCollider');
+    assert.deepEqual(JSON.parse(JSON.stringify(persisted.props.size)), { x: 0.75, y: 1.25 });
+    assert.equal(reopened.schemaVersion, 1);
 });

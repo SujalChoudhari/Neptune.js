@@ -1,3 +1,5 @@
+import { validateAuthoredUI } from "../../../src/ui/authoredUi.js"
+
 export const PROJECT_SCHEMA_VERSION = 1
 export const PROJECT_DATA_VERSION = "1.0.0"
 export const SCENE_SCHEMA_VERSION = 1
@@ -315,6 +317,7 @@ export class EditorGameRunner {
     static currentScene: ScenePayload | null = null
     static currentScenePath: string | null = null
     static isDirty = false
+    private static savedSceneSnapshot: string | null = null
     // Serialize writes per path so a slower earlier native save cannot replace a newer edit.
     private static pendingSceneWrites = new Map<string, Promise<void>>()
 
@@ -338,6 +341,7 @@ export class EditorGameRunner {
         if (data.entities !== undefined && !Array.isArray(data.entities)) {
             throw new Error("Scene entities must be an array supported by the runtime SceneLoader.")
         }
+        if (data.ui !== undefined) validateAuthoredUI(data.ui)
         const issue = collectResourceIssues(data)[0]
         if (issue) {
             const error = new Error(`[${RESOURCE_REFERENCE_ERROR_CODE}] Invalid ${issue.kind} resource reference '${displayReference(issue.reference)}' at ${issue.source}: ${issue.reason}. Expected a non-empty path, id, uri, or key.`)
@@ -394,6 +398,7 @@ export class EditorGameRunner {
             this.currentScene = scene
             this.currentScenePath = path ?? this.currentScenePath
             this.isDirty = false
+            this.savedSceneSnapshot = JSON.stringify(scene)
             emit("editor:scene-opened", { path: this.currentScenePath, scene })
             return scene
         } catch (error) {
@@ -472,6 +477,40 @@ export class EditorGameRunner {
             components: mutation.components ? clone(mutation.components) : [],
             children: []
         })
+        this.isDirty = true
+        return true
+    }
+
+    /** Read a detached authoring branch for a reversible hierarchy command. */
+    static getEntityBranch(id: string) {
+        if (!this.currentScene || typeof id !== "string") return null
+        const scene = this.currentScene as Record<string, any>
+        for (const list of sceneEntityLists(scene)) {
+            const match = findEntityContainer(list, id)
+            if (match) return clone(match.entity)
+        }
+        return null
+    }
+
+    /** Insert a detached branch at a validated parent/index using stable IDs. */
+    static insertEntityBranch(parentId: string, branch: Record<string, any>, index?: number) {
+        if (!this.currentScene || !isRecord(branch) || typeof branch.id !== "string" || !branch.id.trim()) return false
+        const scene = this.currentScene as Record<string, any>
+        if (findEntity(scene, branch.id)) return false
+        const parentChildren = findParentContainer(scene, parentId)
+        if (!parentChildren) return false
+        const branchClone = clone(branch)
+        const used = collectSceneIds(scene).entityIds
+        const checkIds = (entity: unknown): boolean => {
+            if (!isRecord(entity) || typeof entity.id !== "string" || !entity.id.trim() || used.has(entity.id)) return false
+            used.add(entity.id)
+            return !Array.isArray(entity.children) || entity.children.every(checkIds)
+        }
+        if (!checkIds(branchClone)) return false
+        branchClone.parentId = parentId === "root" ? null : parentId
+        const at = typeof index === "number" && Number.isFinite(index)
+            ? Math.max(0, Math.min(Math.trunc(index), parentChildren.length)) : parentChildren.length
+        parentChildren.splice(at, 0, branchClone)
         this.isDirty = true
         return true
     }
@@ -611,6 +650,36 @@ export class EditorGameRunner {
         return changed
     }
 
+    /** Add an authoring component through the canonical scene document. */
+    static addComponent(id: string, type: string, props: Record<string, unknown> = {}) {
+        if (!this.currentScene || typeof id !== "string" || !id.trim() || typeof type !== "string" || !type.trim()
+            || !isRecord(props)) return false
+        const entity = findEntity(this.currentScene as Record<string, any>, id)
+        if (!entity) return false
+        if (!Array.isArray(entity.components)) entity.components = []
+        if (entity.components.some((component: unknown) => isRecord(component) && typeof component.type === "string"
+            && component.type.toLowerCase() === type.toLowerCase())) return false
+        const scene = this.currentScene as Record<string, any>
+        const { componentIds } = collectSceneIds(scene)
+        entity.components.push({ id: createStableId("component", componentIds), type: type.trim(), props: clone(props) })
+        this.isDirty = true
+        return true
+    }
+
+    /** Remove an authoring component by its stable serialized name. */
+    static removeComponent(id: string, type: string) {
+        if (!this.currentScene || typeof id !== "string" || !id.trim() || typeof type !== "string" || !type.trim()) return false
+        if (type.toLowerCase() === "transform") return false
+        const entity = findEntity(this.currentScene as Record<string, any>, id)
+        if (!entity || !Array.isArray(entity.components)) return false
+        const index = entity.components.findIndex((component: unknown) => isRecord(component) && typeof component.type === "string"
+            && component.type.toLowerCase() === type.toLowerCase())
+        if (index < 0) return false
+        entity.components.splice(index, 1)
+        this.isDirty = true
+        return true
+    }
+
     static async saveScene(writeFile: ProjectFileWriter, path = this.currentScenePath) {
         if (!this.currentScene || !path) throw new Error("No scene is open. Open a scene before saving it.")
         const source = this.currentScene
@@ -649,6 +718,7 @@ export class EditorGameRunner {
         const snapshotStillCurrent = JSON.stringify(source) === original
         if (isCurrentCompletion && snapshotStillCurrent) {
             this.currentScene = scene
+            this.savedSceneSnapshot = JSON.stringify(scene)
             this.isDirty = false
         }
         emit("editor:scene-saved", { path, scene })
@@ -663,7 +733,15 @@ export class EditorGameRunner {
         this.currentScene = null
         this.currentScenePath = null
         this.isDirty = false
+        this.savedSceneSnapshot = null
         emit("editor:scene-closed", { path: closedPath })
+    }
+
+    /** Recompute dirty state after an editor undo/redo restored authoring data. */
+    static refreshDirtyState() {
+        this.isDirty = Boolean(this.currentScene && this.savedSceneSnapshot !== null
+            && JSON.stringify(this.currentScene) !== this.savedSceneSnapshot)
+        return this.isDirty
     }
 
     static report(error: unknown) {

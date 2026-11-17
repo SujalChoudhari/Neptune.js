@@ -4,6 +4,10 @@ export function isSceneShortcutTargetBlocked(target: unknown): boolean;
 export function getSceneToolShortcut(event: Pick<KeyboardEvent, 'key' | 'target' | 'defaultPrevented' | 'repeat' | 'isComposing' | 'ctrlKey' | 'metaKey' | 'altKey'>, options?: { modalOpen?: boolean; activeElement?: Element | null }): SceneTool | null;
 export function getSceneDragDelta(deltaX: number, deltaY: number, options: { zoom: number; pixelsPerUnit?: number; fine?: boolean; coarse?: boolean }): { x: number; y: number };
 export function snapSceneValue(value: number, step: number): number;
+export function getSceneGridMetrics(pan: { x: number; y: number }, zoom: number, pixelsPerUnit?: number): {
+    majorSpacing: number; minorSpacing: number; subdivisions: number; offsetX: number; offsetY: number;
+    axisX: number; axisY: number; showMinor: boolean;
+};
 export function moveScenePosition(start: { x: number; y: number }, delta: { x: number; y: number }, options?: { axis?: 'x' | 'y' | 'both'; snapStep?: number | null }): { x: number; y: number };
 export function resizeSceneScale(scale: { x: number; y: number }, size: { width: number; height: number }, delta: { x: number; y: number }, options?: { uniform?: boolean; minSize?: number }): { x: number; y: number };
 export type TransformSnapshot = Readonly<Record<string, Readonly<{ position: Readonly<{ x: number; y: number }>; rotation: number; scale: Readonly<{ x: number; y: number }> }>>>;

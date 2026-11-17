@@ -29,6 +29,7 @@ import { ProjectBehaviour } from "./scripts/projectBehaviour.js";
 
 import { MouseInput } from "./input/mouseinput.js";
 import { KeyboardInput } from "./input/keyboardinput.js";
+import { InputActions } from "./input/actions.js";
 import { TouchInput } from "./input/touchinput.js";
 
 import { Maths } from "./math/math.js";
@@ -58,6 +59,7 @@ import { ComponentRegistry } from "./core/componentRegistry.js";
 import { SceneLoader } from "./core/sceneLoader.js";
 import { SaveManager } from "./core/saveManager.js";
 import { GameClock } from "./core/gameClock.js";
+import { FixedStepper } from "./core/fixedStepper.js";
 
 const application = new Application();
 window.game = application;
@@ -79,14 +81,14 @@ ComponentRegistry.register("SpawnPoint", SpawnPoint);
 // Register other components as needed...
 
 export {
-    application, SaveManager, GameClock,
+    application, Application, SaveManager, GameClock, FixedStepper,
     Storage, Color, Filter, Entity, Scene, DestroyQueue, SceneManager, SceneLoader,
     Component, Transform, BoxCollider, TriggerCollider, Hitbox, Hurtbox, Dialogue, QuestDefinition, EnemyConfig, SceneTransition, SpawnPoint, ComponentRegistry,
     Renderable, Shape, Sprite,
     Sound,
     UI,
     Script, ScriptManager, Global, Behaviour, ProjectBehaviour,
-    MouseInput, KeyboardInput, TouchInput,
+    MouseInput, KeyboardInput, InputActions, TouchInput,
     Maths, Vector2,
     Titan, Thalassa, Nereid, Proteus, Larissa, Galatea,
 }

@@ -33,6 +33,8 @@ interface RenderComponentProps {
     onToggleActive?: () => void
     updateHelpers: any // Passing all update helpers in a single object
     moveHelpers: any // Passing move up/down helpers
+    onRemove?: () => void
+    resources?: { value: string; label: string }[]
 }
 
 export const renderInspectorComponent = ({
@@ -42,7 +44,9 @@ export const renderInspectorComponent = ({
     isActive,
     onToggleActive,
     updateHelpers,
-    moveHelpers
+    moveHelpers,
+    onRemove,
+    resources
 }: RenderComponentProps) => {
     void index
     const Component = InspectorRegistry[compId]
@@ -62,6 +66,8 @@ export const renderInspectorComponent = ({
             type={compId}
             data={entity.components[compId]}
             {...commonProps}
+            onRemove={onRemove}
+            resources={resources}
             onUpdate={(key, value) => updateHelpers.updateGeneric(compId, key, value)}
         />
     }

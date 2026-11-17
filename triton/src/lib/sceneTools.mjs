@@ -39,6 +39,26 @@ export function snapSceneValue(value, step) {
     return Object.is(snapped, -0) ? 0 : Number(snapped.toPrecision(12));
 }
 
+/** CSS pixel geometry for a world-unit grid aligned with the engine camera. */
+export function getSceneGridMetrics(pan, zoom, pixelsPerUnit = 64) {
+    if (!pan || ![pan.x, pan.y, zoom, pixelsPerUnit].every(Number.isFinite) || zoom <= 0 || pixelsPerUnit <= 0) {
+        throw new TypeError('Scene grid needs finite pan and positive zoom/pixels-per-unit');
+    }
+    const majorSpacing = pixelsPerUnit * zoom;
+    const subdivisions = zoom >= 2.5 ? 4 : zoom >= 1.25 ? 2 : 1;
+    const minorSpacing = majorSpacing / subdivisions;
+    return {
+        majorSpacing,
+        minorSpacing,
+        subdivisions,
+        offsetX: Object.is(-pan.x * zoom, -0) ? 0 : -pan.x * zoom,
+        offsetY: Object.is(-pan.y * zoom, -0) ? 0 : -pan.y * zoom,
+        axisX: Object.is(-pan.x * zoom, -0) ? 0 : -pan.x * zoom,
+        axisY: Object.is(-pan.y * zoom, -0) ? 0 : -pan.y * zoom,
+        showMinor: subdivisions > 1
+    };
+}
+
 /** Snap the final world position, rather than its delta, so off-grid selections align. */
 export function moveScenePosition(start, delta, { axis = 'both', snapStep = null } = {}) {
     if (!start || !delta || ![start.x, start.y, delta.x, delta.y].every(Number.isFinite) || !['x', 'y', 'both'].includes(axis)) {

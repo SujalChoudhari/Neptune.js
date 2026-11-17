@@ -1,11 +1,12 @@
 import { Color } from "../rendering/color.js";
-import { Maths } from "../math/math.js";
 import { MouseInput } from "../input/mouseinput.js";
 import { KeyboardInput } from "../input/keyboardinput.js";
 import { TouchInput } from "../input/touchinput.js";
 import { SceneManager } from "./sceneManager.js";
 import { ScriptManager } from "../scripts/scriptManager.js";
 import { DestroyQueue } from "./destroyQueue.js";
+import { mountAuthoredUI } from "../ui/authoredUi.js";
+import { FixedStepper } from "./fixedStepper.js";
 
 const sceneLoadGenerations = new WeakMap();
 
@@ -34,6 +35,9 @@ export class Application {
     #initialCanvasSize = { width: 0, height: 0 };
     #isRunning = false;
     #playGeneration = 0;
+    #authoredUI = null;
+    #authoredUIScene = null;
+    #fixedStepper = new FixedStepper();
 
     #isInitialized = false;
 
@@ -69,6 +73,9 @@ export class Application {
 
         this.#currentTimeStamp = performance.now();
         this._deltaTime = 0;
+        window.addEventListener("neptune:ui-capture", event => {
+            this.#authoredUI?.setCapture(Boolean(event.detail?.enabled));
+        });
     }
 
     get width() {
@@ -155,6 +162,8 @@ export class Application {
             this.#init();
             this.#isInitialized = true;
         }
+        this.#fixedStepper.reset();
+        this.#currentTimeStamp = null;
         this.#isRunning = true;
         this.#gameloop(0, ++this.#playGeneration);
     }
@@ -164,6 +173,8 @@ export class Application {
      */
     pause() {
         this.isPaused = true;
+        this.#fixedStepper.reset();
+        KeyboardInput.clear();
     }
 
     /**
@@ -171,6 +182,7 @@ export class Application {
      */
     resume() {
         this.isPaused = false;
+        this.#currentTimeStamp = null;
     }
 
     /** Stop the game loop. Calling start() later resumes the existing instance. */
@@ -178,6 +190,10 @@ export class Application {
         this.isPaused = false;
         this.#isRunning = false;
         this.#playGeneration++;
+        this.#fixedStepper.reset();
+        KeyboardInput.reset();
+        MouseInput.clear();
+        TouchInput.clear();
     }
 
 
@@ -191,6 +207,9 @@ export class Application {
     /** Clear editor project state and invalidate asynchronous scene loads. */
     resetProject() {
         this.stop();
+        this.#authoredUI?.dispose();
+        this.#authoredUI = null;
+        this.#authoredUIScene = null;
         sceneLoadGenerations.set(this, (sceneLoadGenerations.get(this) || 0) + 1);
         for (const scene of SceneManager.GetScenes()) {
             scene.active = false;
@@ -231,8 +250,13 @@ export class Application {
                 return false;
             }
 
+            const previousScene = this.scene;
             SceneManager.replaceScene(newScene);
             SceneManager.LoadScene(newScene.id);
+            if (previousScene && previousScene !== newScene && previousScene.id === newScene.id) {
+                SceneManager.removeScene(previousScene);
+                previousScene.destroy();
+            }
             return true;
 
         } catch (e) {
@@ -244,6 +268,21 @@ export class Application {
 
     #draw(ctx) {
         SceneManager.draw(ctx);
+        const scene = this.scene;
+        if (globalThis.__NEPTUNE_EDITOR_PREVIEW__ === true) {
+            this.#authoredUI?.dispose();
+            this.#authoredUI = null;
+            this.#authoredUIScene = scene || null;
+            return;
+        }
+        if (scene !== this.#authoredUIScene) {
+            this.#authoredUI?.dispose();
+            this.#authoredUI = null;
+            this.#authoredUIScene = scene || null;
+            if (scene?.ui?.elements?.length) {
+                this.#authoredUI = mountAuthoredUI(document.body, scene.ui, { mode: "game", captureInput: false });
+            }
+        }
     }
 
     #update(timeStamp) {
@@ -252,10 +291,9 @@ export class Application {
 
     #gameloop(timeStamp, generation) {
         if (!this.#isRunning || generation !== this.#playGeneration) return;
-        // Calculate the time passed since the last frame
-        this._deltaTime = (timeStamp - this.#currentTimeStamp) / 1000;  //in seconds
-        // console.log("DT:", this._deltaTime);
-        this._deltaTime = Maths.Clamp(this._deltaTime, 0, 0.1); // Clamp to avoid huge jumps
+        const frameDelta = this.#currentTimeStamp === null
+            ? 0
+            : Math.max(0, (timeStamp - this.#currentTimeStamp) / 1000);
         this.#currentTimeStamp = timeStamp;
 
         // Clear the canvas
@@ -263,20 +301,23 @@ export class Application {
         this.#ctx.fillStyle = this.#clearColor.toString() || Color.darkgray;
         this.#ctx.fillRect(0, 0, this.#width, this.#height);
 
-        // Update and draw the entities
-        // console.log("Application Loop: Update");
+        // Update at a stable simulation rate, limiting catch-up work after stalls.
         if (!this.isPaused) {
-            this.#update(this._deltaTime);
+            this.#fixedStepper.advance(frameDelta, fixedDelta => {
+                this._deltaTime = fixedDelta;
+                this.#update(fixedDelta);
+                MouseInput.clear();
+                KeyboardInput.clear();
+                TouchInput.clear();
+                DestroyQueue.destroy();
+            });
+        } else {
+            this.#fixedStepper.reset();
+            MouseInput.clear();
+            KeyboardInput.clear();
+            TouchInput.clear();
         }
         this.#draw(this.#ctx);
-
-        // Clear the input
-        MouseInput.clear();
-        KeyboardInput.clear();
-        TouchInput.clear();
-
-        // Destroy the entities
-        DestroyQueue.destroy();
 
         // Call the next frame
         if (this.#isRunning && generation === this.#playGeneration) {

@@ -2,6 +2,7 @@ import { collectRenderableRoots, sortRenderables, withRenderablePass } from "../
 import { Entity } from "./entity.js";
 import { SceneManager } from "./sceneManager.js";
 import { Maths } from "../math/math.js";
+import { validateAuthoredUI } from "../ui/authoredUi.js";
 
 export const SCENE_SCHEMA_VERSION = 1;
 export const SCENE_DATA_VERSION = "1.0.0";
@@ -216,6 +217,7 @@ export class Scene extends Entity {
     constructor(name) {
         super(name);
         this.id = SceneManager.getIdForNewScene();
+        this.ui = { version: 1, elements: [] };
         // Runtime navigation grids are loaded from map resources and are not serialized.
         this.navigationTilemaps = new Map();
         SceneManager.addScene(this);
@@ -235,6 +237,7 @@ export class Scene extends Entity {
             id: this.id,
             name: this.name,
             camera: this.cameraSettings ? cloneSerializable(this.cameraSettings) : undefined,
+            ...(this.ui?.elements?.length ? { ui: cloneSerializable(validateAuthoredUI(this.ui)) } : {}),
             layers: [{
                 name: "Main",
                 type: "object_layer",

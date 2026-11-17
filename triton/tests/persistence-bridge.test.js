@@ -22,6 +22,7 @@ import { EnemyAI } from "../../src/larissa/enemyAI.js";
 import { Hitbox, Hurtbox, TriggerCollider } from "../../src/nereid/collider.js";
 import { createEmptyTilemap, paintTileCell, paintTileCells, setCellMetadata, setTileMetadata, getTilesetPaletteIds, getTilesetTileOffset, getTilesetGridSize, getTilemapAttachError } from "../src/lib/tilemapAuthoring.mjs";
 import { isSafeSceneAssetPath } from "../src/lib/sceneTransitionAuthoring.mjs";
+import { sceneContextSelection } from "../src/lib/sceneContextMenu.mjs";
 import { describe, it, expect } from "../../tests/tester.js";
 
 ComponentRegistry.register("SceneTransition", SceneTransition);
@@ -76,6 +77,8 @@ function createMainHarness() {
         "@/components/library",
         "@/context/GameContext",
         "@/lib/editorGameRunner",
+        "@/lib/sceneContextMenu.mjs",
+        "./SceneContextMenu",
         "./hierarchy/HierarchyItem",
         "./hierarchy/HierarchyToolbar"
     ]);
@@ -244,7 +247,8 @@ function createMainHarness() {
                 saveScene: async () => writeScene("scenes/main.scene", game.staleScene || game.openedScene)
             })
         },
-        "@/lib/editorGameRunner": runner
+        "@/lib/editorGameRunner": runner,
+        "@/lib/sceneContextMenu.mjs": { sceneContextSelection }
     };
     const require = (specifier) => {
         if (!(specifier in modules)) throw new Error(`Unexpected external import: ${specifier}`);
@@ -273,6 +277,7 @@ function createMainHarness() {
     const hierarchyModules = {
         ...modules,
         react: hierarchyReact,
+        "./SceneContextMenu": { SceneContextMenu: "SceneContextMenu" },
         "@/components/library": {
             ThemedScrollArea: "ThemedScrollArea",
             ThemedContextMenu: "ThemedContextMenu",

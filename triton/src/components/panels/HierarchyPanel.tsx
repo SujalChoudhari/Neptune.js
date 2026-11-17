@@ -1,13 +1,7 @@
 import type { IDockviewPanelProps } from "dockview"
 import { useState, useMemo, useEffect, useCallback } from "react"
 import {
-    ThemedScrollArea,
-    ThemedContextMenu,
-    ThemedContextMenuTrigger,
-    ThemedContextMenuContent,
-    ThemedContextMenuItem,
-    ThemedContextMenuSeparator,
-    ThemedContextMenuLabel
+    ThemedScrollArea
 } from "@/components/library"
 import { useGameContext } from "@/context/GameContext"
 import { HierarchyItem } from "./hierarchy/HierarchyItem"
@@ -16,6 +10,8 @@ import type { SceneEntity } from "@/types/engine"
 import { EditorGameRunner } from "@/lib/editorGameRunner"
 import { visibleHierarchyIds, hierarchySelectionForClick } from "../../lib/visibleHierarchyIds"
 import { handleHierarchyShortcut } from "../../lib/hierarchyShortcuts"
+import { SceneContextMenu, type SceneContextMenuRequest, type SceneContextAction } from "./SceneContextMenu"
+import { sceneContextSelection } from "@/lib/sceneContextMenu.mjs"
 
 export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     const {
@@ -26,18 +22,20 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         selectEntities,
         setEntityExpansion,
         moveEntities,
-        notifyGame,
         addEntityToHierarchy,
         setEntityActiveInHierarchy,
         setEntityLocked,
         renameEntityInHierarchy,
         removeEntityFromHierarchy,
-        addEntityBranchToHierarchy
+        duplicateEntityInHierarchy,
+        beginSceneEdit,
+        deleteEntitiesInHierarchy
     } = useGameContext()
 
     const [searchQuery, setSearchQuery] = useState("")
     const [renamingId, setRenamingId] = useState<string | null>(null)
     const [lastSelectedId, setLastSelectedId] = useState<string | null>(null)
+    const [contextRequest, setContextRequest] = useState<SceneContextMenuRequest | null>(null)
 
     // Helper to get children
     const getChildren = useCallback((id: string) => {
@@ -53,10 +51,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     const toggleActive = (id: string) => {
         const ent = entities[id];
         if (!ent) return;
-        const active = !ent.active;
-        if (!EditorGameRunner.updateEntity(id, 'active', { value: active })) return;
-        setEntityActiveInHierarchy(id, active);
-        notifyGame('editor:set-active', { id, active });
+        setEntityActiveInHierarchy(id, !ent.active);
     }
 
     const toggleLock = (id: string) => {
@@ -70,28 +65,16 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
     }
 
     const renameEntity = (id: string, newName: string) => {
-        if (!EditorGameRunner.updateEntity(id, 'name', { value: newName })) return;
         renameEntityInHierarchy(id, newName);
-        notifyGame('editor:rename', { id, name: newName });
         setRenamingId(null)
     }
 
     const removeEntity = useCallback((id: string) => {
-        if (!EditorGameRunner.deleteEntity(id)) return;
         removeEntityFromHierarchy(id);
-        notifyGame('editor:delete', { id });
-    }, [removeEntityFromHierarchy, notifyGame])
-
-    const duplicateEntity = (id: string) => {
-        const duplicate = EditorGameRunner.duplicateEntity(id);
-        if (!duplicate) return;
-        addEntityBranchToHierarchy(duplicate, entities[id]?.parentId || "root", id);
-        notifyGame('editor:load-scene', { data: EditorGameRunner.currentScene });
-    }
+    }, [removeEntityFromHierarchy])
 
     const addEntity = (parentId: string, name: string, type: string) => {
         const id = globalThis.crypto?.randomUUID?.() || `entity-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-        const persistenceParentId = EditorGameRunner.resolveHierarchyParentId(parentId, entities)
         const components = type === 'enemy'
             ? [{ type: 'EnemyConfig', props: { maxHealth: 100, moveSpeed: 2, contactDamage: 10, behavior: 'patrol' } }]
             : type === 'quest'
@@ -112,16 +95,11 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
                     ? [{ type: 'Hurtbox', props: { width: 1, height: 1, offsetX: 0, offsetY: 0 } }]
             : undefined
         const entityComponents = components || [];
-        if (!persistenceParentId || !EditorGameRunner.createEntity(persistenceParentId, { id, name, type, components: entityComponents })) return;
-        addEntityToHierarchy({
+        const created = addEntityToHierarchy({
             id, parentId, name, type: type as SceneEntity['type'], children: [],
             active: true, locked: false, expanded: false
         }, entityComponents);
-        notifyGame('editor:create-entity', {
-            id, parentId: persistenceParentId, name, type, active: true,
-            transform: { pos: { x: 0, y: 0 }, rot: 0, scale: { x: 1, y: 1 } },
-            components: entityComponents
-        });
+        if (!created) return
     }
 
     // Simple search filtering
@@ -170,6 +148,15 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         setLastSelectedId(null)
     }, [currentScenePath])
 
+    useEffect(() => {
+        const startRename = (event: Event) => {
+            const id = (event as CustomEvent<{ id?: string }>).detail?.id
+            if (typeof id === 'string' && entities[id] && !entities[id].locked) setRenamingId(id)
+        }
+        window.addEventListener('editor:rename-selection', startRename)
+        return () => window.removeEventListener('editor:rename-selection', startRename)
+    }, [entities])
+
     // Keyboard Shortcuts
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -211,11 +198,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
 
     const handleMove = (draggedIdsArg: string | string[], targetParentId: string, targetIndex?: number | 'before' | 'after', relativeToId?: string) => {
         const draggedIds = Array.isArray(draggedIdsArg) ? draggedIdsArg : [draggedIdsArg]
-        const persistenceParentId = EditorGameRunner.resolveHierarchyParentId(targetParentId, entities)
-        if (!persistenceParentId) return
-
         if (typeof targetIndex === 'number' || targetIndex === undefined) {
-            if (!EditorGameRunner.moveEntities(draggedIds, persistenceParentId, targetIndex as number | undefined)) return
             moveEntities(draggedIds, targetParentId, targetIndex as number | undefined)
             return
         }
@@ -225,8 +208,58 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
 
         const finalIndex = EditorGameRunner.resolveHierarchyDropIndex(parent.children, draggedIds, targetIndex, relativeToId)
         if (finalIndex === null) return
-        if (!EditorGameRunner.moveEntities(draggedIds, persistenceParentId, finalIndex)) return
         moveEntities(draggedIds, targetParentId, finalIndex)
+    }
+
+    const openEntityContext = (event: React.MouseEvent, id: string) => {
+        event.preventDefault()
+        event.stopPropagation()
+        const entity = entities[id]
+        if (!entity) return
+        const nextSelection = entity.locked ? selectedIds : sceneContextSelection(id, selectedIds, entities)
+        if (!entity.locked) selectEntities(nextSelection)
+        setContextRequest({ x: event.clientX, y: event.clientY, targetId: id, selectedIds: nextSelection.length ? nextSelection : [id] })
+    }
+
+    const handleContextAction = (action: SceneContextAction, request: SceneContextMenuRequest) => {
+        const id = request.targetId
+        if (!id) {
+            if (action === 'create-empty') addEntity('root', 'New Entity', 'empty')
+            return
+        }
+        const ids = request.selectedIds.length ? request.selectedIds : [id]
+        if (action === 'select') selectEntities(ids)
+        else if (action === 'frame') window.dispatchEvent(new CustomEvent('editor:frame-selection', { detail: { ids } }))
+        else if (action === 'rename') setRenamingId(id)
+        else if (action === 'duplicate') {
+            const roots = ids.filter(targetId => {
+                const seen = new Set<string>()
+                for (let parent = entities[targetId]?.parentId; parent && !seen.has(parent); parent = entities[parent]?.parentId) {
+                    if (ids.includes(parent)) return false
+                    seen.add(parent)
+                }
+                return true
+            })
+            const transaction = roots.length > 1 ? beginSceneEdit('Duplicate selection') : null
+            try {
+                for (const targetId of roots) {
+                    if (!duplicateEntityInHierarchy(targetId)) { transaction?.cancel(); return }
+                }
+                transaction?.commit()
+            } catch (error) { transaction?.cancel(); EditorGameRunner.report(error) }
+        }
+        else if (action === 'delete') deleteEntitiesInHierarchy(ids)
+        else if (action === 'toggle-active') {
+            const active = !entities[id]?.active
+            const transaction = ids.length > 1 ? beginSceneEdit('Change selection activation') : null
+            try { ids.forEach(targetId => setEntityActiveInHierarchy(targetId, active)); transaction?.commit() }
+            catch (error) { transaction?.cancel(); EditorGameRunner.report(error) }
+        } else if (action === 'toggle-lock') {
+            const locked = !entities[id]?.locked
+            const transaction = ids.length > 1 ? beginSceneEdit('Change selection lock') : null
+            try { ids.forEach(targetId => setEntityLocked(targetId, locked)); transaction?.commit() }
+            catch (error) { transaction?.cancel(); EditorGameRunner.report(error) }
+        }
     }
 
     const renderTree = (id: string, depth: number = 0): React.ReactNode => {
@@ -243,8 +276,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
         return (
             <div key={id}>
                 {!isRoot && (
-                    <ThemedContextMenu>
-                        <ThemedContextMenuTrigger>
+                    <div data-hierarchy-item onContextMenu={event => openEntityContext(event, id)}>
                             <HierarchyItem
                                 entity={entity}
                                 depth={depth - 1}
@@ -262,17 +294,7 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
                                 onRemove={removeEntity}
                                 onMove={handleMove}
                             />
-                        </ThemedContextMenuTrigger>
-                        <ThemedContextMenuContent>
-                            <ThemedContextMenuLabel>{entity.name}</ThemedContextMenuLabel>
-                            <ThemedContextMenuSeparator />
-                            <ThemedContextMenuItem onClick={() => setRenamingId(id)}>Rename</ThemedContextMenuItem>
-                            <ThemedContextMenuItem onClick={() => duplicateEntity(id)}>Duplicate</ThemedContextMenuItem>
-                            <ThemedContextMenuItem onClick={() => removeEntity(id)} className="text-red-400">Delete</ThemedContextMenuItem>
-                            <ThemedContextMenuSeparator />
-                            <ThemedContextMenuItem onClick={() => addEntity(id, "New GameObject", "empty")}>Create Empty Child</ThemedContextMenuItem>
-                        </ThemedContextMenuContent>
-                    </ThemedContextMenu>
+                    </div>
                 )}
 
                 {(isRoot || entity.expanded || searchQuery.trim()) && children.length > 0 && (
@@ -310,6 +332,11 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
             >
                 <div
                     className="py-1 min-h-full"
+                    onContextMenu={event => {
+                        if ((event.target as HTMLElement).closest('[data-hierarchy-item]')) return
+                        event.preventDefault()
+                        setContextRequest({ x: event.clientX, y: event.clientY, targetId: null, selectedIds: [] })
+                    }}
                     onClick={handleBackgroundClick}
                     onDragOver={(e) => {
                         e.preventDefault()
@@ -344,6 +371,14 @@ export const HierarchyPanel = (_props: IDockviewPanelProps) => {
                     <div className="h-32" />
                 </div>
             </ThemedScrollArea>
+            <SceneContextMenu
+                request={contextRequest}
+                targetName={contextRequest?.targetId ? entities[contextRequest.targetId]?.name : undefined}
+                isActive={contextRequest?.targetId ? entities[contextRequest.targetId]?.active : true}
+                isLocked={contextRequest?.targetId ? entities[contextRequest.targetId]?.locked : false}
+                onAction={handleContextAction}
+                onClose={() => setContextRequest(null)}
+            />
 
             {/* Footer / Status */}
             <div className="h-5 border-t border-border bg-card flex items-center px-2 text-[10px] text-muted-foreground">

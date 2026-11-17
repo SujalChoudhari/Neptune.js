@@ -4,3 +4,4 @@ export { Collider, SolidCollider, TriggerCollider, Hitbox, Hurtbox, InteractionA
 export { CollisionSystem } from "./collisionSystem.js";
 export { TileCollision } from "./tilecollision.js";
 export { PlatformerController } from "./platformerController.js";
+export { TopDownController, boxColliderToCollider } from "./topDownController.js";

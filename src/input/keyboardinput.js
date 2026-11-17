@@ -13,9 +13,13 @@ export class KeyboardInput {
     static #keyPressed = [];
     static #specialKeyPressed;
     static #pressedThisFrame = new Set();
+    static #releasedThisFrame = new Set();
+    static #initializedWindow;
 
     /** True for the simulation frame after a key goes down, even after a quick release. */
     static IsKeyPressed(keyCode) { return KeyboardInput.#pressedThisFrame.has(keyCode); }
+    /** True for a simulation frame after a key goes up, including a quick tap. */
+    static IsKeyReleased(keyCode) { return KeyboardInput.#releasedThisFrame.has(keyCode); }
 
     /**
      * Checks if the key with the given keycode is pressed.
@@ -40,15 +44,45 @@ export class KeyboardInput {
 
     /**@private */
     static init(canvas) {
+        if (KeyboardInput.#initializedWindow) {
+            KeyboardInput.#initializedWindow.removeEventListener("keydown", KeyboardInput.#keyDown);
+            KeyboardInput.#initializedWindow.removeEventListener("keyup", KeyboardInput.#keyUp);
+            KeyboardInput.#initializedWindow.removeEventListener("blur", KeyboardInput.#blur);
+        }
         KeyboardInput.#canvas = canvas;
+        KeyboardInput.#initializedWindow = window;
         KeyboardInput.#keyPressed = [];
         KeyboardInput.#specialKeyPressed = null;
         KeyboardInput.#pressedThisFrame.clear();
+        KeyboardInput.#releasedThisFrame.clear();
 
         // Use window instead of canvas to ensure we catch keys even if canvas loses focus
         window.addEventListener("keydown", KeyboardInput.#keyDown);
         window.addEventListener("keyup", KeyboardInput.#keyUp);
         window.addEventListener("blur", KeyboardInput.#blur);
+    }
+
+    /** Remove global handlers and forget every held key. Safe to call repeatedly. */
+    static dispose() {
+        if (KeyboardInput.#initializedWindow) {
+            KeyboardInput.#initializedWindow.removeEventListener("keydown", KeyboardInput.#keyDown);
+            KeyboardInput.#initializedWindow.removeEventListener("keyup", KeyboardInput.#keyUp);
+            KeyboardInput.#initializedWindow.removeEventListener("blur", KeyboardInput.#blur);
+        }
+        KeyboardInput.#initializedWindow = null;
+        KeyboardInput.#canvas = null;
+        KeyboardInput.#keyPressed = [];
+        KeyboardInput.#pressedThisFrame.clear();
+        KeyboardInput.#releasedThisFrame.clear();
+        KeyboardInput.#specialKeyPressed = null;
+    }
+
+    /** Clear held and transient state when a gameplay or project context ends. */
+    static reset() {
+        KeyboardInput.#keyPressed = [];
+        KeyboardInput.#pressedThisFrame.clear();
+        KeyboardInput.#releasedThisFrame.clear();
+        KeyboardInput.#specialKeyPressed = null;
     }
     /**@private */
     static #checkSpecialKey(event) {
@@ -71,6 +105,7 @@ export class KeyboardInput {
     /**@private */
     static #keyUp(event) {
         KeyboardInput.#checkSpecialKey(event);
+        if (KeyboardInput.#keyPressed[event.keyCode]) KeyboardInput.#releasedThisFrame.add(event.keyCode);
         KeyboardInput.#keyPressed[event.keyCode] = false;
     }
 
@@ -78,9 +113,13 @@ export class KeyboardInput {
     static clear() {
         KeyboardInput.#specialKeyPressed = null;
         KeyboardInput.#pressedThisFrame.clear();
+        KeyboardInput.#releasedThisFrame.clear();
     }
 
     static #blur() {
+        for (let keyCode = 0; keyCode < KeyboardInput.#keyPressed.length; keyCode++) {
+            if (KeyboardInput.#keyPressed[keyCode]) KeyboardInput.#releasedThisFrame.add(keyCode);
+        }
         KeyboardInput.#keyPressed = [];
         KeyboardInput.#pressedThisFrame.clear();
         KeyboardInput.#specialKeyPressed = null;

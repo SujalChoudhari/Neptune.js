@@ -73,10 +73,10 @@ export class Combatant extends Component {
         if (typeof this.id !== "string" || !this.id) throw new TypeError("Combatant id must be a non-empty string");
         this.faction = config.faction ?? "neutral";
         if (typeof this.faction !== "string" || !this.faction) throw new TypeError("Combatant faction must be a non-empty string");
-        this.maxHealth = config.maxHealth ?? 100;
-        if (!Number.isFinite(this.maxHealth) || this.maxHealth <= 0) throw new TypeError("maxHealth must be a positive finite number");
-        this.health = config.health ?? this.maxHealth;
-        if (!Number.isFinite(this.health) || this.health < 0 || this.health > this.maxHealth) throw new TypeError("health must be a finite value between zero and maxHealth");
+        this._maxHealth = config.maxHealth ?? 100;
+        if (!Number.isFinite(this._maxHealth) || this._maxHealth <= 0) throw new TypeError("maxHealth must be a positive finite number");
+        this._health = config.health ?? this._maxHealth;
+        if (!Number.isFinite(this._health) || this._health < 0 || this._health > this._maxHealth) throw new TypeError("health must be a finite value between zero and maxHealth");
         this.position = { x: config.x ?? 0, y: config.y ?? 0 };
         if (!Number.isFinite(this.position.x) || !Number.isFinite(this.position.y)) throw new TypeError("Combatant position must be finite");
         this.hurtbox = { width: config.hurtbox?.width ?? 16, height: config.hurtbox?.height ?? 16 };
@@ -95,6 +95,9 @@ export class Combatant extends Component {
         this.body = config.body ?? null;
         this.cooldowns = new Map();
         this.onDeath = null;
+        this.onDamage = null;
+        this.onHeal = null;
+        this._healthListeners = new Set();
         this._deathNotified = !this.isAlive;
     }
 
@@ -102,6 +105,58 @@ export class Combatant extends Component {
 
     get isAlive() { return this.health > 0; }
     get isStaggered() { return this.staggerRemaining > 0; }
+    get maxHealth() { return this._maxHealth; }
+    set maxHealth(value) {
+        if (!Number.isFinite(value) || value <= 0) throw new TypeError("maxHealth must be a positive finite number");
+        this._maxHealth = value;
+        if (this._health > value) this.setHealth(value, { notify: false });
+    }
+    get health() { return this._health; }
+    // Preserve legacy direct-assignment behavior; use setHealth for observable changes.
+    set health(value) { this.setHealth(value, { notify: false }); }
+
+    /** Explicitly link the legacy Stats view to this authoritative health state. */
+    bindStats(stats) {
+        if (!stats || typeof stats.bindCombatant !== "function") throw new TypeError("bindStats requires a Stats component");
+        stats.bindCombatant(this);
+        return stats;
+    }
+
+    onHealthChanged(listener) {
+        if (typeof listener !== "function") throw new TypeError("onHealthChanged requires a listener");
+        this._healthListeners.add(listener);
+        return () => this._healthListeners.delete(listener);
+    }
+
+    _emitHealthChanged(type, amount, killed = false) {
+        if (amount <= 0) return;
+        const event = { type, amount, killed, combatant: this };
+        if (type === "damage") this.onDamage?.(amount, this);
+        else this.onHeal?.(amount, this);
+        for (const listener of [...this._healthListeners]) listener(event);
+    }
+
+    /** Set health through the validated authoritative path; used by Stats compatibility writes. */
+    setHealth(value, { notify = true } = {}) {
+        if (!Number.isFinite(value) || value < 0 || value > this.maxHealth) throw new TypeError("health must be a finite value between zero and maxHealth");
+        const before = this._health;
+        this._health = value;
+        const killed = before > 0 && value === 0;
+        if (value > 0) this._deathNotified = false;
+        if (killed && !this._deathNotified) {
+            this._deathNotified = true;
+            if (notify) this.onDeath?.(this);
+        }
+        const delta = Math.abs(value - before);
+        if (notify) this._emitHealthChanged(value < before ? "damage" : "heal", delta, killed);
+        return delta;
+    }
+
+    /** Restore health up to maxHealth and return the amount restored. */
+    heal(amount) {
+        finiteNonNegative(amount, "Healing amount");
+        return this.setHealth(Math.min(this.maxHealth, this.health + amount));
+    }
 
     canTarget(targeting, other) {
         if (!(other instanceof Combatant) || other === this || !other.isAlive) return false;
@@ -120,17 +175,11 @@ export class Combatant extends Component {
         if (!this.isAlive || this.invulnerableRemaining > 0) return { applied: false, damage: 0, killed: false };
         const resistance = this.resistances[type] ?? 0;
         const damage = Math.max(0, amount * (1 - resistance));
-        const before = this.health;
-        this.health = Math.max(0, this.health - damage);
-        const actual = before - this.health;
+        const actual = this.setHealth(Math.max(0, this.health - damage));
         this.invulnerableRemaining = this.invulnerabilityDuration;
         this.staggerRemaining = Math.max(this.staggerRemaining, stagger);
         if (knockback && typeof knockback.applyKnockback === "function") knockback.applyKnockback(knockback.x, knockback.y);
         const killed = this.health === 0;
-        if (killed && !this._deathNotified) {
-            this._deathNotified = true;
-            if (this.onDeath) this.onDeath(this);
-        }
         return { applied: true, damage: actual, killed };
     }
 
@@ -163,6 +212,12 @@ export class Combatant extends Component {
             if (next === 0) this.cooldowns.delete(name);
             else this.cooldowns.set(name, next);
         }
+    }
+
+    destroy() {
+        for (const listener of [...this._healthListeners]) listener({ type: "destroy", amount: 0, killed: false, combatant: this });
+        this._healthListeners.clear();
+        super.destroy();
     }
 }
 
