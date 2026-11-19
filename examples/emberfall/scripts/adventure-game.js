@@ -172,7 +172,7 @@ export function create({ entity, engine, properties }) {
       if (isPressed('O')) save();
       if (isPressed('L')) load();
       if (isPressed('ESC')) { if (world.ignoreEscape) world.ignoreEscape = false; else { togglePause(); return; } }
-      if (!combatant.isAlive) { if (isPressed('R')) { if (typeof combatant.setHealth === 'function') combatant.setHealth(combatant.maxHealth); else combatant.health = combatant.maxHealth; player.x = spawn.x; player.y = spawn.y; setMessage('You return to the last lantern. The keep remains as you left it.'); save(true); } }
+      if (!combatant.isAlive) { if (isPressed('R')) { if (typeof combatant.setHealth === 'function') combatant.setHealth(combatant.maxHealth); else combatant.health = combatant.maxHealth; player.x = spawn.x; player.y = spawn.y; setMessage('You return to the last lantern. The keep remains as you left it.'); save(true); paint(); } }
       if (combatant.isAlive) {
         let dx = Number(isDown('D') || isDown('RIGHTARROW')) - Number(isDown('A') || isDown('LEFTARROW'));
         let dy = Number(isDown('S') || isDown('DOWNARROW')) - Number(isDown('W') || isDown('UPARROW'));

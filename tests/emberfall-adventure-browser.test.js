@@ -118,7 +118,7 @@ test('death and retry return to the lantern while keeping encounter progress', {
   await page.goto(url); await page.getByRole('button', { name: 'Begin journey' }).click(); const hud = page.locator('#emberfall-hud'); await hud.waitFor();
   await page.keyboard.down('d'); await page.waitForTimeout(1600); await page.keyboard.up('d');
   await page.getByText(/YOU FELL/, { exact: false }).waitFor({ timeout: 60000 });
-  await page.keyboard.press('r'); await page.getByText(/return to the last lantern/).waitFor();
+  await page.keyboard.press('r'); await page.waitForFunction(() => document.querySelector('#emberfall-hud')?.getAttribute('data-health') === '125');
   assert.equal(Number(await hud.getAttribute('data-health')), 125);
   assert.ok(Number(await hud.getAttribute('data-x')) < 4);
 });

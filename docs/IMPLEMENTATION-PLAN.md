@@ -240,6 +240,40 @@ S01: CORE/INPUT; S02: PHYS; S03: WORLD; S04: NAV/PHYS-04; S05: RENDER; S06: FX; 
 
 No 3D, alternate isometric/rotating world mode, WebGPU, multiplayer, global fluid/electrical/structural solver, GOAP/behavior-tree alternative, runtime LLM requirement, arbitrary visual programming/shader graph, marketplace, shell rewrite or content padding. Stop when this queue and locked acceptance gates are verified. New capability requires explicit user scope approval with what is removed/delayed.
 
+## Claim log
+
+### Batch: AI-01, NAV-01, SAVE-01
+- **Task IDs:** AI-01, NAV-01, SAVE-01
+- **Status:** Verified
+- **Owner/Date:** Codex / Nov 19, 2026
+- **Exact File Ownership:**
+  - `AI-01`: `src/larissa/perceptionMemory.js`, `tests/ai-perception-memory.test.mjs`
+  - `NAV-01`: `src/thalassa/navigationGrid.js`, `tests/navigation-grid.test.mjs`
+  - `SAVE-01`: `src/core/versionedSave.js`, `tests/versioned-save.test.mjs`
+  - Integration: `src/neptune.js`, `src/larissa/index.js`, `src/thalassa/index.js`, `scripts/test.js`
+- **Prerequisite IDs:** CORE-01/02/03, PHYS-01, SIM-01
+- **Shared API/Schema Decisions:**
+  - `AI-01`: `PerceptionSystem` computes vision range, FOV cones, line-of-sight raycasts against obstacles (blocking vision behind walls), and hearing radii. `BoundedMemory` manages observations with confidence decay and capacity limits. `NPCKnowledge` provides archetypes (`sentinel`, `patrol`, `civilian`, `boss`) and save/load snapshots.
+  - `NAV-01`: `NavigationGrid` computes optimal A* paths respecting SIM-01 material traversal costs, elevation climb limits (`maxClimbHeight`), diagonal corner-cutting prevention past walls, and chunk links/portals. Gracefully handles unreachable and same start/goal edge cases.
+  - `SAVE-01`: `VersionedSaveEngine` executes sequential schema migration chains (v1 -> v2 -> v3) with atomic rollback on failure, detects future schema versions with actionable errors, validates entity/component references (detecting duplicate IDs and dangling parent references), and diagnoses/recovers corrupt JSON saves.
+- **Implementation Checklist:**
+  - [x] Implement `src/larissa/perceptionMemory.js` and `tests/ai-perception-memory.test.mjs`
+  - [x] Implement `src/thalassa/navigationGrid.js` and `tests/navigation-grid.test.mjs`
+  - [x] Implement `src/core/versionedSave.js` and `tests/versioned-save.test.mjs`
+  - [x] Re-export modules in `src/larissa/index.js`, `src/thalassa/index.js`, and `src/neptune.js`
+  - [x] Integrate into `scripts/test.js` and run regression suite (48/48 tests passing)
+  - [x] Pass full integrated baseline `npm test` (275/275 tests passing)
+  - [x] Pass `npm run test:docs-contract`
+  - [x] Pass `npm run lint:editor` and `npm run build:editor`
+- **Checks and Evidence:**
+  - Focused suite: `node --test tests/ai-perception-memory.test.mjs tests/navigation-grid.test.mjs tests/versioned-save.test.mjs` passed 48/48 tests in 0.43s.
+  - 9-batch suite: all 9 new test suites passed (122/122 tests in 1.3s).
+  - Integrated suite: `npm test` exited 0 with all 275 tests passing.
+  - Docs contract: `npm run test:docs-contract` passed with 0 errors.
+  - Editor build: `npm run build:editor` built cleanly in 4.90s.
+  - Editor lint: `npm run lint:editor` passed with 0 warnings/errors.
+- **Remaining Limitations:** Visual pathfinding overlay in Triton and AI inspection panel remain part of S15.
+
 ### Batch: STORY-01, SIM-02, ABILITY-02
 - **Task IDs:** STORY-01, SIM-02, ABILITY-02
 - **Status:** Verified

@@ -4,3 +4,4 @@ export { Tilemap } from "./tilemap.js";
 export { ParallaxLayer, ParallaxBackground } from "./parallax.js";
 export { Camera } from "./camera.js";
 export { GameFeel } from "./gameFeel.js";
+export { NavigationGrid, NavigationPath } from "./navigationGrid.js";

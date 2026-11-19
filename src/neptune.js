@@ -40,6 +40,7 @@ import * as Titan from "./titan/index.js";
 
 // Thalassa - World/Camera System
 import * as Thalassa from "./thalassa/index.js";
+import { NavigationGrid, NavigationPath } from "./thalassa/navigationGrid.js";
 
 // Nereid - Physics System
 import * as Nereid from "./nereid/index.js";
@@ -49,7 +50,7 @@ import * as Proteus from "./proteus/index.js";
 
 // Larissa - RPG System
 import * as Larissa from "./larissa/index.js";
-import { AbilityExecutor, AbilityBudgetExceededError, AbilityValidator, AbilityValidationError } from "./larissa/index.js";
+import { AbilityExecutor, AbilityBudgetExceededError, AbilityValidator, AbilityValidationError, PerceptionSystem, BoundedMemory, NPCKnowledge } from "./larissa/index.js";
 
 // Galatea - Cutscene System
 import * as Galatea from "./galatea/index.js";
@@ -64,6 +65,7 @@ import { MaterialRegistry, MaterialInteraction, MaterialState, InteractionType, 
 import { ComponentRegistry } from "./core/componentRegistry.js";
 import { SceneLoader } from "./core/sceneLoader.js";
 import { SaveManager } from "./core/saveManager.js";
+import { VersionedSaveEngine, SchemaMigrationRegistry, ReferenceValidator, FutureVersionError, ReferenceValidationError, MigrationError, CorruptSaveError, MapStorage } from "./core/versionedSave.js";
 import { GameClock } from "./core/gameClock.js";
 import { FixedStepper } from "./core/fixedStepper.js";
 import { WorldFacts, TypedEventBus, RuleEngine } from "./core/worldFacts.js";
@@ -85,11 +87,13 @@ ComponentRegistry.register("QuestDefinition", QuestDefinition);
 ComponentRegistry.register("EnemyConfig", EnemyConfig);
 ComponentRegistry.register("SceneTransition", SceneTransition);
 ComponentRegistry.register("SpawnPoint", SpawnPoint);
+ComponentRegistry.register("NPCKnowledge", NPCKnowledge);
 // Register other components as needed...
 
 export {
     application, Application, SaveManager, GameClock, FixedStepper,
     WorldFacts, TypedEventBus, RuleEngine,
+    VersionedSaveEngine, SchemaMigrationRegistry, ReferenceValidator, FutureVersionError, ReferenceValidationError, MigrationError, CorruptSaveError, MapStorage,
     Storage, Color, Filter, Entity, Scene, DestroyQueue, SceneManager, SceneLoader,
     Component, Transform, BoxCollider, TriggerCollider, Hitbox, Hurtbox, Dialogue, QuestDefinition, EnemyConfig, SceneTransition, SpawnPoint, ComponentRegistry,
     Renderable, Shape, Sprite,
@@ -98,6 +102,8 @@ export {
     Script, ScriptManager, Global, Behaviour, ProjectBehaviour,
     MouseInput, KeyboardInput, InputActions, TouchInput,
     Maths, Vector2,
-    Titan, Thalassa, Nereid, Proteus, Larissa, AbilityExecutor, AbilityBudgetExceededError, AbilityValidator, AbilityValidationError, Galatea, StoryGraph, QuestGraph,
+    Titan, Thalassa, NavigationGrid, NavigationPath, Nereid, Proteus, Larissa, AbilityExecutor, AbilityBudgetExceededError, AbilityValidator, AbilityValidationError,
+    PerceptionSystem, BoundedMemory, NPCKnowledge,
+    Galatea, StoryGraph, QuestGraph,
     Sim, MaterialRegistry, MaterialInteraction, MaterialState, InteractionType, CellGridSimulation,
 }
