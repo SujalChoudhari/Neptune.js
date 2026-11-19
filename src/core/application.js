@@ -7,6 +7,7 @@ import { ScriptManager } from "../scripts/scriptManager.js";
 import { DestroyQueue } from "./destroyQueue.js";
 import { mountAuthoredUI } from "../ui/authoredUi.js";
 import { FixedStepper } from "./fixedStepper.js";
+import { WorldFacts, TypedEventBus, RuleEngine } from "./worldFacts.js";
 
 const sceneLoadGenerations = new WeakMap();
 
@@ -38,6 +39,9 @@ export class Application {
     #authoredUI = null;
     #authoredUIScene = null;
     #fixedStepper = new FixedStepper();
+    #worldFacts = new WorldFacts();
+    #eventBus = new TypedEventBus();
+    #ruleEngine = new RuleEngine({ facts: this.#worldFacts, bus: this.#eventBus });
 
     #isInitialized = false;
 
@@ -109,6 +113,18 @@ export class Application {
 
     get isRunning() {
         return this.#isRunning;
+    }
+
+    get worldFacts() {
+        return this.#worldFacts;
+    }
+
+    get eventBus() {
+        return this.#eventBus;
+    }
+
+    get ruleEngine() {
+        return this.#ruleEngine;
     }
 
 

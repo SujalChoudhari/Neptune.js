@@ -242,4 +242,34 @@ No 3D, alternate isometric/rotating world mode, WebGPU, multiplayer, global flui
 
 ## Claim log
 
-No tasks claimed in this planning update. Add claim records here using the required fields above; do not mark a whole subsystem complete because one task passed.
+### Batch: CORE-03, ABILITY-01, SIM-01
+- **Task IDs:** CORE-03, ABILITY-01, SIM-01
+- **Status:** Verified
+- **Owner/Date:** Codex / Nov 19, 2026
+- **Exact File Ownership:**
+  - `CORE-03`: `src/core/worldFacts.js`, `tests/core-facts-rules.test.mjs`
+  - `ABILITY-01`: `src/larissa/abilityValidator.js`, `tests/ability-validation.test.mjs`
+  - `SIM-01`: `src/sim/materialRegistry.js`, `src/sim/index.js`, `tests/material-simulation.test.mjs`
+  - Integration: `src/neptune.js`, `src/core/application.js`, `src/larissa/index.js`, `scripts/test.js`
+- **Prerequisite IDs:** CORE-01/02
+- **Shared API/Schema Decisions:**
+  - `CORE-03`: `WorldFacts` stores key-value facts with provenance (`{ source, timestamp }`), snapshot/restore, and pattern/global `onChange` listeners. `TypedEventBus` dispatches prioritized listeners with self-removing listener safety, bounded recursion (`maxRecursionDepth: 32`), and duplicate guards. `RuleEngine` connects facts and events to evaluate ordered rules with `stopPropagation` and decision trace logging.
+  - `ABILITY-01`: Fixed node vocabulary (`target`, `filter`, `sequence`, `condition`, `projectile`, `area_effect`, `damage`, `heal`, `status`, `knockback`, `timed_action`, `presentation`). `AbilityValidator.validate(def)` reports structured diagnostics (`code`, `path`, `nodeId`) and uses 3-color DFS cycle detection. `assertValid()` throws `AbilityValidationError`.
+  - `SIM-01`: `MaterialRegistry` stores queryable properties (`flammability`, `conductivity`, `viscosity`, `traversalCost`, `isSolid`, `burnDuration`) for built-in materials (`wood`, `stone`, `water`, `grass`, `iron`, `cloth`, `dirt`) with fallback on missing materials. `MaterialInteraction` computes deterministic state transitions (`dry`, `wet`, `burning`, `charred`, `extinguished`) with extinguishing taking precedence in conflicting interactions.
+- **Implementation Checklist:**
+  - [x] Implement `src/core/worldFacts.js` and test suite `tests/core-facts-rules.test.mjs`
+  - [x] Implement `src/larissa/abilityValidator.js` and test suite `tests/ability-validation.test.mjs`
+  - [x] Implement `src/sim/materialRegistry.js` and test suite `tests/material-simulation.test.mjs`
+  - [x] Wire exports into `src/neptune.js`, `src/core/application.js`, `src/larissa/index.js`, and `src/sim/index.js`
+  - [x] Add tests to `scripts/test.js`
+  - [x] Pass focused regression tests (38/38 tests)
+  - [x] Pass integrated `npm test` runner with zero regressions
+  - [x] Pass `npm run test:docs-contract`
+  - [x] Pass `npm run lint:editor` and `npm run build:editor`
+- **Checks and Evidence:**
+  - Focused suite: `node --test tests/core-facts-rules.test.mjs tests/ability-validation.test.mjs tests/material-simulation.test.mjs` passed 38/38 tests in 0.78s.
+  - Integrated suite: `npm test` exited 0 with all batches passing.
+  - Docs contract: `npm run test:docs-contract` exited 0.
+  - Editor build: `npm run build:editor` (`tsc -b && vite build`) built in 6.55s.
+  - Editor lint: `npm run lint:editor` exited 0.
+- **Remaining Limitations:** Visual editor nodes in Triton authoring workspace for abilities (EDIT-05) and tilemap material painting UI (EDIT-03) remain scheduled for S15 authoring phases. Runtime schemas and validators are complete.

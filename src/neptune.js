@@ -53,6 +53,10 @@ import * as Larissa from "./larissa/index.js";
 // Galatea - Cutscene System
 import * as Galatea from "./galatea/index.js";
 
+// Sim - Environmental Simulation System
+import * as Sim from "./sim/index.js";
+import { MaterialRegistry, MaterialInteraction, MaterialState, InteractionType } from "./sim/materialRegistry.js";
+
 
 
 import { ComponentRegistry } from "./core/componentRegistry.js";
@@ -60,6 +64,7 @@ import { SceneLoader } from "./core/sceneLoader.js";
 import { SaveManager } from "./core/saveManager.js";
 import { GameClock } from "./core/gameClock.js";
 import { FixedStepper } from "./core/fixedStepper.js";
+import { WorldFacts, TypedEventBus, RuleEngine } from "./core/worldFacts.js";
 
 const application = new Application();
 window.game = application;
@@ -82,6 +87,7 @@ ComponentRegistry.register("SpawnPoint", SpawnPoint);
 
 export {
     application, Application, SaveManager, GameClock, FixedStepper,
+    WorldFacts, TypedEventBus, RuleEngine,
     Storage, Color, Filter, Entity, Scene, DestroyQueue, SceneManager, SceneLoader,
     Component, Transform, BoxCollider, TriggerCollider, Hitbox, Hurtbox, Dialogue, QuestDefinition, EnemyConfig, SceneTransition, SpawnPoint, ComponentRegistry,
     Renderable, Shape, Sprite,
@@ -91,4 +97,5 @@ export {
     MouseInput, KeyboardInput, InputActions, TouchInput,
     Maths, Vector2,
     Titan, Thalassa, Nereid, Proteus, Larissa, Galatea,
+    Sim, MaterialRegistry, MaterialInteraction, MaterialState, InteractionType,
 }

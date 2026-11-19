@@ -5,3 +5,4 @@ export { EnemyAI } from "./enemyAI.js";
 export { BossAI } from "./bossAI.js";
 export { AttackDefinition, Combatant, CombatSystem } from "./combat.js";
 export { Progression, GameData, RewardSystem, Shop, QuestLog } from "./progression.js";
+export { ABILITY_NODE_VOCABULARY, ABILITY_NODE_TYPES, AbilityValidationError, AbilityValidator } from "./abilityValidator.js";
