@@ -87,6 +87,7 @@ const batches = [
     "tests/audio-buses-volume.test.mjs",
     "tests/versioned-save.test.mjs",
     "tests/navigation-grid.test.mjs",
+    "tests/showcase-smoke.test.mjs",
     "tests/tester-async.test.js",
     "tests/emberfall-adventure-browser.test.js",
     "tests/emberfall-expedition-browser.test.js",

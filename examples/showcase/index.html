@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neptune.js v3.4.0 — Unified Systems Showcase</title>
+  <link rel="stylesheet" href="./showcase.css">
+</head>
+<body>
+  <header class="showcase-header">
+    <div class="brand">
+      <h1>NEPTUNE.JS</h1>
+      <span class="version-badge">v3.4.0 RELEASE SHOWCASE</span>
+    </div>
+    <div class="header-status">
+      <div class="stat-chip">FPS: <span id="fps-display" class="val">60</span></div>
+      <div class="stat-chip">Entities: <span id="entity-count" class="val">24</span></div>
+      <div class="stat-chip">Time: <span id="world-clock" class="val">10:00 AM</span></div>
+    </div>
+  </header>
+
+  <div class="main-layout">
+    <div class="viewport-container">
+      <div class="canvas-card">
+        <canvas id="showcase-canvas" width="760" height="440"></canvas>
+        <div class="canvas-hud">
+          <div class="hud-bar">
+            <span>HP</span>
+            <div class="hud-meter"><div id="hp-bar" class="hud-fill-hp" style="width: 100%;"></div></div>
+            <span id="hp-text">100/100</span>
+          </div>
+          <div class="hud-bar">
+            <span>MP</span>
+            <div class="hud-meter"><div id="mana-bar" class="hud-fill-mana" style="width: 100%;"></div></div>
+            <span id="mana-text">100/100</span>
+          </div>
+          <div id="status-badges" class="hud-bar" style="display: none;"></div>
+        </div>
+      </div>
+
+      <div class="canvas-controls-bar">
+        <div class="ability-hotbar">
+          <button id="btn-ability-1" class="ability-btn">
+            <span>Fireball</span>
+            <span class="key-hint">[1] · 20 MP</span>
+          </button>
+          <button id="btn-ability-2" class="ability-btn">
+            <span>Frost Nova</span>
+            <span class="key-hint">[2] · 25 MP</span>
+          </button>
+          <button id="btn-ability-3" class="ability-btn">
+            <span>Heal Surge</span>
+            <span class="key-hint">[3] · 30 MP</span>
+          </button>
+        </div>
+
+        <div class="tool-picker">
+          <span>Brush / Tool:</span>
+          <button class="tool-btn active" data-tool="move">Navigate</button>
+          <button class="tool-btn" data-tool="wood">Wood</button>
+          <button class="tool-btn" data-tool="fire">Fire</button>
+          <button class="tool-btn" data-tool="water">Water</button>
+          <button class="tool-btn" data-tool="sand">Sand</button>
+          <button class="tool-btn" data-tool="erase">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="sidebar-container">
+      <nav class="tabs-nav" aria-label="Showcase Controls">
+        <button class="tab-btn active" data-tab="tab-sim-ai">Sim & AI</button>
+        <button class="tab-btn" data-tab="tab-sched-fac">Schedule & Faction</button>
+        <button class="tab-btn" data-tab="tab-nav-phys">Physics & Nav</button>
+        <button class="tab-btn" data-tab="tab-rpg">RPG & Gear</button>
+        <button class="tab-btn" data-tab="tab-story">Story & Facts</button>
+        <button class="tab-btn" data-tab="tab-audio-save">Audio & Save</button>
+      </nav>
+
+      <!-- TAB 1: SIM & AI -->
+      <section id="tab-sim-ai" class="tab-content active">
+        <div class="subsystem-card">
+          <h3>Cellular Simulation <span class="tag">SIM-01/02</span></h3>
+          <div class="control-row">
+            <button id="btn-sim-toggle" class="neumorphic-btn">Pause Sim</button>
+            <button id="btn-sim-step" class="neumorphic-btn">Step Sim</button>
+            <button id="btn-sim-clear" class="neumorphic-btn">Reset Grid</button>
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted);">
+            Active Cells: <span id="active-cells-count" style="color: var(--accent-cyan);">0</span> · Flammable reactions active.
+          </div>
+        </div>
+
+        <div class="subsystem-card">
+          <h3>Perception & Memory <span class="tag">AI-01</span></h3>
+          <div class="control-row">
+            <label for="fov-range">FOV Radius</label>
+            <input id="fov-range" type="range" min="80" max="260" value="160">
+            <span id="fov-range-val">160px</span>
+          </div>
+          <div class="control-row">
+            <label for="fov-angle">FOV Angle</label>
+            <input id="fov-angle" type="range" min="30" max="180" value="90">
+            <span id="fov-angle-val">90°</span>
+          </div>
+          <div class="control-row">
+            <span>Perception Status:</span>
+            <span id="ai-awareness-status" style="color: var(--accent-emerald); font-weight: bold;">Unaware</span>
+          </div>
+          <div class="control-row">
+            <button id="btn-make-noise" class="neumorphic-btn" style="width: 100%;">Emit Noise Pulse (Test Hearing)</button>
+          </div>
+        </div>
+
+        <div class="subsystem-card">
+          <h3>Utility AI Decision Engine <span class="tag">AI-02</span></h3>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <div class="control-row"><span>Patrol:</span><span id="ai-score-patrol">0.00</span></div>
+            <div class="control-row"><span>Attack:</span><span id="ai-score-attack">0.00</span></div>
+            <div class="control-row"><span>Flee:</span><span id="ai-score-flee">0.00</span></div>
+            <div class="control-row"><span>Heal:</span><span id="ai-score-heal">0.00</span></div>
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Live Decision Trace:</div>
+          <div id="ai-decision-trace" class="decision-trace-box">Awaiting tick...</div>
+        </div>
+      </section>
+
+      <!-- TAB 2: SCHEDULE & FACTION -->
+      <section id="tab-sched-fac" class="tab-content">
+        <div class="subsystem-card">
+          <h3>24-Hour Schedule System <span class="tag">AI-03</span></h3>
+          <div class="control-row">
+            <label for="time-slider">Time of Day</label>
+            <input id="time-slider" type="range" min="0" max="23.9" step="0.1" value="10">
+          </div>
+          <div class="control-row">
+            <span>Current NPC Routine:</span>
+            <span id="npc-routine-name" style="color: var(--accent-amber); font-weight: bold;">Patrol Courtyard</span>
+          </div>
+          <div class="control-row">
+            <button id="btn-time-play" class="neumorphic-btn" style="width: 100%;">Auto-Advance Time (1hr/sec)</button>
+          </div>
+        </div>
+
+        <div class="subsystem-card">
+          <h3>Faction Registry & Disposition <span class="tag">AI-03</span></h3>
+          <div class="control-row">
+            <span>Guard Attitude:</span>
+            <span id="faction-attitude" style="color: var(--accent-emerald); font-weight: bold;">Friendly</span>
+          </div>
+          <div class="control-row">
+            <button id="btn-toggle-faction" class="neumorphic-btn" style="width: 100%;">Toggle Friendly / Hostile</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: PHYSICS & NAV -->
+      <section id="tab-nav-phys" class="tab-content">
+        <div class="subsystem-card">
+          <h3>A* Navigation Grid <span class="tag">NAV-01</span></h3>
+          <div style="font-size: 11px; color: var(--text-muted);">
+            Click anywhere on the map in Navigate mode to calculate an A* path with dynamic obstacle avoidance.
+          </div>
+          <div class="control-row">
+            <label><input type="checkbox" id="chk-allow-diagonal" checked> Allow Diagonals</label>
+            <button id="btn-recompute-nav" class="neumorphic-btn">Clear Path</button>
+          </div>
+          <div class="control-row">
+            <span>Path Node Count:</span>
+            <span id="path-nodes-count" style="color: var(--accent-cyan);">0</span>
+          </div>
+        </div>
+
+        <div class="subsystem-card">
+          <h3>Swept AABB & Knockback <span class="tag">PHYS-02/03/04</span></h3>
+          <div class="control-row">
+            <button id="btn-test-knockback" class="neumorphic-btn" style="width: 100%;">Apply Test Knockback to Player</button>
+          </div>
+          <div class="control-row">
+            <label><input type="checkbox" id="chk-spatial-grid" checked> Show Spatial Hash Grid</label>
+          </div>
+          <div class="control-row">
+            <label><input type="checkbox" id="chk-elevation" checked> Elevation Filtering (Z=0,1,2)</label>
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted);">
+            Swept collision deflects knockback vectors along wall normals and prevents tunneling at high speeds.
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: RPG & GEAR -->
+      <section id="tab-rpg" class="tab-content">
+        <div class="subsystem-card">
+          <h3>Level Progression <span class="tag">RPG-02</span></h3>
+          <div class="control-row">
+            <span>Level: <span id="rpg-level" style="color: var(--accent-cyan); font-weight: bold;">1</span></span>
+            <span>XP: <span id="rpg-xp">0 / 100</span></span>
+          </div>
+          <div class="control-row">
+            <button id="btn-gain-xp" class="neumorphic-btn" style="width: 100%;">Gain +50 XP (Level Up)</button>
+          </div>
+          <div class="control-row" style="font-size: 11px;">
+            <span>ATK: <span id="stat-atk" style="color: var(--accent-rose);">15</span></span>
+            <span>DEF: <span id="stat-def" style="color: var(--accent-cyan);">5</span></span>
+            <span>SPD: <span id="stat-spd" style="color: var(--accent-emerald);">160</span></span>
+          </div>
+        </div>
+
+        <div class="subsystem-card">
+          <h3>Equipment & Inventory <span class="tag">RPG-01</span></h3>
+          <div style="font-size: 11px; color: var(--text-muted);">Equipped Gear (Click to Unequip):</div>
+          <div class="control-row" style="gap: 6px;">
+            <div id="slot-mainhand" class="inventory-slot equipped" style="flex: 1;">
+              <strong>MainHand</strong><span id="gear-mainhand-name">Flame Wand</span>
+            </div>
+            <div id="slot-armor" class="inventory-slot equipped" style="flex: 1;">
+              <strong>Armor</strong><span id="gear-armor-name">Mage Robe</span>
+            </div>
+            <div id="slot-accessory" class="inventory-slot equipped" style="flex: 1;">
+              <strong>Accessory</strong><span id="gear-acc-name">Ring of Swiftness</span>
+            </div>
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px;">Inventory (Click to Equip/Use):</div>
+          <div id="inventory-grid-container" class="inventory-grid"></div>
+          <div class="control-row" style="margin-top: 6px;">
+            <button id="btn-roll-loot" class="neumorphic-btn" style="width: 100%;">Defeat Dummy & Roll Loot Table</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: STORY & FACTS -->
+      <section id="tab-story" class="tab-content">
+        <div class="subsystem-card">
+          <h3>Branching Story Graph <span class="tag">STORY-01</span></h3>
+          <div style="font-size: 11px; color: var(--text-muted);">
+            Dialogue trees evaluate reactive world facts and fire lifecycle events upon choice selection.
+          </div>
+          <div class="control-row">
+            <button id="btn-talk-guard" class="neumorphic-btn" style="width: 100%;">Talk to Town Guard</button>
+          </div>
+        </div>
+
+        <div class="subsystem-card">
+          <h3>Reactive World Facts & Rules <span class="tag">CORE-03</span></h3>
+          <div id="world-facts-table" style="display: flex; flex-direction: column; gap: 4px; font-family: monospace; font-size: 11px;">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 6: AUDIO & SAVE -->
+      <section id="tab-audio-save" class="tab-content">
+        <div class="subsystem-card">
+          <h3>Audio Bus System <span class="tag">AUDIO-01</span></h3>
+          <div class="audio-slider-group">
+            <label>Master</label>
+            <input id="vol-master" type="range" min="0" max="1" step="0.05" value="0.8">
+            <span id="val-master">80%</span>
+            <button id="mute-master" class="tool-btn">M</button>
+          </div>
+          <div class="audio-slider-group">
+            <label>Music</label>
+            <input id="vol-music" type="range" min="0" max="1" step="0.05" value="0.5">
+            <span id="val-music">50%</span>
+            <button id="mute-music" class="tool-btn">M</button>
+          </div>
+          <div class="audio-slider-group">
+            <label>SFX</label>
+            <input id="vol-sfx" type="range" min="0" max="1" step="0.05" value="0.9">
+            <span id="val-sfx">90%</span>
+            <button id="mute-sfx" class="tool-btn">M</button>
+          </div>
+          <div class="audio-slider-group">
+            <label>UI</label>
+            <input id="vol-ui" type="range" min="0" max="1" step="0.05" value="0.7">
+            <span id="val-ui">70%</span>
+            <button id="mute-ui" class="tool-btn">M</button>
+          </div>
+          <div class="control-row" style="margin-top: 6px;">
+            <button id="btn-test-sound" class="neumorphic-btn" style="width: 100%;">Play Synthetic SFX Tone</button>
+          </div>
+        </div>
+
+        <div class="subsystem-card">
+          <h3>Versioned Save Engine <span class="tag">SAVE-01</span></h3>
+          <div class="control-row">
+            <button id="btn-save-game" class="neumorphic-btn" style="flex: 1;">Save Snapshot</button>
+            <button id="btn-load-game" class="neumorphic-btn" style="flex: 1;">Load Snapshot</button>
+          </div>
+          <div class="control-row">
+            <button id="btn-test-corrupt" class="neumorphic-btn" style="width: 100%; border-color: rgba(244,63,94,0.3);">Test Corrupt Checksum Rejection</button>
+          </div>
+          <div id="save-status-msg" style="font-size: 10px; color: var(--accent-emerald);">Ready</div>
+          <pre id="save-preview" class="decision-trace-box" style="max-height: 90px;">No save recorded yet.</pre>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <!-- Dialogue Modal -->
+  <div id="story-modal" class="story-dialogue-modal" hidden>
+    <div class="dialogue-box">
+      <div id="dialogue-speaker" class="dialogue-speaker">Town Guard Roderick</div>
+      <div id="dialogue-text" class="dialogue-text">Welcome to the Citadel. Watch your step near the chasm.</div>
+      <div id="dialogue-choices" class="dialogue-choices"></div>
+      <button id="btn-close-dialogue" class="neumorphic-btn" style="align-self: flex-end;">Close</button>
+    </div>
+  </div>
+
+  <script type="module" src="./showcase.js"></script>
+</body>
+</html>

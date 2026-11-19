@@ -8,6 +8,8 @@ import { DestroyQueue } from "./destroyQueue.js";
 import { mountAuthoredUI } from "../ui/authoredUi.js";
 import { FixedStepper } from "./fixedStepper.js";
 import { WorldFacts, TypedEventBus, RuleEngine } from "./worldFacts.js";
+import { AudioBusSystem } from "../audio/audioBuses.js";
+import { VersionedSaveEngine } from "./versionedSave.js";
 
 const sceneLoadGenerations = new WeakMap();
 
@@ -20,6 +22,11 @@ const sceneLoadGenerations = new WeakMap();
  * @property {number} fps - The fps of the game.
  * @property {Color} clearColor - The color to clear the canvas with.
  * @property {number} deltaTime - The time passed since the last frame.
+ * @property {WorldFacts} worldFacts - Global facts registry.
+ * @property {TypedEventBus} eventBus - Core typed event bus.
+ * @property {RuleEngine} ruleEngine - Reactive rule engine.
+ * @property {AudioBusSystem} audioBuses - Audio bus routing system.
+ * @property {VersionedSaveEngine} versionedSave - Versioned game save/load engine.
  * 
  * @note The Application class is a singleton class. Hence use `application` to access the instance of the class.
  */
@@ -42,6 +49,8 @@ export class Application {
     #worldFacts = new WorldFacts();
     #eventBus = new TypedEventBus();
     #ruleEngine = new RuleEngine({ facts: this.#worldFacts, bus: this.#eventBus });
+    #audioBuses = new AudioBusSystem();
+    #versionedSave = new VersionedSaveEngine();
 
     #isInitialized = false;
 
@@ -125,6 +134,14 @@ export class Application {
 
     get ruleEngine() {
         return this.#ruleEngine;
+    }
+
+    get audioBuses() {
+        return this.#audioBuses;
+    }
+
+    get versionedSave() {
+        return this.#versionedSave;
     }
 
 

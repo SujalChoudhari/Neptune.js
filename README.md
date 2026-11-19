@@ -120,6 +120,7 @@ The proof content is one village and adjacent dungeon, 10-20 NPCs, three enemy a
 
 ## Tutorials
 
+- [Interactive Systems Showcase](docs/tutorials/showcase-demo.md) and [Playable Showcase Demo](docs/demo.html)
 - [First game](docs/tutorials/first-game.md)
 - [Action RPG sample](docs/tutorials/action-rpg.md)
 - [Runtime and lifecycle](docs/tutorials/runtime.md)

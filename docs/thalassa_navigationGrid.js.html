@@ -1,0 +1,1334 @@
+<!DOCTYPE html><html lang="en" style="font-size:16px"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="author" content="Sujal Choudhari"><meta name="description" content="A 2D framework for making games completely made in JavaScript."><meta name="keywords" content="2D,javascript,game,engine,framework,neptune.js,neptunejs,easy,modular,lightweight,complete,open source"><title>Source: thalassa/navigationGrid.js</title><!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]--><script src="scripts/third-party/hljs.js" defer="defer"></script><script src="scripts/third-party/hljs-line-num.js" defer="defer"></script><script src="scripts/third-party/popper.js" defer="defer"></script><script src="scripts/third-party/tippy.js" defer="defer"></script><script src="scripts/third-party/tocbot.min.js"></script><script>var baseURL="/",locationPathname="";baseURL=(locationPathname=document.location.pathname).substr(0,locationPathname.lastIndexOf("/")+1)</script><link rel="stylesheet" href="styles/clean-jsdoc-theme.min.css"><svg aria-hidden="true" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="display:none"><defs><symbol id="copy-icon" viewbox="0 0 488.3 488.3"><g><path d="M314.25,85.4h-227c-21.3,0-38.6,17.3-38.6,38.6v325.7c0,21.3,17.3,38.6,38.6,38.6h227c21.3,0,38.6-17.3,38.6-38.6V124    C352.75,102.7,335.45,85.4,314.25,85.4z M325.75,449.6c0,6.4-5.2,11.6-11.6,11.6h-227c-6.4,0-11.6-5.2-11.6-11.6V124    c0-6.4,5.2-11.6,11.6-11.6h227c6.4,0,11.6,5.2,11.6,11.6V449.6z"/><path d="M401.05,0h-227c-21.3,0-38.6,17.3-38.6,38.6c0,7.5,6,13.5,13.5,13.5s13.5-6,13.5-13.5c0-6.4,5.2-11.6,11.6-11.6h227    c6.4,0,11.6,5.2,11.6,11.6v325.7c0,6.4-5.2,11.6-11.6,11.6c-7.5,0-13.5,6-13.5,13.5s6,13.5,13.5,13.5c21.3,0,38.6-17.3,38.6-38.6    V38.6C439.65,17.3,422.35,0,401.05,0z"/></g></symbol><symbol id="search-icon" viewBox="0 0 512 512"><g><g><path d="M225.474,0C101.151,0,0,101.151,0,225.474c0,124.33,101.151,225.474,225.474,225.474    c124.33,0,225.474-101.144,225.474-225.474C450.948,101.151,349.804,0,225.474,0z M225.474,409.323    c-101.373,0-183.848-82.475-183.848-183.848S124.101,41.626,225.474,41.626s183.848,82.475,183.848,183.848    S326.847,409.323,225.474,409.323z"/></g></g><g><g><path d="M505.902,476.472L386.574,357.144c-8.131-8.131-21.299-8.131-29.43,0c-8.131,8.124-8.131,21.306,0,29.43l119.328,119.328    c4.065,4.065,9.387,6.098,14.715,6.098c5.321,0,10.649-2.033,14.715-6.098C514.033,497.778,514.033,484.596,505.902,476.472z"/></g></g></symbol><symbol id="font-size-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M11.246 15H4.754l-2 5H.6L7 4h2l6.4 16h-2.154l-2-5zm-.8-2L8 6.885 5.554 13h4.892zM21 12.535V12h2v8h-2v-.535a4 4 0 1 1 0-6.93zM19 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></symbol><symbol id="add-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></symbol><symbol id="minus-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M5 11h14v2H5z"/></symbol><symbol id="dark-theme-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M10 7a7 7 0 0 0 12 4.9v.1c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2h.1A6.979 6.979 0 0 0 10 7zm-6 5a8 8 0 0 0 15.062 3.762A9 9 0 0 1 8.238 4.938 7.999 7.999 0 0 0 4 12z"/></symbol><symbol id="light-theme-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M12 18a6 6 0 1 1 0-12 6 6 0 0 1 0 12zm0-2a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM11 1h2v3h-2V1zm0 19h2v3h-2v-3zM3.515 4.929l1.414-1.414L7.05 5.636 5.636 7.05 3.515 4.93zM16.95 18.364l1.414-1.414 2.121 2.121-1.414 1.414-2.121-2.121zm2.121-14.85l1.414 1.415-2.121 2.121-1.414-1.414 2.121-2.121zM5.636 16.95l1.414 1.414-2.121 2.121-1.414-1.414 2.121-2.121zM23 11v2h-3v-2h3zM4 11v2H1v-2h3z"/></symbol><symbol id="reset-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M18.537 19.567A9.961 9.961 0 0 1 12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10c0 2.136-.67 4.116-1.81 5.74L17 12h3a8 8 0 1 0-2.46 5.772l.997 1.795z"/></symbol><symbol id="down-icon" viewBox="0 0 16 16"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.7803 6.21967C13.0732 6.51256 13.0732 6.98744 12.7803 7.28033L8.53033 11.5303C8.23744 11.8232 7.76256 11.8232 7.46967 11.5303L3.21967 7.28033C2.92678 6.98744 2.92678 6.51256 3.21967 6.21967C3.51256 5.92678 3.98744 5.92678 4.28033 6.21967L8 9.93934L11.7197 6.21967C12.0126 5.92678 12.4874 5.92678 12.7803 6.21967Z"></path></symbol><symbol id="codepen-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M16.5 13.202L13 15.535v3.596L19.197 15 16.5 13.202zM14.697 12L12 10.202 9.303 12 12 13.798 14.697 12zM20 10.869L18.303 12 20 13.131V10.87zM19.197 9L13 4.869v3.596l3.5 2.333L19.197 9zM7.5 10.798L11 8.465V4.869L4.803 9 7.5 10.798zM4.803 15L11 19.131v-3.596l-3.5-2.333L4.803 15zM4 13.131L5.697 12 4 10.869v2.262zM2 9a1 1 0 0 1 .445-.832l9-6a1 1 0 0 1 1.11 0l9 6A1 1 0 0 1 22 9v6a1 1 0 0 1-.445.832l-9 6a1 1 0 0 1-1.11 0l-9-6A1 1 0 0 1 2 15V9z"/></symbol><symbol id="close-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M12 10.586l4.95-4.95 1.414 1.414-4.95 4.95 4.95 4.95-1.414 1.414-4.95-4.95-4.95 4.95-1.414-1.414 4.95-4.95-4.95-4.95L7.05 5.636z"/></symbol><symbol id="menu-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"/></symbol></defs></svg></head><body data-theme="dark"><div class="sidebar-container"><div class="sidebar" id="sidebar"><a href="/" class="sidebar-title sidebar-title-anchor">Neptune.js</a><div class="sidebar-items-container"><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-tutorials"><div>Tutorials</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="tutorial-00-Getting Started.html">Getting started</a></div><div class="sidebar-section-children"><a href="tutorial-01-Introduction.html">Introduction</a></div><div class="sidebar-section-children"><a href="tutorial-02-Step by step.html">Step by step</a></div><div class="sidebar-section-children"><a href="tutorial-03-Systems.html">Systems and Managers</a></div><div class="sidebar-section-children"><a href="tutorial-04-Multiple Scenes.html">Multiple Scenes</a></div><div class="sidebar-section-children"><a href="tutorial-05-Inputs.html">Inputs</a></div><div class="sidebar-section-children"><a href="tutorial-06-Scripts.html">Scripts</a></div><div class="sidebar-section-children"><a href="tutorial-07-Beyond.html">Beyond the basics</a></div><div class="sidebar-section-children"><a href="tutorial-08-Showcase Demo.html">Interactive Systems Showcase</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-interfaces"><div>Interfaces</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="Behaviour.html">Behaviour</a></div><div class="sidebar-section-children"><a href="Component.html">Component</a></div><div class="sidebar-section-children"><a href="Container.html">Container</a></div><div class="sidebar-section-children"><a href="Global_.html">Global</a></div><div class="sidebar-section-children"><a href="Renderable.html">Renderable</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-classes"><div>Classes</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="AbilityBudgetExceededError.html">AbilityBudgetExceededError</a></div><div class="sidebar-section-children"><a href="AbilityExecutionError.html">AbilityExecutionError</a></div><div class="sidebar-section-children"><a href="AbilityExecutor.html">AbilityExecutor</a></div><div class="sidebar-section-children"><a href="AbilityValidationError.html">AbilityValidationError</a></div><div class="sidebar-section-children"><a href="Animation.html">Animation</a></div><div class="sidebar-section-children"><a href="Animation_Animation.html">Animation</a></div><div class="sidebar-section-children"><a href="Animator.html">Animator</a></div><div class="sidebar-section-children"><a href="Application.html">Application</a></div><div class="sidebar-section-children"><a href="AttackDefinition.html">AttackDefinition</a></div><div class="sidebar-section-children"><a href="AudioBus.html">AudioBus</a></div><div class="sidebar-section-children"><a href="AudioBusSystem.html">AudioBusSystem</a></div><div class="sidebar-section-children"><a href="AudioMixer.html">AudioMixer</a></div><div class="sidebar-section-children"><a href="Behaviour_Behaviour.html">Behaviour</a></div><div class="sidebar-section-children"><a href="Body.html">Body</a></div><div class="sidebar-section-children"><a href="BossAI.html">BossAI</a></div><div class="sidebar-section-children"><a href="BoundedMemory.html">BoundedMemory</a></div><div class="sidebar-section-children"><a href="BoxCollider.html">BoxCollider</a></div><div class="sidebar-section-children"><a href="Camera.html">Camera</a></div><div class="sidebar-section-children"><a href="CellGridSimulation.html">CellGridSimulation</a></div><div class="sidebar-section-children"><a href="Collider.html">Collider</a></div><div class="sidebar-section-children"><a href="CollisionSystem.html">CollisionSystem</a></div><div class="sidebar-section-children"><a href="Color.html">Color</a></div><div class="sidebar-section-children"><a href="Combatant.html">Combatant</a></div><div class="sidebar-section-children"><a href="CombatSystem.html">CombatSystem</a></div><div class="sidebar-section-children"><a href="ComponentRegistry.html">ComponentRegistry</a></div><div class="sidebar-section-children"><a href="ContactSolver.html">ContactSolver</a></div><div class="sidebar-section-children"><a href="CorruptSaveError.html">CorruptSaveError</a></div><div class="sidebar-section-children"><a href="Cutscene.html">Cutscene</a></div><div class="sidebar-section-children"><a href="Cutscene_Cutscene.html">Cutscene</a></div><div class="sidebar-section-children"><a href="CutsceneManager.html">CutsceneManager</a></div><div class="sidebar-section-children"><a href="DeathRetryManager.html">DeathRetryManager</a></div><div class="sidebar-section-children"><a href="DestroyQueue.html">DestroyQueue</a></div><div class="sidebar-section-children"><a href="Dialogue.html">Dialogue</a></div><div class="sidebar-section-children"><a href="DialogueBox.html">DialogueBox</a></div><div class="sidebar-section-children"><a href="ElevationFilter.html">ElevationFilter</a></div><div class="sidebar-section-children"><a href="EnemyAI.html">EnemyAI</a></div><div class="sidebar-section-children"><a href="EnemyConfig.html">EnemyConfig</a></div><div class="sidebar-section-children"><a href="Entity.html">Entity</a></div><div class="sidebar-section-children"><a href="EquipmentSystem.html">EquipmentSystem</a></div><div class="sidebar-section-children"><a href="FactionRegistry.html">FactionRegistry</a></div><div class="sidebar-section-children"><a href="Filter.html">Filter</a></div><div class="sidebar-section-children"><a href="FixedStepper.html">FixedStepper</a></div><div class="sidebar-section-children"><a href="Font.html">Font</a></div><div class="sidebar-section-children"><a href="FutureVersionError.html">FutureVersionError</a></div><div class="sidebar-section-children"><a href="GameClock.html">GameClock</a></div><div class="sidebar-section-children"><a href="GameData.html">GameData</a></div><div class="sidebar-section-children"><a href="GameFeel.html">GameFeel</a></div><div class="sidebar-section-children"><a href="GridContainer.html">GridContainer</a></div><div class="sidebar-section-children"><a href="HazardSystem.html">HazardSystem</a></div><div class="sidebar-section-children"><a href="HBoxContainer.html">HBoxContainer</a></div><div class="sidebar-section-children"><a href="InputActions.html">InputActions</a></div><div class="sidebar-section-children"><a href="InteractionResult.html">InteractionResult</a></div><div class="sidebar-section-children"><a href="Inventory.html">Inventory</a></div><div class="sidebar-section-children"><a href="Inventory.html">Inventory</a></div><div class="sidebar-section-children"><a href="Inventory_Inventory.html">Inventory</a></div><div class="sidebar-section-children"><a href="ItemRegistry.html">ItemRegistry</a></div><div class="sidebar-section-children"><a href="KeyboardInput.html">KeyboardInput</a></div><div class="sidebar-section-children"><a href="KnockbackMotor.html">KnockbackMotor</a></div><div class="sidebar-section-children"><a href="LevelProgression.html">LevelProgression</a></div><div class="sidebar-section-children"><a href="LootTable.html">LootTable</a></div><div class="sidebar-section-children"><a href="MapStorage.html">MapStorage</a></div><div class="sidebar-section-children"><a href="MarginContainer.html">MarginContainer</a></div><div class="sidebar-section-children"><a href="MaterialInteraction.html">MaterialInteraction</a></div><div class="sidebar-section-children"><a href="MaterialRegistry.html">MaterialRegistry</a></div><div class="sidebar-section-children"><a href="Maths.html">Maths</a></div><div class="sidebar-section-children"><a href="MigrationError.html">MigrationError</a></div><div class="sidebar-section-children"><a href="MinHeap.html">MinHeap</a></div><div class="sidebar-section-children"><a href="MouseInput.html">MouseInput</a></div><div class="sidebar-section-children"><a href="MusicManager.html">MusicManager</a></div><div class="sidebar-section-children"><a href="NavigationGrid.html">NavigationGrid</a></div><div class="sidebar-section-children"><a href="NavigationGrid_NavigationGrid.html">NavigationGrid</a></div><div class="sidebar-section-children"><a href="NavigationPath.html">NavigationPath</a></div><div class="sidebar-section-children"><a href="NavigationPath_NavigationPath.html">NavigationPath</a></div><div class="sidebar-section-children"><a href="NPCKnowledge.html">NPCKnowledge</a></div><div class="sidebar-section-children"><a href="NPCSchedule.html">NPCSchedule</a></div><div class="sidebar-section-children"><a href="Panel.html">Panel</a></div><div class="sidebar-section-children"><a href="ParallaxBackground.html">ParallaxBackground</a></div><div class="sidebar-section-children"><a href="ParallaxLayer.html">ParallaxLayer</a></div><div class="sidebar-section-children"><a href="ParallaxLayer_ParallaxLayer.html">ParallaxLayer</a></div><div class="sidebar-section-children"><a href="PerceptionSystem.html">PerceptionSystem</a></div><div class="sidebar-section-children"><a href="PlatformerController.html">PlatformerController</a></div><div class="sidebar-section-children"><a href="Pose.html">Pose</a></div><div class="sidebar-section-children"><a href="Pose_Pose.html">Pose</a></div><div class="sidebar-section-children"><a href="Progression.html">Progression</a></div><div class="sidebar-section-children"><a href="ProjectBehaviour.html">ProjectBehaviour</a></div><div class="sidebar-section-children"><a href="QuestDefinition.html">QuestDefinition</a></div><div class="sidebar-section-children"><a href="QuestGraph.html">QuestGraph</a></div><div class="sidebar-section-children"><a href="QuestLog.html">QuestLog</a></div><div class="sidebar-section-children"><a href="ReferenceValidationError.html">ReferenceValidationError</a></div><div class="sidebar-section-children"><a href="ReferenceValidator.html">ReferenceValidator</a></div><div class="sidebar-section-children"><a href="ResourceReferenceError.html">ResourceReferenceError</a></div><div class="sidebar-section-children"><a href="RewardSystem.html">RewardSystem</a></div><div class="sidebar-section-children"><a href="Rig.html">Rig</a></div><div class="sidebar-section-children"><a href="RuleEngine.html">RuleEngine</a></div><div class="sidebar-section-children"><a href="SaveManager.html">SaveManager</a></div><div class="sidebar-section-children"><a href="Scene.html">Scene</a></div><div class="sidebar-section-children"><a href="SceneLoader.html">SceneLoader</a></div><div class="sidebar-section-children"><a href="SceneManager.html">SceneManager</a></div><div class="sidebar-section-children"><a href="SceneTransition.html">SceneTransition</a></div><div class="sidebar-section-children"><a href="ScheduleSlot.html">ScheduleSlot</a></div><div class="sidebar-section-children"><a href="ScheduleSystem.html">ScheduleSystem</a></div><div class="sidebar-section-children"><a href="SchemaMigrationRegistry.html">SchemaMigrationRegistry</a></div><div class="sidebar-section-children"><a href="Shape.html">Shape</a></div><div class="sidebar-section-children"><a href="Shop.html">Shop</a></div><div class="sidebar-section-children"><a href="Sound.html">Sound</a></div><div class="sidebar-section-children"><a href="SoundPool.html">SoundPool</a></div><div class="sidebar-section-children"><a href="SoundPool_SoundPool.html">SoundPool</a></div><div class="sidebar-section-children"><a href="SpatialHashGrid.html">SpatialHashGrid</a></div><div class="sidebar-section-children"><a href="SpawnPoint.html">SpawnPoint</a></div><div class="sidebar-section-children"><a href="Sprite.html">Sprite</a></div><div class="sidebar-section-children"><a href="Stats.html">Stats</a></div><div class="sidebar-section-children"><a href="StatusEffectManager.html">StatusEffectManager</a></div><div class="sidebar-section-children"><a href="Storage.html">Storage</a></div><div class="sidebar-section-children"><a href="StoryGraph.html">StoryGraph</a></div><div class="sidebar-section-children"><a href="SweptAABB.html">SweptAABB</a></div><div class="sidebar-section-children"><a href="Text.html">Text</a></div><div class="sidebar-section-children"><a href="TileCollision.html">TileCollision</a></div><div class="sidebar-section-children"><a href="TileCollision_TileCollision.html">TileCollision</a></div><div class="sidebar-section-children"><a href="Tilemap.html">Tilemap</a></div><div class="sidebar-section-children"><a href="Tilemap_Tilemap.html">Tilemap</a></div><div class="sidebar-section-children"><a href="Tileset.html">Tileset</a></div><div class="sidebar-section-children"><a href="Tileset_Tileset.html">Tileset</a></div><div class="sidebar-section-children"><a href="TopDownController.html">TopDownController</a></div><div class="sidebar-section-children"><a href="TouchInput.html">TouchInput</a></div><div class="sidebar-section-children"><a href="Transform.html">Transform</a></div><div class="sidebar-section-children"><a href="TriggerLifecycleSystem.html">TriggerLifecycleSystem</a></div><div class="sidebar-section-children"><a href="TypedEventBus.html">TypedEventBus</a></div><div class="sidebar-section-children"><a href="UISprite.html">UISprite</a></div><div class="sidebar-section-children"><a href="UITransform.html">UITransform</a></div><div class="sidebar-section-children"><a href="UtilityAction.html">UtilityAction</a></div><div class="sidebar-section-children"><a href="UtilityAI.html">UtilityAI</a></div><div class="sidebar-section-children"><a href="UtilityAI_UtilityAI.html">UtilityAI</a></div><div class="sidebar-section-children"><a href="UtilityConsideration.html">UtilityConsideration</a></div><div class="sidebar-section-children"><a href="VBoxContainer.html">VBoxContainer</a></div><div class="sidebar-section-children"><a href="Vector2.html">Vector2</a></div><div class="sidebar-section-children"><a href="VersionedSaveEngine.html">VersionedSaveEngine</a></div><div class="sidebar-section-children"><a href="WorldFacts.html">WorldFacts</a></div><div class="sidebar-section-children"><a href="WorldMetadataRegistry.html">WorldMetadataRegistry</a></div></div></div></div></div><div class="navbar-container" id="VuAckcnZhf"><nav class="navbar"><div class="navbar-left-items"><div class="navbar-item"><a id="" href="https://github.com/NotSujal/Neptune.js" target="_blank">Github</a></div><div class="navbar-item"><a id="" href="https://www.npmjs.com/package/@sujalchoudhari/neptune-js" target="_blank">NPM</a></div></div><div class="navbar-right-items"><div class="navbar-right-item"><button class="icon-button search-button" aria-label="open-search"><svg><use xlink:href="#search-icon"></use></svg></button></div><div class="navbar-right-item"><button class="icon-button theme-toggle" aria-label="toggle-theme"><svg><use class="theme-svg-use" xlink:href="#light-theme-icon"></use></svg></button></div><div class="navbar-right-item"><button class="icon-button font-size" aria-label="change-font-size"><svg><use xlink:href="#font-size-icon"></use></svg></button></div></div><nav></nav></nav></div><div class="toc-container"><div class="toc-content"><span class="bold">On this page</span><div id="eed4d2a0bfd64539bb9df78095dec881"></div></div></div><div class="body-wrapper"><div class="main-content"><div class="main-wrapper"><section id="source-page" class="source-page"><header><h1 id="title" class="has-anchor">thalassa_navigationGrid.js</h1></header><article><pre class="prettyprint source lang-js"><code>import { MaterialInteraction } from "../sim/materialRegistry.js";
+
+/**
+ * Priority queue (min-heap) for A* pathfinding.
+ */
+class MinHeap {
+    constructor() {
+        this._heap = [];
+    }
+
+    /**
+     * @returns {number} Number of items in heap.
+     */
+    get size() {
+        return this._heap.length;
+    }
+
+    /**
+     * @returns {boolean} True if empty.
+     */
+    isEmpty() {
+        return this._heap.length === 0;
+    }
+
+    /**
+     * Push an item into the priority queue.
+     * @param {Object} item - Heap item with f, h, and order properties.
+     */
+    push(item) {
+        this._heap.push(item);
+        this._bubbleUp(this._heap.length - 1);
+    }
+
+    /**
+     * Remove and return the lowest-cost item.
+     * @returns {Object|null} Lowest cost item, or null if empty.
+     */
+    pop() {
+        if (this._heap.length === 0) return null;
+        const top = this._heap[0];
+        const last = this._heap.pop();
+        if (this._heap.length > 0 &amp;&amp; last !== undefined) {
+            this._heap[0] = last;
+            this._sinkDown(0);
+        }
+        return top;
+    }
+
+    /**
+     * @private
+     */
+    _compare(a, b) {
+        if (a.f !== b.f) return a.f - b.f;
+        if (a.h !== b.h) return a.h - b.h;
+        return a.order - b.order;
+    }
+
+    /**
+     * @private
+     */
+    _bubbleUp(index) {
+        const item = this._heap[index];
+        while (index > 0) {
+            const parentIndex = (index - 1) >> 1;
+            const parent = this._heap[parentIndex];
+            if (this._compare(item, parent) >= 0) break;
+            this._heap[index] = parent;
+            index = parentIndex;
+        }
+        this._heap[index] = item;
+    }
+
+    /**
+     * @private
+     */
+    _sinkDown(index) {
+        const item = this._heap[index];
+        const length = this._heap.length;
+        const halfLength = length >> 1;
+
+        while (index &lt; halfLength) {
+            const leftChild = (index &lt;&lt; 1) + 1;
+            const rightChild = leftChild + 1;
+            let bestChild = leftChild;
+
+            if (rightChild &lt; length &amp;&amp; this._compare(this._heap[rightChild], this._heap[leftChild]) &lt; 0) {
+                bestChild = rightChild;
+            }
+
+            if (this._compare(item, this._heap[bestChild]) &lt;= 0) break;
+
+            this._heap[index] = this._heap[bestChild];
+            index = bestChild;
+        }
+        this._heap[index] = item;
+    }
+}
+
+/**
+ * Result returned by NavigationGrid pathfinding.
+ * Extends Array so it can be iterated directly, indexed by number, or inspected via properties.
+ * @class NavigationPath
+ * @extends Array
+ */
+export class NavigationPath extends Array {
+    /**
+     * Ensure built-in Array methods like map/filter/slice return standard Arrays.
+     * @returns {Function}
+     */
+    static get [Symbol.species]() {
+        return Array;
+    }
+
+    /**
+     * @param {Object|Array|number} [options] - Result options, steps array, or length
+     * @param {string} [options.status] - "success", "unreachable", "out_of_bounds", or "same_start_goal"
+     * @param {boolean} [options.success] - Whether a valid path was found
+     * @param {Array} [options.path] - List of { x, y } steps
+     * @param {number} [options.cost] - Total traversal cost
+     * @param {number} [options.visitedNodes] - Nodes expanded during search
+     */
+    constructor(options = {}) {
+        let steps = [];
+        let opts = {};
+
+        if (Array.isArray(options)) {
+            steps = options;
+            opts = { success: true, status: "success" };
+        } else if (typeof options === "number") {
+            super(options);
+            this.status = "unreachable";
+            this.success = false;
+            this.cost = Infinity;
+            this.visitedNodes = 0;
+            this.path = this;
+            return;
+        } else if (typeof options === "object" &amp;&amp; options !== null) {
+            steps = options.path || [];
+            opts = options;
+        }
+
+        super(...steps);
+        this.status = opts.status || (opts.success ? "success" : "unreachable");
+        this.success = Boolean(opts.success);
+        this.cost = Number.isFinite(opts.cost) ? opts.cost : (this.success ? 0 : Infinity);
+        this.visitedNodes = opts.visitedNodes || 0;
+        this.path = this;
+    }
+
+    /**
+     * Whether pathfinding succeeded.
+     * @returns {boolean}
+     */
+    isSuccess() {
+        return this.success;
+    }
+
+    /**
+     * Whether goal was unreachable.
+     * @returns {boolean}
+     */
+    isUnreachable() {
+        return this.status === "unreachable";
+    }
+
+    /**
+     * Whether start or goal was out of bounds.
+     * @returns {boolean}
+     */
+    isOutOfBounds() {
+        return this.status === "out_of_bounds";
+    }
+
+    /**
+     * Whether start and goal are the same point.
+     * @returns {boolean}
+     */
+    isSameStartGoal() {
+        return this.status === "same_start_goal";
+    }
+}
+
+/**
+ * 2D navigation grid supporting weighted traversal costs, walkability flags,
+ * elevation rules, dynamic obstacles, chunk boundary links, and A* pathfinding.
+ * @class NavigationGrid
+ */
+export class NavigationGrid {
+    /**
+     * @param {number|Object} [widthOrOptions=10] - Width in tiles, or options object
+     * @param {number} [height=10] - Height in tiles
+     * @param {Object} [options={}] - Grid configuration options
+     * @param {number} [options.defaultCost=1.0] - Default movement cost per cell
+     * @param {boolean} [options.defaultWalkable=true] - Default walkability flag
+     * @param {number} [options.defaultElevation=0] - Default elevation level
+     * @param {number} [options.maxClimbHeight=1] - Maximum traversable height difference between adjacent cells
+     * @param {boolean} [options.allowDiagonal=true] - Allow 8-way diagonal movement
+     * @param {number} [options.diagonalCostMultiplier] - Multiplier for diagonal steps (default Math.SQRT2)
+     */
+    constructor(widthOrOptions = 10, height = 10, options = {}) {
+        let width = 10;
+        let h = 10;
+        let opts = {};
+
+        if (typeof widthOrOptions === "object" &amp;&amp; widthOrOptions !== null) {
+            opts = widthOrOptions;
+            width = opts.width ?? 10;
+            h = opts.height ?? 10;
+        } else {
+            width = widthOrOptions;
+            h = height ?? 10;
+            opts = options || {};
+        }
+
+        if (!Number.isInteger(width) || width &lt;= 0 || !Number.isInteger(h) || h &lt;= 0) {
+            throw new TypeError("NavigationGrid width and height must be positive integers");
+        }
+
+        this.width = width;
+        this.height = h;
+        this.defaultCost = Number.isFinite(opts.defaultCost) &amp;&amp; opts.defaultCost >= 1 ? opts.defaultCost : 1.0;
+        this.defaultWalkable = opts.defaultWalkable !== false;
+        this.defaultElevation = Number.isFinite(opts.defaultElevation) ? opts.defaultElevation : 0;
+        this.maxClimbHeight = Number.isFinite(opts.maxClimbHeight) &amp;&amp; opts.maxClimbHeight >= 0 ? opts.maxClimbHeight : 1;
+        this.allowDiagonal = opts.allowDiagonal !== false;
+        this.diagonalCostMultiplier = Number.isFinite(opts.diagonalCostMultiplier) &amp;&amp; opts.diagonalCostMultiplier > 0
+            ? opts.diagonalCostMultiplier
+            : Math.SQRT2;
+
+        const size = width * h;
+        this._walkable = new Uint8Array(size).fill(this.defaultWalkable ? 1 : 0);
+        this._cost = new Float32Array(size).fill(this.defaultCost);
+        this._elevation = new Float32Array(size).fill(this.defaultElevation);
+
+        // Dynamic obstacles
+        this._obstacles = new Map();
+        this._obstacleCells = new Map();
+        this._nextObstacleId = 0;
+
+        // Chunk links / portals
+        this._chunkLinks = new Map();
+        this._chunkLinksById = new Map();
+        this._nextLinkId = 0;
+
+        // Route monitoring &amp; invalidation
+        this.routeVersion = 0;
+        this._registeredRoutes = new Map();
+        this._invalidationListeners = new Set();
+    }
+
+    /**
+     * Map (x, y) to a flat array index.
+     * @private
+     * @param {number} x
+     * @param {number} y
+     * @returns {number} Array index, or -1 if out of bounds.
+     */
+    _index(x, y) {
+        if (!Number.isInteger(x) || !Number.isInteger(y) || x &lt; 0 || x >= this.width || y &lt; 0 || y >= this.height) {
+            return -1;
+        }
+        return y * this.width + x;
+    }
+
+    /**
+     * Check whether (x, y) is inside the grid bounds.
+     * @param {number} x
+     * @param {number} y
+     * @returns {boolean}
+     */
+    inBounds(x, y) {
+        return Number.isInteger(x) &amp;&amp; Number.isInteger(y) &amp;&amp; x >= 0 &amp;&amp; x &lt; this.width &amp;&amp; y >= 0 &amp;&amp; y &lt; this.height;
+    }
+
+    /**
+     * Get cell properties at (x, y).
+     * @param {number} x
+     * @param {number} y
+     * @returns {Object|null} Cell state or null if out of bounds.
+     */
+    getCell(x, y) {
+        const idx = this._index(x, y);
+        if (idx === -1) return null;
+        return {
+            x,
+            y,
+            walkable: this._walkable[idx] === 1,
+            cost: this._cost[idx],
+            elevation: this._elevation[idx],
+            isBlockedByObstacle: this.isCellBlockedByObstacle(x, y),
+            effectiveWalkable: this.isWalkable(x, y)
+        };
+    }
+
+    /**
+     * Set multiple cell properties at once.
+     * @param {number} x
+     * @param {number} y
+     * @param {Object} [props={}]
+     * @param {boolean} [props.walkable]
+     * @param {number} [props.cost]
+     * @param {number} [props.elevation]
+     * @returns {boolean} True if in bounds.
+     */
+    setCell(x, y, props = {}) {
+        const idx = this._index(x, y);
+        if (idx === -1) return false;
+        if (props.walkable !== undefined) {
+            this._walkable[idx] = props.walkable ? 1 : 0;
+        }
+        if (Number.isFinite(props.cost) &amp;&amp; props.cost >= 1) {
+            this._cost[idx] = props.cost;
+        }
+        if (Number.isFinite(props.elevation)) {
+            this._elevation[idx] = props.elevation;
+        }
+        this.routeVersion++;
+        return true;
+    }
+
+    /**
+     * Check if a cell is walkable and not blocked by dynamic obstacles.
+     * @param {number} x
+     * @param {number} y
+     * @param {boolean} [checkObstacles=true] - Whether dynamic obstacles block walkability
+     * @returns {boolean}
+     */
+    isWalkable(x, y, checkObstacles = true) {
+        const idx = this._index(x, y);
+        if (idx === -1) return false;
+        if (this._walkable[idx] === 0) return false;
+        if (checkObstacles &amp;&amp; this._obstacleCells.has(idx) &amp;&amp; this._obstacleCells.get(idx).size > 0) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Set walkability flag for a cell.
+     * @param {number} x
+     * @param {number} y
+     * @param {boolean} walkable
+     * @returns {boolean} True if updated.
+     */
+    setWalkable(x, y, walkable) {
+        const idx = this._index(x, y);
+        if (idx === -1) return false;
+        this._walkable[idx] = walkable ? 1 : 0;
+        this.routeVersion++;
+        return true;
+    }
+
+    /**
+     * Get traversal cost for a cell.
+     * @param {number} x
+     * @param {number} y
+     * @returns {number} Cost value (>= 1.0) or Infinity if out of bounds / unwalkable.
+     */
+    getCost(x, y) {
+        const idx = this._index(x, y);
+        if (idx === -1 || !this.isWalkable(x, y)) return Infinity;
+        return this._cost[idx];
+    }
+
+    /**
+     * Set traversal cost for a cell.
+     * @param {number} x
+     * @param {number} y
+     * @param {number} cost - Movement cost (must be >= 1.0)
+     * @returns {boolean} True if updated.
+     */
+    setCost(x, y, cost) {
+        const idx = this._index(x, y);
+        if (idx === -1) return false;
+        const num = Number(cost);
+        if (!Number.isFinite(num) || num &lt; 1) {
+            throw new RangeError(`Traversal cost must be a finite number >= 1.0, got ${cost}`);
+        }
+        this._cost[idx] = num;
+        this.routeVersion++;
+        return true;
+    }
+
+    /**
+     * Get elevation level for a cell.
+     * @param {number} x
+     * @param {number} y
+     * @returns {number|null} Elevation level or null if out of bounds.
+     */
+    getElevation(x, y) {
+        const idx = this._index(x, y);
+        if (idx === -1) return null;
+        return this._elevation[idx];
+    }
+
+    /**
+     * Set elevation level for a cell.
+     * @param {number} x
+     * @param {number} y
+     * @param {number} elevation
+     * @returns {boolean} True if updated.
+     */
+    setElevation(x, y, elevation) {
+        const idx = this._index(x, y);
+        if (idx === -1) return false;
+        const num = Number(elevation);
+        if (!Number.isFinite(num)) {
+            throw new TypeError(`Elevation must be a finite number, got ${elevation}`);
+        }
+        this._elevation[idx] = num;
+        this.routeVersion++;
+        return true;
+    }
+
+    /**
+     * Set cell properties based on material definitions from SIM-01.
+     * @param {number} x
+     * @param {number} y
+     * @param {string} materialId - Material ID (e.g., 'water', 'grass', 'wood')
+     * @param {string} [state='dry'] - Material state (e.g., 'dry', 'wet', 'frozen')
+     * @param {Object} [registry] - Optional MaterialRegistry instance
+     * @returns {boolean} True if set.
+     */
+    setCellMaterial(x, y, materialId, state = "dry", registry = null) {
+        const idx = this._index(x, y);
+        if (idx === -1) return false;
+        let cost = 1.0;
+        try {
+            cost = MaterialInteraction.getEffectiveTraversalCost({ materialId, state, registry });
+        } catch (_) {
+            try {
+                cost = MaterialInteraction.getEffectiveTraversalCost(materialId, state);
+            } catch (_) {
+                cost = 1.0;
+            }
+        }
+        this._cost[idx] = Math.max(1.0, cost);
+        this.routeVersion++;
+        return true;
+    }
+
+    /**
+     * Set maximum climb height difference between adjacent cells.
+     * @param {number} height
+     */
+    setMaxClimbHeight(height) {
+        const num = Number(height);
+        if (!Number.isFinite(num) || num &lt; 0) {
+            throw new RangeError(`maxClimbHeight must be a finite number >= 0, got ${height}`);
+        }
+        this.maxClimbHeight = num;
+        this.routeVersion++;
+    }
+
+    /**
+     * Get maximum climb height difference.
+     * @returns {number}
+     */
+    getMaxClimbHeight() {
+        return this.maxClimbHeight;
+    }
+
+    // =========================================================================
+    // Dynamic Obstacles
+    // =========================================================================
+
+    /**
+     * Add a dynamic obstacle blocking one or more cells.
+     * Supports both addObstacle(id, x, y, width, height) and addObstacle({ id, x, y, width, height, cells }).
+     * @param {string|Object} idOrConfig
+     * @param {number} [x=0]
+     * @param {number} [y=0]
+     * @param {number} [width=1]
+     * @param {number} [height=1]
+     * @returns {Object} The registered obstacle record.
+     */
+    addObstacle(idOrConfig, x = 0, y = 0, width = 1, height = 1) {
+        let id;
+        let obstacle;
+
+        if (typeof idOrConfig === "object" &amp;&amp; idOrConfig !== null) {
+            obstacle = { ...idOrConfig };
+            id = obstacle.id ? String(obstacle.id) : `obstacle_${++this._nextObstacleId}`;
+        } else {
+            id = String(idOrConfig || `obstacle_${++this._nextObstacleId}`);
+            obstacle = { id, x, y, width, height };
+        }
+
+        if (this._obstacles.has(id)) {
+            this.removeObstacle(id);
+        }
+
+        const blockedIndices = new Set();
+        if (Array.isArray(obstacle.cells)) {
+            for (const cell of obstacle.cells) {
+                const cx = Array.isArray(cell) ? cell[0] : cell.x;
+                const cy = Array.isArray(cell) ? cell[1] : cell.y;
+                const idx = this._index(cx, cy);
+                if (idx !== -1) blockedIndices.add(idx);
+            }
+        } else {
+            const ox = obstacle.x ?? 0;
+            const oy = obstacle.y ?? 0;
+            const ow = obstacle.width ?? 1;
+            const oh = obstacle.height ?? 1;
+            for (let row = 0; row &lt; oh; row++) {
+                for (let col = 0; col &lt; ow; col++) {
+                    const idx = this._index(ox + col, oy + row);
+                    if (idx !== -1) blockedIndices.add(idx);
+                }
+            }
+        }
+
+        for (const idx of blockedIndices) {
+            if (!this._obstacleCells.has(idx)) {
+                this._obstacleCells.set(idx, new Set());
+            }
+            this._obstacleCells.get(idx).add(id);
+        }
+
+        const record = {
+            id,
+            ...obstacle,
+            blockedIndices: Array.from(blockedIndices)
+        };
+        this._obstacles.set(id, record);
+
+        this.routeVersion++;
+        this._notifyInvalidation({ type: "obstacle_added", obstacle: record });
+        return record;
+    }
+
+    /**
+     * Remove a dynamic obstacle by ID.
+     * @param {string} id
+     * @returns {boolean} True if removed.
+     */
+    removeObstacle(id) {
+        const key = String(id);
+        const record = this._obstacles.get(key);
+        if (!record) return false;
+
+        for (const idx of record.blockedIndices) {
+            const set = this._obstacleCells.get(idx);
+            if (set) {
+                set.delete(key);
+                if (set.size === 0) {
+                    this._obstacleCells.delete(idx);
+                }
+            }
+        }
+
+        this._obstacles.delete(key);
+        this.routeVersion++;
+        this._notifyInvalidation({ type: "obstacle_removed", obstacle: record });
+        return true;
+    }
+
+    /**
+     * Check if obstacle exists by ID.
+     * @param {string} id
+     * @returns {boolean}
+     */
+    hasObstacle(id) {
+        return this._obstacles.has(String(id));
+    }
+
+    /**
+     * Get obstacle by ID.
+     * @param {string} id
+     * @returns {Object|null}
+     */
+    getObstacle(id) {
+        return this._obstacles.get(String(id)) || null;
+    }
+
+    /**
+     * Get all active obstacles.
+     * @returns {Object[]}
+     */
+    getObstacles() {
+        return Array.from(this._obstacles.values());
+    }
+
+    /**
+     * Remove all dynamic obstacles.
+     */
+    clearObstacles() {
+        this._obstacles.clear();
+        this._obstacleCells.clear();
+        this.routeVersion++;
+        this._notifyInvalidation({ type: "obstacles_cleared" });
+    }
+
+    /**
+     * Check if a specific cell is blocked by dynamic obstacles.
+     * @param {number} x
+     * @param {number} y
+     * @returns {boolean}
+     */
+    isCellBlockedByObstacle(x, y) {
+        const idx = this._index(x, y);
+        if (idx === -1) return false;
+        return this._obstacleCells.has(idx) &amp;&amp; this._obstacleCells.get(idx).size > 0;
+    }
+
+    // =========================================================================
+    // Chunk Links / Portals
+    // =========================================================================
+
+    /**
+     * Add a chunk link or portal connecting two coordinates.
+     * Supports both addChunkLink(fromX, fromY, toX, toY, options) and addChunkLink({ from, to, cost, bidirectional, id }).
+     * @param {number|Object} linkOrFromX
+     * @param {number} [fromY]
+     * @param {number} [toX]
+     * @param {number} [toY]
+     * @param {Object} [options={}]
+     * @returns {Object} The created chunk link.
+     */
+    addChunkLink(linkOrFromX, fromY, toX, toY, options = {}) {
+        let link;
+        if (typeof linkOrFromX === "object" &amp;&amp; linkOrFromX !== null) {
+            link = { ...linkOrFromX };
+        } else {
+            link = {
+                from: { x: linkOrFromX, y: fromY },
+                to: { x: toX, y: toY },
+                ...options
+            };
+        }
+
+        if (!link.id) {
+            link.id = `link_${++this._nextLinkId}`;
+        }
+        link.cost = Number.isFinite(link.cost) &amp;&amp; link.cost >= 0 ? link.cost : 1.0;
+        link.bidirectional = link.bidirectional !== false;
+        link.enabled = link.enabled !== false;
+
+        link.from = { x: Math.floor(link.from.x), y: Math.floor(link.from.y) };
+        link.to = { x: Math.floor(link.to.x), y: Math.floor(link.to.y) };
+
+        const fromIdx = this._index(link.from.x, link.from.y);
+        if (fromIdx !== -1) {
+            if (!this._chunkLinks.has(fromIdx)) {
+                this._chunkLinks.set(fromIdx, []);
+            }
+            this._chunkLinks.get(fromIdx).push(link);
+        }
+
+        if (link.bidirectional) {
+            const toIdx = this._index(link.to.x, link.to.y);
+            if (toIdx !== -1) {
+                const reverseLink = {
+                    id: `${link.id}_reverse`,
+                    from: { x: link.to.x, y: link.to.y },
+                    to: { x: link.from.x, y: link.from.y },
+                    cost: link.cost,
+                    bidirectional: false,
+                    enabled: link.enabled,
+                    isReverse: true,
+                    parentLinkId: link.id
+                };
+                if (!this._chunkLinks.has(toIdx)) {
+                    this._chunkLinks.set(toIdx, []);
+                }
+                this._chunkLinks.get(toIdx).push(reverseLink);
+            }
+        }
+
+        this._chunkLinksById.set(link.id, link);
+        this.routeVersion++;
+        this._notifyInvalidation({ type: "chunk_link_added", link });
+        return link;
+    }
+
+    /**
+     * Alias for addChunkLink.
+     * @param {number|Object} linkOrFromX
+     * @param {number} [fromY]
+     * @param {number} [toX]
+     * @param {number} [toY]
+     * @param {Object} [options={}]
+     * @returns {Object}
+     */
+    addPortal(linkOrFromX, fromY, toX, toY, options = {}) {
+        return this.addChunkLink(linkOrFromX, fromY, toX, toY, options);
+    }
+
+    /**
+     * Remove a chunk link by ID.
+     * @param {string} id
+     * @returns {boolean} True if removed.
+     */
+    removeChunkLink(id) {
+        const link = this._chunkLinksById.get(id);
+        if (!link) return false;
+
+        const fromIdx = this._index(link.from.x, link.from.y);
+        if (fromIdx !== -1 &amp;&amp; this._chunkLinks.has(fromIdx)) {
+            const list = this._chunkLinks.get(fromIdx).filter((l) => l.id !== id);
+            if (list.length === 0) this._chunkLinks.delete(fromIdx);
+            else this._chunkLinks.set(fromIdx, list);
+        }
+
+        if (link.bidirectional) {
+            const revId = `${id}_reverse`;
+            const toIdx = this._index(link.to.x, link.to.y);
+            if (toIdx !== -1 &amp;&amp; this._chunkLinks.has(toIdx)) {
+                const list = this._chunkLinks.get(toIdx).filter((l) => l.id !== revId);
+                if (list.length === 0) this._chunkLinks.delete(toIdx);
+                else this._chunkLinks.set(toIdx, list);
+            }
+        }
+
+        this._chunkLinksById.delete(id);
+        this.routeVersion++;
+        this._notifyInvalidation({ type: "chunk_link_removed", linkId: id });
+        return true;
+    }
+
+    /**
+     * Get outgoing chunk links from coordinate (x, y).
+     * @param {number} x
+     * @param {number} y
+     * @returns {Object[]}
+     */
+    getChunkLinks(x, y) {
+        const idx = this._index(x, y);
+        if (idx === -1 || !this._chunkLinks.has(idx)) return [];
+        return this._chunkLinks.get(idx).filter((l) => l.enabled !== false);
+    }
+
+    /**
+     * Clear all chunk links.
+     */
+    clearChunkLinks() {
+        this._chunkLinks.clear();
+        this._chunkLinksById.clear();
+        this.routeVersion++;
+        this._notifyInvalidation({ type: "chunk_links_cleared" });
+    }
+
+    // =========================================================================
+    // Route Validation and Invalidation
+    // =========================================================================
+
+    /**
+     * Validate whether an existing path remains walkable and unbroken.
+     * @param {Array} path - Sequence of { x, y } step objects
+     * @param {Object} [options={}] - Validation options
+     * @returns {Object} Validation report { valid, blockedIndex, blockedCell, reason }
+     */
+    validateRoute(path, options = {}) {
+        if (!Array.isArray(path) || path.length === 0) {
+            return { valid: true, blockedIndex: -1, blockedCell: null, reason: null };
+        }
+        const maxClimb = Number.isFinite(options.maxClimbHeight) ? options.maxClimbHeight : this.maxClimbHeight;
+        const preventCornerCutting = options.preventCornerCutting !== false;
+
+        for (let i = 0; i &lt; path.length; i++) {
+            const step = path[i];
+            if (!this.inBounds(step.x, step.y)) {
+                return { valid: false, blockedIndex: i, blockedCell: step, reason: "out_of_bounds" };
+            }
+            if (!this.isWalkable(step.x, step.y)) {
+                return {
+                    valid: false,
+                    blockedIndex: i,
+                    blockedCell: step,
+                    reason: this.isCellBlockedByObstacle(step.x, step.y) ? "obstacle_blocked" : "cell_unwalkable"
+                };
+            }
+
+            if (i > 0) {
+                const prev = path[i - 1];
+                if (step.isChunkLink) {
+                    continue;
+                }
+
+                const dx = step.x - prev.x;
+                const dy = step.y - prev.y;
+
+                const elevDiff = Math.abs(this.getElevation(step.x, step.y) - this.getElevation(prev.x, prev.y));
+                if (elevDiff > maxClimb) {
+                    return { valid: false, blockedIndex: i, blockedCell: step, reason: "climb_limit_exceeded" };
+                }
+
+                if (dx !== 0 &amp;&amp; dy !== 0 &amp;&amp; preventCornerCutting) {
+                    if (!this.isWalkable(prev.x + dx, prev.y) || !this.isWalkable(prev.x, prev.y + dy)) {
+                        return { valid: false, blockedIndex: i, blockedCell: step, reason: "corner_cutting_blocked" };
+                    }
+                }
+            }
+        }
+        return { valid: true, blockedIndex: -1, blockedCell: null, reason: null };
+    }
+
+    /**
+     * Check if an existing path remains valid.
+     * @param {Array} path - Array of { x, y }
+     * @param {Object} [options={}]
+     * @returns {boolean}
+     */
+    isRouteValid(path, options = {}) {
+        return this.validateRoute(path, options).valid;
+    }
+
+    /**
+     * Register a route to monitor for invalidation when obstacles change.
+     * @param {string} id - Identifier for the route
+     * @param {Array} path - Array of { x, y } steps
+     */
+    registerRoute(id, path) {
+        this._registeredRoutes.set(String(id), {
+            id: String(id),
+            path: Array.from(path),
+            registeredVersion: this.routeVersion
+        });
+    }
+
+    /**
+     * Unregister a monitored route.
+     * @param {string} id
+     * @returns {boolean} True if removed.
+     */
+    unregisterRoute(id) {
+        return this._registeredRoutes.delete(String(id));
+    }
+
+    /**
+     * Get a registered route by ID.
+     * @param {string} id
+     * @returns {Array|null}
+     */
+    getRegisteredRoute(id) {
+        const entry = this._registeredRoutes.get(String(id));
+        return entry ? entry.path : null;
+    }
+
+    /**
+     * Query which registered routes are currently invalid.
+     * @returns {string[]} List of invalidated route IDs.
+     */
+    getInvalidatedRoutes() {
+        const invalidated = [];
+        for (const [id, entry] of this._registeredRoutes) {
+            if (!this.isRouteValid(entry.path)) {
+                invalidated.push(id);
+            }
+        }
+        return invalidated;
+    }
+
+    /**
+     * Explicitly invalidate routes and increment version.
+     * @returns {string[]} IDs of registered routes that are invalid.
+     */
+    invalidateRoutes() {
+        this.routeVersion++;
+        const invalidated = this.getInvalidatedRoutes();
+        this._notifyInvalidation({ type: "routes_invalidated", invalidatedRoutes: invalidated });
+        return invalidated;
+    }
+
+    /**
+     * Subscribe to route invalidation events.
+     * @param {Function} callback - Event listener
+     * @returns {Function} Unsubscribe function
+     */
+    onRouteInvalidated(callback) {
+        if (typeof callback === "function") {
+            this._invalidationListeners.add(callback);
+        }
+        return () => this.offRouteInvalidated(callback);
+    }
+
+    /**
+     * Remove an invalidation listener.
+     * @param {Function} callback
+     */
+    offRouteInvalidated(callback) {
+        this._invalidationListeners.delete(callback);
+    }
+
+    /**
+     * @private
+     */
+    _notifyInvalidation(event) {
+        if (this._invalidationListeners.size === 0) return;
+        for (const listener of this._invalidationListeners) {
+            try {
+                listener({ ...event, version: this.routeVersion });
+            } catch (_) {
+                // Ignore listener exceptions
+            }
+        }
+    }
+
+    // =========================================================================
+    // A* Pathfinding
+    // =========================================================================
+
+    /**
+     * Compute the lowest-cost path from start to goal using A*.
+     * Supports both findPath(start, goal, options) and findPath(startX, startY, goalX, goalY, options).
+     * @param {Object|Array|number} startArg - Starting point { x, y }, [x, y], or startX number
+     * @param {Object|Array|number} goalArg - Goal point { x, y }, [x, y], or startY number
+     * @param {Object|number} [optionsOrGoalX] - Options object, or goalX number
+     * @param {number} [goalY] - goalY number if coordinates were passed numerically
+     * @param {Object} [options] - Options object if coordinates were passed numerically
+     * @param {boolean} [options.allowDiagonal] - Allow diagonal steps (default this.allowDiagonal)
+     * @param {boolean} [options.preventCornerCutting=true] - Strict corner-cutting prevention past solid walls
+     * @param {number} [options.maxClimbHeight] - Max traversable height diff (default this.maxClimbHeight)
+     * @param {number} [options.diagonalCostMultiplier] - Multiplier for diagonal steps
+     * @param {boolean} [options.includeStart=false] - Whether to include the starting tile in the path
+     * @param {boolean} [options.useChunkLinks=true] - Whether to traverse chunk links/portals
+     * @param {number} [options.maxCost] - Search cost cutoff limit
+     * @param {Function} [options.isWalkable] - Custom walkability predicate (x, y) => boolean
+     * @returns {NavigationPath} Path result containing status, success, cost, and steps.
+     */
+    findPath(startArg, goalArg, optionsOrGoalX, goalY, options) {
+        let start = null;
+        let goal = null;
+        let opts = {};
+
+        if (
+            typeof startArg === "number" &amp;&amp;
+            typeof goalArg === "number" &amp;&amp;
+            typeof optionsOrGoalX === "number" &amp;&amp;
+            typeof goalY === "number"
+        ) {
+            start = { x: Math.floor(startArg), y: Math.floor(goalArg) };
+            goal = { x: Math.floor(optionsOrGoalX), y: Math.floor(goalY) };
+            opts = options || {};
+        } else {
+            const normalize = (pt) => {
+                if (!pt) return null;
+                if (Array.isArray(pt)) return { x: Math.floor(pt[0]), y: Math.floor(pt[1]) };
+                if (typeof pt === "object" &amp;&amp; Number.isFinite(pt.x) &amp;&amp; Number.isFinite(pt.y)) {
+                    return { x: Math.floor(pt.x), y: Math.floor(pt.y) };
+                }
+                return null;
+            };
+            start = normalize(startArg);
+            goal = normalize(goalArg);
+            opts = (typeof optionsOrGoalX === "object" &amp;&amp; optionsOrGoalX !== null) ? optionsOrGoalX : (options || {});
+        }
+
+        // Edge case: out of bounds start or goal returns safely without throwing
+        if (!start || !goal || !this.inBounds(start.x, start.y) || !this.inBounds(goal.x, goal.y)) {
+            return new NavigationPath({
+                status: "out_of_bounds",
+                success: false,
+                path: [],
+                cost: Infinity,
+                visitedNodes: 0
+            });
+        }
+
+        // Edge case: same start and goal returns immediately
+        if (start.x === goal.x &amp;&amp; start.y === goal.y) {
+            const path = opts.includeStart ? [{ x: start.x, y: start.y, cost: 0 }] : [];
+            return new NavigationPath({
+                status: "same_start_goal",
+                success: true,
+                path,
+                cost: 0,
+                visitedNodes: 0
+            });
+        }
+
+        const customWalkable = typeof opts.isWalkable === "function" ? opts.isWalkable : null;
+        const isTileWalkable = (tx, ty) => {
+            if (customWalkable) return customWalkable(tx, ty);
+            return this.isWalkable(tx, ty);
+        };
+
+        // Edge case: start or goal cell is not walkable
+        if (!isTileWalkable(start.x, start.y) || !isTileWalkable(goal.x, goal.y)) {
+            return new NavigationPath({
+                status: "unreachable",
+                success: false,
+                path: [],
+                cost: Infinity,
+                visitedNodes: 0
+            });
+        }
+
+        const allowDiagonal = opts.allowDiagonal !== undefined ? Boolean(opts.allowDiagonal) : this.allowDiagonal;
+        const preventCornerCutting = opts.preventCornerCutting !== false;
+        const maxClimb = Number.isFinite(opts.maxClimbHeight) ? opts.maxClimbHeight : this.maxClimbHeight;
+        const diagMultiplier = Number.isFinite(opts.diagonalCostMultiplier)
+            ? opts.diagonalCostMultiplier
+            : this.diagonalCostMultiplier;
+        const useChunkLinks = opts.useChunkLinks !== false;
+        const maxCost = Number.isFinite(opts.maxCost) ? opts.maxCost : Infinity;
+
+        const baseDistance = (x1, y1, x2, y2) => {
+            const dx = Math.abs(x1 - x2);
+            const dy = Math.abs(y1 - y2);
+            if (allowDiagonal) {
+                const minD = Math.min(dx, dy);
+                const maxD = Math.max(dx, dy);
+                return minD * diagMultiplier + (maxD - minD);
+            }
+            return dx + dy;
+        };
+
+        const activePortals = [];
+        if (useChunkLinks &amp;&amp; this._chunkLinks.size > 0) {
+            for (const linkList of this._chunkLinks.values()) {
+                for (let i = 0; i &lt; linkList.length; i++) {
+                    const l = linkList[i];
+                    if (l.enabled !== false &amp;&amp; this.inBounds(l.to.x, l.to.y) &amp;&amp; isTileWalkable(l.to.x, l.to.y)) {
+                        activePortals.push({
+                            from: l.from,
+                            to: l.to,
+                            cost: l.cost,
+                            toGoal: baseDistance(l.to.x, l.to.y, goal.x, goal.y) + l.cost
+                        });
+                    }
+                }
+            }
+        }
+
+        // Admissible heuristic function (portal-aware)
+        const heuristic = (x, y) => {
+            let minH = baseDistance(x, y, goal.x, goal.y);
+            for (let p = 0; p &lt; activePortals.length; p++) {
+                const port = activePortals[p];
+                const via = baseDistance(x, y, port.from.x, port.from.y) + port.toGoal;
+                if (via &lt; minH) minH = via;
+            }
+            return minH;
+        };
+
+        const startIdx = this._index(start.x, start.y);
+        const goalIdx = this._index(goal.x, goal.y);
+
+        const queue = new MinHeap();
+        const gScores = new Map();
+        const cameFrom = new Map();
+        const closedSet = new Set();
+        let insertionOrder = 0;
+        let visitedNodesCount = 0;
+
+        gScores.set(startIdx, 0);
+        const startH = heuristic(start.x, start.y);
+        queue.push({
+            index: startIdx,
+            x: start.x,
+            y: start.y,
+            g: 0,
+            h: startH,
+            f: startH,
+            order: insertionOrder++
+        });
+
+        // 8-way and 4-way direction vectors
+        const directions = allowDiagonal
+            ? [
+                [0, -1], [1, 0], [0, 1], [-1, 0],
+                [-1, -1], [1, -1], [1, 1], [-1, 1]
+            ]
+            : [
+                [0, -1], [1, 0], [0, 1], [-1, 0]
+            ];
+
+        while (!queue.isEmpty()) {
+            const current = queue.pop();
+            if (!current) break;
+
+            if (closedSet.has(current.index)) continue;
+            if (current.g > (gScores.get(current.index) ?? Infinity)) continue;
+
+            closedSet.add(current.index);
+            visitedNodesCount++;
+
+            // Reached goal!
+            if (current.index === goalIdx) {
+                const steps = [];
+                let stepIdx = current.index;
+
+                while (stepIdx !== startIdx) {
+                    const edge = cameFrom.get(stepIdx);
+                    if (!edge) break;
+                    const stepObj = {
+                        x: edge.toX,
+                        y: edge.toY,
+                        cost: edge.stepCost
+                    };
+                    if (edge.isChunkLink) {
+                        stepObj.isChunkLink = true;
+                        if (edge.linkId) stepObj.linkId = edge.linkId;
+                    }
+                    steps.push(stepObj);
+                    stepIdx = edge.fromIdx;
+                }
+
+                if (opts.includeStart) {
+                    steps.push({ x: start.x, y: start.y, cost: 0 });
+                }
+
+                steps.reverse();
+
+                return new NavigationPath({
+                    status: "success",
+                    success: true,
+                    path: steps,
+                    cost: current.g,
+                    visitedNodes: visitedNodesCount
+                });
+            }
+
+            // 1. Chunk links / portals originating from current cell
+            if (useChunkLinks) {
+                const links = this.getChunkLinks(current.x, current.y);
+                for (let i = 0; i &lt; links.length; i++) {
+                    const link = links[i];
+                    const tx = link.to.x;
+                    const ty = link.to.y;
+
+                    if (!this.inBounds(tx, ty) || !isTileWalkable(tx, ty)) continue;
+                    const tIdx = this._index(tx, ty);
+                    if (closedSet.has(tIdx)) continue;
+
+                    const stepCost = link.cost;
+                    const tentG = current.g + stepCost;
+                    if (tentG > maxCost) continue;
+
+                    if (tentG &lt; (gScores.get(tIdx) ?? Infinity)) {
+                        gScores.set(tIdx, tentG);
+                        cameFrom.set(tIdx, {
+                            fromIdx: current.index,
+                            toX: tx,
+                            toY: ty,
+                            stepCost,
+                            isChunkLink: true,
+                            linkId: link.id
+                        });
+                        const h = heuristic(tx, ty);
+                        queue.push({
+                            index: tIdx,
+                            x: tx,
+                            y: ty,
+                            g: tentG,
+                            h,
+                            f: tentG + h,
+                            order: insertionOrder++
+                        });
+                    }
+                }
+            }
+
+            // 2. Adjacent grid neighbors
+            for (let d = 0; d &lt; directions.length; d++) {
+                const [dx, dy] = directions[d];
+                const nx = current.x + dx;
+                const ny = current.y + dy;
+
+                if (!this.inBounds(nx, ny)) continue;
+                if (!isTileWalkable(nx, ny)) continue;
+
+                const nIdx = this._index(nx, ny);
+                if (closedSet.has(nIdx)) continue;
+
+                // Elevation rule: traversal between adjacent cells blocked if difference exceeds maxClimbHeight
+                const elevDiff = Math.abs(this._elevation[nIdx] - this._elevation[current.index]);
+                if (elevDiff > maxClimb) continue;
+
+                // Diagonal movement: strict corner-cutting prevention past solid walls
+                const isDiagonal = (dx !== 0 &amp;&amp; dy !== 0);
+                if (isDiagonal &amp;&amp; preventCornerCutting) {
+                    const ortho1 = isTileWalkable(current.x + dx, current.y);
+                    const ortho2 = isTileWalkable(current.x, current.y + dy);
+                    if (!ortho1 || !ortho2) {
+                        continue;
+                    }
+                }
+
+                // Movement cost affects path weighting
+                const distance = isDiagonal ? diagMultiplier : 1.0;
+                const cellCost = this._cost[nIdx];
+                const stepCost = distance * cellCost;
+
+                const tentG = current.g + stepCost;
+                if (tentG > maxCost) continue;
+
+                if (tentG &lt; (gScores.get(nIdx) ?? Infinity)) {
+                    gScores.set(nIdx, tentG);
+                    cameFrom.set(nIdx, {
+                        fromIdx: current.index,
+                        toX: nx,
+                        toY: ny,
+                        stepCost,
+                        isChunkLink: false
+                    });
+                    const h = heuristic(nx, ny);
+                    queue.push({
+                        index: nIdx,
+                        x: nx,
+                        y: ny,
+                        g: tentG,
+                        h,
+                        f: tentG + h,
+                        order: insertionOrder++
+                    });
+                }
+            }
+        }
+
+        // Unreachable goal returns unreachable status
+        return new NavigationPath({
+            status: "unreachable",
+            success: false,
+            path: [],
+            cost: Infinity,
+            visitedNodes: visitedNodesCount
+        });
+    }
+
+    /**
+     * Create a clone of this NavigationGrid.
+     * @returns {NavigationGrid}
+     */
+    clone() {
+        const copy = new NavigationGrid(this.width, this.height, {
+            defaultCost: this.defaultCost,
+            defaultWalkable: this.defaultWalkable,
+            defaultElevation: this.defaultElevation,
+            maxClimbHeight: this.maxClimbHeight,
+            allowDiagonal: this.allowDiagonal,
+            diagonalCostMultiplier: this.diagonalCostMultiplier
+        });
+        copy._walkable.set(this._walkable);
+        copy._cost.set(this._cost);
+        copy._elevation.set(this._elevation);
+
+        for (const [id, obs] of this._obstacles) {
+            copy.addObstacle({ ...obs });
+        }
+        for (const [id, link] of this._chunkLinksById) {
+            copy.addChunkLink({ ...link });
+        }
+        return copy;
+    }
+
+    /**
+     * Construct a NavigationGrid from a Thalassa Tilemap.
+     * @param {Object} tilemap - Tilemap instance
+     * @param {Object} [options={}] - Grid options
+     * @returns {NavigationGrid}
+     */
+    static fromTilemap(tilemap, options = {}) {
+        if (!tilemap || typeof tilemap.width !== "number" || typeof tilemap.height !== "number") {
+            throw new TypeError("fromTilemap requires a Tilemap instance with width and height");
+        }
+        const grid = new NavigationGrid(tilemap.width, tilemap.height, options);
+        for (let y = 0; y &lt; tilemap.height; y++) {
+            for (let x = 0; x &lt; tilemap.width; x++) {
+                const meta = typeof tilemap.getResolvedMetadata === "function"
+                    ? tilemap.getResolvedMetadata(x, y)
+                    : null;
+                if (meta) {
+                    if (meta.walkable !== undefined) {
+                        grid.setWalkable(x, y, meta.walkable);
+                    }
+                    if (Number.isFinite(meta.movementCost) &amp;&amp; meta.movementCost >= 1) {
+                        grid.setCost(x, y, meta.movementCost);
+                    }
+                    if (Number.isFinite(meta.elevation)) {
+                        grid.setElevation(x, y, meta.elevation);
+                    }
+                }
+            }
+        }
+        return grid;
+    }
+
+    /**
+     * Construct a NavigationGrid from an ASCII layout.
+     * Legend maps characters to properties like { walkable, cost, elevation }.
+     * @param {string} ascii - Multiline text representation of the grid
+     * @param {Object} [legend={}] - Mapping from character to cell properties
+     * @param {Object} [options={}] - Grid options
+     * @returns {NavigationGrid}
+     */
+    static fromAscii(ascii, legend = {}, options = {}) {
+        if (typeof ascii !== "string") {
+            throw new TypeError("fromAscii expects an ASCII string");
+        }
+        const rawLines = ascii
+            .split("\n")
+            .filter((line) => line.trim().length > 0);
+
+        if (rawLines.length === 0) {
+            throw new Error("fromAscii received empty grid string");
+        }
+
+        let minIndent = Infinity;
+        for (let i = 0; i &lt; rawLines.length; i++) {
+            const match = rawLines[i].match(/^(\s*)/);
+            if (match) {
+                minIndent = Math.min(minIndent, match[1].length);
+            }
+        }
+        if (!Number.isFinite(minIndent)) minIndent = 0;
+
+        const lines = rawLines.map((line) => line.slice(minIndent).trimEnd());
+        const height = lines.length;
+        const width = Math.max(...lines.map((l) => l.length));
+
+        const grid = new NavigationGrid(width, height, options);
+        for (let y = 0; y &lt; height; y++) {
+            const line = lines[y];
+            for (let x = 0; x &lt; width; x++) {
+                const ch = line[x] || " ";
+                const def = legend[ch];
+                if (def) {
+                    if (def.walkable !== undefined) grid.setWalkable(x, y, def.walkable);
+                    if (def.cost !== undefined) grid.setCost(x, y, def.cost);
+                    if (def.elevation !== undefined) grid.setElevation(x, y, def.elevation);
+                } else if (ch === "#") {
+                    grid.setWalkable(x, y, false);
+                }
+            }
+        }
+        return grid;
+    }
+}
+</code></pre></article></section><footer class="footer" id="PeOAagUepe"><div class="wrapper">MIT License | Copyright (c) 2022 Sujal Choudhari</div></footer></div></div></div><div class="search-container" id="PkfLWpAbet" style="display:none"><div class="wrapper" id="iCxFxjkHbP"><button class="icon-button search-close-button" id="VjLlGakifb" aria-label="close search"><svg><use xlink:href="#close-icon"></use></svg></button><div class="search-box-c"><svg><use xlink:href="#search-icon"></use></svg> <input type="text" id="vpcKVYIppa" class="search-input" placeholder="Search..." autofocus></div><div class="search-result-c" id="fWwVHRuDuN"><span class="search-result-c-text">Type anything to view search result</span></div></div></div><div class="mobile-menu-icon-container"><button class="icon-button" id="mobile-menu" data-isopen="false" aria-label="menu"><svg><use xlink:href="#menu-icon"></use></svg></button></div><div id="mobile-sidebar" class="mobile-sidebar-container"><div class="mobile-sidebar-wrapper"><a href="/" class="sidebar-title sidebar-title-anchor">Neptune.js</a><div class="mobile-nav-links"><div class="navbar-item"><a id="" href="https://github.com/NotSujal/Neptune.js" target="_blank">Github</a></div><div class="navbar-item"><a id="" href="https://www.npmjs.com/package/@sujalchoudhari/neptune-js" target="_blank">NPM</a></div></div><div class="mobile-sidebar-items-c"><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-tutorials"><div>Tutorials</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="tutorial-00-Getting Started.html">Getting started</a></div><div class="sidebar-section-children"><a href="tutorial-01-Introduction.html">Introduction</a></div><div class="sidebar-section-children"><a href="tutorial-02-Step by step.html">Step by step</a></div><div class="sidebar-section-children"><a href="tutorial-03-Systems.html">Systems and Managers</a></div><div class="sidebar-section-children"><a href="tutorial-04-Multiple Scenes.html">Multiple Scenes</a></div><div class="sidebar-section-children"><a href="tutorial-05-Inputs.html">Inputs</a></div><div class="sidebar-section-children"><a href="tutorial-06-Scripts.html">Scripts</a></div><div class="sidebar-section-children"><a href="tutorial-07-Beyond.html">Beyond the basics</a></div><div class="sidebar-section-children"><a href="tutorial-08-Showcase Demo.html">Interactive Systems Showcase</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-interfaces"><div>Interfaces</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="Behaviour.html">Behaviour</a></div><div class="sidebar-section-children"><a href="Component.html">Component</a></div><div class="sidebar-section-children"><a href="Container.html">Container</a></div><div class="sidebar-section-children"><a href="Global_.html">Global</a></div><div class="sidebar-section-children"><a href="Renderable.html">Renderable</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-classes"><div>Classes</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="AbilityBudgetExceededError.html">AbilityBudgetExceededError</a></div><div class="sidebar-section-children"><a href="AbilityExecutionError.html">AbilityExecutionError</a></div><div class="sidebar-section-children"><a href="AbilityExecutor.html">AbilityExecutor</a></div><div class="sidebar-section-children"><a href="AbilityValidationError.html">AbilityValidationError</a></div><div class="sidebar-section-children"><a href="Animation.html">Animation</a></div><div class="sidebar-section-children"><a href="Animation_Animation.html">Animation</a></div><div class="sidebar-section-children"><a href="Animator.html">Animator</a></div><div class="sidebar-section-children"><a href="Application.html">Application</a></div><div class="sidebar-section-children"><a href="AttackDefinition.html">AttackDefinition</a></div><div class="sidebar-section-children"><a href="AudioBus.html">AudioBus</a></div><div class="sidebar-section-children"><a href="AudioBusSystem.html">AudioBusSystem</a></div><div class="sidebar-section-children"><a href="AudioMixer.html">AudioMixer</a></div><div class="sidebar-section-children"><a href="Behaviour_Behaviour.html">Behaviour</a></div><div class="sidebar-section-children"><a href="Body.html">Body</a></div><div class="sidebar-section-children"><a href="BossAI.html">BossAI</a></div><div class="sidebar-section-children"><a href="BoundedMemory.html">BoundedMemory</a></div><div class="sidebar-section-children"><a href="BoxCollider.html">BoxCollider</a></div><div class="sidebar-section-children"><a href="Camera.html">Camera</a></div><div class="sidebar-section-children"><a href="CellGridSimulation.html">CellGridSimulation</a></div><div class="sidebar-section-children"><a href="Collider.html">Collider</a></div><div class="sidebar-section-children"><a href="CollisionSystem.html">CollisionSystem</a></div><div class="sidebar-section-children"><a href="Color.html">Color</a></div><div class="sidebar-section-children"><a href="Combatant.html">Combatant</a></div><div class="sidebar-section-children"><a href="CombatSystem.html">CombatSystem</a></div><div class="sidebar-section-children"><a href="ComponentRegistry.html">ComponentRegistry</a></div><div class="sidebar-section-children"><a href="ContactSolver.html">ContactSolver</a></div><div class="sidebar-section-children"><a href="CorruptSaveError.html">CorruptSaveError</a></div><div class="sidebar-section-children"><a href="Cutscene.html">Cutscene</a></div><div class="sidebar-section-children"><a href="Cutscene_Cutscene.html">Cutscene</a></div><div class="sidebar-section-children"><a href="CutsceneManager.html">CutsceneManager</a></div><div class="sidebar-section-children"><a href="DeathRetryManager.html">DeathRetryManager</a></div><div class="sidebar-section-children"><a href="DestroyQueue.html">DestroyQueue</a></div><div class="sidebar-section-children"><a href="Dialogue.html">Dialogue</a></div><div class="sidebar-section-children"><a href="DialogueBox.html">DialogueBox</a></div><div class="sidebar-section-children"><a href="ElevationFilter.html">ElevationFilter</a></div><div class="sidebar-section-children"><a href="EnemyAI.html">EnemyAI</a></div><div class="sidebar-section-children"><a href="EnemyConfig.html">EnemyConfig</a></div><div class="sidebar-section-children"><a href="Entity.html">Entity</a></div><div class="sidebar-section-children"><a href="EquipmentSystem.html">EquipmentSystem</a></div><div class="sidebar-section-children"><a href="FactionRegistry.html">FactionRegistry</a></div><div class="sidebar-section-children"><a href="Filter.html">Filter</a></div><div class="sidebar-section-children"><a href="FixedStepper.html">FixedStepper</a></div><div class="sidebar-section-children"><a href="Font.html">Font</a></div><div class="sidebar-section-children"><a href="FutureVersionError.html">FutureVersionError</a></div><div class="sidebar-section-children"><a href="GameClock.html">GameClock</a></div><div class="sidebar-section-children"><a href="GameData.html">GameData</a></div><div class="sidebar-section-children"><a href="GameFeel.html">GameFeel</a></div><div class="sidebar-section-children"><a href="GridContainer.html">GridContainer</a></div><div class="sidebar-section-children"><a href="HazardSystem.html">HazardSystem</a></div><div class="sidebar-section-children"><a href="HBoxContainer.html">HBoxContainer</a></div><div class="sidebar-section-children"><a href="InputActions.html">InputActions</a></div><div class="sidebar-section-children"><a href="InteractionResult.html">InteractionResult</a></div><div class="sidebar-section-children"><a href="Inventory.html">Inventory</a></div><div class="sidebar-section-children"><a href="Inventory.html">Inventory</a></div><div class="sidebar-section-children"><a href="Inventory_Inventory.html">Inventory</a></div><div class="sidebar-section-children"><a href="ItemRegistry.html">ItemRegistry</a></div><div class="sidebar-section-children"><a href="KeyboardInput.html">KeyboardInput</a></div><div class="sidebar-section-children"><a href="KnockbackMotor.html">KnockbackMotor</a></div><div class="sidebar-section-children"><a href="LevelProgression.html">LevelProgression</a></div><div class="sidebar-section-children"><a href="LootTable.html">LootTable</a></div><div class="sidebar-section-children"><a href="MapStorage.html">MapStorage</a></div><div class="sidebar-section-children"><a href="MarginContainer.html">MarginContainer</a></div><div class="sidebar-section-children"><a href="MaterialInteraction.html">MaterialInteraction</a></div><div class="sidebar-section-children"><a href="MaterialRegistry.html">MaterialRegistry</a></div><div class="sidebar-section-children"><a href="Maths.html">Maths</a></div><div class="sidebar-section-children"><a href="MigrationError.html">MigrationError</a></div><div class="sidebar-section-children"><a href="MinHeap.html">MinHeap</a></div><div class="sidebar-section-children"><a href="MouseInput.html">MouseInput</a></div><div class="sidebar-section-children"><a href="MusicManager.html">MusicManager</a></div><div class="sidebar-section-children"><a href="NavigationGrid.html">NavigationGrid</a></div><div class="sidebar-section-children"><a href="NavigationGrid_NavigationGrid.html">NavigationGrid</a></div><div class="sidebar-section-children"><a href="NavigationPath.html">NavigationPath</a></div><div class="sidebar-section-children"><a href="NavigationPath_NavigationPath.html">NavigationPath</a></div><div class="sidebar-section-children"><a href="NPCKnowledge.html">NPCKnowledge</a></div><div class="sidebar-section-children"><a href="NPCSchedule.html">NPCSchedule</a></div><div class="sidebar-section-children"><a href="Panel.html">Panel</a></div><div class="sidebar-section-children"><a href="ParallaxBackground.html">ParallaxBackground</a></div><div class="sidebar-section-children"><a href="ParallaxLayer.html">ParallaxLayer</a></div><div class="sidebar-section-children"><a href="ParallaxLayer_ParallaxLayer.html">ParallaxLayer</a></div><div class="sidebar-section-children"><a href="PerceptionSystem.html">PerceptionSystem</a></div><div class="sidebar-section-children"><a href="PlatformerController.html">PlatformerController</a></div><div class="sidebar-section-children"><a href="Pose.html">Pose</a></div><div class="sidebar-section-children"><a href="Pose_Pose.html">Pose</a></div><div class="sidebar-section-children"><a href="Progression.html">Progression</a></div><div class="sidebar-section-children"><a href="ProjectBehaviour.html">ProjectBehaviour</a></div><div class="sidebar-section-children"><a href="QuestDefinition.html">QuestDefinition</a></div><div class="sidebar-section-children"><a href="QuestGraph.html">QuestGraph</a></div><div class="sidebar-section-children"><a href="QuestLog.html">QuestLog</a></div><div class="sidebar-section-children"><a href="ReferenceValidationError.html">ReferenceValidationError</a></div><div class="sidebar-section-children"><a href="ReferenceValidator.html">ReferenceValidator</a></div><div class="sidebar-section-children"><a href="ResourceReferenceError.html">ResourceReferenceError</a></div><div class="sidebar-section-children"><a href="RewardSystem.html">RewardSystem</a></div><div class="sidebar-section-children"><a href="Rig.html">Rig</a></div><div class="sidebar-section-children"><a href="RuleEngine.html">RuleEngine</a></div><div class="sidebar-section-children"><a href="SaveManager.html">SaveManager</a></div><div class="sidebar-section-children"><a href="Scene.html">Scene</a></div><div class="sidebar-section-children"><a href="SceneLoader.html">SceneLoader</a></div><div class="sidebar-section-children"><a href="SceneManager.html">SceneManager</a></div><div class="sidebar-section-children"><a href="SceneTransition.html">SceneTransition</a></div><div class="sidebar-section-children"><a href="ScheduleSlot.html">ScheduleSlot</a></div><div class="sidebar-section-children"><a href="ScheduleSystem.html">ScheduleSystem</a></div><div class="sidebar-section-children"><a href="SchemaMigrationRegistry.html">SchemaMigrationRegistry</a></div><div class="sidebar-section-children"><a href="Shape.html">Shape</a></div><div class="sidebar-section-children"><a href="Shop.html">Shop</a></div><div class="sidebar-section-children"><a href="Sound.html">Sound</a></div><div class="sidebar-section-children"><a href="SoundPool.html">SoundPool</a></div><div class="sidebar-section-children"><a href="SoundPool_SoundPool.html">SoundPool</a></div><div class="sidebar-section-children"><a href="SpatialHashGrid.html">SpatialHashGrid</a></div><div class="sidebar-section-children"><a href="SpawnPoint.html">SpawnPoint</a></div><div class="sidebar-section-children"><a href="Sprite.html">Sprite</a></div><div class="sidebar-section-children"><a href="Stats.html">Stats</a></div><div class="sidebar-section-children"><a href="StatusEffectManager.html">StatusEffectManager</a></div><div class="sidebar-section-children"><a href="Storage.html">Storage</a></div><div class="sidebar-section-children"><a href="StoryGraph.html">StoryGraph</a></div><div class="sidebar-section-children"><a href="SweptAABB.html">SweptAABB</a></div><div class="sidebar-section-children"><a href="Text.html">Text</a></div><div class="sidebar-section-children"><a href="TileCollision.html">TileCollision</a></div><div class="sidebar-section-children"><a href="TileCollision_TileCollision.html">TileCollision</a></div><div class="sidebar-section-children"><a href="Tilemap.html">Tilemap</a></div><div class="sidebar-section-children"><a href="Tilemap_Tilemap.html">Tilemap</a></div><div class="sidebar-section-children"><a href="Tileset.html">Tileset</a></div><div class="sidebar-section-children"><a href="Tileset_Tileset.html">Tileset</a></div><div class="sidebar-section-children"><a href="TopDownController.html">TopDownController</a></div><div class="sidebar-section-children"><a href="TouchInput.html">TouchInput</a></div><div class="sidebar-section-children"><a href="Transform.html">Transform</a></div><div class="sidebar-section-children"><a href="TriggerLifecycleSystem.html">TriggerLifecycleSystem</a></div><div class="sidebar-section-children"><a href="TypedEventBus.html">TypedEventBus</a></div><div class="sidebar-section-children"><a href="UISprite.html">UISprite</a></div><div class="sidebar-section-children"><a href="UITransform.html">UITransform</a></div><div class="sidebar-section-children"><a href="UtilityAction.html">UtilityAction</a></div><div class="sidebar-section-children"><a href="UtilityAI.html">UtilityAI</a></div><div class="sidebar-section-children"><a href="UtilityAI_UtilityAI.html">UtilityAI</a></div><div class="sidebar-section-children"><a href="UtilityConsideration.html">UtilityConsideration</a></div><div class="sidebar-section-children"><a href="VBoxContainer.html">VBoxContainer</a></div><div class="sidebar-section-children"><a href="Vector2.html">Vector2</a></div><div class="sidebar-section-children"><a href="VersionedSaveEngine.html">VersionedSaveEngine</a></div><div class="sidebar-section-children"><a href="WorldFacts.html">WorldFacts</a></div><div class="sidebar-section-children"><a href="WorldMetadataRegistry.html">WorldMetadataRegistry</a></div></div></div><div class="mobile-navbar-actions"><div class="navbar-right-item"><button class="icon-button search-button" aria-label="open-search"><svg><use xlink:href="#search-icon"></use></svg></button></div><div class="navbar-right-item"><button class="icon-button theme-toggle" aria-label="toggle-theme"><svg><use class="theme-svg-use" xlink:href="#light-theme-icon"></use></svg></button></div><div class="navbar-right-item"><button class="icon-button font-size" aria-label="change-font-size"><svg><use xlink:href="#font-size-icon"></use></svg></button></div></div></div></div><script type="text/javascript" src="scripts/core.min.js"></script><script src="scripts/search.min.js" defer="defer"></script><script src="scripts/third-party/fuse.js" defer="defer"></script><script type="text/javascript">var tocbotInstance=tocbot.init({tocSelector:"#eed4d2a0bfd64539bb9df78095dec881",contentSelector:".main-content",headingSelector:"h1, h2, h3",hasInnerContainers:!0,scrollContainer:".main-content",headingsOffset:130,onClick:bringLinkToView})</script></body></html>

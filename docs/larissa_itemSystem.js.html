@@ -1,0 +1,1469 @@
+<!DOCTYPE html><html lang="en" style="font-size:16px"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="author" content="Sujal Choudhari"><meta name="description" content="A 2D framework for making games completely made in JavaScript."><meta name="keywords" content="2D,javascript,game,engine,framework,neptune.js,neptunejs,easy,modular,lightweight,complete,open source"><title>Source: larissa/itemSystem.js</title><!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]--><script src="scripts/third-party/hljs.js" defer="defer"></script><script src="scripts/third-party/hljs-line-num.js" defer="defer"></script><script src="scripts/third-party/popper.js" defer="defer"></script><script src="scripts/third-party/tippy.js" defer="defer"></script><script src="scripts/third-party/tocbot.min.js"></script><script>var baseURL="/",locationPathname="";baseURL=(locationPathname=document.location.pathname).substr(0,locationPathname.lastIndexOf("/")+1)</script><link rel="stylesheet" href="styles/clean-jsdoc-theme.min.css"><svg aria-hidden="true" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="display:none"><defs><symbol id="copy-icon" viewbox="0 0 488.3 488.3"><g><path d="M314.25,85.4h-227c-21.3,0-38.6,17.3-38.6,38.6v325.7c0,21.3,17.3,38.6,38.6,38.6h227c21.3,0,38.6-17.3,38.6-38.6V124    C352.75,102.7,335.45,85.4,314.25,85.4z M325.75,449.6c0,6.4-5.2,11.6-11.6,11.6h-227c-6.4,0-11.6-5.2-11.6-11.6V124    c0-6.4,5.2-11.6,11.6-11.6h227c6.4,0,11.6,5.2,11.6,11.6V449.6z"/><path d="M401.05,0h-227c-21.3,0-38.6,17.3-38.6,38.6c0,7.5,6,13.5,13.5,13.5s13.5-6,13.5-13.5c0-6.4,5.2-11.6,11.6-11.6h227    c6.4,0,11.6,5.2,11.6,11.6v325.7c0,6.4-5.2,11.6-11.6,11.6c-7.5,0-13.5,6-13.5,13.5s6,13.5,13.5,13.5c21.3,0,38.6-17.3,38.6-38.6    V38.6C439.65,17.3,422.35,0,401.05,0z"/></g></symbol><symbol id="search-icon" viewBox="0 0 512 512"><g><g><path d="M225.474,0C101.151,0,0,101.151,0,225.474c0,124.33,101.151,225.474,225.474,225.474    c124.33,0,225.474-101.144,225.474-225.474C450.948,101.151,349.804,0,225.474,0z M225.474,409.323    c-101.373,0-183.848-82.475-183.848-183.848S124.101,41.626,225.474,41.626s183.848,82.475,183.848,183.848    S326.847,409.323,225.474,409.323z"/></g></g><g><g><path d="M505.902,476.472L386.574,357.144c-8.131-8.131-21.299-8.131-29.43,0c-8.131,8.124-8.131,21.306,0,29.43l119.328,119.328    c4.065,4.065,9.387,6.098,14.715,6.098c5.321,0,10.649-2.033,14.715-6.098C514.033,497.778,514.033,484.596,505.902,476.472z"/></g></g></symbol><symbol id="font-size-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M11.246 15H4.754l-2 5H.6L7 4h2l6.4 16h-2.154l-2-5zm-.8-2L8 6.885 5.554 13h4.892zM21 12.535V12h2v8h-2v-.535a4 4 0 1 1 0-6.93zM19 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></symbol><symbol id="add-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></symbol><symbol id="minus-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M5 11h14v2H5z"/></symbol><symbol id="dark-theme-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M10 7a7 7 0 0 0 12 4.9v.1c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2h.1A6.979 6.979 0 0 0 10 7zm-6 5a8 8 0 0 0 15.062 3.762A9 9 0 0 1 8.238 4.938 7.999 7.999 0 0 0 4 12z"/></symbol><symbol id="light-theme-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M12 18a6 6 0 1 1 0-12 6 6 0 0 1 0 12zm0-2a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM11 1h2v3h-2V1zm0 19h2v3h-2v-3zM3.515 4.929l1.414-1.414L7.05 5.636 5.636 7.05 3.515 4.93zM16.95 18.364l1.414-1.414 2.121 2.121-1.414 1.414-2.121-2.121zm2.121-14.85l1.414 1.415-2.121 2.121-1.414-1.414 2.121-2.121zM5.636 16.95l1.414 1.414-2.121 2.121-1.414-1.414 2.121-2.121zM23 11v2h-3v-2h3zM4 11v2H1v-2h3z"/></symbol><symbol id="reset-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M18.537 19.567A9.961 9.961 0 0 1 12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10c0 2.136-.67 4.116-1.81 5.74L17 12h3a8 8 0 1 0-2.46 5.772l.997 1.795z"/></symbol><symbol id="down-icon" viewBox="0 0 16 16"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.7803 6.21967C13.0732 6.51256 13.0732 6.98744 12.7803 7.28033L8.53033 11.5303C8.23744 11.8232 7.76256 11.8232 7.46967 11.5303L3.21967 7.28033C2.92678 6.98744 2.92678 6.51256 3.21967 6.21967C3.51256 5.92678 3.98744 5.92678 4.28033 6.21967L8 9.93934L11.7197 6.21967C12.0126 5.92678 12.4874 5.92678 12.7803 6.21967Z"></path></symbol><symbol id="codepen-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M16.5 13.202L13 15.535v3.596L19.197 15 16.5 13.202zM14.697 12L12 10.202 9.303 12 12 13.798 14.697 12zM20 10.869L18.303 12 20 13.131V10.87zM19.197 9L13 4.869v3.596l3.5 2.333L19.197 9zM7.5 10.798L11 8.465V4.869L4.803 9 7.5 10.798zM4.803 15L11 19.131v-3.596l-3.5-2.333L4.803 15zM4 13.131L5.697 12 4 10.869v2.262zM2 9a1 1 0 0 1 .445-.832l9-6a1 1 0 0 1 1.11 0l9 6A1 1 0 0 1 22 9v6a1 1 0 0 1-.445.832l-9 6a1 1 0 0 1-1.11 0l-9-6A1 1 0 0 1 2 15V9z"/></symbol><symbol id="close-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M12 10.586l4.95-4.95 1.414 1.414-4.95 4.95 4.95 4.95-1.414 1.414-4.95-4.95-4.95 4.95-1.414-1.414 4.95-4.95-4.95-4.95L7.05 5.636z"/></symbol><symbol id="menu-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"/></symbol></defs></svg></head><body data-theme="dark"><div class="sidebar-container"><div class="sidebar" id="sidebar"><a href="/" class="sidebar-title sidebar-title-anchor">Neptune.js</a><div class="sidebar-items-container"><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-tutorials"><div>Tutorials</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="tutorial-00-Getting Started.html">Getting started</a></div><div class="sidebar-section-children"><a href="tutorial-01-Introduction.html">Introduction</a></div><div class="sidebar-section-children"><a href="tutorial-02-Step by step.html">Step by step</a></div><div class="sidebar-section-children"><a href="tutorial-03-Systems.html">Systems and Managers</a></div><div class="sidebar-section-children"><a href="tutorial-04-Multiple Scenes.html">Multiple Scenes</a></div><div class="sidebar-section-children"><a href="tutorial-05-Inputs.html">Inputs</a></div><div class="sidebar-section-children"><a href="tutorial-06-Scripts.html">Scripts</a></div><div class="sidebar-section-children"><a href="tutorial-07-Beyond.html">Beyond the basics</a></div><div class="sidebar-section-children"><a href="tutorial-08-Showcase Demo.html">Interactive Systems Showcase</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-interfaces"><div>Interfaces</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="Behaviour.html">Behaviour</a></div><div class="sidebar-section-children"><a href="Component.html">Component</a></div><div class="sidebar-section-children"><a href="Container.html">Container</a></div><div class="sidebar-section-children"><a href="Global_.html">Global</a></div><div class="sidebar-section-children"><a href="Renderable.html">Renderable</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-classes"><div>Classes</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="AbilityBudgetExceededError.html">AbilityBudgetExceededError</a></div><div class="sidebar-section-children"><a href="AbilityExecutionError.html">AbilityExecutionError</a></div><div class="sidebar-section-children"><a href="AbilityExecutor.html">AbilityExecutor</a></div><div class="sidebar-section-children"><a href="AbilityValidationError.html">AbilityValidationError</a></div><div class="sidebar-section-children"><a href="Animation.html">Animation</a></div><div class="sidebar-section-children"><a href="Animation_Animation.html">Animation</a></div><div class="sidebar-section-children"><a href="Animator.html">Animator</a></div><div class="sidebar-section-children"><a href="Application.html">Application</a></div><div class="sidebar-section-children"><a href="AttackDefinition.html">AttackDefinition</a></div><div class="sidebar-section-children"><a href="AudioBus.html">AudioBus</a></div><div class="sidebar-section-children"><a href="AudioBusSystem.html">AudioBusSystem</a></div><div class="sidebar-section-children"><a href="AudioMixer.html">AudioMixer</a></div><div class="sidebar-section-children"><a href="Behaviour_Behaviour.html">Behaviour</a></div><div class="sidebar-section-children"><a href="Body.html">Body</a></div><div class="sidebar-section-children"><a href="BossAI.html">BossAI</a></div><div class="sidebar-section-children"><a href="BoundedMemory.html">BoundedMemory</a></div><div class="sidebar-section-children"><a href="BoxCollider.html">BoxCollider</a></div><div class="sidebar-section-children"><a href="Camera.html">Camera</a></div><div class="sidebar-section-children"><a href="CellGridSimulation.html">CellGridSimulation</a></div><div class="sidebar-section-children"><a href="Collider.html">Collider</a></div><div class="sidebar-section-children"><a href="CollisionSystem.html">CollisionSystem</a></div><div class="sidebar-section-children"><a href="Color.html">Color</a></div><div class="sidebar-section-children"><a href="Combatant.html">Combatant</a></div><div class="sidebar-section-children"><a href="CombatSystem.html">CombatSystem</a></div><div class="sidebar-section-children"><a href="ComponentRegistry.html">ComponentRegistry</a></div><div class="sidebar-section-children"><a href="ContactSolver.html">ContactSolver</a></div><div class="sidebar-section-children"><a href="CorruptSaveError.html">CorruptSaveError</a></div><div class="sidebar-section-children"><a href="Cutscene.html">Cutscene</a></div><div class="sidebar-section-children"><a href="Cutscene_Cutscene.html">Cutscene</a></div><div class="sidebar-section-children"><a href="CutsceneManager.html">CutsceneManager</a></div><div class="sidebar-section-children"><a href="DeathRetryManager.html">DeathRetryManager</a></div><div class="sidebar-section-children"><a href="DestroyQueue.html">DestroyQueue</a></div><div class="sidebar-section-children"><a href="Dialogue.html">Dialogue</a></div><div class="sidebar-section-children"><a href="DialogueBox.html">DialogueBox</a></div><div class="sidebar-section-children"><a href="ElevationFilter.html">ElevationFilter</a></div><div class="sidebar-section-children"><a href="EnemyAI.html">EnemyAI</a></div><div class="sidebar-section-children"><a href="EnemyConfig.html">EnemyConfig</a></div><div class="sidebar-section-children"><a href="Entity.html">Entity</a></div><div class="sidebar-section-children"><a href="EquipmentSystem.html">EquipmentSystem</a></div><div class="sidebar-section-children"><a href="FactionRegistry.html">FactionRegistry</a></div><div class="sidebar-section-children"><a href="Filter.html">Filter</a></div><div class="sidebar-section-children"><a href="FixedStepper.html">FixedStepper</a></div><div class="sidebar-section-children"><a href="Font.html">Font</a></div><div class="sidebar-section-children"><a href="FutureVersionError.html">FutureVersionError</a></div><div class="sidebar-section-children"><a href="GameClock.html">GameClock</a></div><div class="sidebar-section-children"><a href="GameData.html">GameData</a></div><div class="sidebar-section-children"><a href="GameFeel.html">GameFeel</a></div><div class="sidebar-section-children"><a href="GridContainer.html">GridContainer</a></div><div class="sidebar-section-children"><a href="HazardSystem.html">HazardSystem</a></div><div class="sidebar-section-children"><a href="HBoxContainer.html">HBoxContainer</a></div><div class="sidebar-section-children"><a href="InputActions.html">InputActions</a></div><div class="sidebar-section-children"><a href="InteractionResult.html">InteractionResult</a></div><div class="sidebar-section-children"><a href="Inventory.html">Inventory</a></div><div class="sidebar-section-children"><a href="Inventory.html">Inventory</a></div><div class="sidebar-section-children"><a href="Inventory_Inventory.html">Inventory</a></div><div class="sidebar-section-children"><a href="ItemRegistry.html">ItemRegistry</a></div><div class="sidebar-section-children"><a href="KeyboardInput.html">KeyboardInput</a></div><div class="sidebar-section-children"><a href="KnockbackMotor.html">KnockbackMotor</a></div><div class="sidebar-section-children"><a href="LevelProgression.html">LevelProgression</a></div><div class="sidebar-section-children"><a href="LootTable.html">LootTable</a></div><div class="sidebar-section-children"><a href="MapStorage.html">MapStorage</a></div><div class="sidebar-section-children"><a href="MarginContainer.html">MarginContainer</a></div><div class="sidebar-section-children"><a href="MaterialInteraction.html">MaterialInteraction</a></div><div class="sidebar-section-children"><a href="MaterialRegistry.html">MaterialRegistry</a></div><div class="sidebar-section-children"><a href="Maths.html">Maths</a></div><div class="sidebar-section-children"><a href="MigrationError.html">MigrationError</a></div><div class="sidebar-section-children"><a href="MinHeap.html">MinHeap</a></div><div class="sidebar-section-children"><a href="MouseInput.html">MouseInput</a></div><div class="sidebar-section-children"><a href="MusicManager.html">MusicManager</a></div><div class="sidebar-section-children"><a href="NavigationGrid.html">NavigationGrid</a></div><div class="sidebar-section-children"><a href="NavigationGrid_NavigationGrid.html">NavigationGrid</a></div><div class="sidebar-section-children"><a href="NavigationPath.html">NavigationPath</a></div><div class="sidebar-section-children"><a href="NavigationPath_NavigationPath.html">NavigationPath</a></div><div class="sidebar-section-children"><a href="NPCKnowledge.html">NPCKnowledge</a></div><div class="sidebar-section-children"><a href="NPCSchedule.html">NPCSchedule</a></div><div class="sidebar-section-children"><a href="Panel.html">Panel</a></div><div class="sidebar-section-children"><a href="ParallaxBackground.html">ParallaxBackground</a></div><div class="sidebar-section-children"><a href="ParallaxLayer.html">ParallaxLayer</a></div><div class="sidebar-section-children"><a href="ParallaxLayer_ParallaxLayer.html">ParallaxLayer</a></div><div class="sidebar-section-children"><a href="PerceptionSystem.html">PerceptionSystem</a></div><div class="sidebar-section-children"><a href="PlatformerController.html">PlatformerController</a></div><div class="sidebar-section-children"><a href="Pose.html">Pose</a></div><div class="sidebar-section-children"><a href="Pose_Pose.html">Pose</a></div><div class="sidebar-section-children"><a href="Progression.html">Progression</a></div><div class="sidebar-section-children"><a href="ProjectBehaviour.html">ProjectBehaviour</a></div><div class="sidebar-section-children"><a href="QuestDefinition.html">QuestDefinition</a></div><div class="sidebar-section-children"><a href="QuestGraph.html">QuestGraph</a></div><div class="sidebar-section-children"><a href="QuestLog.html">QuestLog</a></div><div class="sidebar-section-children"><a href="ReferenceValidationError.html">ReferenceValidationError</a></div><div class="sidebar-section-children"><a href="ReferenceValidator.html">ReferenceValidator</a></div><div class="sidebar-section-children"><a href="ResourceReferenceError.html">ResourceReferenceError</a></div><div class="sidebar-section-children"><a href="RewardSystem.html">RewardSystem</a></div><div class="sidebar-section-children"><a href="Rig.html">Rig</a></div><div class="sidebar-section-children"><a href="RuleEngine.html">RuleEngine</a></div><div class="sidebar-section-children"><a href="SaveManager.html">SaveManager</a></div><div class="sidebar-section-children"><a href="Scene.html">Scene</a></div><div class="sidebar-section-children"><a href="SceneLoader.html">SceneLoader</a></div><div class="sidebar-section-children"><a href="SceneManager.html">SceneManager</a></div><div class="sidebar-section-children"><a href="SceneTransition.html">SceneTransition</a></div><div class="sidebar-section-children"><a href="ScheduleSlot.html">ScheduleSlot</a></div><div class="sidebar-section-children"><a href="ScheduleSystem.html">ScheduleSystem</a></div><div class="sidebar-section-children"><a href="SchemaMigrationRegistry.html">SchemaMigrationRegistry</a></div><div class="sidebar-section-children"><a href="Shape.html">Shape</a></div><div class="sidebar-section-children"><a href="Shop.html">Shop</a></div><div class="sidebar-section-children"><a href="Sound.html">Sound</a></div><div class="sidebar-section-children"><a href="SoundPool.html">SoundPool</a></div><div class="sidebar-section-children"><a href="SoundPool_SoundPool.html">SoundPool</a></div><div class="sidebar-section-children"><a href="SpatialHashGrid.html">SpatialHashGrid</a></div><div class="sidebar-section-children"><a href="SpawnPoint.html">SpawnPoint</a></div><div class="sidebar-section-children"><a href="Sprite.html">Sprite</a></div><div class="sidebar-section-children"><a href="Stats.html">Stats</a></div><div class="sidebar-section-children"><a href="StatusEffectManager.html">StatusEffectManager</a></div><div class="sidebar-section-children"><a href="Storage.html">Storage</a></div><div class="sidebar-section-children"><a href="StoryGraph.html">StoryGraph</a></div><div class="sidebar-section-children"><a href="SweptAABB.html">SweptAABB</a></div><div class="sidebar-section-children"><a href="Text.html">Text</a></div><div class="sidebar-section-children"><a href="TileCollision.html">TileCollision</a></div><div class="sidebar-section-children"><a href="TileCollision_TileCollision.html">TileCollision</a></div><div class="sidebar-section-children"><a href="Tilemap.html">Tilemap</a></div><div class="sidebar-section-children"><a href="Tilemap_Tilemap.html">Tilemap</a></div><div class="sidebar-section-children"><a href="Tileset.html">Tileset</a></div><div class="sidebar-section-children"><a href="Tileset_Tileset.html">Tileset</a></div><div class="sidebar-section-children"><a href="TopDownController.html">TopDownController</a></div><div class="sidebar-section-children"><a href="TouchInput.html">TouchInput</a></div><div class="sidebar-section-children"><a href="Transform.html">Transform</a></div><div class="sidebar-section-children"><a href="TriggerLifecycleSystem.html">TriggerLifecycleSystem</a></div><div class="sidebar-section-children"><a href="TypedEventBus.html">TypedEventBus</a></div><div class="sidebar-section-children"><a href="UISprite.html">UISprite</a></div><div class="sidebar-section-children"><a href="UITransform.html">UITransform</a></div><div class="sidebar-section-children"><a href="UtilityAction.html">UtilityAction</a></div><div class="sidebar-section-children"><a href="UtilityAI.html">UtilityAI</a></div><div class="sidebar-section-children"><a href="UtilityAI_UtilityAI.html">UtilityAI</a></div><div class="sidebar-section-children"><a href="UtilityConsideration.html">UtilityConsideration</a></div><div class="sidebar-section-children"><a href="VBoxContainer.html">VBoxContainer</a></div><div class="sidebar-section-children"><a href="Vector2.html">Vector2</a></div><div class="sidebar-section-children"><a href="VersionedSaveEngine.html">VersionedSaveEngine</a></div><div class="sidebar-section-children"><a href="WorldFacts.html">WorldFacts</a></div><div class="sidebar-section-children"><a href="WorldMetadataRegistry.html">WorldMetadataRegistry</a></div></div></div></div></div><div class="navbar-container" id="VuAckcnZhf"><nav class="navbar"><div class="navbar-left-items"><div class="navbar-item"><a id="" href="https://github.com/NotSujal/Neptune.js" target="_blank">Github</a></div><div class="navbar-item"><a id="" href="https://www.npmjs.com/package/@sujalchoudhari/neptune-js" target="_blank">NPM</a></div></div><div class="navbar-right-items"><div class="navbar-right-item"><button class="icon-button search-button" aria-label="open-search"><svg><use xlink:href="#search-icon"></use></svg></button></div><div class="navbar-right-item"><button class="icon-button theme-toggle" aria-label="toggle-theme"><svg><use class="theme-svg-use" xlink:href="#light-theme-icon"></use></svg></button></div><div class="navbar-right-item"><button class="icon-button font-size" aria-label="change-font-size"><svg><use xlink:href="#font-size-icon"></use></svg></button></div></div><nav></nav></nav></div><div class="toc-container"><div class="toc-content"><span class="bold">On this page</span><div id="eed4d2a0bfd64539bb9df78095dec881"></div></div></div><div class="body-wrapper"><div class="main-content"><div class="main-wrapper"><section id="source-page" class="source-page"><header><h1 id="title" class="has-anchor">larissa_itemSystem.js</h1></header><article><pre class="prettyprint source lang-js"><code>/**
+ * Larissa RPG System - Item, Inventory, Equipment, and Loot Systems
+ * RPG-01: Validated item registry, slot-based inventory with capacity and stacking,
+ * designated equipment slots with stat modifier binding and slot protection,
+ * weighted loot table generator with min/max quantities, and persistence snapshots.
+ */
+
+import { Component } from "../components/component.js";
+
+/**
+ * Designated equipment slots supported by the equipment system.
+ * @type {Array.&lt;string>}
+ */
+export const EQUIPMENT_SLOTS = Object.freeze(["mainHand", "offHand", "armor", "accessory"]);
+
+/**
+ * Validate that an equipment slot name is one of the designated slots.
+ * @param {string} slot
+ * @returns {boolean}
+ */
+export function isValidEquipmentSlot(slot) {
+    return typeof slot === "string" &amp;&amp; EQUIPMENT_SLOTS.includes(slot);
+}
+
+/**
+ * Deep-freeze a plain object or array to ensure immutability.
+ * @param {Object} value
+ * @returns {Object}
+ */
+function deepFreeze(value) {
+    if (value &amp;&amp; typeof value === "object" &amp;&amp; !Object.isFrozen(value)) {
+        for (const child of Object.values(value)) {
+            deepFreeze(child);
+        }
+        Object.freeze(value);
+    }
+    return value;
+}
+
+/**
+ * Registry for item definitions.
+ */
+export class ItemRegistry {
+    /**
+     * @param {Array.&lt;Object>|Object} [items] - Initial item definitions.
+     */
+    constructor(items = []) {
+        /** @type {Map.&lt;string, Object>} */
+        this._items = new Map();
+
+        if (Array.isArray(items)) {
+            for (const item of items) {
+                this.register(item);
+            }
+        } else if (items &amp;&amp; typeof items === "object") {
+            for (const item of Object.values(items)) {
+                this.register(item);
+            }
+        }
+    }
+
+    /**
+     * Register an item definition.
+     * @param {Object} itemDef - Item definition object.
+     * @returns {Object} Registered immutable item definition.
+     */
+    register(itemDef) {
+        if (!itemDef || typeof itemDef !== "object" || Array.isArray(itemDef)) {
+            throw new TypeError("Item definition must be an object");
+        }
+        if (typeof itemDef.id !== "string" || !itemDef.id.trim()) {
+            throw new TypeError("Item id must be a non-empty string");
+        }
+
+        const id = itemDef.id.trim();
+        const type = typeof itemDef.type === "string" ? itemDef.type : "misc";
+        const name = typeof itemDef.name === "string" ? itemDef.name : id;
+        const description = typeof itemDef.description === "string" ? itemDef.description : "";
+
+        // Resolve maxStack / stackable
+        let maxStack = 1;
+        if (Number.isInteger(itemDef.maxStack) &amp;&amp; itemDef.maxStack >= 1) {
+            maxStack = itemDef.maxStack;
+        } else if (Number.isInteger(itemDef.stackable) &amp;&amp; itemDef.stackable >= 1) {
+            maxStack = itemDef.stackable;
+        } else if (type === "consumable") {
+            maxStack = 99;
+        }
+
+        const value = Number.isFinite(itemDef.value) ? Math.max(0, itemDef.value) : 0;
+
+        // Resolve designated equipment slot
+        let slot = itemDef.slot ?? null;
+        let allowedSlots = [];
+        if (Array.isArray(itemDef.allowedSlots)) {
+            allowedSlots = itemDef.allowedSlots.filter(s => isValidEquipmentSlot(s));
+        }
+        if (!slot) {
+            if (type === "weapon") slot = "mainHand";
+            else if (type === "armor") slot = "armor";
+            else if (type === "accessory") slot = "accessory";
+        }
+        if (typeof slot === "string" &amp;&amp; !allowedSlots.includes(slot)) {
+            allowedSlots.push(slot);
+        }
+
+        // Normalize stat modifiers
+        const stats = {};
+        const sourceStats = itemDef.stats ?? itemDef.statModifiers ?? {};
+        if (sourceStats &amp;&amp; typeof sourceStats === "object") {
+            for (const [statKey, statVal] of Object.entries(sourceStats)) {
+                if (Number.isFinite(statVal)) {
+                    stats[statKey] = statVal;
+                }
+            }
+        }
+
+        // Normalize effects
+        const effects = {};
+        const sourceEffects = itemDef.effects ?? {};
+        if (sourceEffects &amp;&amp; typeof sourceEffects === "object") {
+            if (Number.isFinite(sourceEffects.health)) effects.health = sourceEffects.health;
+            if (Number.isFinite(sourceEffects.stamina)) effects.stamina = sourceEffects.stamina;
+            if (sourceEffects.stats &amp;&amp; typeof sourceEffects.stats === "object") {
+                effects.stats = { ...sourceEffects.stats };
+            }
+            if (sourceEffects.statModifiers &amp;&amp; typeof sourceEffects.statModifiers === "object") {
+                effects.stats = { ...sourceEffects.statModifiers };
+            }
+            if (sourceEffects.statusEffect &amp;&amp; typeof sourceEffects.statusEffect === "object") {
+                effects.statusEffect = structuredClone(sourceEffects.statusEffect);
+            }
+        }
+
+        const registered = {
+            ...itemDef,
+            id,
+            name,
+            type,
+            slot,
+            allowedSlots: Object.freeze(allowedSlots),
+            maxStack,
+            stackable: maxStack,
+            value,
+            stats: Object.freeze(stats),
+            statModifiers: Object.freeze(stats),
+            effects: deepFreeze(effects),
+            description
+        };
+
+        deepFreeze(registered);
+        this._items.set(id, registered);
+        return registered;
+    }
+
+    /**
+     * Alias for register.
+     * @param {Object} itemDef
+     * @returns {Object}
+     */
+    registerItem(itemDef) {
+        return this.register(itemDef);
+    }
+
+    /**
+     * Retrieve an item definition by id.
+     * @param {string} id
+     * @returns {Object|null}
+     */
+    get(id) {
+        if (typeof id !== "string") return null;
+        return this._items.get(id) ?? null;
+    }
+
+    /**
+     * Alias for get.
+     * @param {string} id
+     * @returns {Object|null}
+     */
+    getItem(id) {
+        return this.get(id);
+    }
+
+    /**
+     * Check if an item id exists.
+     * @param {string} id
+     * @returns {boolean}
+     */
+    has(id) {
+        if (typeof id !== "string") return false;
+        return this._items.has(id);
+    }
+
+    /**
+     * Alias for has.
+     * @param {string} id
+     * @returns {boolean}
+     */
+    hasItem(id) {
+        return this.has(id);
+    }
+
+    /**
+     * Unregister an item by id.
+     * @param {string} id
+     * @returns {boolean}
+     */
+    unregister(id) {
+        if (typeof id !== "string") return false;
+        return this._items.delete(id);
+    }
+
+    /**
+     * Get all registered items.
+     * @returns {Array.&lt;Object>}
+     */
+    getAll() {
+        return Array.from(this._items.values());
+    }
+
+    /**
+     * Clear all registered items.
+     */
+    clear() {
+        this._items.clear();
+    }
+}
+
+/**
+ * Equipment system managing designated slots (mainHand, offHand, armor, accessory),
+ * stat modifier binding to Combatant/Stats, and incompatible slot rejection.
+ */
+export class EquipmentSystem extends Component {
+    /**
+     * @param {Object} [config]
+     */
+    constructor(config = {}) {
+        super();
+        const target = config.target ?? null;
+        this.target = target;
+        this.inventory = config.inventory ?? null;
+
+        // Designated slots: mainHand, offHand, armor, accessory
+        this.slots = {
+            mainHand: null,
+            offHand: null,
+            armor: null,
+            accessory: null
+        };
+
+        // Aliases for legacy compatibility
+        Object.defineProperties(this.slots, {
+            hand: {
+                get: () => this.slots.mainHand,
+                set: (val) => { this.slots.mainHand = val; },
+                enumerable: false,
+                configurable: true
+            },
+            weapon: {
+                get: () => this.slots.mainHand,
+                set: (val) => { this.slots.mainHand = val; },
+                enumerable: false,
+                configurable: true
+            }
+        });
+
+        this.onEquip = null;
+        this.onUnequip = null;
+    }
+
+    /**
+     * Bind a Combatant, Stats, or composite target to receive equipment stat modifiers.
+     * @param {Object} target
+     * @returns {EquipmentSystem}
+     */
+    bindTarget(target) {
+        if (this.target &amp;&amp; this.target !== target) {
+            this.unbindTarget();
+        }
+        this.target = target;
+        // Apply existing equipped items' stats to newly bound target
+        if (this.target) {
+            for (const item of Object.values(this.slots)) {
+                if (item) {
+                    this._applyStats(item, this.target);
+                }
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Unbind current target, reverting any applied stat modifiers.
+     * @returns {boolean}
+     */
+    unbindTarget() {
+        if (!this.target) return false;
+        for (const item of Object.values(this.slots)) {
+            if (item) {
+                this._revertStats(item, this.target);
+            }
+        }
+        this.target = null;
+        return true;
+    }
+
+    /**
+     * Normalize slot name, mapping aliases like 'hand' or 'weapon' to 'mainHand'.
+     * @param {string} slot
+     * @returns {string|null}
+     */
+    normalizeSlot(slot) {
+        if (typeof slot !== "string") return null;
+        const normalized = slot.trim();
+        if (normalized === "hand" || normalized === "weapon") return "mainHand";
+        if (EQUIPMENT_SLOTS.includes(normalized)) return normalized;
+        return null;
+    }
+
+    /**
+     * Check if an item can be equipped into a designated slot.
+     * Rejects incompatible items, consumables, or unknown slots.
+     * @param {string} slot
+     * @param {Object} item
+     * @returns {boolean}
+     */
+    canEquip(slot, item) {
+        const designatedSlot = this.normalizeSlot(slot);
+        if (!designatedSlot) return false;
+        if (!item || typeof item !== "object") return false;
+
+        // Consumables cannot be equipped
+        if (item.type === "consumable") return false;
+
+        // Gather allowed slots for this item
+        const allowed = new Set();
+        if (Array.isArray(item.allowedSlots)) {
+            for (const s of item.allowedSlots) {
+                const norm = this.normalizeSlot(s);
+                if (norm) allowed.add(norm);
+            }
+        }
+        if (typeof item.slot === "string") {
+            const norm = this.normalizeSlot(item.slot);
+            if (norm) allowed.add(norm);
+        }
+
+        // Inferred fallback from item.type
+        if (allowed.size === 0) {
+            if (item.type === "weapon") allowed.add("mainHand");
+            else if (item.type === "armor") allowed.add("armor");
+            else if (item.type === "accessory") allowed.add("accessory");
+        }
+
+        return allowed.has(designatedSlot);
+    }
+
+    /**
+     * Equip an item into a designated slot.
+     * Modifies bound Combatant/Stats and reverts previous item stats if replacing.
+     * Rejects incompatible slots.
+     * @param {string|Object} slotOrItem
+     * @param {Object} [maybeItem]
+     * @param {Object} [options]
+     * @returns {Object|boolean} Returns previous item or equipped item on success, false on rejection.
+     */
+    equip(slotOrItem, maybeItem, options = {}) {
+        let slot;
+        let item;
+        let opt = options;
+
+        if (typeof slotOrItem === "string") {
+            slot = slotOrItem;
+            item = maybeItem;
+        } else if (slotOrItem &amp;&amp; typeof slotOrItem === "object") {
+            item = slotOrItem;
+            slot = item.slot ?? null;
+            if (maybeItem &amp;&amp; typeof maybeItem === "object") {
+                opt = maybeItem;
+            }
+        }
+
+        const designatedSlot = this.normalizeSlot(slot);
+        if (!designatedSlot || !this.canEquip(designatedSlot, item)) {
+            if (opt.throwOnError) {
+                throw new Error(`Incompatible equipment slot '${slot}' for item '${item?.id ?? "unknown"}'`);
+            }
+            return false;
+        }
+
+        const target = opt.target ?? this.target;
+        const previousItem = this.slots[designatedSlot];
+
+        // If slot currently has an item, unequip it first
+        if (previousItem) {
+            if (target) {
+                this._revertStats(previousItem, target);
+            }
+            this.slots[designatedSlot] = null;
+            if (this.onUnequip) {
+                this.onUnequip(designatedSlot, previousItem);
+            }
+        }
+
+        // Equip new item
+        this.slots[designatedSlot] = item;
+        if (target) {
+            this._applyStats(item, target);
+        }
+        if (this.onEquip) {
+            this.onEquip(designatedSlot, item);
+        }
+
+        return previousItem ?? item;
+    }
+
+    /**
+     * Unequip item from a designated slot, reverting stats on bound Combatant/Stats.
+     * @param {string} slot
+     * @param {Object} [options]
+     * @returns {Object|null} Unequipped item or null if slot was empty.
+     */
+    unequip(slot, options = {}) {
+        const designatedSlot = this.normalizeSlot(slot);
+        if (!designatedSlot) return null;
+
+        const item = this.slots[designatedSlot];
+        if (!item) return null;
+
+        const target = options.target ?? this.target;
+        if (target) {
+            this._revertStats(item, target);
+        }
+
+        this.slots[designatedSlot] = null;
+        if (this.onUnequip) {
+            this.onUnequip(designatedSlot, item);
+        }
+
+        return item;
+    }
+
+    /**
+     * Get item in a designated slot.
+     * @param {string} slot
+     * @returns {Object|null}
+     */
+    getSlot(slot) {
+        const designatedSlot = this.normalizeSlot(slot);
+        if (!designatedSlot) return null;
+        return this.slots[designatedSlot] ?? null;
+    }
+
+    /**
+     * Alias for getSlot.
+     * @param {string} slot
+     * @returns {Object|null}
+     */
+    getEquippedItem(slot) {
+        return this.getSlot(slot);
+    }
+
+    /**
+     * Compute total stat modifier for a specific stat across all equipped items.
+     * @param {string} statName
+     * @returns {number}
+     */
+    getStatModifier(statName) {
+        if (typeof statName !== "string" || !statName) return 0;
+        let total = 0;
+        for (const slotName of EQUIPMENT_SLOTS) {
+            const item = this.slots[slotName];
+            if (item) {
+                const statMods = item.stats ?? item.statModifiers ?? {};
+                if (Number.isFinite(statMods[statName])) {
+                    total += statMods[statName];
+                }
+            }
+        }
+        return total;
+    }
+
+    /**
+     * Compute aggregate stat modifiers across all equipped items.
+     * @returns {Object}
+     */
+    getAllStatModifiers() {
+        const totals = {};
+        for (const slotName of EQUIPMENT_SLOTS) {
+            const item = this.slots[slotName];
+            if (item) {
+                const statMods = item.stats ?? item.statModifiers ?? {};
+                for (const [name, val] of Object.entries(statMods)) {
+                    if (Number.isFinite(val)) {
+                        totals[name] = (totals[name] ?? 0) + val;
+                    }
+                }
+            }
+        }
+        return totals;
+    }
+
+    /**
+     * Apply an item's stat modifiers to a target (Combatant, Stats, or both).
+     * @private
+     * @param {Object} item
+     * @param {Object} target
+     */
+    _applyStats(item, target) {
+        if (!item || !target) return;
+        const stats = item.stats ?? item.statModifiers ?? {};
+
+        // Target can be a composite { combatant, stats } or direct instance
+        const targets = [];
+        if (target.combatant) targets.push(target.combatant);
+        if (target.stats) targets.push(target.stats);
+        if (!targets.includes(target)) targets.push(target);
+
+        for (const [statName, amount] of Object.entries(stats)) {
+            if (!Number.isFinite(amount)) continue;
+
+            for (const t of targets) {
+                if (statName === "maxHealth") {
+                    if (Number.isFinite(t.maxHealth)) {
+                        t.maxHealth += amount;
+                    }
+                } else if (t.resistances &amp;&amp; Object.hasOwn(t.resistances, statName)) {
+                    t.resistances[statName] = Math.max(0, Math.min(1, (t.resistances[statName] ?? 0) + amount));
+                } else if (typeof t[statName] === "number") {
+                    t[statName] += amount;
+                }
+            }
+        }
+    }
+
+    /**
+     * Revert an item's stat modifiers from a target (Combatant, Stats, or both).
+     * @private
+     * @param {Object} item
+     * @param {Object} target
+     */
+    _revertStats(item, target) {
+        if (!item || !target) return;
+        const stats = item.stats ?? item.statModifiers ?? {};
+
+        const targets = [];
+        if (target.combatant) targets.push(target.combatant);
+        if (target.stats) targets.push(target.stats);
+        if (!targets.includes(target)) targets.push(target);
+
+        for (const [statName, amount] of Object.entries(stats)) {
+            if (!Number.isFinite(amount)) continue;
+
+            for (const t of targets) {
+                if (statName === "maxHealth") {
+                    if (Number.isFinite(t.maxHealth)) {
+                        t.maxHealth = Math.max(1, t.maxHealth - amount);
+                        if (t.health > t.maxHealth) {
+                            if (typeof t.setHealth === "function") {
+                                t.setHealth(t.maxHealth);
+                            } else {
+                                t.health = t.maxHealth;
+                            }
+                        }
+                    }
+                } else if (t.resistances &amp;&amp; Object.hasOwn(t.resistances, statName)) {
+                    t.resistances[statName] = Math.max(0, Math.min(1, (t.resistances[statName] ?? 0) - amount));
+                } else if (typeof t[statName] === "number") {
+                    t[statName] -= amount;
+                }
+            }
+        }
+    }
+
+    /**
+     * Create persistence snapshot of equipped items.
+     * @returns {Object}
+     */
+    createSnapshot() {
+        const slotsData = {};
+        for (const slotName of EQUIPMENT_SLOTS) {
+            slotsData[slotName] = this.slots[slotName] ? structuredClone(this.slots[slotName]) : null;
+        }
+        return {
+            slots: slotsData
+        };
+    }
+
+    /**
+     * Restore equipped items from snapshot, maintaining stat modifier binding.
+     * @param {Object} snapshot
+     * @param {Object} [options]
+     * @returns {boolean}
+     */
+    restoreSnapshot(snapshot, options = {}) {
+        if (!snapshot || typeof snapshot !== "object") {
+            throw new TypeError("Invalid equipment snapshot data");
+        }
+        const slotsData = snapshot.slots ?? snapshot;
+        const registry = options.registry ?? null;
+        const target = options.target ?? this.target;
+
+        // Unequip all current slots first to revert old stats
+        for (const slotName of EQUIPMENT_SLOTS) {
+            if (this.slots[slotName]) {
+                this.unequip(slotName, { target });
+            }
+        }
+
+        // Restore each slot
+        for (const slotName of EQUIPMENT_SLOTS) {
+            let item = slotsData[slotName] ?? null;
+            if (typeof item === "string" &amp;&amp; registry) {
+                item = registry.get(item);
+            }
+            if (item) {
+                this.equip(slotName, item, { target });
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Export to plain JSON representation.
+     * @returns {Object}
+     */
+    toJSON() {
+        return this.createSnapshot().slots;
+    }
+
+    /**
+     * Load from JSON representation.
+     * @param {Object} data
+     */
+    loadJSON(data) {
+        this.restoreSnapshot(data);
+    }
+}
+
+/**
+ * Slot-based inventory with stacking (maxStack), capacity limits (maxSlots),
+ * item add/remove/consume methods, and integrated equipment handling.
+ */
+export class Inventory extends Component {
+    /**
+     * @param {number|Object} [maxSlotsOrConfig] - Max slots number or configuration object.
+     * @param {Object} [config] - Optional configuration when first param is number.
+     */
+    constructor(maxSlotsOrConfig = 20, config = {}) {
+        super();
+
+        let maxSlots = 20;
+        let maxStack = 99;
+        let gold = 0;
+        let registry = null;
+
+        if (typeof maxSlotsOrConfig === "number") {
+            maxSlots = maxSlotsOrConfig;
+            if (config &amp;&amp; typeof config === "object") {
+                if (Number.isInteger(config.maxStack) &amp;&amp; config.maxStack >= 1) maxStack = config.maxStack;
+                if (Number.isFinite(config.gold)) gold = Math.max(0, config.gold);
+                if (Number.isFinite(config.currency)) gold = Math.max(0, config.currency);
+                if (config.registry) registry = config.registry;
+            }
+        } else if (maxSlotsOrConfig &amp;&amp; typeof maxSlotsOrConfig === "object") {
+            if (Number.isInteger(maxSlotsOrConfig.maxSlots)) maxSlots = maxSlotsOrConfig.maxSlots;
+            if (Number.isInteger(maxSlotsOrConfig.maxStack) &amp;&amp; maxSlotsOrConfig.maxStack >= 1) maxStack = maxSlotsOrConfig.maxStack;
+            if (Number.isFinite(maxSlotsOrConfig.gold)) gold = Math.max(0, maxSlotsOrConfig.gold);
+            if (Number.isFinite(maxSlotsOrConfig.currency)) gold = Math.max(0, maxSlotsOrConfig.currency);
+            if (maxSlotsOrConfig.registry) registry = maxSlotsOrConfig.registry;
+        }
+
+        this.maxSlots = maxSlots;
+        this.maxStack = maxStack;
+        this.slots = []; // Array of { item: Object, quantity: number }
+        this.gold = gold;
+        this.registry = registry;
+
+        this.equipmentSystem = new EquipmentSystem({ inventory: this });
+
+        this.onItemAdded = null;
+        this.onItemRemoved = null;
+    }
+
+    /**
+     * Currency alias for gold.
+     * @type {number}
+     */
+    get currency() {
+        return this.gold;
+    }
+
+    set currency(value) {
+        if (!Number.isFinite(value) || value &lt; 0) {
+            throw new TypeError("Currency must be a non-negative finite number");
+        }
+        this.gold = value;
+    }
+
+    /**
+     * Equipment mapping getter mirroring the equipment system slots.
+     * Non-null slots are enumerable so Object.entries(equipment) reflects only equipped items,
+     * while direct slot property access (e.g. equipment.mainHand or equipment.weapon) returns the item or null.
+     * @type {Object}
+     */
+    get equipment() {
+        const slots = this.equipmentSystem.slots;
+        return new Proxy(slots, {
+            get(target, prop) {
+                if (prop === "weapon" || prop === "hand") {
+                    return target.mainHand ?? null;
+                }
+                if (typeof prop === "string" &amp;&amp; prop in target) {
+                    return target[prop] ?? null;
+                }
+                return target[prop];
+            },
+            has(target, prop) {
+                if (prop === "weapon" || prop === "hand") {
+                    return target.mainHand !== null;
+                }
+                return prop in target &amp;&amp; target[prop] !== null;
+            },
+            ownKeys(target) {
+                const keys = [];
+                for (const k of Object.keys(target)) {
+                    if (target[k] !== null) {
+                        const item = target[k];
+                        if (k === "mainHand" &amp;&amp; item?.slot === "weapon") {
+                            keys.push("weapon");
+                        } else {
+                            keys.push(k);
+                        }
+                    }
+                }
+                return keys;
+            },
+            getOwnPropertyDescriptor(target, prop) {
+                if ((prop === "weapon" || prop === "hand") &amp;&amp; target.mainHand) {
+                    return {
+                        value: target.mainHand,
+                        writable: true,
+                        enumerable: true,
+                        configurable: true
+                    };
+                }
+                if (target[prop] !== null &amp;&amp; target[prop] !== undefined) {
+                    return {
+                        value: target[prop],
+                        writable: true,
+                        enumerable: true,
+                        configurable: true
+                    };
+                }
+                return undefined;
+            }
+        });
+    }
+
+    set equipment(value) {
+        if (value &amp;&amp; typeof value === "object") {
+            this.equipmentSystem.restoreSnapshot(value);
+        }
+    }
+
+    /**
+     * Check if inventory is full.
+     * @type {boolean}
+     */
+    get isFull() {
+        return this.slots.length >= this.maxSlots;
+    }
+
+    /**
+     * Resolve an item object from item or item id.
+     * @private
+     * @param {Object|string} itemOrId
+     * @returns {Object|null}
+     */
+    _resolveItem(itemOrId) {
+        if (!itemOrId) return null;
+        if (typeof itemOrId === "object" &amp;&amp; itemOrId.id) return itemOrId;
+        if (typeof itemOrId === "string" &amp;&amp; this.registry) return this.registry.get(itemOrId);
+        return null;
+    }
+
+    /**
+     * Resolve the maxStack limit for an item.
+     * @param {Object} item
+     * @returns {number}
+     */
+    getItemMaxStack(item) {
+        if (!item) return 1;
+        if (Number.isInteger(item.maxStack) &amp;&amp; item.maxStack >= 1) return item.maxStack;
+        if (Number.isInteger(item.stackable) &amp;&amp; item.stackable >= 1) return item.stackable;
+        if (item.type === "consumable") return this.maxStack;
+        return 1;
+    }
+
+    /**
+     * Check whether an item quantity can be added without exceeding capacity limits.
+     * @param {Object|string} itemOrId
+     * @param {number} [quantity]
+     * @returns {boolean}
+     */
+    canAddItem(itemOrId, quantity = 1) {
+        const item = this._resolveItem(itemOrId);
+        if (!item || !Number.isInteger(quantity) || quantity &lt; 1) return false;
+
+        const maxStack = this.getItemMaxStack(item);
+        let remaining = quantity;
+
+        if (maxStack > 1) {
+            for (const slot of this.slots) {
+                if (slot.item.id === item.id &amp;&amp; slot.quantity &lt; maxStack) {
+                    remaining -= Math.max(0, maxStack - slot.quantity);
+                }
+            }
+        }
+
+        const needed = maxStack > 1 ? Math.ceil(Math.max(0, remaining) / maxStack) : remaining;
+        return this.slots.length + needed &lt;= this.maxSlots;
+    }
+
+    /**
+     * Add an item to the inventory.
+     * Stacks with existing matching slots up to maxStack, then allocates new slots.
+     * Enforces maxSlots capacity limits to prevent overflow.
+     * @param {Object|string} itemOrId
+     * @param {number} [quantity]
+     * @param {Object} [options]
+     * @returns {boolean} True if added successfully, false if rejected due to capacity.
+     */
+    addItem(itemOrId, quantity = 1, options = {}) {
+        const item = this._resolveItem(itemOrId);
+        if (!item || !Number.isInteger(quantity) || quantity &lt; 1) return false;
+
+        const allowPartial = options.allowPartial ?? false;
+
+        // Atomic check: prevent overflow if total quantity cannot fit
+        if (!allowPartial &amp;&amp; !this.canAddItem(item, quantity)) {
+            return false;
+        }
+
+        const maxStack = this.getItemMaxStack(item);
+        let remaining = quantity;
+
+        // 1. Stack into existing slots
+        if (maxStack > 1) {
+            for (const slot of this.slots) {
+                if (slot.item.id === item.id &amp;&amp; slot.quantity &lt; maxStack) {
+                    const addAmount = Math.min(remaining, maxStack - slot.quantity);
+                    slot.quantity += addAmount;
+                    remaining -= addAmount;
+                    if (this.onItemAdded) this.onItemAdded(item, addAmount);
+                    if (remaining === 0) return true;
+                }
+            }
+        }
+
+        // 2. Add to new slots up to maxSlots
+        while (remaining > 0 &amp;&amp; this.slots.length &lt; this.maxSlots) {
+            const addAmount = maxStack > 1 ? Math.min(remaining, maxStack) : 1;
+            this.slots.push({ item, quantity: addAmount });
+            remaining -= addAmount;
+            if (this.onItemAdded) this.onItemAdded(item, addAmount);
+        }
+
+        return remaining === 0;
+    }
+
+    /**
+     * Remove an item quantity from the inventory.
+     * @param {string} itemId
+     * @param {number} [quantity]
+     * @returns {boolean} True if removed successfully, false if insufficient items.
+     */
+    removeItem(itemId, quantity = 1) {
+        if (typeof itemId !== "string" || !Number.isInteger(quantity) || quantity &lt; 1) return false;
+        if (this.getItemCount(itemId) &lt; quantity) return false;
+
+        let remaining = quantity;
+        for (let i = this.slots.length - 1; i >= 0 &amp;&amp; remaining > 0; i--) {
+            if (this.slots[i].item.id === itemId) {
+                const removeAmount = Math.min(remaining, this.slots[i].quantity);
+                this.slots[i].quantity -= removeAmount;
+                remaining -= removeAmount;
+
+                if (this.onItemRemoved) this.onItemRemoved(this.slots[i].item, removeAmount);
+
+                if (this.slots[i].quantity === 0) {
+                    this.slots.splice(i, 1);
+                }
+            }
+        }
+        return remaining === 0;
+    }
+
+    /**
+     * Check if inventory contains at least quantity of an item.
+     * @param {string} itemId
+     * @param {number} [quantity]
+     * @returns {boolean}
+     */
+    hasItem(itemId, quantity = 1) {
+        if (typeof itemId !== "string" || !Number.isInteger(quantity) || quantity &lt; 1) return false;
+        return this.getItemCount(itemId) >= quantity;
+    }
+
+    /**
+     * Get total quantity of an item across all slots.
+     * @param {string} itemId
+     * @returns {number}
+     */
+    getItemCount(itemId) {
+        if (typeof itemId !== "string") return 0;
+        let count = 0;
+        for (const slot of this.slots) {
+            if (slot.item.id === itemId) {
+                count += slot.quantity;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Consume a consumable item, applying its effects to the target and decrementing count.
+     * Supports targets that are Combatant, Stats, or custom entities.
+     * @param {string} itemId
+     * @param {Object} target - Target Combatant or Stats.
+     * @returns {boolean} True if consumed successfully, false otherwise.
+     */
+    consume(itemId, target) {
+        if (typeof itemId !== "string") return false;
+        const slot = this.slots.find(entry => entry.item.id === itemId);
+        if (!slot || slot.item.type !== "consumable") return false;
+
+        const item = slot.item;
+        const effects = item.effects ?? {};
+
+        // 1. Health restoration
+        if (Number.isFinite(effects.health)) {
+            if (typeof target?.heal === "function") {
+                target.heal(effects.health);
+            } else if (Number.isFinite(target?.health)) {
+                const max = target.maxHealth ?? Infinity;
+                target.health = Math.min(max, target.health + effects.health);
+            }
+        }
+
+        // 2. Stamina restoration
+        if (Number.isFinite(effects.stamina) &amp;&amp; Number.isFinite(target?.stamina)) {
+            const maxStamina = target.maxStamina ?? Infinity;
+            target.stamina = Math.min(maxStamina, target.stamina + effects.stamina);
+        }
+
+        // 3. Stat modifications
+        const statMods = effects.stats ?? effects.statModifiers ?? {};
+        for (const [statName, amount] of Object.entries(statMods)) {
+            if (Number.isFinite(amount)) {
+                if (Number.isFinite(target?.[statName])) {
+                    target[statName] += amount;
+                } else if (target?.stats &amp;&amp; Number.isFinite(target.stats[statName])) {
+                    target.stats[statName] += amount;
+                }
+            }
+        }
+
+        // 4. Status effects
+        if (effects.statusEffect &amp;&amp; typeof target?.applyEffect === "function") {
+            target.applyEffect(effects.statusEffect);
+        }
+
+        // 5. Custom onUse hook
+        if (typeof item.onUse === "function") {
+            item.onUse(target, item);
+        }
+
+        // Decrement item count
+        this.removeItem(itemId, 1);
+        return true;
+    }
+
+    /**
+     * Alias for consume.
+     * @param {string} itemId
+     * @param {Object} target
+     * @returns {boolean}
+     */
+    useItem(itemId, target) {
+        return this.consume(itemId, target);
+    }
+
+    /**
+     * Alias for consume.
+     * @param {string} itemId
+     * @param {Object} target
+     * @returns {boolean}
+     */
+    consumeItem(itemId, target) {
+        return this.consume(itemId, target);
+    }
+
+    /**
+     * Equip an item from inventory into designated equipment slot.
+     * @param {string} slotOrItemId
+     * @param {string} [maybeItemId]
+     * @returns {Object|boolean}
+     */
+    equip(slotOrItemId, maybeItemId) {
+        let slotName = null;
+        let itemId = null;
+
+        if (maybeItemId !== undefined) {
+            slotName = slotOrItemId;
+            itemId = maybeItemId;
+        } else {
+            itemId = slotOrItemId;
+        }
+
+        const slotIndex = this.slots.findIndex(entry => entry.item.id === itemId);
+        if (slotIndex === -1) return false;
+        const item = this.slots[slotIndex].item;
+
+        if (!slotName) {
+            slotName = item.slot ?? (item.type === "weapon" ? "mainHand" : item.type === "armor" ? "armor" : item.type === "accessory" ? "accessory" : null);
+        }
+        const designatedSlot = this.equipmentSystem.normalizeSlot(slotName);
+        if (!designatedSlot || !this.equipmentSystem.canEquip(designatedSlot, item)) {
+            return false;
+        }
+
+        const prior = this.equipmentSystem.slots[designatedSlot];
+
+        // Remove 1 quantity of the item from inventory
+        this.removeItem(itemId, 1);
+
+        // Equip into equipment system
+        this.equipmentSystem.equip(designatedSlot, item);
+
+        // Put prior item back into inventory if present
+        if (prior) {
+            this.addItem(prior, 1);
+        }
+
+        return prior ?? item;
+    }
+
+    /**
+     * Unequip an item from equipment slot back into inventory.
+     * Rejects if inventory has no capacity to store the unequipped item.
+     * @param {string} slot
+     * @returns {Object|boolean} Unequipped item or false if failed.
+     */
+    unequip(slot) {
+        const designatedSlot = this.equipmentSystem.normalizeSlot(slot);
+        if (!designatedSlot) return false;
+
+        const item = this.equipmentSystem.slots[designatedSlot];
+        if (!item) return false;
+
+        // Check if inventory has room
+        if (!this.canAddItem(item, 1)) {
+            return false;
+        }
+
+        this.equipmentSystem.unequip(designatedSlot);
+        this.addItem(item, 1);
+        return item;
+    }
+
+    /**
+     * Add currency (gold).
+     * @param {number} amount
+     * @returns {number} Total currency.
+     */
+    addCurrency(amount) {
+        if (!Number.isFinite(amount) || amount &lt; 0) {
+            throw new RangeError("Currency amount must be a non-negative finite number");
+        }
+        this.gold += amount;
+        return this.gold;
+    }
+
+    /**
+     * Deduct currency (gold) if sufficient.
+     * @param {number} amount
+     * @returns {boolean} True if deducted, false if insufficient.
+     */
+    removeCurrency(amount) {
+        if (!Number.isFinite(amount) || amount &lt; 0) {
+            throw new RangeError("Currency amount must be a non-negative finite number");
+        }
+        if (this.gold &lt; amount) return false;
+        this.gold -= amount;
+        return true;
+    }
+
+    /**
+     * Check if inventory has at least currency amount.
+     * @param {number} amount
+     * @returns {boolean}
+     */
+    hasCurrency(amount) {
+        if (!Number.isFinite(amount) || amount &lt; 0) return false;
+        return this.gold >= amount;
+    }
+
+    /**
+     * Create persistence snapshot of inventory, equipment, and currency.
+     * @returns {Object}
+     */
+    createSnapshot() {
+        return {
+            version: 1,
+            maxSlots: this.maxSlots,
+            maxStack: this.maxStack,
+            currency: this.gold,
+            gold: this.gold,
+            slots: this.slots.map(s => ({
+                itemId: s.item.id,
+                quantity: s.quantity,
+                item: structuredClone(s.item)
+            })),
+            equipment: this.equipmentSystem.createSnapshot()
+        };
+    }
+
+    /**
+     * Restore inventory, equipment, and currency from persistence snapshot.
+     * @param {Object} snapshot
+     * @param {Object} [options]
+     * @returns {boolean}
+     */
+    restoreSnapshot(snapshot, options = {}) {
+        if (!snapshot || typeof snapshot !== "object") {
+            throw new TypeError("Invalid inventory snapshot data");
+        }
+        if (Number.isInteger(snapshot.maxSlots) &amp;&amp; snapshot.maxSlots >= 0) {
+            this.maxSlots = snapshot.maxSlots;
+        }
+        if (Number.isInteger(snapshot.maxStack) &amp;&amp; snapshot.maxStack >= 1) {
+            this.maxStack = snapshot.maxStack;
+        }
+
+        this.gold = Number.isFinite(snapshot.currency) ? Math.max(0, snapshot.currency)
+            : Number.isFinite(snapshot.gold) ? Math.max(0, snapshot.gold) : 0;
+
+        const registry = options.registry ?? this.registry;
+        const target = options.target ?? null;
+
+        this.slots = [];
+        if (Array.isArray(snapshot.slots)) {
+            for (const slotData of snapshot.slots) {
+                let item = slotData.item;
+                if (!item &amp;&amp; registry &amp;&amp; slotData.itemId) {
+                    item = registry.get(slotData.itemId);
+                }
+                if (item &amp;&amp; Number.isInteger(slotData.quantity) &amp;&amp; slotData.quantity > 0) {
+                    this.slots.push({
+                        item: structuredClone(item),
+                        quantity: slotData.quantity
+                    });
+                }
+            }
+        }
+
+        if (snapshot.equipment) {
+            this.equipmentSystem.restoreSnapshot(snapshot.equipment, { registry, target });
+        }
+
+        return true;
+    }
+
+    /**
+     * Export to plain JSON representation.
+     * @returns {Object}
+     */
+    toJSON() {
+        return {
+            maxSlots: this.maxSlots,
+            gold: this.gold,
+            currency: this.gold,
+            slots: this.slots.map(slot => ({
+                item: structuredClone(slot.item),
+                quantity: slot.quantity
+            })),
+            equipment: structuredClone(this.equipmentSystem.toJSON())
+        };
+    }
+
+    /**
+     * Load state from plain JSON representation.
+     * @param {Object} data
+     */
+    loadJSON(data) {
+        if (!data || !Number.isInteger(data.maxSlots) || data.maxSlots &lt; 0 || !Array.isArray(data.slots) || !Number.isFinite(data.gold) || data.gold &lt; 0) {
+            throw new TypeError("Invalid inventory data");
+        }
+        if (data.slots.length > data.maxSlots || data.slots.some(slot => !slot.item || !Number.isInteger(slot.quantity) || slot.quantity &lt; 1 || slot.quantity > (slot.item.maxStack ?? slot.item.stackable ?? 1))) {
+            throw new TypeError("Invalid inventory slots");
+        }
+        this.maxSlots = data.maxSlots;
+        this.gold = data.gold;
+        this.slots = data.slots.map(slot => ({ item: structuredClone(slot.item), quantity: slot.quantity }));
+
+        // Clear equipment
+        for (const slot of EQUIPMENT_SLOTS) {
+            this.equipmentSystem.slots[slot] = null;
+        }
+
+        if (data.equipment) {
+            const eqData = data.equipment.slots ?? data.equipment;
+            for (const [k, v] of Object.entries(eqData)) {
+                const designatedSlot = this.equipmentSystem.normalizeSlot(k);
+                if (designatedSlot &amp;&amp; v) {
+                    this.equipmentSystem.slots[designatedSlot] = structuredClone(v);
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Loot table managing weighted drop rolls with min/max quantities.
+ */
+export class LootTable {
+    /**
+     * @param {Array.&lt;Object>} [entries] - Initial loot entries.
+     * @param {Object} [config] - Optional configuration { id, name }.
+     */
+    constructor(entries = [], config = {}) {
+        this.id = config.id ?? null;
+        this.name = config.name ?? null;
+        this.entries = [];
+
+        if (Array.isArray(entries)) {
+            for (const entry of entries) {
+                this.addEntry(entry);
+            }
+        }
+    }
+
+    /**
+     * Add a drop entry to the loot table.
+     * @param {Object} entry - { itemId, weight, minQuantity, maxQuantity, chance, item }
+     * @returns {LootTable}
+     */
+    addEntry(entry) {
+        if (!entry || typeof entry !== "object") {
+            throw new TypeError("LootTable entry must be an object");
+        }
+        const itemId = entry.itemId ?? entry.id;
+        if (typeof itemId !== "string" || !itemId.trim()) {
+            throw new TypeError("LootTable entry itemId must be a non-empty string");
+        }
+
+        const weight = Number.isFinite(entry.weight) ? Math.max(0, entry.weight) : 1;
+        const chance = Number.isFinite(entry.chance) ? Math.min(1, Math.max(0, entry.chance)) : 1;
+
+        let minQuantity = 1;
+        if (Number.isInteger(entry.minQuantity) &amp;&amp; entry.minQuantity >= 1) minQuantity = entry.minQuantity;
+        else if (Number.isInteger(entry.min) &amp;&amp; entry.min >= 1) minQuantity = entry.min;
+        else if (Number.isInteger(entry.quantity) &amp;&amp; entry.quantity >= 1) minQuantity = entry.quantity;
+
+        let maxQuantity = minQuantity;
+        if (Number.isInteger(entry.maxQuantity) &amp;&amp; entry.maxQuantity >= minQuantity) maxQuantity = entry.maxQuantity;
+        else if (Number.isInteger(entry.max) &amp;&amp; entry.max >= minQuantity) maxQuantity = entry.max;
+
+        this.entries.push({
+            itemId: itemId.trim(),
+            weight,
+            chance,
+            minQuantity,
+            maxQuantity,
+            item: entry.item ?? null
+        });
+
+        return this;
+    }
+
+    /**
+     * Convenience method to add an item drop.
+     * @param {string} itemId
+     * @param {number} [weight]
+     * @param {number} [minQuantity]
+     * @param {number} [maxQuantity]
+     * @param {number} [chance]
+     * @returns {LootTable}
+     */
+    addItem(itemId, weight = 1, minQuantity = 1, maxQuantity = 1, chance = 1) {
+        return this.addEntry({ itemId, weight, minQuantity, maxQuantity, chance });
+    }
+
+    /**
+     * Remove a drop entry by item id.
+     * @param {string} itemId
+     * @returns {boolean}
+     */
+    removeEntry(itemId) {
+        if (typeof itemId !== "string") return false;
+        const initialLen = this.entries.length;
+        this.entries = this.entries.filter(e => e.itemId !== itemId);
+        return this.entries.length &lt; initialLen;
+    }
+
+    /**
+     * Roll drops from this loot table.
+     * Supports weighted roll mode (default) and independent chance mode.
+     * Produces random quantities between minQuantity and maxQuantity inclusive.
+     * @param {Object|Function} [optionsOrRandom] - Options object or custom random function.
+     * @returns {Array.&lt;Object>} Array of generated drops { itemId, quantity, [item] }
+     */
+    roll(optionsOrRandom = {}) {
+        let random = Math.random;
+        let rolls = 1;
+        let mode = "weighted";
+
+        if (typeof optionsOrRandom === "function") {
+            random = optionsOrRandom;
+        } else if (optionsOrRandom &amp;&amp; typeof optionsOrRandom === "object") {
+            if (typeof optionsOrRandom.random === "function") random = optionsOrRandom.random;
+            if (Number.isInteger(optionsOrRandom.rolls) &amp;&amp; optionsOrRandom.rolls >= 1) rolls = optionsOrRandom.rolls;
+            if (typeof optionsOrRandom.mode === "string") mode = optionsOrRandom.mode;
+        }
+
+        if (this.entries.length === 0) return [];
+
+        if (mode === "independent") {
+            const results = [];
+            for (const entry of this.entries) {
+                const rollVal = random();
+                if (rollVal &lt;= entry.chance) {
+                    const quantity = this._rollQuantity(entry, random);
+                    if (quantity > 0) {
+                        results.push({
+                            itemId: entry.itemId,
+                            quantity,
+                            item: entry.item
+                        });
+                    }
+                }
+            }
+            return results;
+        }
+
+        // Weighted drop generation mode
+        const totalWeight = this.entries.reduce((sum, e) => sum + e.weight, 0);
+        if (totalWeight &lt;= 0) return [];
+
+        const results = [];
+        for (let r = 0; r &lt; rolls; r++) {
+            let rollPick = random() * totalWeight;
+            let selected = this.entries[this.entries.length - 1];
+
+            for (const entry of this.entries) {
+                if (rollPick &lt; entry.weight) {
+                    selected = entry;
+                    break;
+                }
+                rollPick -= entry.weight;
+            }
+
+            // Independent chance gate on chosen entry
+            if (selected.chance &lt; 1 &amp;&amp; random() > selected.chance) {
+                continue;
+            }
+
+            const quantity = this._rollQuantity(selected, random);
+            if (quantity > 0) {
+                const existing = results.find(d => d.itemId === selected.itemId);
+                if (existing) {
+                    existing.quantity += quantity;
+                } else {
+                    results.push({
+                        itemId: selected.itemId,
+                        quantity,
+                        item: selected.item
+                    });
+                }
+            }
+        }
+
+        return results;
+    }
+
+    /**
+     * Compute quantity between minQuantity and maxQuantity inclusive.
+     * @private
+     * @param {Object} entry
+     * @param {Function} random
+     * @returns {number}
+     */
+    _rollQuantity(entry, random) {
+        if (entry.minQuantity === entry.maxQuantity) {
+            return entry.minQuantity;
+        }
+        const delta = entry.maxQuantity - entry.minQuantity;
+        const randVal = Math.min(0.999999, Math.max(0, random()));
+        return entry.minQuantity + Math.floor(randVal * (delta + 1));
+    }
+
+    /**
+     * Export to plain JSON representation.
+     * @returns {Object}
+     */
+    toJSON() {
+        return {
+            id: this.id,
+            name: this.name,
+            entries: this.entries.map(e => ({ ...e }))
+        };
+    }
+
+    /**
+     * Reconstruct a LootTable from JSON data.
+     * @param {Object} data
+     * @returns {LootTable}
+     */
+    static fromJSON(data) {
+        if (!data || !Array.isArray(data.entries)) {
+            throw new TypeError("Invalid LootTable data");
+        }
+        return new LootTable(data.entries, { id: data.id, name: data.name });
+    }
+}
+
+/**
+ * Helper to create a unified snapshot for inventory, equipment, and currency.
+ * @param {Object} context
+ * @returns {Object}
+ */
+export function createRPGSnapshot({ inventory = null, equipment = null, currency = 0 } = {}) {
+    return {
+        version: 1,
+        timestamp: Date.now(),
+        currency: Number.isFinite(currency) ? currency : (inventory?.gold ?? 0),
+        inventory: inventory ? inventory.createSnapshot() : null,
+        equipment: equipment ? equipment.createSnapshot() : (inventory?.equipmentSystem ? inventory.equipmentSystem.createSnapshot() : null)
+    };
+}
+
+/**
+ * Helper to restore a unified snapshot for inventory, equipment, and currency.
+ * @param {Object} snapshot
+ * @param {Object} context
+ * @returns {boolean}
+ */
+export function restoreRPGSnapshot(snapshot, { inventory = null, equipment = null, target = null, registry = null } = {}) {
+    if (!snapshot || typeof snapshot !== "object") {
+        throw new TypeError("Invalid RPG snapshot");
+    }
+
+    if (inventory &amp;&amp; snapshot.inventory) {
+        inventory.restoreSnapshot(snapshot.inventory, { registry, target });
+    } else if (inventory &amp;&amp; Number.isFinite(snapshot.currency)) {
+        inventory.gold = snapshot.currency;
+    }
+
+    if (equipment &amp;&amp; snapshot.equipment) {
+        equipment.restoreSnapshot(snapshot.equipment, { registry, target });
+    }
+
+    return true;
+}
+</code></pre></article></section><footer class="footer" id="PeOAagUepe"><div class="wrapper">MIT License | Copyright (c) 2022 Sujal Choudhari</div></footer></div></div></div><div class="search-container" id="PkfLWpAbet" style="display:none"><div class="wrapper" id="iCxFxjkHbP"><button class="icon-button search-close-button" id="VjLlGakifb" aria-label="close search"><svg><use xlink:href="#close-icon"></use></svg></button><div class="search-box-c"><svg><use xlink:href="#search-icon"></use></svg> <input type="text" id="vpcKVYIppa" class="search-input" placeholder="Search..." autofocus></div><div class="search-result-c" id="fWwVHRuDuN"><span class="search-result-c-text">Type anything to view search result</span></div></div></div><div class="mobile-menu-icon-container"><button class="icon-button" id="mobile-menu" data-isopen="false" aria-label="menu"><svg><use xlink:href="#menu-icon"></use></svg></button></div><div id="mobile-sidebar" class="mobile-sidebar-container"><div class="mobile-sidebar-wrapper"><a href="/" class="sidebar-title sidebar-title-anchor">Neptune.js</a><div class="mobile-nav-links"><div class="navbar-item"><a id="" href="https://github.com/NotSujal/Neptune.js" target="_blank">Github</a></div><div class="navbar-item"><a id="" href="https://www.npmjs.com/package/@sujalchoudhari/neptune-js" target="_blank">NPM</a></div></div><div class="mobile-sidebar-items-c"><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-tutorials"><div>Tutorials</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="tutorial-00-Getting Started.html">Getting started</a></div><div class="sidebar-section-children"><a href="tutorial-01-Introduction.html">Introduction</a></div><div class="sidebar-section-children"><a href="tutorial-02-Step by step.html">Step by step</a></div><div class="sidebar-section-children"><a href="tutorial-03-Systems.html">Systems and Managers</a></div><div class="sidebar-section-children"><a href="tutorial-04-Multiple Scenes.html">Multiple Scenes</a></div><div class="sidebar-section-children"><a href="tutorial-05-Inputs.html">Inputs</a></div><div class="sidebar-section-children"><a href="tutorial-06-Scripts.html">Scripts</a></div><div class="sidebar-section-children"><a href="tutorial-07-Beyond.html">Beyond the basics</a></div><div class="sidebar-section-children"><a href="tutorial-08-Showcase Demo.html">Interactive Systems Showcase</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-interfaces"><div>Interfaces</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="Behaviour.html">Behaviour</a></div><div class="sidebar-section-children"><a href="Component.html">Component</a></div><div class="sidebar-section-children"><a href="Container.html">Container</a></div><div class="sidebar-section-children"><a href="Global_.html">Global</a></div><div class="sidebar-section-children"><a href="Renderable.html">Renderable</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-classes"><div>Classes</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="AbilityBudgetExceededError.html">AbilityBudgetExceededError</a></div><div class="sidebar-section-children"><a href="AbilityExecutionError.html">AbilityExecutionError</a></div><div class="sidebar-section-children"><a href="AbilityExecutor.html">AbilityExecutor</a></div><div class="sidebar-section-children"><a href="AbilityValidationError.html">AbilityValidationError</a></div><div class="sidebar-section-children"><a href="Animation.html">Animation</a></div><div class="sidebar-section-children"><a href="Animation_Animation.html">Animation</a></div><div class="sidebar-section-children"><a href="Animator.html">Animator</a></div><div class="sidebar-section-children"><a href="Application.html">Application</a></div><div class="sidebar-section-children"><a href="AttackDefinition.html">AttackDefinition</a></div><div class="sidebar-section-children"><a href="AudioBus.html">AudioBus</a></div><div class="sidebar-section-children"><a href="AudioBusSystem.html">AudioBusSystem</a></div><div class="sidebar-section-children"><a href="AudioMixer.html">AudioMixer</a></div><div class="sidebar-section-children"><a href="Behaviour_Behaviour.html">Behaviour</a></div><div class="sidebar-section-children"><a href="Body.html">Body</a></div><div class="sidebar-section-children"><a href="BossAI.html">BossAI</a></div><div class="sidebar-section-children"><a href="BoundedMemory.html">BoundedMemory</a></div><div class="sidebar-section-children"><a href="BoxCollider.html">BoxCollider</a></div><div class="sidebar-section-children"><a href="Camera.html">Camera</a></div><div class="sidebar-section-children"><a href="CellGridSimulation.html">CellGridSimulation</a></div><div class="sidebar-section-children"><a href="Collider.html">Collider</a></div><div class="sidebar-section-children"><a href="CollisionSystem.html">CollisionSystem</a></div><div class="sidebar-section-children"><a href="Color.html">Color</a></div><div class="sidebar-section-children"><a href="Combatant.html">Combatant</a></div><div class="sidebar-section-children"><a href="CombatSystem.html">CombatSystem</a></div><div class="sidebar-section-children"><a href="ComponentRegistry.html">ComponentRegistry</a></div><div class="sidebar-section-children"><a href="ContactSolver.html">ContactSolver</a></div><div class="sidebar-section-children"><a href="CorruptSaveError.html">CorruptSaveError</a></div><div class="sidebar-section-children"><a href="Cutscene.html">Cutscene</a></div><div class="sidebar-section-children"><a href="Cutscene_Cutscene.html">Cutscene</a></div><div class="sidebar-section-children"><a href="CutsceneManager.html">CutsceneManager</a></div><div class="sidebar-section-children"><a href="DeathRetryManager.html">DeathRetryManager</a></div><div class="sidebar-section-children"><a href="DestroyQueue.html">DestroyQueue</a></div><div class="sidebar-section-children"><a href="Dialogue.html">Dialogue</a></div><div class="sidebar-section-children"><a href="DialogueBox.html">DialogueBox</a></div><div class="sidebar-section-children"><a href="ElevationFilter.html">ElevationFilter</a></div><div class="sidebar-section-children"><a href="EnemyAI.html">EnemyAI</a></div><div class="sidebar-section-children"><a href="EnemyConfig.html">EnemyConfig</a></div><div class="sidebar-section-children"><a href="Entity.html">Entity</a></div><div class="sidebar-section-children"><a href="EquipmentSystem.html">EquipmentSystem</a></div><div class="sidebar-section-children"><a href="FactionRegistry.html">FactionRegistry</a></div><div class="sidebar-section-children"><a href="Filter.html">Filter</a></div><div class="sidebar-section-children"><a href="FixedStepper.html">FixedStepper</a></div><div class="sidebar-section-children"><a href="Font.html">Font</a></div><div class="sidebar-section-children"><a href="FutureVersionError.html">FutureVersionError</a></div><div class="sidebar-section-children"><a href="GameClock.html">GameClock</a></div><div class="sidebar-section-children"><a href="GameData.html">GameData</a></div><div class="sidebar-section-children"><a href="GameFeel.html">GameFeel</a></div><div class="sidebar-section-children"><a href="GridContainer.html">GridContainer</a></div><div class="sidebar-section-children"><a href="HazardSystem.html">HazardSystem</a></div><div class="sidebar-section-children"><a href="HBoxContainer.html">HBoxContainer</a></div><div class="sidebar-section-children"><a href="InputActions.html">InputActions</a></div><div class="sidebar-section-children"><a href="InteractionResult.html">InteractionResult</a></div><div class="sidebar-section-children"><a href="Inventory.html">Inventory</a></div><div class="sidebar-section-children"><a href="Inventory.html">Inventory</a></div><div class="sidebar-section-children"><a href="Inventory_Inventory.html">Inventory</a></div><div class="sidebar-section-children"><a href="ItemRegistry.html">ItemRegistry</a></div><div class="sidebar-section-children"><a href="KeyboardInput.html">KeyboardInput</a></div><div class="sidebar-section-children"><a href="KnockbackMotor.html">KnockbackMotor</a></div><div class="sidebar-section-children"><a href="LevelProgression.html">LevelProgression</a></div><div class="sidebar-section-children"><a href="LootTable.html">LootTable</a></div><div class="sidebar-section-children"><a href="MapStorage.html">MapStorage</a></div><div class="sidebar-section-children"><a href="MarginContainer.html">MarginContainer</a></div><div class="sidebar-section-children"><a href="MaterialInteraction.html">MaterialInteraction</a></div><div class="sidebar-section-children"><a href="MaterialRegistry.html">MaterialRegistry</a></div><div class="sidebar-section-children"><a href="Maths.html">Maths</a></div><div class="sidebar-section-children"><a href="MigrationError.html">MigrationError</a></div><div class="sidebar-section-children"><a href="MinHeap.html">MinHeap</a></div><div class="sidebar-section-children"><a href="MouseInput.html">MouseInput</a></div><div class="sidebar-section-children"><a href="MusicManager.html">MusicManager</a></div><div class="sidebar-section-children"><a href="NavigationGrid.html">NavigationGrid</a></div><div class="sidebar-section-children"><a href="NavigationGrid_NavigationGrid.html">NavigationGrid</a></div><div class="sidebar-section-children"><a href="NavigationPath.html">NavigationPath</a></div><div class="sidebar-section-children"><a href="NavigationPath_NavigationPath.html">NavigationPath</a></div><div class="sidebar-section-children"><a href="NPCKnowledge.html">NPCKnowledge</a></div><div class="sidebar-section-children"><a href="NPCSchedule.html">NPCSchedule</a></div><div class="sidebar-section-children"><a href="Panel.html">Panel</a></div><div class="sidebar-section-children"><a href="ParallaxBackground.html">ParallaxBackground</a></div><div class="sidebar-section-children"><a href="ParallaxLayer.html">ParallaxLayer</a></div><div class="sidebar-section-children"><a href="ParallaxLayer_ParallaxLayer.html">ParallaxLayer</a></div><div class="sidebar-section-children"><a href="PerceptionSystem.html">PerceptionSystem</a></div><div class="sidebar-section-children"><a href="PlatformerController.html">PlatformerController</a></div><div class="sidebar-section-children"><a href="Pose.html">Pose</a></div><div class="sidebar-section-children"><a href="Pose_Pose.html">Pose</a></div><div class="sidebar-section-children"><a href="Progression.html">Progression</a></div><div class="sidebar-section-children"><a href="ProjectBehaviour.html">ProjectBehaviour</a></div><div class="sidebar-section-children"><a href="QuestDefinition.html">QuestDefinition</a></div><div class="sidebar-section-children"><a href="QuestGraph.html">QuestGraph</a></div><div class="sidebar-section-children"><a href="QuestLog.html">QuestLog</a></div><div class="sidebar-section-children"><a href="ReferenceValidationError.html">ReferenceValidationError</a></div><div class="sidebar-section-children"><a href="ReferenceValidator.html">ReferenceValidator</a></div><div class="sidebar-section-children"><a href="ResourceReferenceError.html">ResourceReferenceError</a></div><div class="sidebar-section-children"><a href="RewardSystem.html">RewardSystem</a></div><div class="sidebar-section-children"><a href="Rig.html">Rig</a></div><div class="sidebar-section-children"><a href="RuleEngine.html">RuleEngine</a></div><div class="sidebar-section-children"><a href="SaveManager.html">SaveManager</a></div><div class="sidebar-section-children"><a href="Scene.html">Scene</a></div><div class="sidebar-section-children"><a href="SceneLoader.html">SceneLoader</a></div><div class="sidebar-section-children"><a href="SceneManager.html">SceneManager</a></div><div class="sidebar-section-children"><a href="SceneTransition.html">SceneTransition</a></div><div class="sidebar-section-children"><a href="ScheduleSlot.html">ScheduleSlot</a></div><div class="sidebar-section-children"><a href="ScheduleSystem.html">ScheduleSystem</a></div><div class="sidebar-section-children"><a href="SchemaMigrationRegistry.html">SchemaMigrationRegistry</a></div><div class="sidebar-section-children"><a href="Shape.html">Shape</a></div><div class="sidebar-section-children"><a href="Shop.html">Shop</a></div><div class="sidebar-section-children"><a href="Sound.html">Sound</a></div><div class="sidebar-section-children"><a href="SoundPool.html">SoundPool</a></div><div class="sidebar-section-children"><a href="SoundPool_SoundPool.html">SoundPool</a></div><div class="sidebar-section-children"><a href="SpatialHashGrid.html">SpatialHashGrid</a></div><div class="sidebar-section-children"><a href="SpawnPoint.html">SpawnPoint</a></div><div class="sidebar-section-children"><a href="Sprite.html">Sprite</a></div><div class="sidebar-section-children"><a href="Stats.html">Stats</a></div><div class="sidebar-section-children"><a href="StatusEffectManager.html">StatusEffectManager</a></div><div class="sidebar-section-children"><a href="Storage.html">Storage</a></div><div class="sidebar-section-children"><a href="StoryGraph.html">StoryGraph</a></div><div class="sidebar-section-children"><a href="SweptAABB.html">SweptAABB</a></div><div class="sidebar-section-children"><a href="Text.html">Text</a></div><div class="sidebar-section-children"><a href="TileCollision.html">TileCollision</a></div><div class="sidebar-section-children"><a href="TileCollision_TileCollision.html">TileCollision</a></div><div class="sidebar-section-children"><a href="Tilemap.html">Tilemap</a></div><div class="sidebar-section-children"><a href="Tilemap_Tilemap.html">Tilemap</a></div><div class="sidebar-section-children"><a href="Tileset.html">Tileset</a></div><div class="sidebar-section-children"><a href="Tileset_Tileset.html">Tileset</a></div><div class="sidebar-section-children"><a href="TopDownController.html">TopDownController</a></div><div class="sidebar-section-children"><a href="TouchInput.html">TouchInput</a></div><div class="sidebar-section-children"><a href="Transform.html">Transform</a></div><div class="sidebar-section-children"><a href="TriggerLifecycleSystem.html">TriggerLifecycleSystem</a></div><div class="sidebar-section-children"><a href="TypedEventBus.html">TypedEventBus</a></div><div class="sidebar-section-children"><a href="UISprite.html">UISprite</a></div><div class="sidebar-section-children"><a href="UITransform.html">UITransform</a></div><div class="sidebar-section-children"><a href="UtilityAction.html">UtilityAction</a></div><div class="sidebar-section-children"><a href="UtilityAI.html">UtilityAI</a></div><div class="sidebar-section-children"><a href="UtilityAI_UtilityAI.html">UtilityAI</a></div><div class="sidebar-section-children"><a href="UtilityConsideration.html">UtilityConsideration</a></div><div class="sidebar-section-children"><a href="VBoxContainer.html">VBoxContainer</a></div><div class="sidebar-section-children"><a href="Vector2.html">Vector2</a></div><div class="sidebar-section-children"><a href="VersionedSaveEngine.html">VersionedSaveEngine</a></div><div class="sidebar-section-children"><a href="WorldFacts.html">WorldFacts</a></div><div class="sidebar-section-children"><a href="WorldMetadataRegistry.html">WorldMetadataRegistry</a></div></div></div><div class="mobile-navbar-actions"><div class="navbar-right-item"><button class="icon-button search-button" aria-label="open-search"><svg><use xlink:href="#search-icon"></use></svg></button></div><div class="navbar-right-item"><button class="icon-button theme-toggle" aria-label="toggle-theme"><svg><use class="theme-svg-use" xlink:href="#light-theme-icon"></use></svg></button></div><div class="navbar-right-item"><button class="icon-button font-size" aria-label="change-font-size"><svg><use xlink:href="#font-size-icon"></use></svg></button></div></div></div></div><script type="text/javascript" src="scripts/core.min.js"></script><script src="scripts/search.min.js" defer="defer"></script><script src="scripts/third-party/fuse.js" defer="defer"></script><script type="text/javascript">var tocbotInstance=tocbot.init({tocSelector:"#eed4d2a0bfd64539bb9df78095dec881",contentSelector:".main-content",headingSelector:"h1, h2, h3",hasInnerContainers:!0,scrollContainer:".main-content",headingsOffset:130,onClick:bringLinkToView})</script></body></html>

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neptune.js v3.4.0 — Interactive Systems Showcase</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0e17;
+      color: #f1f5f9;
+      font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .demo-nav-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      background: linear-gradient(145deg, #182234, #101622);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 13px;
+      z-index: 10;
+    }
+    .demo-nav-bar .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .demo-nav-bar .brand span.tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .demo-nav-links {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .demo-nav-links a {
+      color: #94a3b8;
+      text-decoration: none;
+      transition: color 0.15s ease;
+      font-weight: 500;
+    }
+    .demo-nav-links a:hover {
+      color: #38bdf8;
+    }
+    .demo-frame-container {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    iframe#demo-viewport {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <nav class="demo-nav-bar">
+    <div class="brand">
+      <span>NEPTUNE.JS v3.4.0</span>
+      <span class="tag">PLAYABLE SHOWCASE</span>
+    </div>
+    <div class="demo-nav-links">
+      <a href="./index.html">← API Reference</a>
+      <a href="./tutorial-08-Showcase Demo.html">Showcase Tutorial</a>
+      <a href="../examples/showcase/index.html" target="_blank">Open Fullscreen ↗</a>
+    </div>
+  </nav>
+
+  <div class="demo-frame-container">
+    <iframe id="demo-viewport" src="../examples/showcase/index.html" title="Neptune.js v3.4.0 Interactive Systems Showcase"></iframe>
+  </div>
+
+  <script>
+    // Fallback if hosted where ../examples is outside docroot
+    const frame = document.getElementById('demo-viewport');
+    frame.onerror = () => {
+      frame.src = './demo/index.html';
+    };
+  </script>
+</body>
+</html>

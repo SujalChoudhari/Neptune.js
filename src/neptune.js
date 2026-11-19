@@ -57,7 +57,7 @@ import { AudioBus, AudioBusSystem } from "./proteus/index.js";
 import * as Larissa from "./larissa/index.js";
 import {
     AbilityExecutor, AbilityBudgetExceededError, AbilityValidator, AbilityValidationError,
-    PerceptionSystem, BoundedMemory, NPCKnowledge, UtilityAI,
+    PerceptionSystem, BoundedMemory, NPCKnowledge, UtilityAI, UtilityAction, UtilityConsideration, UtilityCurves,
     ScheduleSystem, FactionRegistry, NPCSchedule, ScheduleSlot, ROUTINE_ACTIVITIES, FACTION_DISPOSITION,
     ItemRegistry, Inventory, EquipmentSystem, LootTable,
     LevelProgression, StatusEffectManager, DeathRetryManager
@@ -124,7 +124,7 @@ export {
     Maths, Vector2,
     Titan, Thalassa, NavigationGrid, NavigationPath, WorldMetadataRegistry, SEMANTIC_LAYER_TYPES,
     Nereid, Proteus, Larissa, AbilityExecutor, AbilityBudgetExceededError, AbilityValidator, AbilityValidationError,
-    PerceptionSystem, BoundedMemory, NPCKnowledge, UtilityAI,
+    PerceptionSystem, BoundedMemory, NPCKnowledge, UtilityAI, UtilityAction, UtilityConsideration, UtilityCurves,
     ScheduleSystem, FactionRegistry, NPCSchedule, ScheduleSlot, ROUTINE_ACTIVITIES, FACTION_DISPOSITION,
     ItemRegistry, Inventory, EquipmentSystem, LootTable,
     LevelProgression, StatusEffectManager, DeathRetryManager,

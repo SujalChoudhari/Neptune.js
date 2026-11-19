@@ -1,0 +1,986 @@
+<!DOCTYPE html><html lang="en" style="font-size:16px"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="author" content="Sujal Choudhari"><meta name="description" content="A 2D framework for making games completely made in JavaScript."><meta name="keywords" content="2D,javascript,game,engine,framework,neptune.js,neptunejs,easy,modular,lightweight,complete,open source"><title>Source: larissa/utilityAI.js</title><!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]--><script src="scripts/third-party/hljs.js" defer="defer"></script><script src="scripts/third-party/hljs-line-num.js" defer="defer"></script><script src="scripts/third-party/popper.js" defer="defer"></script><script src="scripts/third-party/tippy.js" defer="defer"></script><script src="scripts/third-party/tocbot.min.js"></script><script>var baseURL="/",locationPathname="";baseURL=(locationPathname=document.location.pathname).substr(0,locationPathname.lastIndexOf("/")+1)</script><link rel="stylesheet" href="styles/clean-jsdoc-theme.min.css"><svg aria-hidden="true" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="display:none"><defs><symbol id="copy-icon" viewbox="0 0 488.3 488.3"><g><path d="M314.25,85.4h-227c-21.3,0-38.6,17.3-38.6,38.6v325.7c0,21.3,17.3,38.6,38.6,38.6h227c21.3,0,38.6-17.3,38.6-38.6V124    C352.75,102.7,335.45,85.4,314.25,85.4z M325.75,449.6c0,6.4-5.2,11.6-11.6,11.6h-227c-6.4,0-11.6-5.2-11.6-11.6V124    c0-6.4,5.2-11.6,11.6-11.6h227c6.4,0,11.6,5.2,11.6,11.6V449.6z"/><path d="M401.05,0h-227c-21.3,0-38.6,17.3-38.6,38.6c0,7.5,6,13.5,13.5,13.5s13.5-6,13.5-13.5c0-6.4,5.2-11.6,11.6-11.6h227    c6.4,0,11.6,5.2,11.6,11.6v325.7c0,6.4-5.2,11.6-11.6,11.6c-7.5,0-13.5,6-13.5,13.5s6,13.5,13.5,13.5c21.3,0,38.6-17.3,38.6-38.6    V38.6C439.65,17.3,422.35,0,401.05,0z"/></g></symbol><symbol id="search-icon" viewBox="0 0 512 512"><g><g><path d="M225.474,0C101.151,0,0,101.151,0,225.474c0,124.33,101.151,225.474,225.474,225.474    c124.33,0,225.474-101.144,225.474-225.474C450.948,101.151,349.804,0,225.474,0z M225.474,409.323    c-101.373,0-183.848-82.475-183.848-183.848S124.101,41.626,225.474,41.626s183.848,82.475,183.848,183.848    S326.847,409.323,225.474,409.323z"/></g></g><g><g><path d="M505.902,476.472L386.574,357.144c-8.131-8.131-21.299-8.131-29.43,0c-8.131,8.124-8.131,21.306,0,29.43l119.328,119.328    c4.065,4.065,9.387,6.098,14.715,6.098c5.321,0,10.649-2.033,14.715-6.098C514.033,497.778,514.033,484.596,505.902,476.472z"/></g></g></symbol><symbol id="font-size-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M11.246 15H4.754l-2 5H.6L7 4h2l6.4 16h-2.154l-2-5zm-.8-2L8 6.885 5.554 13h4.892zM21 12.535V12h2v8h-2v-.535a4 4 0 1 1 0-6.93zM19 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/></symbol><symbol id="add-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></symbol><symbol id="minus-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M5 11h14v2H5z"/></symbol><symbol id="dark-theme-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M10 7a7 7 0 0 0 12 4.9v.1c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2h.1A6.979 6.979 0 0 0 10 7zm-6 5a8 8 0 0 0 15.062 3.762A9 9 0 0 1 8.238 4.938 7.999 7.999 0 0 0 4 12z"/></symbol><symbol id="light-theme-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M12 18a6 6 0 1 1 0-12 6 6 0 0 1 0 12zm0-2a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM11 1h2v3h-2V1zm0 19h2v3h-2v-3zM3.515 4.929l1.414-1.414L7.05 5.636 5.636 7.05 3.515 4.93zM16.95 18.364l1.414-1.414 2.121 2.121-1.414 1.414-2.121-2.121zm2.121-14.85l1.414 1.415-2.121 2.121-1.414-1.414 2.121-2.121zM5.636 16.95l1.414 1.414-2.121 2.121-1.414-1.414 2.121-2.121zM23 11v2h-3v-2h3zM4 11v2H1v-2h3z"/></symbol><symbol id="reset-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M18.537 19.567A9.961 9.961 0 0 1 12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10c0 2.136-.67 4.116-1.81 5.74L17 12h3a8 8 0 1 0-2.46 5.772l.997 1.795z"/></symbol><symbol id="down-icon" viewBox="0 0 16 16"><path fill-rule="evenodd" clip-rule="evenodd" d="M12.7803 6.21967C13.0732 6.51256 13.0732 6.98744 12.7803 7.28033L8.53033 11.5303C8.23744 11.8232 7.76256 11.8232 7.46967 11.5303L3.21967 7.28033C2.92678 6.98744 2.92678 6.51256 3.21967 6.21967C3.51256 5.92678 3.98744 5.92678 4.28033 6.21967L8 9.93934L11.7197 6.21967C12.0126 5.92678 12.4874 5.92678 12.7803 6.21967Z"></path></symbol><symbol id="codepen-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M16.5 13.202L13 15.535v3.596L19.197 15 16.5 13.202zM14.697 12L12 10.202 9.303 12 12 13.798 14.697 12zM20 10.869L18.303 12 20 13.131V10.87zM19.197 9L13 4.869v3.596l3.5 2.333L19.197 9zM7.5 10.798L11 8.465V4.869L4.803 9 7.5 10.798zM4.803 15L11 19.131v-3.596l-3.5-2.333L4.803 15zM4 13.131L5.697 12 4 10.869v2.262zM2 9a1 1 0 0 1 .445-.832l9-6a1 1 0 0 1 1.11 0l9 6A1 1 0 0 1 22 9v6a1 1 0 0 1-.445.832l-9 6a1 1 0 0 1-1.11 0l-9-6A1 1 0 0 1 2 15V9z"/></symbol><symbol id="close-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M12 10.586l4.95-4.95 1.414 1.414-4.95 4.95 4.95 4.95-1.414 1.414-4.95-4.95-4.95 4.95-1.414-1.414 4.95-4.95-4.95-4.95L7.05 5.636z"/></symbol><symbol id="menu-icon" viewBox="0 0 24 24"><path fill="none" d="M0 0h24v24H0z"/><path d="M3 4h18v2H3V4zm0 7h18v2H3v-2zm0 7h18v2H3v-2z"/></symbol></defs></svg></head><body data-theme="dark"><div class="sidebar-container"><div class="sidebar" id="sidebar"><a href="/" class="sidebar-title sidebar-title-anchor">Neptune.js</a><div class="sidebar-items-container"><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-tutorials"><div>Tutorials</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="tutorial-00-Getting Started.html">Getting started</a></div><div class="sidebar-section-children"><a href="tutorial-01-Introduction.html">Introduction</a></div><div class="sidebar-section-children"><a href="tutorial-02-Step by step.html">Step by step</a></div><div class="sidebar-section-children"><a href="tutorial-03-Systems.html">Systems and Managers</a></div><div class="sidebar-section-children"><a href="tutorial-04-Multiple Scenes.html">Multiple Scenes</a></div><div class="sidebar-section-children"><a href="tutorial-05-Inputs.html">Inputs</a></div><div class="sidebar-section-children"><a href="tutorial-06-Scripts.html">Scripts</a></div><div class="sidebar-section-children"><a href="tutorial-07-Beyond.html">Beyond the basics</a></div><div class="sidebar-section-children"><a href="tutorial-08-Showcase Demo.html">Interactive Systems Showcase</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-interfaces"><div>Interfaces</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="Behaviour.html">Behaviour</a></div><div class="sidebar-section-children"><a href="Component.html">Component</a></div><div class="sidebar-section-children"><a href="Container.html">Container</a></div><div class="sidebar-section-children"><a href="Global_.html">Global</a></div><div class="sidebar-section-children"><a href="Renderable.html">Renderable</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-classes"><div>Classes</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="AbilityBudgetExceededError.html">AbilityBudgetExceededError</a></div><div class="sidebar-section-children"><a href="AbilityExecutionError.html">AbilityExecutionError</a></div><div class="sidebar-section-children"><a href="AbilityExecutor.html">AbilityExecutor</a></div><div class="sidebar-section-children"><a href="AbilityValidationError.html">AbilityValidationError</a></div><div class="sidebar-section-children"><a href="Animation.html">Animation</a></div><div class="sidebar-section-children"><a href="Animation_Animation.html">Animation</a></div><div class="sidebar-section-children"><a href="Animator.html">Animator</a></div><div class="sidebar-section-children"><a href="Application.html">Application</a></div><div class="sidebar-section-children"><a href="AttackDefinition.html">AttackDefinition</a></div><div class="sidebar-section-children"><a href="AudioBus.html">AudioBus</a></div><div class="sidebar-section-children"><a href="AudioBusSystem.html">AudioBusSystem</a></div><div class="sidebar-section-children"><a href="AudioMixer.html">AudioMixer</a></div><div class="sidebar-section-children"><a href="Behaviour_Behaviour.html">Behaviour</a></div><div class="sidebar-section-children"><a href="Body.html">Body</a></div><div class="sidebar-section-children"><a href="BossAI.html">BossAI</a></div><div class="sidebar-section-children"><a href="BoundedMemory.html">BoundedMemory</a></div><div class="sidebar-section-children"><a href="BoxCollider.html">BoxCollider</a></div><div class="sidebar-section-children"><a href="Camera.html">Camera</a></div><div class="sidebar-section-children"><a href="CellGridSimulation.html">CellGridSimulation</a></div><div class="sidebar-section-children"><a href="Collider.html">Collider</a></div><div class="sidebar-section-children"><a href="CollisionSystem.html">CollisionSystem</a></div><div class="sidebar-section-children"><a href="Color.html">Color</a></div><div class="sidebar-section-children"><a href="Combatant.html">Combatant</a></div><div class="sidebar-section-children"><a href="CombatSystem.html">CombatSystem</a></div><div class="sidebar-section-children"><a href="ComponentRegistry.html">ComponentRegistry</a></div><div class="sidebar-section-children"><a href="ContactSolver.html">ContactSolver</a></div><div class="sidebar-section-children"><a href="CorruptSaveError.html">CorruptSaveError</a></div><div class="sidebar-section-children"><a href="Cutscene.html">Cutscene</a></div><div class="sidebar-section-children"><a href="Cutscene_Cutscene.html">Cutscene</a></div><div class="sidebar-section-children"><a href="CutsceneManager.html">CutsceneManager</a></div><div class="sidebar-section-children"><a href="DeathRetryManager.html">DeathRetryManager</a></div><div class="sidebar-section-children"><a href="DestroyQueue.html">DestroyQueue</a></div><div class="sidebar-section-children"><a href="Dialogue.html">Dialogue</a></div><div class="sidebar-section-children"><a href="DialogueBox.html">DialogueBox</a></div><div class="sidebar-section-children"><a href="ElevationFilter.html">ElevationFilter</a></div><div class="sidebar-section-children"><a href="EnemyAI.html">EnemyAI</a></div><div class="sidebar-section-children"><a href="EnemyConfig.html">EnemyConfig</a></div><div class="sidebar-section-children"><a href="Entity.html">Entity</a></div><div class="sidebar-section-children"><a href="EquipmentSystem.html">EquipmentSystem</a></div><div class="sidebar-section-children"><a href="FactionRegistry.html">FactionRegistry</a></div><div class="sidebar-section-children"><a href="Filter.html">Filter</a></div><div class="sidebar-section-children"><a href="FixedStepper.html">FixedStepper</a></div><div class="sidebar-section-children"><a href="Font.html">Font</a></div><div class="sidebar-section-children"><a href="FutureVersionError.html">FutureVersionError</a></div><div class="sidebar-section-children"><a href="GameClock.html">GameClock</a></div><div class="sidebar-section-children"><a href="GameData.html">GameData</a></div><div class="sidebar-section-children"><a href="GameFeel.html">GameFeel</a></div><div class="sidebar-section-children"><a href="GridContainer.html">GridContainer</a></div><div class="sidebar-section-children"><a href="HazardSystem.html">HazardSystem</a></div><div class="sidebar-section-children"><a href="HBoxContainer.html">HBoxContainer</a></div><div class="sidebar-section-children"><a href="InputActions.html">InputActions</a></div><div class="sidebar-section-children"><a href="InteractionResult.html">InteractionResult</a></div><div class="sidebar-section-children"><a href="Inventory.html">Inventory</a></div><div class="sidebar-section-children"><a href="Inventory.html">Inventory</a></div><div class="sidebar-section-children"><a href="Inventory_Inventory.html">Inventory</a></div><div class="sidebar-section-children"><a href="ItemRegistry.html">ItemRegistry</a></div><div class="sidebar-section-children"><a href="KeyboardInput.html">KeyboardInput</a></div><div class="sidebar-section-children"><a href="KnockbackMotor.html">KnockbackMotor</a></div><div class="sidebar-section-children"><a href="LevelProgression.html">LevelProgression</a></div><div class="sidebar-section-children"><a href="LootTable.html">LootTable</a></div><div class="sidebar-section-children"><a href="MapStorage.html">MapStorage</a></div><div class="sidebar-section-children"><a href="MarginContainer.html">MarginContainer</a></div><div class="sidebar-section-children"><a href="MaterialInteraction.html">MaterialInteraction</a></div><div class="sidebar-section-children"><a href="MaterialRegistry.html">MaterialRegistry</a></div><div class="sidebar-section-children"><a href="Maths.html">Maths</a></div><div class="sidebar-section-children"><a href="MigrationError.html">MigrationError</a></div><div class="sidebar-section-children"><a href="MinHeap.html">MinHeap</a></div><div class="sidebar-section-children"><a href="MouseInput.html">MouseInput</a></div><div class="sidebar-section-children"><a href="MusicManager.html">MusicManager</a></div><div class="sidebar-section-children"><a href="NavigationGrid.html">NavigationGrid</a></div><div class="sidebar-section-children"><a href="NavigationGrid_NavigationGrid.html">NavigationGrid</a></div><div class="sidebar-section-children"><a href="NavigationPath.html">NavigationPath</a></div><div class="sidebar-section-children"><a href="NavigationPath_NavigationPath.html">NavigationPath</a></div><div class="sidebar-section-children"><a href="NPCKnowledge.html">NPCKnowledge</a></div><div class="sidebar-section-children"><a href="NPCSchedule.html">NPCSchedule</a></div><div class="sidebar-section-children"><a href="Panel.html">Panel</a></div><div class="sidebar-section-children"><a href="ParallaxBackground.html">ParallaxBackground</a></div><div class="sidebar-section-children"><a href="ParallaxLayer.html">ParallaxLayer</a></div><div class="sidebar-section-children"><a href="ParallaxLayer_ParallaxLayer.html">ParallaxLayer</a></div><div class="sidebar-section-children"><a href="PerceptionSystem.html">PerceptionSystem</a></div><div class="sidebar-section-children"><a href="PlatformerController.html">PlatformerController</a></div><div class="sidebar-section-children"><a href="Pose.html">Pose</a></div><div class="sidebar-section-children"><a href="Pose_Pose.html">Pose</a></div><div class="sidebar-section-children"><a href="Progression.html">Progression</a></div><div class="sidebar-section-children"><a href="ProjectBehaviour.html">ProjectBehaviour</a></div><div class="sidebar-section-children"><a href="QuestDefinition.html">QuestDefinition</a></div><div class="sidebar-section-children"><a href="QuestGraph.html">QuestGraph</a></div><div class="sidebar-section-children"><a href="QuestLog.html">QuestLog</a></div><div class="sidebar-section-children"><a href="ReferenceValidationError.html">ReferenceValidationError</a></div><div class="sidebar-section-children"><a href="ReferenceValidator.html">ReferenceValidator</a></div><div class="sidebar-section-children"><a href="ResourceReferenceError.html">ResourceReferenceError</a></div><div class="sidebar-section-children"><a href="RewardSystem.html">RewardSystem</a></div><div class="sidebar-section-children"><a href="Rig.html">Rig</a></div><div class="sidebar-section-children"><a href="RuleEngine.html">RuleEngine</a></div><div class="sidebar-section-children"><a href="SaveManager.html">SaveManager</a></div><div class="sidebar-section-children"><a href="Scene.html">Scene</a></div><div class="sidebar-section-children"><a href="SceneLoader.html">SceneLoader</a></div><div class="sidebar-section-children"><a href="SceneManager.html">SceneManager</a></div><div class="sidebar-section-children"><a href="SceneTransition.html">SceneTransition</a></div><div class="sidebar-section-children"><a href="ScheduleSlot.html">ScheduleSlot</a></div><div class="sidebar-section-children"><a href="ScheduleSystem.html">ScheduleSystem</a></div><div class="sidebar-section-children"><a href="SchemaMigrationRegistry.html">SchemaMigrationRegistry</a></div><div class="sidebar-section-children"><a href="Shape.html">Shape</a></div><div class="sidebar-section-children"><a href="Shop.html">Shop</a></div><div class="sidebar-section-children"><a href="Sound.html">Sound</a></div><div class="sidebar-section-children"><a href="SoundPool.html">SoundPool</a></div><div class="sidebar-section-children"><a href="SoundPool_SoundPool.html">SoundPool</a></div><div class="sidebar-section-children"><a href="SpatialHashGrid.html">SpatialHashGrid</a></div><div class="sidebar-section-children"><a href="SpawnPoint.html">SpawnPoint</a></div><div class="sidebar-section-children"><a href="Sprite.html">Sprite</a></div><div class="sidebar-section-children"><a href="Stats.html">Stats</a></div><div class="sidebar-section-children"><a href="StatusEffectManager.html">StatusEffectManager</a></div><div class="sidebar-section-children"><a href="Storage.html">Storage</a></div><div class="sidebar-section-children"><a href="StoryGraph.html">StoryGraph</a></div><div class="sidebar-section-children"><a href="SweptAABB.html">SweptAABB</a></div><div class="sidebar-section-children"><a href="Text.html">Text</a></div><div class="sidebar-section-children"><a href="TileCollision.html">TileCollision</a></div><div class="sidebar-section-children"><a href="TileCollision_TileCollision.html">TileCollision</a></div><div class="sidebar-section-children"><a href="Tilemap.html">Tilemap</a></div><div class="sidebar-section-children"><a href="Tilemap_Tilemap.html">Tilemap</a></div><div class="sidebar-section-children"><a href="Tileset.html">Tileset</a></div><div class="sidebar-section-children"><a href="Tileset_Tileset.html">Tileset</a></div><div class="sidebar-section-children"><a href="TopDownController.html">TopDownController</a></div><div class="sidebar-section-children"><a href="TouchInput.html">TouchInput</a></div><div class="sidebar-section-children"><a href="Transform.html">Transform</a></div><div class="sidebar-section-children"><a href="TriggerLifecycleSystem.html">TriggerLifecycleSystem</a></div><div class="sidebar-section-children"><a href="TypedEventBus.html">TypedEventBus</a></div><div class="sidebar-section-children"><a href="UISprite.html">UISprite</a></div><div class="sidebar-section-children"><a href="UITransform.html">UITransform</a></div><div class="sidebar-section-children"><a href="UtilityAction.html">UtilityAction</a></div><div class="sidebar-section-children"><a href="UtilityAI.html">UtilityAI</a></div><div class="sidebar-section-children"><a href="UtilityAI_UtilityAI.html">UtilityAI</a></div><div class="sidebar-section-children"><a href="UtilityConsideration.html">UtilityConsideration</a></div><div class="sidebar-section-children"><a href="VBoxContainer.html">VBoxContainer</a></div><div class="sidebar-section-children"><a href="Vector2.html">Vector2</a></div><div class="sidebar-section-children"><a href="VersionedSaveEngine.html">VersionedSaveEngine</a></div><div class="sidebar-section-children"><a href="WorldFacts.html">WorldFacts</a></div><div class="sidebar-section-children"><a href="WorldMetadataRegistry.html">WorldMetadataRegistry</a></div></div></div></div></div><div class="navbar-container" id="VuAckcnZhf"><nav class="navbar"><div class="navbar-left-items"><div class="navbar-item"><a id="" href="https://github.com/NotSujal/Neptune.js" target="_blank">Github</a></div><div class="navbar-item"><a id="" href="https://www.npmjs.com/package/@sujalchoudhari/neptune-js" target="_blank">NPM</a></div></div><div class="navbar-right-items"><div class="navbar-right-item"><button class="icon-button search-button" aria-label="open-search"><svg><use xlink:href="#search-icon"></use></svg></button></div><div class="navbar-right-item"><button class="icon-button theme-toggle" aria-label="toggle-theme"><svg><use class="theme-svg-use" xlink:href="#light-theme-icon"></use></svg></button></div><div class="navbar-right-item"><button class="icon-button font-size" aria-label="change-font-size"><svg><use xlink:href="#font-size-icon"></use></svg></button></div></div><nav></nav></nav></div><div class="toc-container"><div class="toc-content"><span class="bold">On this page</span><div id="eed4d2a0bfd64539bb9df78095dec881"></div></div></div><div class="body-wrapper"><div class="main-content"><div class="main-wrapper"><section id="source-page" class="source-page"><header><h1 id="title" class="has-anchor">larissa_utilityAI.js</h1></header><article><pre class="prettyprint source lang-js"><code>/**
+ * Larissa RPG System - Utility AI Engine
+ * AI-02: Utility scoring engine evaluating candidate actions (attack, flee, heal, patrol, rest)
+ * using composite consideration curves (normalized 0..1), deterministic tie-breaking,
+ * fallback / no-action handling, decision trace logging, and interrupted action cleanup.
+ */
+
+import { Component } from "../components/component.js";
+
+/**
+ * Clamps a number to the [0, 1] range.
+ * @param {number} value - Numeric value to clamp.
+ * @returns {number} Clamped value between 0 and 1.
+ */
+export function clamp01(value) {
+    if (typeof value !== "number" || Number.isNaN(value) || value &lt;= 0) return 0;
+    if (value >= 1) return 1;
+    return value;
+}
+
+/**
+ * Common normalized consideration curve functions mapping [0, 1] input to [0, 1] output.
+ */
+export const UtilityCurves = Object.freeze({
+    /**
+     * Linear identity response: f(x) = x.
+     * @param {number} x - Normalized input.
+     * @returns {number}
+     */
+    linear(x) {
+        return clamp01(x);
+    },
+
+    /**
+     * Inverse linear response: f(x) = 1 - x.
+     * @param {number} x - Normalized input.
+     * @returns {number}
+     */
+    inverseLinear(x) {
+        return clamp01(1 - clamp01(x));
+    },
+
+    /**
+     * Quadratic response (accelerating / ease-in): f(x) = x^2.
+     * @param {number} x - Normalized input.
+     * @returns {number}
+     */
+    quadratic(x) {
+        const c = clamp01(x);
+        return c * c;
+    },
+
+    /**
+     * Inverse quadratic response: f(x) = (1 - x)^2.
+     * @param {number} x - Normalized input.
+     * @returns {number}
+     */
+    inverseQuadratic(x) {
+        const c = clamp01(1 - clamp01(x));
+        return c * c;
+    },
+
+    /**
+     * Exponential response: f(x) = x^exponent.
+     * @param {number} x - Normalized input.
+     * @param {number} [exponent=2] - Power exponent.
+     * @returns {number}
+     */
+    exponential(x, exponent = 2) {
+        const exp = Number.isFinite(exponent) ? exponent : 2;
+        return clamp01(Math.pow(clamp01(x), exp));
+    },
+
+    /**
+     * Logistic (sigmoidal) S-curve response.
+     * @param {number} x - Normalized input.
+     * @param {number} [steepness=10] - Curve steepness factor.
+     * @param {number} [midpoint=0.5] - Inflection midpoint.
+     * @returns {number}
+     */
+    logistic(x, steepness = 10, midpoint = 0.5) {
+        const c = clamp01(x);
+        const k = Number.isFinite(steepness) ? steepness : 10;
+        const m = Number.isFinite(midpoint) ? midpoint : 0.5;
+        const raw = 1 / (1 + Math.exp(-k * (c - m)));
+        const low = 1 / (1 + Math.exp(k * m));
+        const high = 1 / (1 + Math.exp(-k * (1 - m)));
+        const range = high - low;
+        if (range &lt;= 0) return c;
+        const normalized = (raw - low) / range;
+        return clamp01(normalized);
+    },
+
+    /**
+     * Smoothstep curve (Hermite interpolation): f(x) = 3x^2 - 2x^3.
+     * @param {number} x - Normalized input.
+     * @returns {number}
+     */
+    smoothstep(x) {
+        const c = clamp01(x);
+        return c * c * (3 - 2 * c);
+    },
+
+    /**
+     * Binary step threshold response: 1 if x >= threshold, else 0.
+     * @param {number} x - Normalized input.
+     * @param {number} [threshold=0.5] - Activation threshold.
+     * @returns {number}
+     */
+    step(x, threshold = 0.5) {
+        return clamp01(x) >= threshold ? 1 : 0;
+    },
+
+    /**
+     * Inverse binary step threshold response: 1 if x &lt; threshold, else 0.
+     * @param {number} x - Normalized input.
+     * @param {number} [threshold=0.5] - Cutoff threshold.
+     * @returns {number}
+     */
+    inverseStep(x, threshold = 0.5) {
+        return clamp01(x) &lt; threshold ? 1 : 0;
+    }
+});
+
+/**
+ * Consideration evaluating a single dimension of context for an action.
+ */
+export class UtilityConsideration {
+    /**
+     * @param {Object} [config] - Consideration configuration.
+     * @param {string} [config.id] - Consideration identifier.
+     * @param {string} [config.name] - Alias for identifier.
+     * @param {Function} [config.input] - Function extracting raw or normalized input from context.
+     * @param {Function|string} [config.curve] - Curve function or curve name from UtilityCurves.
+     * @param {Function} [config.evaluate] - Direct evaluation function returning a utility score (0..1).
+     * @param {number} [config.weight=1.0] - Consideration weight multiplier.
+     */
+    constructor(config = {}) {
+        this.id = config.id || config.name || "consideration";
+        this.name = this.id;
+        this.weight = Number.isFinite(config.weight) ? config.weight : 1.0;
+        this.input = typeof config.input === "function" ? config.input : null;
+        this.directEvaluate = typeof config.evaluate === "function" ? config.evaluate : null;
+
+        if (typeof config.curve === "function") {
+            this.curve = config.curve;
+        } else if (typeof config.curve === "string" &amp;&amp; UtilityCurves[config.curve]) {
+            this.curve = UtilityCurves[config.curve];
+        } else {
+            this.curve = UtilityCurves.linear;
+        }
+    }
+
+    /**
+     * Evaluates this consideration against the given context.
+     * @param {Object} context - Game context data.
+     * @returns {Object} Result object containing id, rawInput, normalizedInput, and score.
+     */
+    evaluate(context) {
+        if (this.directEvaluate) {
+            const raw = this.directEvaluate(context);
+            const num = Number.isFinite(raw) ? raw : 0;
+            const score = clamp01(num * this.weight);
+            return {
+                id: this.id,
+                rawInput: num,
+                normalizedInput: clamp01(num),
+                score
+            };
+        }
+
+        const raw = this.input ? this.input(context) : 0;
+        const normalizedInput = clamp01(Number.isFinite(raw) ? raw : 0);
+        const curved = this.curve(normalizedInput);
+        const weighted = clamp01(curved * this.weight);
+
+        return {
+            id: this.id,
+            rawInput: Number.isFinite(raw) ? raw : 0,
+            normalizedInput,
+            score: weighted
+        };
+    }
+}
+
+/**
+ * Candidate action evaluated and executed by UtilityAI.
+ */
+export class UtilityAction {
+    /**
+     * @param {Object} config - Action configuration.
+     * @param {string} config.id - Action identifier.
+     * @param {number} [config.priority=0] - Deterministic tie-breaking and interruption priority.
+     * @param {number} [config.weight=1.0] - Action utility weight multiplier.
+     * @param {number} [config.threshold] - Action-specific minimum utility threshold.
+     * @param {Array} [config.considerations=[]] - Considerations list.
+     * @param {string} [config.compositeMode="multiplicative"] - "multiplicative" or "average".
+     * @param {Function} [config.execute] - Execution function called when action is chosen.
+     * @param {Function} [config.cleanup] - Cleanup function called when action ends or is interrupted.
+     * @param {Function} [config.onInterrupt] - Callback called when action is interrupted.
+     * @param {Function} [config.onExit] - Callback called on exit.
+     * @param {Function} [config.update] - Per-tick update function while active.
+     */
+    constructor(config = {}) {
+        if (!config || typeof config.id !== "string" || config.id.trim() === "") {
+            throw new TypeError("UtilityAction requires a non-empty string id");
+        }
+        this.id = config.id.trim();
+        this.priority = Number.isFinite(config.priority) ? config.priority : 0;
+        this.weight = Number.isFinite(config.weight) ? config.weight : 1.0;
+        this.threshold = Number.isFinite(config.threshold) ? config.threshold : null;
+        this.compositeMode = config.compositeMode === "average" ? "average" : "multiplicative";
+        this.execute = typeof config.execute === "function" ? config.execute : null;
+        this.cleanup = typeof config.cleanup === "function" ? config.cleanup : null;
+        this.onInterrupt = typeof config.onInterrupt === "function" ? config.onInterrupt : null;
+        this.onExit = typeof config.onExit === "function" ? config.onExit : null;
+        this.update = typeof config.update === "function" ? config.update : null;
+        this.isActive = false;
+
+        this.considerations = [];
+        if (Array.isArray(config.considerations)) {
+            for (const item of config.considerations) {
+                this.addConsideration(item);
+            }
+        }
+    }
+
+    /**
+     * Adds a consideration to this action.
+     * @param {UtilityConsideration|Object|Function} consideration - Consideration instance or config.
+     * @returns {UtilityAction} Self for chaining.
+     */
+    addConsideration(consideration) {
+        if (!consideration) return this;
+        if (consideration instanceof UtilityConsideration) {
+            this.considerations.push(consideration);
+        } else if (typeof consideration === "function") {
+            this.considerations.push(new UtilityConsideration({
+                id: `consideration_${this.considerations.length}`,
+                evaluate: consideration
+            }));
+        } else if (typeof consideration === "object") {
+            this.considerations.push(new UtilityConsideration(consideration));
+        }
+        return this;
+    }
+
+    /**
+     * Evaluates all composite considerations for this action against context.
+     * @param {Object} context - Game context data.
+     * @returns {Object} Evaluation summary including composite utility score.
+     */
+    evaluate(context) {
+        if (this.considerations.length === 0) {
+            const rawScore = clamp01(this.weight);
+            return {
+                id: this.id,
+                score: rawScore,
+                priority: this.priority,
+                threshold: this.threshold,
+                considerations: []
+            };
+        }
+
+        const evaluatedConsiderations = [];
+        let composite = 1.0;
+        let sum = 0;
+
+        for (const consideration of this.considerations) {
+            const result = consideration.evaluate(context);
+            evaluatedConsiderations.push(result);
+            composite *= result.score;
+            sum += result.score;
+        }
+
+        let finalScore = 0;
+        if (this.compositeMode === "average") {
+            finalScore = clamp01((sum / this.considerations.length) * this.weight);
+        } else {
+            // Multiplicative composite curves (standard Dave Mark utility architecture)
+            finalScore = clamp01(composite * this.weight);
+        }
+
+        return {
+            id: this.id,
+            score: finalScore,
+            priority: this.priority,
+            threshold: this.threshold,
+            considerations: evaluatedConsiderations
+        };
+    }
+}
+
+/**
+ * Safely extracts normalized health fraction (0..1) from context.
+ * @param {Object} context - Game context.
+ * @returns {number} Health fraction between 0 and 1.
+ */
+export function extractHealthFraction(context) {
+    if (!context || typeof context !== "object") return 1.0;
+    if (Number.isFinite(context.healthFraction)) return clamp01(context.healthFraction);
+    if (Number.isFinite(context.healthPercent)) {
+        return clamp01(context.healthPercent &lt;= 1 ? context.healthPercent : context.healthPercent / 100);
+    }
+    if (Number.isFinite(context.health) &amp;&amp; Number.isFinite(context.maxHealth) &amp;&amp; context.maxHealth > 0) {
+        return clamp01(context.health / context.maxHealth);
+    }
+    if (context.stats &amp;&amp; Number.isFinite(context.stats.health) &amp;&amp; Number.isFinite(context.stats.maxHealth) &amp;&amp; context.stats.maxHealth > 0) {
+        return clamp01(context.stats.health / context.stats.maxHealth);
+    }
+    if (context.combatant &amp;&amp; Number.isFinite(context.combatant.health) &amp;&amp; Number.isFinite(context.combatant.maxHealth) &amp;&amp; context.combatant.maxHealth > 0) {
+        return clamp01(context.combatant.health / context.combatant.maxHealth);
+    }
+    if (Number.isFinite(context.health)) {
+        return context.health &lt;= 1 ? clamp01(context.health) : clamp01(context.health / 100);
+    }
+    return 1.0;
+}
+
+/**
+ * Safely extracts danger/threat level (0..1) from context.
+ * @param {Object} context - Game context.
+ * @returns {number} Danger level between 0 and 1.
+ */
+export function extractDangerLevel(context) {
+    if (!context || typeof context !== "object") return 0.0;
+    if (Number.isFinite(context.dangerLevel)) return clamp01(context.dangerLevel);
+    if (Number.isFinite(context.danger)) return clamp01(context.danger);
+    if (context.inDanger === true) return 1.0;
+    if (context.inDanger === false) return 0.0;
+    if (Array.isArray(context.threats)) return context.threats.length > 0 ? 1.0 : 0.0;
+    if (context.target) return 0.8;
+    return 0.0;
+}
+
+/**
+ * Safely extracts stamina/energy fraction (0..1) from context.
+ * @param {Object} context - Game context.
+ * @returns {number} Stamina fraction between 0 and 1.
+ */
+export function extractStaminaFraction(context) {
+    if (!context || typeof context !== "object") return 1.0;
+    if (Number.isFinite(context.staminaFraction)) return clamp01(context.staminaFraction);
+    if (Number.isFinite(context.stamina) &amp;&amp; Number.isFinite(context.maxStamina) &amp;&amp; context.maxStamina > 0) {
+        return clamp01(context.stamina / context.maxStamina);
+    }
+    if (Number.isFinite(context.stamina)) {
+        return context.stamina &lt;= 1 ? clamp01(context.stamina) : clamp01(context.stamina / 100);
+    }
+    if (Number.isFinite(context.energy)) {
+        return context.energy &lt;= 1 ? clamp01(context.energy) : clamp01(context.energy / 100);
+    }
+    return 1.0;
+}
+
+/**
+ * Safely extracts target range suitability score (0..1).
+ * @param {Object} context - Game context.
+ * @returns {number} Range score between 0 and 1.
+ */
+export function extractRangeScore(context) {
+    if (!context || typeof context !== "object") return 0.0;
+    if (context.inAttackRange !== undefined) return context.inAttackRange ? 1.0 : 0.0;
+    if (context.inRange !== undefined) return context.inRange ? 1.0 : 0.0;
+    if (!context.target) return 0.0;
+
+    const range = Number.isFinite(context.attackRange) &amp;&amp; context.attackRange > 0 ? context.attackRange : 50;
+
+    if (Number.isFinite(context.targetDistance)) {
+        if (context.targetDistance &lt;= range) return 1.0;
+        if (context.targetDistance >= range * 2) return 0.0;
+        return clamp01(1 - (context.targetDistance - range) / range);
+    }
+
+    const selfPos = context.actor?.position ?? context.entity?.transform?.position ?? context.position;
+    const targetPos = context.target?.position ?? context.target?.transform?.position ?? (Number.isFinite(context.target?.x) ? context.target : null);
+
+    if (selfPos &amp;&amp; targetPos &amp;&amp; Number.isFinite(selfPos.x) &amp;&amp; Number.isFinite(selfPos.y) &amp;&amp; Number.isFinite(targetPos.x) &amp;&amp; Number.isFinite(targetPos.y)) {
+        const dx = targetPos.x - selfPos.x;
+        const dy = targetPos.y - selfPos.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist &lt;= range) return 1.0;
+        if (dist >= range * 2) return 0.0;
+        return clamp01(1 - (dist - range) / range);
+    }
+
+    // Target exists without explicit distance: consider in range
+    return 1.0;
+}
+
+/**
+ * Checks whether healing resource is available.
+ * @param {Object} context - Game context.
+ * @returns {boolean} True if healing resource or ability is available.
+ */
+export function extractCanHeal(context) {
+    if (!context || typeof context !== "object") return false;
+    if (context.canHeal !== undefined) return Boolean(context.canHeal);
+    if (Number.isFinite(context.potions)) return context.potions > 0;
+    if (Number.isFinite(context.healCharges)) return context.healCharges > 0;
+    if (Array.isArray(context.healingItems)) return context.healingItems.length > 0;
+    return false;
+}
+
+/**
+ * Creates built-in candidate action templates: attack, flee, heal, patrol, rest.
+ * @param {Object} [options] - Optional overrides.
+ * @returns {UtilityAction[]} Array of candidate actions.
+ */
+export function createDefaultActions(options = {}) {
+    // 1. Flee: high utility when health is low and danger is present
+    const flee = new UtilityAction({
+        id: "flee",
+        priority: 25,
+        threshold: 0.15,
+        execute: options.onFlee ?? ((ctx) => (typeof ctx.onFlee === "function" ? ctx.onFlee(ctx) : null)),
+        cleanup: options.onFleeCleanup ?? ((ctx, detail) => (typeof ctx.onFleeCleanup === "function" ? ctx.onFleeCleanup(ctx, detail) : null)),
+        considerations: [
+            new UtilityConsideration({
+                id: "low_health",
+                input: (ctx) => extractHealthFraction(ctx),
+                curve: UtilityCurves.inverseLinear
+            }),
+            new UtilityConsideration({
+                id: "threat_presence",
+                input: (ctx) => extractDangerLevel(ctx),
+                curve: UtilityCurves.linear
+            })
+        ]
+    });
+
+    // 2. Heal: high utility when damaged and healing supplies exist
+    const heal = new UtilityAction({
+        id: "heal",
+        priority: 20,
+        threshold: 0.15,
+        execute: options.onHeal ?? ((ctx) => (typeof ctx.onHeal === "function" ? ctx.onHeal(ctx) : null)),
+        cleanup: options.onHealCleanup ?? ((ctx, detail) => (typeof ctx.onHealCleanup === "function" ? ctx.onHealCleanup(ctx, detail) : null)),
+        considerations: [
+            new UtilityConsideration({
+                id: "missing_health",
+                input: (ctx) => 1.0 - extractHealthFraction(ctx),
+                curve: UtilityCurves.linear
+            }),
+            new UtilityConsideration({
+                id: "can_heal",
+                input: (ctx) => (extractCanHeal(ctx) ? 1.0 : 0.0),
+                curve: UtilityCurves.linear
+            })
+        ]
+    });
+
+    // 3. Attack: high utility when healthy and hostile target is within range
+    const attack = new UtilityAction({
+        id: "attack",
+        priority: 15,
+        threshold: 0.1,
+        execute: options.onAttack ?? ((ctx) => (typeof ctx.onAttack === "function" ? ctx.onAttack(ctx) : null)),
+        cleanup: options.onAttackCleanup ?? ((ctx, detail) => (typeof ctx.onAttackCleanup === "function" ? ctx.onAttackCleanup(ctx, detail) : null)),
+        considerations: [
+            new UtilityConsideration({
+                id: "has_target",
+                input: (ctx) => (ctx.target ? 1.0 : 0.0),
+                curve: UtilityCurves.linear
+            }),
+            new UtilityConsideration({
+                id: "target_in_range",
+                input: (ctx) => extractRangeScore(ctx),
+                curve: UtilityCurves.linear
+            }),
+            new UtilityConsideration({
+                id: "combat_readiness",
+                input: (ctx) => extractHealthFraction(ctx),
+                curve: UtilityCurves.linear
+            })
+        ]
+    });
+
+    // 4. Rest: high utility when stamina is low and environment is safe
+    const rest = new UtilityAction({
+        id: "rest",
+        priority: 10,
+        threshold: 0.15,
+        execute: options.onRest ?? ((ctx) => (typeof ctx.onRest === "function" ? ctx.onRest(ctx) : null)),
+        cleanup: options.onRestCleanup ?? ((ctx, detail) => (typeof ctx.onRestCleanup === "function" ? ctx.onRestCleanup(ctx, detail) : null)),
+        considerations: [
+            new UtilityConsideration({
+                id: "fatigue",
+                input: (ctx) => 1.0 - extractStaminaFraction(ctx),
+                curve: UtilityCurves.linear
+            }),
+            new UtilityConsideration({
+                id: "safety",
+                input: (ctx) => 1.0 - extractDangerLevel(ctx),
+                curve: UtilityCurves.linear
+            })
+        ]
+    });
+
+    // 5. Patrol: baseline behavior when calm and ready
+    const patrol = new UtilityAction({
+        id: "patrol",
+        priority: 5,
+        weight: 0.6,
+        threshold: 0.1,
+        execute: options.onPatrol ?? ((ctx) => (typeof ctx.onPatrol === "function" ? ctx.onPatrol(ctx) : null)),
+        cleanup: options.onPatrolCleanup ?? ((ctx, detail) => (typeof ctx.onPatrolCleanup === "function" ? ctx.onPatrolCleanup(ctx, detail) : null)),
+        considerations: [
+            new UtilityConsideration({
+                id: "calm_state",
+                input: (ctx) => 1.0 - extractDangerLevel(ctx),
+                curve: UtilityCurves.linear
+            }),
+            new UtilityConsideration({
+                id: "stamina",
+                input: (ctx) => extractStaminaFraction(ctx),
+                curve: UtilityCurves.linear
+            }),
+            new UtilityConsideration({
+                id: "health",
+                input: (ctx) => extractHealthFraction(ctx),
+                curve: UtilityCurves.linear
+            })
+        ]
+    });
+
+    return [flee, heal, attack, rest, patrol];
+}
+
+/**
+ * UtilityAI component managing utility scoring, candidate action evaluation,
+ * deterministic tie-breaking, decision tracing, and action lifecycle cleanup.
+ * @class UtilityAI
+ * @extends Component
+ */
+export class UtilityAI extends Component {
+    /**
+     * @param {Object} [config] - Configuration options.
+     * @param {Entity} [config.entity] - Entity attachment.
+     * @param {Array} [config.actions] - Array of candidate actions.
+     * @param {number} [config.defaultThreshold=0.1] - Default minimum utility threshold to execute an action.
+     * @param {number} [config.maxTraces=100] - Maximum decision traces retained.
+     * @param {boolean} [config.useDefaultActions=true] - Populate default actions (attack, flee, heal, patrol, rest) if none provided.
+     * @param {Object} [config.context] - Default context object.
+     * @param {Function} [config.contextProvider] - Context provider function (ai) => context.
+     * @param {Function} [config.onActionChange] - Callback when active action changes.
+     * @param {Function} [config.onActionInterrupted] - Callback when active action is interrupted.
+     */
+    constructor(config = {}) {
+        super(config.entity ?? null);
+
+        this.defaultThreshold = Number.isFinite(config.defaultThreshold) ? config.defaultThreshold : 0.1;
+        this.maxTraces = Number.isFinite(config.maxTraces) ? Math.max(1, config.maxTraces) : 100;
+
+        /** @type {UtilityAction|null} */
+        this.currentAction = null;
+        /** @type {Object|null} */
+        this.lastInterruptedAction = null;
+        /** @type {Map&lt;string, UtilityAction>} */
+        this.actions = new Map();
+
+        this._decisionTraces = [];
+        this.context = config.context ?? null;
+        this.contextProvider = typeof config.contextProvider === "function" ? config.contextProvider : null;
+        this.onActionChange = typeof config.onActionChange === "function" ? config.onActionChange : null;
+        this.onActionInterrupted = typeof config.onActionInterrupted === "function" ? config.onActionInterrupted : null;
+
+        if (Array.isArray(config.actions)) {
+            for (const act of config.actions) {
+                this.registerAction(act);
+            }
+        } else if (config.useDefaultActions !== false) {
+            const defaults = createDefaultActions();
+            for (const act of defaults) {
+                this.registerAction(act);
+            }
+        }
+    }
+
+    /**
+     * Current minimum score threshold to trigger an action.
+     * @returns {number}
+     */
+    get threshold() {
+        return this.defaultThreshold;
+    }
+
+    /**
+     * @param {number} value
+     */
+    set threshold(value) {
+        if (Number.isFinite(value)) {
+            this.defaultThreshold = value;
+        }
+    }
+
+    /**
+     * Registers a candidate action.
+     * @param {UtilityAction|Object} action - Action instance or configuration.
+     * @returns {UtilityAction} Registered action instance.
+     */
+    registerAction(action) {
+        if (!action) {
+            throw new TypeError("Cannot register empty action");
+        }
+        const inst = action instanceof UtilityAction ? action : new UtilityAction(action);
+        this.actions.set(inst.id, inst);
+        return inst;
+    }
+
+    /**
+     * Removes an action by identifier. Cleans up if currently active.
+     * @param {string} actionId - Identifier of action to remove.
+     * @param {Object} [context] - Context for cleanup.
+     * @returns {boolean} True if removed.
+     */
+    removeAction(actionId, context = {}) {
+        if (!this.actions.has(actionId)) return false;
+        if (this.currentAction &amp;&amp; this.currentAction.id === actionId) {
+            this._cleanupActiveAction(context, {
+                reason: "action_removed",
+                details: `Action '${actionId}' was removed from UtilityAI`
+            });
+            this.currentAction = null;
+        }
+        return this.actions.delete(actionId);
+    }
+
+    /**
+     * Retrieves an action by ID.
+     * @param {string} actionId
+     * @returns {UtilityAction|null}
+     */
+    getAction(actionId) {
+        return this.actions.get(actionId) ?? null;
+    }
+
+    /**
+     * Returns an array of all registered candidate actions.
+     * @returns {UtilityAction[]}
+     */
+    getActions() {
+        return Array.from(this.actions.values());
+    }
+
+    /**
+     * Evaluates all candidate actions against context and returns winning decision.
+     * Applies deterministic tie-breaking (priority then ID) and records a decision trace.
+     * @param {Object} [context={}] - Context data.
+     * @returns {Object} Evaluation result containing chosenAction, score, reason, trace, and candidateScores.
+     */
+    evaluate(context = {}) {
+        const candidates = [];
+
+        for (const action of this.actions.values()) {
+            const result = action.evaluate(context);
+            const actThreshold = action.threshold !== null &amp;&amp; action.threshold !== undefined
+                ? action.threshold
+                : this.defaultThreshold;
+
+            candidates.push({
+                action,
+                id: action.id,
+                score: result.score,
+                priority: action.priority ?? 0,
+                threshold: actThreshold,
+                passedThreshold: result.score >= actThreshold &amp;&amp; result.score > 0,
+                considerations: result.considerations
+            });
+        }
+
+        // Deterministic sorting:
+        // 1. Highest utility score descending
+        // 2. Highest priority descending on equal scores
+        // 3. Alphabetical action ID ascending on equal priority
+        candidates.sort((a, b) => {
+            const scoreDiff = b.score - a.score;
+            if (Math.abs(scoreDiff) > 1e-6) {
+                return scoreDiff;
+            }
+            const prioDiff = (b.priority ?? 0) - (a.priority ?? 0);
+            if (prioDiff !== 0) {
+                return prioDiff;
+            }
+            return String(a.id).localeCompare(String(b.id));
+        });
+
+        const best = candidates.length > 0 ? candidates[0] : null;
+        const effectiveThreshold = best ? best.threshold : this.defaultThreshold;
+
+        let chosenAction = null;
+        let chosenScore = 0;
+        let reason = "";
+
+        if (!best) {
+            reason = "No candidate actions registered.";
+        } else if (best.score &lt; effectiveThreshold || best.score &lt;= 0) {
+            reason = `All candidates scored below threshold (${effectiveThreshold.toFixed(4)}). Highest was '${best.id}' with score ${best.score.toFixed(4)}.`;
+        } else {
+            chosenAction = best.action;
+            chosenScore = best.score;
+
+            const second = candidates[1];
+            if (second &amp;&amp; Math.abs(best.score - second.score) &lt;= 1e-6) {
+                if ((best.priority ?? 0) !== (second.priority ?? 0)) {
+                    reason = `Action '${best.id}' selected with score ${best.score.toFixed(4)}; broke tie with '${second.id}' by priority (${best.priority} > ${second.priority})`;
+                } else {
+                    reason = `Action '${best.id}' selected with score ${best.score.toFixed(4)}; broke tie with '${second.id}' by ID`;
+                }
+            } else {
+                reason = `Action '${best.id}' selected with highest utility score ${best.score.toFixed(4)} (threshold: ${effectiveThreshold.toFixed(4)})`;
+            }
+        }
+
+        const trace = {
+            timestamp: this._getNow(),
+            chosenAction: chosenAction ? chosenAction.id : null,
+            chosenScore,
+            reason,
+            threshold: effectiveThreshold,
+            interruptedAction: null,
+            candidates: candidates.map((c) => ({
+                id: c.id,
+                score: c.score,
+                priority: c.priority,
+                threshold: c.threshold,
+                passedThreshold: c.passedThreshold,
+                considerations: c.considerations
+            }))
+        };
+
+        this._recordTrace(trace);
+
+        return {
+            chosenAction,
+            score: chosenScore,
+            reason,
+            trace,
+            candidateScores: trace.candidates
+        };
+    }
+
+    /**
+     * Evaluates candidates and executes the highest-scoring action.
+     * Cleans up superseded or active action states if interrupted or changed.
+     * @param {Object} [context={}] - Context data.
+     * @returns {Object} Result object with chosenAction, score, executed, result, and evaluation.
+     */
+    evaluateAndExecute(context = {}) {
+        const evaluation = this.evaluate(context);
+        const { chosenAction } = evaluation;
+
+        if (!chosenAction) {
+            if (this.currentAction) {
+                this._cleanupActiveAction(context, {
+                    reason: "threshold_not_met",
+                    details: "All candidate actions scored below threshold"
+                });
+                this.currentAction = null;
+            }
+            return {
+                chosenAction: null,
+                score: 0,
+                executed: false,
+                result: null,
+                evaluation
+            };
+        }
+
+        const previousAction = this.currentAction;
+
+        if (this.currentAction &amp;&amp; this.currentAction.id !== chosenAction.id) {
+            this._cleanupActiveAction(context, {
+                reason: "interrupted",
+                supersededBy: chosenAction.id,
+                details: `Interrupted by higher-scoring action '${chosenAction.id}'`
+            });
+        }
+
+        this.currentAction = chosenAction;
+        chosenAction.isActive = true;
+
+        let result = null;
+        if (typeof chosenAction.execute === "function") {
+            try {
+                result = chosenAction.execute(context);
+            } catch (err) {
+                console.error(`Error executing action '${chosenAction.id}':`, err);
+            }
+        }
+
+        if (this.onActionChange &amp;&amp; (!previousAction || previousAction.id !== chosenAction.id)) {
+            try {
+                this.onActionChange(chosenAction, previousAction, context);
+            } catch (err) {
+                console.error("Error in onActionChange callback:", err);
+            }
+        }
+
+        return {
+            chosenAction,
+            score: evaluation.score,
+            executed: true,
+            result,
+            evaluation
+        };
+    }
+
+    /**
+     * Explicitly interrupts the currently active action with cleanup.
+     * @param {string|Object} [reason="interrupted"] - Reason for interruption.
+     * @param {Object} [context={}] - Context data.
+     * @returns {boolean} True if an active action was interrupted.
+     */
+    interrupt(reason = "interrupted", context = {}) {
+        if (!this.currentAction) return false;
+
+        const interrupted = this.currentAction;
+        const reasonStr = typeof reason === "string" ? reason : "interrupted";
+
+        this._cleanupActiveAction(context, {
+            reason: reasonStr,
+            details: reason
+        });
+        this.currentAction = null;
+
+        if (typeof this.onActionInterrupted === "function") {
+            try {
+                this.onActionInterrupted(interrupted, reason, context);
+            } catch (err) {
+                console.error("Error in onActionInterrupted callback:", err);
+            }
+        }
+
+        this._recordTrace({
+            timestamp: this._getNow(),
+            chosenAction: null,
+            chosenScore: 0,
+            reason: `Active action '${interrupted.id}' interrupted: ${reasonStr}`,
+            threshold: this.defaultThreshold,
+            interruptedAction: interrupted.id,
+            candidates: []
+        });
+
+        return true;
+    }
+
+    /**
+     * Cleans up the active action.
+     * @private
+     * @param {Object} context - Game context.
+     * @param {Object} detail - Detail payload for cleanup.
+     */
+    _cleanupActiveAction(context, detail) {
+        const action = this.currentAction;
+        if (!action) return;
+
+        action.isActive = false;
+        this.lastInterruptedAction = {
+            actionId: action.id,
+            detail,
+            timestamp: this._getNow()
+        };
+
+        if (typeof action.cleanup === "function") {
+            try {
+                action.cleanup(context, detail);
+            } catch (err) {
+                console.error(`Error in cleanup for action '${action.id}':`, err);
+            }
+        }
+        if (typeof action.onInterrupt === "function") {
+            try {
+                action.onInterrupt(context, detail);
+            } catch (err) {
+                console.error(`Error in onInterrupt for action '${action.id}':`, err);
+            }
+        }
+        if (typeof action.onExit === "function") {
+            try {
+                action.onExit(context, detail);
+            } catch (err) {
+                console.error(`Error in onExit for action '${action.id}':`, err);
+            }
+        }
+    }
+
+    /**
+     * Returns a copy of recorded decision traces.
+     * @returns {Object[]} Array of decision traces.
+     */
+    getDecisionTraces() {
+        return this._decisionTraces.map((t) => ({
+            ...t,
+            candidates: Array.isArray(t.candidates) ? t.candidates.map((c) => ({ ...c })) : []
+        }));
+    }
+
+    /**
+     * Clears all recorded decision traces.
+     */
+    clearTraces() {
+        this._decisionTraces = [];
+    }
+
+    /**
+     * Returns the most recent decision trace, or null if empty.
+     * @returns {Object|null}
+     */
+    getLastDecisionTrace() {
+        if (this._decisionTraces.length === 0) return null;
+        return this._decisionTraces[this._decisionTraces.length - 1];
+    }
+
+    /**
+     * Resolves the current context for evaluation.
+     * @returns {Object}
+     */
+    getContext() {
+        let ctx = {};
+        if (typeof this.contextProvider === "function") {
+            ctx = this.contextProvider(this) ?? {};
+        } else if (this.context &amp;&amp; typeof this.context === "object") {
+            ctx = { ...this.context };
+        }
+        if (this.entity &amp;&amp; !ctx.entity) {
+            ctx.entity = this.entity;
+        }
+        return ctx;
+    }
+
+    /**
+     * Updates the UtilityAI component for a game loop tick.
+     * @param {number} [deltaTime=0] - Delta time in seconds.
+     * @param {Object} [overrideContext] - Optional context override.
+     * @returns {Object} Result of evaluateAndExecute.
+     */
+    update(deltaTime = 0, overrideContext = null) {
+        const context = overrideContext ?? this.getContext();
+        context.deltaTime = deltaTime;
+
+        if (this.currentAction &amp;&amp; typeof this.currentAction.update === "function") {
+            try {
+                this.currentAction.update(context, deltaTime);
+            } catch (err) {
+                console.error(`Error in update for action '${this.currentAction.id}':`, err);
+            }
+        }
+
+        return this.evaluateAndExecute(context);
+    }
+
+    /**
+     * Records a decision trace into the bounded history.
+     * @private
+     * @param {Object} trace
+     * @returns {Object}
+     */
+    _recordTrace(trace) {
+        this._decisionTraces.push(trace);
+        if (this._decisionTraces.length > this.maxTraces) {
+            this._decisionTraces.shift();
+        }
+        return trace;
+    }
+
+    /**
+     * Gets current high-resolution timestamp.
+     * @private
+     * @returns {number}
+     */
+    _getNow() {
+        return typeof performance !== "undefined" &amp;&amp; typeof performance.now === "function"
+            ? performance.now()
+            : Date.now();
+    }
+}
+
+UtilityAI.Curves = UtilityCurves;
+UtilityAI.Action = UtilityAction;
+UtilityAI.Consideration = UtilityConsideration;
+UtilityAI.createDefaultActions = createDefaultActions;
+UtilityAI.clamp01 = clamp01;
+</code></pre></article></section><footer class="footer" id="PeOAagUepe"><div class="wrapper">MIT License | Copyright (c) 2022 Sujal Choudhari</div></footer></div></div></div><div class="search-container" id="PkfLWpAbet" style="display:none"><div class="wrapper" id="iCxFxjkHbP"><button class="icon-button search-close-button" id="VjLlGakifb" aria-label="close search"><svg><use xlink:href="#close-icon"></use></svg></button><div class="search-box-c"><svg><use xlink:href="#search-icon"></use></svg> <input type="text" id="vpcKVYIppa" class="search-input" placeholder="Search..." autofocus></div><div class="search-result-c" id="fWwVHRuDuN"><span class="search-result-c-text">Type anything to view search result</span></div></div></div><div class="mobile-menu-icon-container"><button class="icon-button" id="mobile-menu" data-isopen="false" aria-label="menu"><svg><use xlink:href="#menu-icon"></use></svg></button></div><div id="mobile-sidebar" class="mobile-sidebar-container"><div class="mobile-sidebar-wrapper"><a href="/" class="sidebar-title sidebar-title-anchor">Neptune.js</a><div class="mobile-nav-links"><div class="navbar-item"><a id="" href="https://github.com/NotSujal/Neptune.js" target="_blank">Github</a></div><div class="navbar-item"><a id="" href="https://www.npmjs.com/package/@sujalchoudhari/neptune-js" target="_blank">NPM</a></div></div><div class="mobile-sidebar-items-c"><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-tutorials"><div>Tutorials</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="tutorial-00-Getting Started.html">Getting started</a></div><div class="sidebar-section-children"><a href="tutorial-01-Introduction.html">Introduction</a></div><div class="sidebar-section-children"><a href="tutorial-02-Step by step.html">Step by step</a></div><div class="sidebar-section-children"><a href="tutorial-03-Systems.html">Systems and Managers</a></div><div class="sidebar-section-children"><a href="tutorial-04-Multiple Scenes.html">Multiple Scenes</a></div><div class="sidebar-section-children"><a href="tutorial-05-Inputs.html">Inputs</a></div><div class="sidebar-section-children"><a href="tutorial-06-Scripts.html">Scripts</a></div><div class="sidebar-section-children"><a href="tutorial-07-Beyond.html">Beyond the basics</a></div><div class="sidebar-section-children"><a href="tutorial-08-Showcase Demo.html">Interactive Systems Showcase</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-interfaces"><div>Interfaces</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="Behaviour.html">Behaviour</a></div><div class="sidebar-section-children"><a href="Component.html">Component</a></div><div class="sidebar-section-children"><a href="Container.html">Container</a></div><div class="sidebar-section-children"><a href="Global_.html">Global</a></div><div class="sidebar-section-children"><a href="Renderable.html">Renderable</a></div></div><div class="sidebar-section-title with-arrow" data-isopen="false" id="sidebar-classes"><div>Classes</div><svg><use xlink:href="#down-icon"></use></svg></div><div class="sidebar-section-children-container"><div class="sidebar-section-children"><a href="AbilityBudgetExceededError.html">AbilityBudgetExceededError</a></div><div class="sidebar-section-children"><a href="AbilityExecutionError.html">AbilityExecutionError</a></div><div class="sidebar-section-children"><a href="AbilityExecutor.html">AbilityExecutor</a></div><div class="sidebar-section-children"><a href="AbilityValidationError.html">AbilityValidationError</a></div><div class="sidebar-section-children"><a href="Animation.html">Animation</a></div><div class="sidebar-section-children"><a href="Animation_Animation.html">Animation</a></div><div class="sidebar-section-children"><a href="Animator.html">Animator</a></div><div class="sidebar-section-children"><a href="Application.html">Application</a></div><div class="sidebar-section-children"><a href="AttackDefinition.html">AttackDefinition</a></div><div class="sidebar-section-children"><a href="AudioBus.html">AudioBus</a></div><div class="sidebar-section-children"><a href="AudioBusSystem.html">AudioBusSystem</a></div><div class="sidebar-section-children"><a href="AudioMixer.html">AudioMixer</a></div><div class="sidebar-section-children"><a href="Behaviour_Behaviour.html">Behaviour</a></div><div class="sidebar-section-children"><a href="Body.html">Body</a></div><div class="sidebar-section-children"><a href="BossAI.html">BossAI</a></div><div class="sidebar-section-children"><a href="BoundedMemory.html">BoundedMemory</a></div><div class="sidebar-section-children"><a href="BoxCollider.html">BoxCollider</a></div><div class="sidebar-section-children"><a href="Camera.html">Camera</a></div><div class="sidebar-section-children"><a href="CellGridSimulation.html">CellGridSimulation</a></div><div class="sidebar-section-children"><a href="Collider.html">Collider</a></div><div class="sidebar-section-children"><a href="CollisionSystem.html">CollisionSystem</a></div><div class="sidebar-section-children"><a href="Color.html">Color</a></div><div class="sidebar-section-children"><a href="Combatant.html">Combatant</a></div><div class="sidebar-section-children"><a href="CombatSystem.html">CombatSystem</a></div><div class="sidebar-section-children"><a href="ComponentRegistry.html">ComponentRegistry</a></div><div class="sidebar-section-children"><a href="ContactSolver.html">ContactSolver</a></div><div class="sidebar-section-children"><a href="CorruptSaveError.html">CorruptSaveError</a></div><div class="sidebar-section-children"><a href="Cutscene.html">Cutscene</a></div><div class="sidebar-section-children"><a href="Cutscene_Cutscene.html">Cutscene</a></div><div class="sidebar-section-children"><a href="CutsceneManager.html">CutsceneManager</a></div><div class="sidebar-section-children"><a href="DeathRetryManager.html">DeathRetryManager</a></div><div class="sidebar-section-children"><a href="DestroyQueue.html">DestroyQueue</a></div><div class="sidebar-section-children"><a href="Dialogue.html">Dialogue</a></div><div class="sidebar-section-children"><a href="DialogueBox.html">DialogueBox</a></div><div class="sidebar-section-children"><a href="ElevationFilter.html">ElevationFilter</a></div><div class="sidebar-section-children"><a href="EnemyAI.html">EnemyAI</a></div><div class="sidebar-section-children"><a href="EnemyConfig.html">EnemyConfig</a></div><div class="sidebar-section-children"><a href="Entity.html">Entity</a></div><div class="sidebar-section-children"><a href="EquipmentSystem.html">EquipmentSystem</a></div><div class="sidebar-section-children"><a href="FactionRegistry.html">FactionRegistry</a></div><div class="sidebar-section-children"><a href="Filter.html">Filter</a></div><div class="sidebar-section-children"><a href="FixedStepper.html">FixedStepper</a></div><div class="sidebar-section-children"><a href="Font.html">Font</a></div><div class="sidebar-section-children"><a href="FutureVersionError.html">FutureVersionError</a></div><div class="sidebar-section-children"><a href="GameClock.html">GameClock</a></div><div class="sidebar-section-children"><a href="GameData.html">GameData</a></div><div class="sidebar-section-children"><a href="GameFeel.html">GameFeel</a></div><div class="sidebar-section-children"><a href="GridContainer.html">GridContainer</a></div><div class="sidebar-section-children"><a href="HazardSystem.html">HazardSystem</a></div><div class="sidebar-section-children"><a href="HBoxContainer.html">HBoxContainer</a></div><div class="sidebar-section-children"><a href="InputActions.html">InputActions</a></div><div class="sidebar-section-children"><a href="InteractionResult.html">InteractionResult</a></div><div class="sidebar-section-children"><a href="Inventory.html">Inventory</a></div><div class="sidebar-section-children"><a href="Inventory.html">Inventory</a></div><div class="sidebar-section-children"><a href="Inventory_Inventory.html">Inventory</a></div><div class="sidebar-section-children"><a href="ItemRegistry.html">ItemRegistry</a></div><div class="sidebar-section-children"><a href="KeyboardInput.html">KeyboardInput</a></div><div class="sidebar-section-children"><a href="KnockbackMotor.html">KnockbackMotor</a></div><div class="sidebar-section-children"><a href="LevelProgression.html">LevelProgression</a></div><div class="sidebar-section-children"><a href="LootTable.html">LootTable</a></div><div class="sidebar-section-children"><a href="MapStorage.html">MapStorage</a></div><div class="sidebar-section-children"><a href="MarginContainer.html">MarginContainer</a></div><div class="sidebar-section-children"><a href="MaterialInteraction.html">MaterialInteraction</a></div><div class="sidebar-section-children"><a href="MaterialRegistry.html">MaterialRegistry</a></div><div class="sidebar-section-children"><a href="Maths.html">Maths</a></div><div class="sidebar-section-children"><a href="MigrationError.html">MigrationError</a></div><div class="sidebar-section-children"><a href="MinHeap.html">MinHeap</a></div><div class="sidebar-section-children"><a href="MouseInput.html">MouseInput</a></div><div class="sidebar-section-children"><a href="MusicManager.html">MusicManager</a></div><div class="sidebar-section-children"><a href="NavigationGrid.html">NavigationGrid</a></div><div class="sidebar-section-children"><a href="NavigationGrid_NavigationGrid.html">NavigationGrid</a></div><div class="sidebar-section-children"><a href="NavigationPath.html">NavigationPath</a></div><div class="sidebar-section-children"><a href="NavigationPath_NavigationPath.html">NavigationPath</a></div><div class="sidebar-section-children"><a href="NPCKnowledge.html">NPCKnowledge</a></div><div class="sidebar-section-children"><a href="NPCSchedule.html">NPCSchedule</a></div><div class="sidebar-section-children"><a href="Panel.html">Panel</a></div><div class="sidebar-section-children"><a href="ParallaxBackground.html">ParallaxBackground</a></div><div class="sidebar-section-children"><a href="ParallaxLayer.html">ParallaxLayer</a></div><div class="sidebar-section-children"><a href="ParallaxLayer_ParallaxLayer.html">ParallaxLayer</a></div><div class="sidebar-section-children"><a href="PerceptionSystem.html">PerceptionSystem</a></div><div class="sidebar-section-children"><a href="PlatformerController.html">PlatformerController</a></div><div class="sidebar-section-children"><a href="Pose.html">Pose</a></div><div class="sidebar-section-children"><a href="Pose_Pose.html">Pose</a></div><div class="sidebar-section-children"><a href="Progression.html">Progression</a></div><div class="sidebar-section-children"><a href="ProjectBehaviour.html">ProjectBehaviour</a></div><div class="sidebar-section-children"><a href="QuestDefinition.html">QuestDefinition</a></div><div class="sidebar-section-children"><a href="QuestGraph.html">QuestGraph</a></div><div class="sidebar-section-children"><a href="QuestLog.html">QuestLog</a></div><div class="sidebar-section-children"><a href="ReferenceValidationError.html">ReferenceValidationError</a></div><div class="sidebar-section-children"><a href="ReferenceValidator.html">ReferenceValidator</a></div><div class="sidebar-section-children"><a href="ResourceReferenceError.html">ResourceReferenceError</a></div><div class="sidebar-section-children"><a href="RewardSystem.html">RewardSystem</a></div><div class="sidebar-section-children"><a href="Rig.html">Rig</a></div><div class="sidebar-section-children"><a href="RuleEngine.html">RuleEngine</a></div><div class="sidebar-section-children"><a href="SaveManager.html">SaveManager</a></div><div class="sidebar-section-children"><a href="Scene.html">Scene</a></div><div class="sidebar-section-children"><a href="SceneLoader.html">SceneLoader</a></div><div class="sidebar-section-children"><a href="SceneManager.html">SceneManager</a></div><div class="sidebar-section-children"><a href="SceneTransition.html">SceneTransition</a></div><div class="sidebar-section-children"><a href="ScheduleSlot.html">ScheduleSlot</a></div><div class="sidebar-section-children"><a href="ScheduleSystem.html">ScheduleSystem</a></div><div class="sidebar-section-children"><a href="SchemaMigrationRegistry.html">SchemaMigrationRegistry</a></div><div class="sidebar-section-children"><a href="Shape.html">Shape</a></div><div class="sidebar-section-children"><a href="Shop.html">Shop</a></div><div class="sidebar-section-children"><a href="Sound.html">Sound</a></div><div class="sidebar-section-children"><a href="SoundPool.html">SoundPool</a></div><div class="sidebar-section-children"><a href="SoundPool_SoundPool.html">SoundPool</a></div><div class="sidebar-section-children"><a href="SpatialHashGrid.html">SpatialHashGrid</a></div><div class="sidebar-section-children"><a href="SpawnPoint.html">SpawnPoint</a></div><div class="sidebar-section-children"><a href="Sprite.html">Sprite</a></div><div class="sidebar-section-children"><a href="Stats.html">Stats</a></div><div class="sidebar-section-children"><a href="StatusEffectManager.html">StatusEffectManager</a></div><div class="sidebar-section-children"><a href="Storage.html">Storage</a></div><div class="sidebar-section-children"><a href="StoryGraph.html">StoryGraph</a></div><div class="sidebar-section-children"><a href="SweptAABB.html">SweptAABB</a></div><div class="sidebar-section-children"><a href="Text.html">Text</a></div><div class="sidebar-section-children"><a href="TileCollision.html">TileCollision</a></div><div class="sidebar-section-children"><a href="TileCollision_TileCollision.html">TileCollision</a></div><div class="sidebar-section-children"><a href="Tilemap.html">Tilemap</a></div><div class="sidebar-section-children"><a href="Tilemap_Tilemap.html">Tilemap</a></div><div class="sidebar-section-children"><a href="Tileset.html">Tileset</a></div><div class="sidebar-section-children"><a href="Tileset_Tileset.html">Tileset</a></div><div class="sidebar-section-children"><a href="TopDownController.html">TopDownController</a></div><div class="sidebar-section-children"><a href="TouchInput.html">TouchInput</a></div><div class="sidebar-section-children"><a href="Transform.html">Transform</a></div><div class="sidebar-section-children"><a href="TriggerLifecycleSystem.html">TriggerLifecycleSystem</a></div><div class="sidebar-section-children"><a href="TypedEventBus.html">TypedEventBus</a></div><div class="sidebar-section-children"><a href="UISprite.html">UISprite</a></div><div class="sidebar-section-children"><a href="UITransform.html">UITransform</a></div><div class="sidebar-section-children"><a href="UtilityAction.html">UtilityAction</a></div><div class="sidebar-section-children"><a href="UtilityAI.html">UtilityAI</a></div><div class="sidebar-section-children"><a href="UtilityAI_UtilityAI.html">UtilityAI</a></div><div class="sidebar-section-children"><a href="UtilityConsideration.html">UtilityConsideration</a></div><div class="sidebar-section-children"><a href="VBoxContainer.html">VBoxContainer</a></div><div class="sidebar-section-children"><a href="Vector2.html">Vector2</a></div><div class="sidebar-section-children"><a href="VersionedSaveEngine.html">VersionedSaveEngine</a></div><div class="sidebar-section-children"><a href="WorldFacts.html">WorldFacts</a></div><div class="sidebar-section-children"><a href="WorldMetadataRegistry.html">WorldMetadataRegistry</a></div></div></div><div class="mobile-navbar-actions"><div class="navbar-right-item"><button class="icon-button search-button" aria-label="open-search"><svg><use xlink:href="#search-icon"></use></svg></button></div><div class="navbar-right-item"><button class="icon-button theme-toggle" aria-label="toggle-theme"><svg><use class="theme-svg-use" xlink:href="#light-theme-icon"></use></svg></button></div><div class="navbar-right-item"><button class="icon-button font-size" aria-label="change-font-size"><svg><use xlink:href="#font-size-icon"></use></svg></button></div></div></div></div><script type="text/javascript" src="scripts/core.min.js"></script><script src="scripts/search.min.js" defer="defer"></script><script src="scripts/third-party/fuse.js" defer="defer"></script><script type="text/javascript">var tocbotInstance=tocbot.init({tocSelector:"#eed4d2a0bfd64539bb9df78095dec881",contentSelector:".main-content",headingSelector:"h1, h2, h3",hasInnerContainers:!0,scrollContainer:".main-content",headingsOffset:130,onClick:bringLinkToView})</script></body></html>
