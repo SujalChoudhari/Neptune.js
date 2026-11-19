@@ -4,6 +4,7 @@ export { Collider, SolidCollider, TriggerCollider, Hitbox, Hurtbox, InteractionA
 export { CollisionSystem } from "./collisionSystem.js";
 export { CollisionLayers, createCollisionMask, canLayersCollide, ContactSolver, TriggerLifecycleSystem } from "./collisionLayers.js";
 export { SweptAABB, ElevationFilter, KnockbackMotor, HazardSystem } from "./sweptCollision.js";
+export { SpatialHashGrid } from "./spatialHashGrid.js";
 export { TileCollision } from "./tilecollision.js";
 export { PlatformerController } from "./platformerController.js";
 export { TopDownController, boxColliderToCollider } from "./topDownController.js";

@@ -700,10 +700,62 @@ export class Inventory extends Component {
 
     /**
      * Equipment mapping getter mirroring the equipment system slots.
+     * Non-null slots are enumerable so Object.entries(equipment) reflects only equipped items,
+     * while direct slot property access (e.g. equipment.mainHand or equipment.weapon) returns the item or null.
      * @type {Object}
      */
     get equipment() {
-        return this.equipmentSystem.slots;
+        const slots = this.equipmentSystem.slots;
+        return new Proxy(slots, {
+            get(target, prop) {
+                if (prop === "weapon" || prop === "hand") {
+                    return target.mainHand ?? null;
+                }
+                if (typeof prop === "string" && prop in target) {
+                    return target[prop] ?? null;
+                }
+                return target[prop];
+            },
+            has(target, prop) {
+                if (prop === "weapon" || prop === "hand") {
+                    return target.mainHand !== null;
+                }
+                return prop in target && target[prop] !== null;
+            },
+            ownKeys(target) {
+                const keys = [];
+                for (const k of Object.keys(target)) {
+                    if (target[k] !== null) {
+                        const item = target[k];
+                        if (k === "mainHand" && item?.slot === "weapon") {
+                            keys.push("weapon");
+                        } else {
+                            keys.push(k);
+                        }
+                    }
+                }
+                return keys;
+            },
+            getOwnPropertyDescriptor(target, prop) {
+                if ((prop === "weapon" || prop === "hand") && target.mainHand) {
+                    return {
+                        value: target.mainHand,
+                        writable: true,
+                        enumerable: true,
+                        configurable: true
+                    };
+                }
+                if (target[prop] !== null && target[prop] !== undefined) {
+                    return {
+                        value: target[prop],
+                        writable: true,
+                        enumerable: true,
+                        configurable: true
+                    };
+                }
+                return undefined;
+            }
+        });
     }
 
     set equipment(value) {

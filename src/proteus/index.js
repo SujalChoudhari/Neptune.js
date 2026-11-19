@@ -2,3 +2,4 @@
 export { MusicManager } from "./musicManager.js";
 export { SoundPool } from "./soundPool.js";
 export { AudioMixer } from "./audioMixer.js";
+export { AudioBus, AudioBusSystem } from "../audio/audioBuses.js";

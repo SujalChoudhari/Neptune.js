@@ -242,6 +242,35 @@ No 3D, alternate isometric/rotating world mode, WebGPU, multiplayer, global flui
 
 ## Claim log
 
+### Batch: PHYS-04, WORLD-01, AUDIO-01
+- **Task IDs:** PHYS-04, WORLD-01, AUDIO-01
+- **Status:** Verified
+- **Owner/Date:** Codex / Nov 19, 2026
+- **Exact File Ownership:**
+  - `PHYS-04`: `src/nereid/spatialHashGrid.js`, `tests/physics-spatial-grid.test.mjs`
+  - `WORLD-01`: `src/thalassa/worldMetadata.js`, `tests/world-metadata-schema.test.mjs`
+  - `AUDIO-01`: `src/audio/audioBuses.js`, `tests/audio-buses-volume.test.mjs`
+  - Integration: `src/nereid/index.js`, `src/thalassa/index.js`, `src/proteus/index.js`, `src/neptune.js`, `scripts/test.js`
+- **Prerequisite IDs:** PHYS-01/02/03, WORLD-01, SIM-01
+- **Shared API/Schema Decisions:**
+  - `PHYS-04`: `SpatialHashGrid` partitions 2D space into uniform buckets (`cellSize`), handling negative coordinates seamlessly without index or modulo bugs (`Math.floor`). Optimizes movements within the same cell without bucket re-insertions, supports oversized colliders spanning multiple cells safely within `maxCellSpan` caps, provides circular radius and AABB queries, and generates deduplicated potential collision pairs.
+  - `WORLD-01`: `WorldMetadataRegistry` defines multi-layer schemas (`visual`, `collision`, `elevation`, `zones`, `materials`) with strict diagnostics for unknown tiles, missing layers, and invalid elevations. Resolves override conflicts deterministically where higher zIndex and explicit collision layers take precedence over visual layers. Binds tiles to `SIM-01` materials (`wood`, `stone`, `water`, `grass`, `iron`, `dirt`) and provides 3D elevation interval zone queries.
+  - `AUDIO-01`: `AudioBusSystem` provides a hierarchical bus tree (root `master` -> `music`, `sfx`, `ui`) with recursive composed gain calculation, volume clamping (`0.0 .. 1.0`), and ancestor mute propagation ("muted parent" immediately zeros descendant effective volumes). Persists user audio preferences independently from story/save progress, supporting preference adjustments before audio unlock or scene loading.
+- **Implementation Checklist:**
+  - [x] Implement `src/nereid/spatialHashGrid.js` and `tests/physics-spatial-grid.test.mjs`
+  - [x] Implement `src/thalassa/worldMetadata.js` and `tests/world-metadata-schema.test.mjs`
+  - [x] Implement `src/audio/audioBuses.js` and `tests/audio-buses-volume.test.mjs`
+  - [x] Re-export modules in `src/nereid/index.js`, `src/thalassa/index.js`, `src/proteus/index.js`, and `src/neptune.js`
+  - [x] Register test suites in `scripts/test.js`
+  - [x] Pass focused regression tests (19/19 tests)
+  - [x] Pass integrated 9-suite regression suite (83/83 tests)
+  - [x] Pass `npm run test:docs-contract`
+- **Checks and Evidence:**
+  - Focused suite: `node --test tests/physics-spatial-grid.test.mjs tests/world-metadata-schema.test.mjs tests/audio-buses-volume.test.mjs` passed 19/19 tests in 0.44s.
+  - 9-suite regression: `node --test tests/ai-utility-actions.test.mjs tests/ai-schedules-factions.test.mjs tests/rpg-inventory-loot.test.mjs tests/rpg-progression-status.test.mjs tests/physics-collision-masks.test.mjs tests/physics-swept-knockback.test.mjs tests/physics-spatial-grid.test.mjs tests/world-metadata-schema.test.mjs tests/audio-buses-volume.test.mjs` passed 83/83 tests in 1.32s.
+  - Docs contract: `npm run test:docs-contract` passed cleanly without JSDoc syntax errors.
+- **Remaining Limitations:** Visual spatial partitioning debugger and audio mixer UI in Triton remain scheduled for S15 authoring phases.
+
 ### Batch: RPG-02, PHYS-02, PHYS-03
 - **Task IDs:** RPG-02, PHYS-02, PHYS-03
 - **Status:** Verified

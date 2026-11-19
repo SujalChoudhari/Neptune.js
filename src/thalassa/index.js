@@ -5,3 +5,4 @@ export { ParallaxLayer, ParallaxBackground } from "./parallax.js";
 export { Camera } from "./camera.js";
 export { GameFeel } from "./gameFeel.js";
 export { NavigationGrid, NavigationPath } from "./navigationGrid.js";
+export { WorldMetadataRegistry, SEMANTIC_LAYER_TYPES } from "./worldMetadata.js";

@@ -40,17 +40,18 @@ import * as Titan from "./titan/index.js";
 
 // Thalassa - World/Camera System
 import * as Thalassa from "./thalassa/index.js";
-import { NavigationGrid, NavigationPath } from "./thalassa/navigationGrid.js";
+import { NavigationGrid, NavigationPath, WorldMetadataRegistry, SEMANTIC_LAYER_TYPES } from "./thalassa/index.js";
 
 // Nereid - Physics System
 import * as Nereid from "./nereid/index.js";
 import {
     CollisionLayers, createCollisionMask, canLayersCollide, ContactSolver, TriggerLifecycleSystem,
-    SweptAABB, ElevationFilter, KnockbackMotor, HazardSystem
+    SweptAABB, ElevationFilter, KnockbackMotor, HazardSystem, SpatialHashGrid
 } from "./nereid/index.js";
 
 // Proteus - Audio System
 import * as Proteus from "./proteus/index.js";
+import { AudioBus, AudioBusSystem } from "./proteus/index.js";
 
 // Larissa - RPG System
 import * as Larissa from "./larissa/index.js";
@@ -104,6 +105,9 @@ ComponentRegistry.register("LevelProgression", LevelProgression);
 ComponentRegistry.register("StatusEffectManager", StatusEffectManager);
 ComponentRegistry.register("DeathRetryManager", DeathRetryManager);
 ComponentRegistry.register("KnockbackMotor", KnockbackMotor);
+ComponentRegistry.register("SpatialHashGrid", SpatialHashGrid);
+ComponentRegistry.register("WorldMetadataRegistry", WorldMetadataRegistry);
+ComponentRegistry.register("AudioBusSystem", AudioBusSystem);
 // Register other components as needed...
 
 export {
@@ -118,13 +122,15 @@ export {
     Script, ScriptManager, Global, Behaviour, ProjectBehaviour,
     MouseInput, KeyboardInput, InputActions, TouchInput,
     Maths, Vector2,
-    Titan, Thalassa, NavigationGrid, NavigationPath, Nereid, Proteus, Larissa, AbilityExecutor, AbilityBudgetExceededError, AbilityValidator, AbilityValidationError,
+    Titan, Thalassa, NavigationGrid, NavigationPath, WorldMetadataRegistry, SEMANTIC_LAYER_TYPES,
+    Nereid, Proteus, Larissa, AbilityExecutor, AbilityBudgetExceededError, AbilityValidator, AbilityValidationError,
     PerceptionSystem, BoundedMemory, NPCKnowledge, UtilityAI,
     ScheduleSystem, FactionRegistry, NPCSchedule, ScheduleSlot, ROUTINE_ACTIVITIES, FACTION_DISPOSITION,
     ItemRegistry, Inventory, EquipmentSystem, LootTable,
     LevelProgression, StatusEffectManager, DeathRetryManager,
     CollisionLayers, createCollisionMask, canLayersCollide, ContactSolver, TriggerLifecycleSystem,
-    SweptAABB, ElevationFilter, KnockbackMotor, HazardSystem,
+    SweptAABB, ElevationFilter, KnockbackMotor, HazardSystem, SpatialHashGrid,
+    AudioBus, AudioBusSystem,
     Galatea, StoryGraph, QuestGraph,
     Sim, MaterialRegistry, MaterialInteraction, MaterialState, InteractionType, CellGridSimulation,
 }
