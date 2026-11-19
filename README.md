@@ -4,6 +4,8 @@ A modular JavaScript **2D game engine** with an entity-component architecture an
 
 The current goal is to finish a coherent 2D engine and prove it with a small playable action-RPG demo. **3D and multiplayer are outside this delivery.** Existing modules and passing individual tests do not mean that the complete ARPG workflow is finished.
 
+The user's final product scope is now locked in [release one scope](docs/LOCKED-SCOPE.md), based on the supplied 2.5D ARPG SRS. It retains 2D simulation and the existing architecture, while explicitly adding elevation, WebGL2 presentation, lighting, streamed worlds and integrated simulation/NPC/narrative authoring. That contract controls future feature scope; this README's capability statements describe what exists today.
+
 ## Development setup
 
 Use Node.js 24 LTS and Yarn Classic 1.22.x. Install from the committed lockfiles:
@@ -80,31 +82,41 @@ Important remaining integration work:
 - The public browser entry performs DOM/application initialization on import. Make any future bootstrap changes compatible and explicit.
 - Tile rendering scans map cells, collision checks pairs, and some AI lookups scan occupants. Measure real workloads and optimize demonstrated limits; there is no established large-crowd FPS guarantee.
 
-The target [product contract](docs/PRODUCT-CONTRACT.md) and [performance budgets](docs/performance-budgets.md) describe scope and workload limits. Historical native observations are in [M12 acceptance evidence](docs/m12-acceptance.md); they are not verification of the current machine or a new release.
+The [locked scope](docs/LOCKED-SCOPE.md) controls release requirements. The earlier [product contract](docs/PRODUCT-CONTRACT.md) and [performance budgets](docs/performance-budgets.md) provide historical context and workload guidance where consistent with that scope. Historical native observations are in [M12 acceptance evidence](docs/m12-acceptance.md); they are not verification of the current machine or a new release.
 
 ## TODO / next delivery
 
 November 19 delivery: scene edit history, the world grid, context commands, functional component authoring, authored HTML UI preview and opt-in editor tools are implemented alongside runtime foundations and the playable expedition. The reported nested-child overlay offset is fixed. See [delivery evidence and limits](docs/five-batch-tsd.md#november-19-delivery). These changes do not close the broader engine/editor/game roadmap.
 
-**Immediate direction:** use the supported authoring and expedition workflows to drive the remaining P1 authoring safeguards and content/presentation polish. Keep the current shell and compact raised/inset style. See [the ordered delivery details](docs/ROADMAP.md#next-delivery--scene-view-essentials-then-editor-extensibility).
+**Active task queue:** [release-one implementation plan](docs/IMPLEMENTATION-PLAN.md). It groups the locked S01-S17 scope into tasks with acceptance criteria, edge-case tests, ownership rules and prerequisites. The [older roadmap](docs/ROADMAP.md) retains historical evidence; its content-length targets and estimates do not control this release.
 
-The [full engine, editor and game roadmap](docs/ROADMAP.md) is the active plan, with subsystem checklists, dependencies, estimates and observable acceptance. Existing code is reused and verified. Runtime capabilities and a working starter do not establish a finished authoring workflow or finished game.
+| System | Task IDs |
+| --- | --- |
+| Core lifecycle, timing, facts, rules and project modules | CORE-01 through CORE-04 |
+| Input and device mappings | INPUT-01 through INPUT-03 |
+| Nereid physics and spatial queries | PHYS-01 through PHYS-04 |
+| Thalassa world/chunks and navigation | WORLD-01 through WORLD-03; NAV-01 through NAV-03 |
+| Rendering and camera | RENDER-01 through RENDER-04 |
+| Lighting, particles and weather | FX-01 through FX-03 |
+| Assets and Titan animation | ASSET-01/02; ANIM-01 |
+| Proteus sound/music | AUDIO-01 through AUDIO-03 |
+| Larissa combat and RPG | COMBAT-01/02; RPG-01/02 |
+| Ability composition | ABILITY-01/02 |
+| Local environmental simulation | SIM-01 through SIM-03 |
+| NPC/enemy AI | AI-01 through AI-03 |
+| Galatea dialogue, quests and cutscenes | STORY-01 through STORY-03 |
+| Game UI runtime | GUI-01 through GUI-03 |
+| Persistence and recovery | SAVE-01 through SAVE-03 |
+| Triton authoring | EDIT-01 through EDIT-06 |
+| Diagnostics, replay and measured optimization | QA-01/02; PERF-01/02 |
+| Export, packaging, templates and documentation | SHIP-01 through SHIP-03 |
+| Integrated Emberfall and independent creator proof | DEMO-01 through DEMO-03 |
 
-- [x] **Development baseline:** launcher, portable checks, contributor guidance and initial native workflows verified. See [Windows evidence](docs/windows-workflows.md).
-- [x] **Emberfall starter:** a versioned `.npt` project with movement, melee combat, guardians, an altar objective and saves. Placeholder visuals and no proper menu flow; not the finished demo.
-- [ ] **P0 — viewport and visual foundation (in progress):** picking, Q/W/E/R/T/Y tools, focus-safe shortcuts, snapping, drag cancellation, dock persistence, the world grid and undo transactions are verified. Nested rotated/scaled-parent selection, overlays and movement now use the complete authoring hierarchy, including at zoom/pan offsets. Remaining full transform-tool and visual/display-scale acceptance stays open.
-- [ ] **P1 — safe editor authoring:** undo/redo, save/recovery safeguards, functional Add Component, typed searchable Inspector, script settings, resource pickers, multi-edit, hierarchy and shortcut QoL.
-- [ ] **P2 — consistent runtime:** authoritative combat/collision paths, input actions, simulation timing, lifecycle, edit/play separation and versioned project/module contracts.
-- [ ] **P3 — asset and presentation pipeline:** spritesheet slicing/pivots/imports, real animation timeline/state tools, music/SFX buses/previews/settings, effects and camera feedback.
-- [ ] **P4 — world and reuse:** reusable entity/scene instances and overrides, viewport tile painting/terrain/layers, collision/navigation tools, spawns, transitions and reference repair.
-- [ ] **P5 — ARPG systems and data tools:** melee/ranged/dodge, enemies and phased boss, inventory/equipment/loot, progression, NPCs/dialogue/quests and validated authoring.
-- [ ] **P6 — complete UI and persistence:** title/new/continue/load/settings/credits, pause/HUD/inventory/quest/dialogue/death/victory flows, input navigation, checkpoints, slots and complete saved world state.
-- [ ] **P7 — the actual adventure:** first a polished 10–15 minute slice, then a bounded approximately 30–60 minute game with coherent sprites, animation, music, sound, onboarding, encounters and ending.
-- [ ] **P8 — hardening and delivery:** debugger/profiler tools, measured performance, native/browser/export tests, endurance playtests, packaged editor, game exports, templates/types/docs and fresh-developer usability.
+**Agent starting instructions:** read AGENTS.md and the plan; inspect existing code/evidence; claim a task with exact files and dependencies; implement and run its behavioral checks; record results and remaining gaps. Queue items start Open / needs verification, not as claims that existing systems are absent. Shared contracts must be agreed before parallel dependent work.
 
-Initial planning ranges: **4–8 focused development weeks for the polished vertical slice; approximately 12–22 weeks for the bounded engine/editor plus small complete game**. These are engineering-effort estimates with substantial uncertainty, not calendar promises or unattended work commitments. Original art/music production and larger content scope need separate estimates. Re-estimate after P1 and after the slice.
+Start with CORE contracts and existing runtime inconsistencies, then physics/spatial queries, world/navigation, combat and persistence. Rendering/assets/audio and later simulation/AI/story proceed where prerequisites and file ownership permit. Diagnostics and tests accompany every stage. Runtime work can precede new editor panels; authoring and native workflows still need their own acceptance.
 
-2D completion requires the game to be authored, played, saved, reopened, modified and packaged through supported workflows, with passing checks, actual native evidence and release acceptance. Only then consider 3D. The roadmap update itself does not mark the planned enhancements complete.
+The proof content is one village and adjacent dungeon, 10-20 NPCs, three enemy archetypes, three abilities, a phased boss, one branching quest, a fire/water interaction and an ending. A fresh creator must build a second village without engine changes. No playtime padding or inherited 30-60 minute requirement. See [locked boundaries and end-to-end gates](docs/LOCKED-SCOPE.md).
 
 ## Tutorials
 

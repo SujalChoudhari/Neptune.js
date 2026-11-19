@@ -1,6 +1,10 @@
-# Neptune 2D engine, Triton editor, and ARPG delivery plan
+# Neptune delivery roadmap and historical evidence
 
-Updated November 16, 2026. This is the active delivery plan. README links here and tracks milestone status. It extends the initial vertical-slice product contract into a bounded small-game release; historical closed issues and an implemented runtime API are not completion evidence.
+**Scope authority:** [Neptune release one scope](LOCKED-SCOPE.md), locked November 19, 2026 from the user's final SRS, supersedes this document's older feature and game-length boundaries. Use this roadmap as historical status and sequencing guidance. Every future task must map to S01-S17; the checklist below cannot add requirements to the locked release.
+
+**Active implementation plan:** [subsystem task queue](IMPLEMENTATION-PLAN.md), updated November 19, 2026. Agents must pick its CORE/PHYS/RENDER/AUDIO/etc. tasks, follow its claim/dependency rules, and record behavioral evidence. It contains acceptance criteria and example edge tests for every task. The older P0-P8 sections and estimates below are retained as historical context, not a second active backlog.
+
+Historical plan dated November 16, 2026 follows. Historical closed issues and an implemented runtime API are not completion evidence. Its superseded game-length, renderer and schedule assumptions must not override the locked scope or current implementation plan.
 
 November 19 delivery: the five-batch implementation now includes authoring history, scene grid/context commands, component authoring, HTML UI preview/editor extensions, runtime foundations and the expedition. [Delivery evidence and remaining product limits](five-batch-tsd.md#november-19-delivery) supersede the November 17 interrupted checkpoint. Phase-wide unchecked gates below remain open; individual historical statements refer to their original verification date.
 
