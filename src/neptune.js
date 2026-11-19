@@ -50,7 +50,12 @@ import * as Proteus from "./proteus/index.js";
 
 // Larissa - RPG System
 import * as Larissa from "./larissa/index.js";
-import { AbilityExecutor, AbilityBudgetExceededError, AbilityValidator, AbilityValidationError, PerceptionSystem, BoundedMemory, NPCKnowledge } from "./larissa/index.js";
+import {
+    AbilityExecutor, AbilityBudgetExceededError, AbilityValidator, AbilityValidationError,
+    PerceptionSystem, BoundedMemory, NPCKnowledge, UtilityAI,
+    ScheduleSystem, FactionRegistry, NPCSchedule, ScheduleSlot, ROUTINE_ACTIVITIES, FACTION_DISPOSITION,
+    ItemRegistry, Inventory, EquipmentSystem, LootTable
+} from "./larissa/index.js";
 
 // Galatea - Cutscene System
 import * as Galatea from "./galatea/index.js";
@@ -88,6 +93,8 @@ ComponentRegistry.register("EnemyConfig", EnemyConfig);
 ComponentRegistry.register("SceneTransition", SceneTransition);
 ComponentRegistry.register("SpawnPoint", SpawnPoint);
 ComponentRegistry.register("NPCKnowledge", NPCKnowledge);
+ComponentRegistry.register("NPCSchedule", NPCSchedule);
+ComponentRegistry.register("UtilityAI", UtilityAI);
 // Register other components as needed...
 
 export {
@@ -103,7 +110,9 @@ export {
     MouseInput, KeyboardInput, InputActions, TouchInput,
     Maths, Vector2,
     Titan, Thalassa, NavigationGrid, NavigationPath, Nereid, Proteus, Larissa, AbilityExecutor, AbilityBudgetExceededError, AbilityValidator, AbilityValidationError,
-    PerceptionSystem, BoundedMemory, NPCKnowledge,
+    PerceptionSystem, BoundedMemory, NPCKnowledge, UtilityAI,
+    ScheduleSystem, FactionRegistry, NPCSchedule, ScheduleSlot, ROUTINE_ACTIVITIES, FACTION_DISPOSITION,
+    ItemRegistry, Inventory, EquipmentSystem, LootTable,
     Galatea, StoryGraph, QuestGraph,
     Sim, MaterialRegistry, MaterialInteraction, MaterialState, InteractionType, CellGridSimulation,
 }

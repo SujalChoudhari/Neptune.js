@@ -242,6 +242,33 @@ No 3D, alternate isometric/rotating world mode, WebGPU, multiplayer, global flui
 
 ## Claim log
 
+### Batch: AI-02, AI-03, RPG-01
+- **Task IDs:** AI-02, AI-03, RPG-01
+- **Status:** Verified
+- **Owner/Date:** Codex / Nov 19, 2026
+- **Exact File Ownership:**
+  - `AI-02`: `src/larissa/utilityAI.js`, `tests/ai-utility-actions.test.mjs`
+  - `AI-03`: `src/larissa/npcSchedules.js`, `tests/ai-schedules-factions.test.mjs`
+  - `RPG-01`: `src/larissa/itemSystem.js`, `tests/rpg-inventory-loot.test.mjs`
+  - Integration: `src/larissa/index.js`, `src/neptune.js`, `scripts/test.js`
+- **Prerequisite IDs:** AI-01, CORE-03, COMBAT-01/02
+- **Shared API/Schema Decisions:**
+  - `AI-02`: `UtilityAI` evaluates data-driven actions with composite response curves (`linear`, `quadratic`, `exponential`, `logistic`, `threshold`). Employs deterministic tie-breaking (by explicit action priority, then lexicographical ID), structured decision trace logging with ring buffer limits, and active action interruption cleanup callbacks (`onInterrupt`, `onExit`).
+  - `AI-03`: `ScheduleSystem` drives 24-hour routine slots with seamless midnight wraparound (`22:00 -> 06:00`), fallback when authored waypoints are occupied, and danger reaction interruptions with priority resume and missed appointment reconciliation. `FactionRegistry` manages symmetric and asymmetric reputation standings (`ally`, `friendly`, `neutral`, `hostile`, `nemesis`) and serializes with `VersionedSaveEngine`.
+  - `RPG-01`: `ItemRegistry` provides typed definitions for weapons, armor, accessories, consumables, and quest items with modifiers and usage hooks. `Inventory` provides slot-bounded item storage with maxStack bounds and overflow prevention. `EquipmentSystem` validates designated gear slots, applies stat modifiers to `Stats` or `Combatant`, and rejects incompatible equipment. `LootTable` executes weighted deterministic rolls with min/max quantity bounds.
+- **Implementation Checklist:**
+  - [x] Implement `src/larissa/utilityAI.js` and `tests/ai-utility-actions.test.mjs`
+  - [x] Implement `src/larissa/npcSchedules.js` and `tests/ai-schedules-factions.test.mjs`
+  - [x] Implement `src/larissa/itemSystem.js` and `tests/rpg-inventory-loot.test.mjs`
+  - [x] Re-export modules in `src/larissa/index.js` and `src/neptune.js`
+  - [x] Register test suites in `scripts/test.js`
+  - [x] Pass focused regression tests (40/40 tests)
+  - [x] Pass `npm run test:docs-contract`
+- **Checks and Evidence:**
+  - Focused suite: `node --test tests/ai-utility-actions.test.mjs tests/ai-schedules-factions.test.mjs tests/rpg-inventory-loot.test.mjs` passed 40/40 tests in 0.56s.
+  - Docs contract: `npm run test:docs-contract` passed cleanly without JSDoc syntax errors.
+- **Remaining Limitations:** Visual inspection UI in Triton for NPC schedules and utility curves remains scheduled for S15.
+
 ### Batch: AI-01, NAV-01, SAVE-01
 - **Task IDs:** AI-01, NAV-01, SAVE-01
 - **Status:** Verified
