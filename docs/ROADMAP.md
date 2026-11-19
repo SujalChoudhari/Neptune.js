@@ -2,7 +2,7 @@
 
 Updated November 16, 2026. This is the active delivery plan. README links here and tracks milestone status. It extends the initial vertical-slice product contract into a bounded small-game release; historical closed issues and an implemented runtime API are not completion evidence.
 
-November 17 implementation checkpoint: the user stopped work for a local commit before full acceptance. [Implemented changes, focused evidence and remaining checks](five-batch-tsd.md#paused-implementation-checkpoint--november-17-2026) are recorded separately; unchecked delivery gates below remain open.
+November 19 delivery: the five-batch implementation now includes authoring history, scene grid/context commands, component authoring, HTML UI preview/editor extensions, runtime foundations and the expedition. [Delivery evidence and remaining product limits](five-batch-tsd.md#november-19-delivery) supersede the November 17 interrupted checkpoint. Phase-wide unchecked gates below remain open; individual historical statements refer to their original verification date.
 
 ## Outcome and scope
 

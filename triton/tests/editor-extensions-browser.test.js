@@ -94,6 +94,7 @@ test('opt-in extension Inspector, context action and shared authored UI work in 
     await page.getByText('Test wall', { exact: true }).click();
     const width = page.getByRole('spinbutton', { name: 'Area (world units) X', exact: true });
     await width.waitFor();
+    await page.getByRole('button', { name: 'Reset View', exact: true }).click();
     console.log('Extension integration: opt-in Inspector loaded');
     await width.fill('2');
     await width.press('Tab');

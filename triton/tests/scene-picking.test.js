@@ -25,7 +25,7 @@ test('Scene View bridge trusts only its own live iframe for all message types', 
     assert.match(source, /if \(!isSceneViewBridgeMessageSource\(event\.source, iframeRef\.current\?\.contentWindow\)\) return/);
 });
 
-function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-1'], initialTool = 'transform') {
+function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-1'], initialTool = 'transform', options = {}) {
     const sourcefile = path.resolve('triton/src/components/panels/SceneViewPanel.tsx');
     const external = [
         'react', 'react/jsx-runtime', 'lucide-react', '@/components/library', '@/context/GameContext',
@@ -45,6 +45,11 @@ function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-
     const canonicalEdits = [];
     const componentEdits = [];
     const transactions = { begun: 0, committed: 0, cancelled: 0 };
+    const duplicated = [];
+    const entityDataCache = {
+        'entity-1': { id: 'entity-1', name: 'First', transform: { position: { x: 2, y: 3 }, scale: { x: 1, y: 2 } }, components: { Sprite: { width: 10, height: 4 } } },
+        'entity-2': { id: 'entity-2', name: 'Second', transform: { position: { x: -5, y: 6 }, scale: { x: 2, y: 1 } }, components: { Sprite: { _properties: { width: 4, height: 8 } } } }
+    };
     const react = {
         createElement: (type, props, ...children) => ({ type, props: { ...(props || {}), children: children.length > 1 ? children : children[0] } }),
         useRef(initial) { const index = hookIndex++; return slots[index] ||= { current: initial }; },
@@ -82,12 +87,12 @@ function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-
                 cancel() { transactions.cancelled += 1; return true; }
             }; },
             canUndo: false, canRedo: false, undoSceneEdit() {}, redoSceneEdit() {},
-            selectEntities() {}, addEntityToHierarchy() { return true; }, duplicateEntityInHierarchy() { return 'duplicate'; },
+            selectEntities() {}, addEntityToHierarchy() { return true; }, duplicateEntityInHierarchy(id) { duplicated.push(id); return options.failDuplicate === id ? null : 'duplicate'; },
             deleteEntitiesInHierarchy() { return true; }, setEntityActiveInHierarchy() {}, setEntityLocked() {},
             entities: {
                 root: { id: 'root', parentId: null, children: ['entity-1', 'entity-2'] },
                 'entity-1': { id: 'entity-1', parentId: 'root', children: [] },
-                'entity-2': { id: 'entity-2', parentId: 'root', children: [] }
+                'entity-2': { id: 'entity-2', parentId: options.nested ? 'entity-1' : 'root', children: [] }
             },
             selectedEntityData: {
                 transform: { position: { x: 2, y: 3 }, rotation: 0.5, scale: { x: 1, y: 2 } },
@@ -100,6 +105,7 @@ function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-
                 }
             },
             selectedIds,
+            entityDataCache,
             selectedEntitiesData: {
                 'entity-1': {
                     id: 'entity-1', name: 'First',
@@ -150,8 +156,20 @@ function createSceneViewHarness(spawnFacing = undefined, selectedIds = ['entity-
         tree.props.ref.current = { getBoundingClientRect: () => ({ left: 10, top: 20, width: 800, height: 600 }) };
         return tree;
     };
-    return { render, notifications, viewportMessages, canonicalEdits, componentEdits, transactions, getSpawnPointOverlay: module.exports.getSpawnPointOverlay };
+    return { render, notifications, viewportMessages, canonicalEdits, componentEdits, transactions, duplicated, getSpawnPointOverlay: module.exports.getSpawnPointOverlay };
 }
+
+test('Scene View duplicates a selected parent subtree only once and cancels on failure', () => {
+    const nested = createSceneViewHarness(undefined, ['entity-1', 'entity-2'], 'move', { nested: true });
+    const menu = findNode(nested.render(), node => node.type === 'SceneContextMenu');
+    menu.props.onAction('duplicate', { targetId: 'entity-1', selectedIds: ['entity-1', 'entity-2'] });
+    assert.deepEqual(nested.duplicated, ['entity-1']);
+    assert.equal(nested.transactions.committed, 1);
+    const failed = createSceneViewHarness(undefined, ['entity-1', 'entity-2'], 'move', { failDuplicate: 'entity-2' });
+    findNode(failed.render(), node => node.type === 'SceneContextMenu').props.onAction('duplicate', { targetId: 'entity-1', selectedIds: ['entity-1', 'entity-2'] });
+    assert.equal(failed.transactions.cancelled, 1);
+    assert.equal(failed.transactions.committed, 0);
+});
 
 function findNode(node, predicate) {
     if (!node || typeof node !== 'object') return null;

@@ -38,8 +38,24 @@ test('runtime-origin selection is relayed to both runtime views', () => {
     const notifications = [];
     const code = transformSync(`switch ('game:selection-changed') { ${branch} }`, { loader: 'tsx' }).code;
     vm.runInNewContext(code, { payload: { ids: ['hero'] }, readRuntimeSelection,
-        entities: { hero: {} }, entityDataCache: {},
+        entities: { hero: {} }, entityDataCache: {}, isPlaying: false,
         setSelectedIds() {}, setSelectedEntitiesData() {},
         notifyGame: (type, payload) => notifications.push({ type, ids: Array.from(payload.ids) }) });
     assert.deepEqual(notifications, [{ type: 'editor:select', ids: ['hero'] }]);
+});
+
+test('selection during play keeps the authored inspector data', () => {
+    const source = fs.readFileSync('triton/src/context/GameContext.tsx', 'utf8');
+    const branch = source.match(/case 'game:selection-changed':[\s\S]*?break;\n                case 'game:component-updated'/)?.[0]
+        .replace(/\n                case 'game:component-updated'$/, '');
+    assert.ok(branch);
+    const authored = { id: 'hero', name: 'Authored' };
+    let selected;
+    vm.runInNewContext(transformSync(`switch ('game:selection-changed') { ${branch} }`, { loader: 'tsx' }).code, {
+        payload: { ids: ['hero'], data: { hero: { id: 'hero', name: 'Runtime' } } }, readRuntimeSelection,
+        entities: { hero: {} }, entityDataCache: { hero: authored }, isPlaying: true,
+        setSelectedIds() {}, setSelectedEntitiesData: value => { selected = value; }, notifyGame() {}
+    });
+    assert.equal(selected.hero, authored);
+    assert.equal(authored.name, 'Authored');
 });

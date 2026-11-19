@@ -17,6 +17,7 @@ interface GameContextType {
     entities: Record<string, SceneEntity>;
     selectedIds: string[];
     selectedEntitiesData: Record<string, EntityData>;
+    entityDataCache: Record<string, EntityData>;
     selectedEntityData: EntityData | null; // Computed helper for backward compat
 
     // Actions
@@ -902,7 +903,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         runSceneEdit(`${data.name}: ${canonicalComponent} ${field}`,
             () => applyComponentField(id, canonicalComponent, field, value),
             () => applyComponentField(id, canonicalComponent, field, previous));
-    }, [entityDataCache, selectedEntitiesData, runSceneEdit, applyComponentField]);
+    }, [selectedEntitiesData, runSceneEdit, applyComponentField]);
 
     const addComponent = useCallback((id: string, type: string, props: Record<string, unknown> = {}) => {
         const data = entityDataCache[id];
@@ -1074,7 +1075,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         if (rootPath) {
             void loadMainScene();
         }
-    }, [rootPath, loadMainScene, notifyGame]);
+    }, [rootPath, loadMainScene, notifyGame, history]);
 
     useEffect(() => {
         const warnOnClose = (event: BeforeUnloadEvent) => {
@@ -1094,6 +1095,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
             entities,
             selectedIds,
             selectedEntitiesData,
+            entityDataCache,
             selectedEntityData,
             play,
             pause,

@@ -1,5 +1,17 @@
 # Windows editor and Emberfall workflow verification
 
+## November 19 five-batch acceptance
+
+Verified the built frontend in the actual Windows Tauri editor using an isolated WebView2 profile and disposable projects. The verification page uses the configured `http://localhost:5173` dev URL: navigating the native webview to `127.0.0.1` instead is a different origin and does not receive the default native capability permissions. No additional production permission was introduced.
+
+The Scene View passed nested child picking and gizmo alignment under a rotated, nonuniformly scaled renderable parent; authored HTML UI preview; an opt-in BoxCollider Inspector change written to a real scene file; save/reopen; and Undo/Redo after reopening. The production Chromium viewport regression additionally covers the reported 180% zoom/negative-pan offset, visible grid pixels, dragging and undo. These are distinct native and browser checks.
+
+Opened an isolated copy of Emberfall with `scenes/expedition.scene` as its main scene. Game View passed its self-contained title menu, PNG asset loading, ordinary keyboard movement, game-owned pause, gameplay save, return-to-title, Continue at the saved position and Stop cleanup. Scene View did not start the gameplay HUD. Original SVG art is retained as source; native image loading uses PNG copies supported by the existing backend.
+
+The complete integrated tests, editor build/lint and documentation contracts passed. The browser expedition route completed its seals, boss, altar, saved-world reload and ending through ordinary input. Its 140.7-second automated measurement does not establish the 10–15 minute fresh-player quality target. No release/package, broad performance or complete-roadmap acceptance is implied.
+
+The remaining sections record earlier checks and their historical limits.
+
 November 16, 2026. These observations cover the named workflows, not every engine feature or the completed ARPG roadmap.
 
 ## Startup repair

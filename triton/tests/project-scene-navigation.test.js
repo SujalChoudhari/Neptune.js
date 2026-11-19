@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import fs from 'node:fs';
-import { transformSync } from 'esbuild';
+import { EditorGameRunner } from '../src/lib/editorGameRunner.ts';
 import { SceneLoader } from '../../src/core/sceneLoader.js';
 import { ComponentRegistry } from '../../src/core/componentRegistry.js';
 import { Shape } from '../../src/rendering/shape.js';
@@ -12,9 +12,6 @@ const context = fs.readFileSync('triton/src/context/GameContext.tsx', 'utf8');
 
 test('separate native smoke fixture is version-1 project and runtime-loadable scene', async () => {
     ComponentRegistry.register('Shape', Shape);
-    const source = fs.readFileSync('triton/src/lib/editorGameRunner.ts', 'utf8');
-    const compiled = transformSync(source, { loader: 'ts', format: 'esm' }).code;
-    const { EditorGameRunner } = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`);
     const project = JSON.parse(fs.readFileSync('triton/tests/fixtures/native-smoke/project.npt', 'utf8'));
     const scene = JSON.parse(fs.readFileSync('triton/tests/fixtures/native-smoke/scenes/main.scene', 'utf8'));
     assert.equal(EditorGameRunner.normalizeProject(project).schemaVersion, 1);

@@ -27,7 +27,7 @@ function createEditorRunner() {
         format: "cjs",
         platform: "node",
         write: false,
-        stdin: { contents: fs.readFileSync(sourcefile, "utf8"), loader: "ts", sourcefile }
+        stdin: { contents: fs.readFileSync(sourcefile, "utf8"), loader: "ts", sourcefile, resolveDir: path.dirname(sourcefile) }
     }).outputFiles[0].text;
     const module = { exports: {} };
     vm.runInNewContext(bundle, {
@@ -69,7 +69,7 @@ test("saved editor-authored scene loads through the Application runtime", async 
         body: makeElement("body"),
         head: makeElement("head")
     };
-    globalThis.window = { innerWidth: 800, innerHeight: 600, outerWidth: 800, outerHeight: 600 };
+    globalThis.window = { innerWidth: 800, innerHeight: 600, outerWidth: 800, outerHeight: 600, addEventListener() {}, removeEventListener() {} };
     const runtimeEntry = await import("../../src/neptune.js");
     for (const name of ["BoxCollider", "SceneTransition", "SpawnPoint", "Dialogue", "QuestDefinition", "EnemyConfig", "TriggerCollider", "Hitbox", "Hurtbox"]) {
         assert.equal(runtimeEntry.ComponentRegistry.has(name), true, `${name} is registered by the production runtime entry`);

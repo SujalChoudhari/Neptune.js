@@ -571,7 +571,7 @@
           "id": "hero-sprite",
           "type": "Sprite",
           "props": {
-            "path": "assets/wanderer-rest.svg",
+            "path": "/assets/wanderer-rest.png",
             "width": 0.9,
             "height": 1.05,
             "renderOrder": 1
@@ -630,7 +630,7 @@
           "id": "briar-scout-sprite",
           "type": "Sprite",
           "props": {
-            "path": "assets/sentinel.svg",
+            "path": "/assets/sentinel.png",
             "width": 0.82,
             "height": 0.9,
             "renderOrder": 1
@@ -933,7 +933,7 @@
           "id": "keep-raider-sprite",
           "type": "Sprite",
           "props": {
-            "path": "assets/sentinel.svg",
+            "path": "/assets/sentinel.png",
             "width": 0.9,
             "height": 1,
             "renderOrder": 1
@@ -992,7 +992,7 @@
           "id": "keeper-sprite",
           "type": "Sprite",
           "props": {
-            "path": "assets/keeper.svg",
+            "path": "/assets/keeper.png",
             "width": 1.4,
             "height": 1.55,
             "renderOrder": 1

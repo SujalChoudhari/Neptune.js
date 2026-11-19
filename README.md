@@ -24,7 +24,7 @@ npm run serve
 
 Open http://127.0.0.1:8000/debug_project/ and select **Play Game**. This preview server binds to localhost only and needs no Python installation. Use `npm run serve -- --port 8001` to choose another port. ES module examples must be served over HTTP rather than opened as local files.
 
-The new [Emberfall ARPG starter](examples/emberfall/README.md) uses a real `.npt` project and editable scene. Play at http://127.0.0.1:8000/examples/emberfall/, or open the `examples/emberfall` folder in Triton. It includes top-down movement, solid walls, three guardians, melee combat, an altar objective and save/load. It is a playable starter, not the completed multi-map ARPG demo.
+The [Emberfall project](examples/emberfall/README.md) includes the original ruins starter and an expanded expedition. Open http://127.0.0.1:8000/examples/emberfall/adventure.html for the expedition's title menu, connected hollow/keep rooms, three guarded seals, phased boss, ending and Continue flow. The original starter remains at http://127.0.0.1:8000/examples/emberfall/. In Triton, open the project and then `scenes/expedition.scene` to play the expedition. It is a bounded playable demo; the 10–15 minute fresh-player quality target remains unverified.
 
 On Windows, double-click `Neptune.cmd` to start the desktop editor (`yarn --cwd triton tauri dev`). The launcher uses installed tools or the optional sibling `DevTools` folder.
 
@@ -74,9 +74,9 @@ The codebase includes scene/entity serialization, Canvas 2D rendering, cameras/l
 
 Important remaining integration work:
 
-- `Stats` and `Combatant` have overlapping health/damage responsibilities. Choose one authoritative ARPG state flow before expanding the game.
-- Legacy `BoxCollider`, Nereid physics, and the sample's custom collision handling need a documented supported movement path.
-- The older debug sample uses platformer movement; Emberfall has a project-specific top-down controller. A configurable shared ARPG controller and a completed multi-map game remain planned.
+- New ARPG code uses `Combatant` for authoritative health; `Stats.bindCombatant()` provides an explicit legacy health view. Standalone Stats and other RPG-stat integration still require deliberate ownership.
+- `Nereid.TopDownController` moves in world units using Nereid solids and the centered `BoxCollider` adapter. Legacy platformer and collision APIs remain available; this does not make them interchangeable.
+- Action-based keyboard input, bounded fixed simulation steps and authored-state restoration after Game View Stop are implemented. Gamepad input, broader rebinding UI and a completed multi-map game remain planned.
 - The public browser entry performs DOM/application initialization on import. Make any future bootstrap changes compatible and explicit.
 - Tile rendering scans map cells, collision checks pairs, and some AI lookups scan occupants. Measure real workloads and optimize demonstrated limits; there is no established large-crowd FPS guarantee.
 
@@ -84,15 +84,15 @@ The target [product contract](docs/PRODUCT-CONTRACT.md) and [performance budgets
 
 ## TODO / next delivery
 
-November 17 checkpoint: implementation across the next five batches is saved as work in progress. Focused editor/runtime checks pass, but integrated baseline, native acceptance and the adventure remain unfinished. See [checkpoint evidence and remaining work](docs/five-batch-tsd.md#paused-implementation-checkpoint--november-17-2026). No milestone is closed by this checkpoint.
+November 19 delivery: scene edit history, the world grid, context commands, functional component authoring, authored HTML UI preview and opt-in editor tools are implemented alongside runtime foundations and the playable expedition. The reported nested-child overlay offset is fixed. See [delivery evidence and limits](docs/five-batch-tsd.md#november-19-delivery). These changes do not close the broader engine/editor/game roadmap.
 
-**Immediate direction:** finish the Scene View's world-unit grid/panning, per-object context menus and authored game UI preview, together with safe undo/save/edit commands. Then add code-defined editor extensions for custom gizmos, inspectors and editor-only scene helpers. Keep the current shell during this work; a whole editor rewrite is not part of this batch. See [the ordered delivery details](docs/ROADMAP.md#next-delivery--scene-view-essentials-then-editor-extensibility).
+**Immediate direction:** use the supported authoring and expedition workflows to drive the remaining P1 authoring safeguards and content/presentation polish. Keep the current shell and compact raised/inset style. See [the ordered delivery details](docs/ROADMAP.md#next-delivery--scene-view-essentials-then-editor-extensibility).
 
 The [full engine, editor and game roadmap](docs/ROADMAP.md) is the active plan, with subsystem checklists, dependencies, estimates and observable acceptance. Existing code is reused and verified. Runtime capabilities and a working starter do not establish a finished authoring workflow or finished game.
 
 - [x] **Development baseline:** launcher, portable checks, contributor guidance and initial native workflows verified. See [Windows evidence](docs/windows-workflows.md).
 - [x] **Emberfall starter:** a versioned `.npt` project with movement, melee combat, guardians, an altar objective and saves. Placeholder visuals and no proper menu flow; not the finished demo.
-- [ ] **P0 — viewport and visual foundation (in progress):** root-level coordinate conversion, direct picking, Q/W/E/R/T/Y tools, focus-safe shortcuts, snapping, drag cancellation and validated dock-layout persistence/reset are verified. Preserve compact raised/inset controls and refine the dark neumorphic style. Full nested-transform gizmo editing and remaining visual acceptance are still open; drag transaction events prepare P1 undo integration, but do not provide undo history.
+- [ ] **P0 — viewport and visual foundation (in progress):** picking, Q/W/E/R/T/Y tools, focus-safe shortcuts, snapping, drag cancellation, dock persistence, the world grid and undo transactions are verified. Nested rotated/scaled-parent selection, overlays and movement now use the complete authoring hierarchy, including at zoom/pan offsets. Remaining full transform-tool and visual/display-scale acceptance stays open.
 - [ ] **P1 — safe editor authoring:** undo/redo, save/recovery safeguards, functional Add Component, typed searchable Inspector, script settings, resource pickers, multi-edit, hierarchy and shortcut QoL.
 - [ ] **P2 — consistent runtime:** authoritative combat/collision paths, input actions, simulation timing, lifecycle, edit/play separation and versioned project/module contracts.
 - [ ] **P3 — asset and presentation pipeline:** spritesheet slicing/pivots/imports, real animation timeline/state tools, music/SFX buses/previews/settings, effects and camera feedback.

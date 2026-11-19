@@ -17,6 +17,7 @@ import { SceneManager } from '../../src/core/sceneManager.js';
 import { Hitbox, Hurtbox } from '../../src/nereid/collider.js';
 import { CollisionSystem } from '../../src/nereid/collisionSystem.js';
 import { runtimeComponentBridgeScript } from '../src/lib/runtimeComponentBridge.mjs';
+import { runtimeSelectionBridgeScript } from '../src/lib/runtimeSelectionBridge.mjs';
 import { applyInspectorComponentUpdate } from '../src/lib/inspectorComponentUpdate.ts';
 import fs from 'node:fs';
 
@@ -25,7 +26,7 @@ const src = path.resolve('triton/src').replace(/\\/g, '/');
 const jsx = (type, props) => ({ type, props: props || {} });
 const react = { createElement: (type, props, ...children) => jsx(type, { ...(props || {}), children: children.length > 1 ? children : children[0] }),
     cloneElement: (element, props) => jsx(element.type, { ...element.props, ...props }),
-    useState: value => [value, () => {}], useMemo: fn => fn(), useCallback: fn => fn, useEffect() {} };
+    useState: value => [value, () => {}], useMemo: fn => fn(), useCallback: fn => fn, useEffect() {}, useRef: value => ({ current: value }) };
 const icon = new Proxy({}, { get: (_, key) => key });
 const visit = node => Array.isArray(node) ? node.flatMap(visit) : node && typeof node === 'object'
     ? [node, ...visit(node.props?.children)] : [];
@@ -34,7 +35,8 @@ function inspectorHarness(scene, selection = {}) {
     const code = buildSync({
         entryPoints: [path.posix.join(src, 'components/panels/InspectorPanel.tsx')],
         alias: { '@': src }, bundle: true, platform: 'node', format: 'cjs', write: false,
-        external: ['react', 'react/jsx-runtime', 'lucide-react', path.posix.join(src, 'components/library'),
+        external: ['react', 'react/jsx-runtime', 'lucide-react', path.posix.join(src, 'components/library'), path.posix.join(src, 'components/library/*'),
+            path.posix.join(src, 'components/editor/ExtensionInspector'),
             path.posix.join(src, 'context/*'), path.posix.join(src, 'lib/editorGameRunner')]
     }).outputFiles[0].text;
     const selected = { id: 'sprite-1', name: 'Sprite', active: true,
@@ -45,17 +47,24 @@ function inspectorHarness(scene, selection = {}) {
     const game = {
         selectedEntityData: selected, selectedIds: ['sprite-1'], currentScenePath: 'scenes/main.scene',
         updateComponent(id, component, field, value) {
+            if (!EditorGameRunner.updateEntity(id, component, { [field]: value })) return false;
             if (component === 'transform') selected.transform[field] = value;
             const key = Object.keys(selected.components).find(key => key.toLowerCase() === component.toLowerCase());
             if (key) selected.components[key] = { ...selected.components[key], [field]: value };
             notices.push(['editor:update-component', { id, component, data: { [field]: value } }]);
         },
         notifyGame: (...args) => notices.push(args),
-        renameEntityInHierarchy() {}, setEntityActiveInHierarchy(_, active) { selected.active = active; }
+        renameEntityInHierarchy() {}, setEntityActiveInHierarchy(id, active) {
+            if (!EditorGameRunner.updateEntity(id, 'active', { value: active })) return;
+            selected.active = active;
+            notices.push(['editor:set-active', { id, active }]);
+        }
     };
     const modules = {
         react, 'react/jsx-runtime': { jsx, jsxs: jsx }, 'lucide-react': icon,
         '@/components/library': new Proxy({}, { get: (_, key) => key }),
+        '@/components/library/ThemedInput': { ThemedInput: 'ThemedInput' },
+        '@/components/editor/ExtensionInspector': { ExtensionInspector: 'ExtensionInspector' },
         '@/context/GameContext': { useGameContext: () => game },
         '@/context/FileSystemContext': { useFileSystem: () => ({ writeScene: async (_, value) => { saved = value; return true; } }) },
         '@/lib/editorGameRunner': { EditorGameRunner }
@@ -312,11 +321,10 @@ test('Inspector edits transform, active state, and sprite properties in both liv
             .map(scene => ({ scene }));
         const dispatchers = runtimeViews.map(game => {
             const parent = {};
-            let listener;
-            vm.runInNewContext(runtimeComponentBridgeScript, { window: {
-                game, parent, addEventListener(_, callback) { listener = callback; }
-            } });
-            return (type, payload) => listener({ source: parent, data: { type, payload } });
+            const listeners = [];
+            const window = { game, parent, addEventListener(type, callback) { if (type === 'message') listeners.push(callback); } };
+            vm.runInNewContext(runtimeComponentBridgeScript + runtimeSelectionBridgeScript, { window });
+            return (type, payload) => listeners.forEach(listener => listener({ source: parent, data: { type, payload } }));
         });
         const transform = harness.render().find(node => node.type?.name === 'TransformSection');
         transform.props.onUpdate('position', { x: 4, y: 7 });

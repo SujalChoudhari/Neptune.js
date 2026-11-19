@@ -56,3 +56,19 @@ test('no-op edits do not clear redo and undo/redo stacks respect the configured 
     history.undo();
     assert.equal(history.canUndo, false);
 });
+
+test('failed transaction cancellation restores already reverted commands and remains retryable', () => {
+    const history = createEditHistory();
+    let value = 0;
+    let reject = true;
+    const transaction = history.begin('drag');
+    history.run('first move', () => { value = 1; }, () => { if (reject) return false; value = 0; });
+    history.run('second move', () => { value = 2; }, () => { value = 1; });
+    assert.throws(() => transaction.cancel(), /Could not cancel 'first move'/);
+    assert.equal(value, 2);
+    assert.equal(history.active, true);
+    reject = false;
+    assert.equal(transaction.cancel(), true);
+    assert.equal(value, 0);
+    assert.equal(history.active, false);
+});

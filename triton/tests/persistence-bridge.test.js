@@ -1,6 +1,8 @@
 import fs from "fs";
 import path from "path";
 import vm from "node:vm";
+import test from "node:test";
+import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { buildSync } from "esbuild";
 import { chromium } from "playwright";
@@ -23,7 +25,7 @@ import { Hitbox, Hurtbox, TriggerCollider } from "../../src/nereid/collider.js";
 import { createEmptyTilemap, paintTileCell, paintTileCells, setCellMetadata, setTileMetadata, getTilesetPaletteIds, getTilesetTileOffset, getTilesetGridSize, getTilemapAttachError } from "../src/lib/tilemapAuthoring.mjs";
 import { isSafeSceneAssetPath } from "../src/lib/sceneTransitionAuthoring.mjs";
 import { sceneContextSelection } from "../src/lib/sceneContextMenu.mjs";
-import { describe, it, expect } from "../../tests/tester.js";
+import { describe, it, expect, printResults } from "../../tests/tester.js";
 
 ComponentRegistry.register("SceneTransition", SceneTransition);
 ComponentRegistry.register("SpawnPoint", SpawnPoint);
@@ -216,7 +218,17 @@ function createMainHarness() {
                     });
                 },
                 moveEntities() {},
-                addEntityToHierarchy(entity, components) { addedEntities.push({ entity, components }); },
+                addEntityToHierarchy(entity, components) {
+                    const parentId = runner.EditorGameRunner.resolveHierarchyParentId(entity.parentId, game.entities);
+                    const mutation = { id: entity.id, name: entity.name, type: entity.type, active: entity.active,
+                        transform: { pos: { x: 0, y: 0 }, rot: 0, scale: { x: 1, y: 1 } }, components };
+                    if (!runner.EditorGameRunner.createEntity(parentId, mutation)) return false;
+                    addedEntities.push({ entity, components });
+                    game.entities[entity.id] = entity;
+                    game.entities[entity.parentId].children.push(entity.id);
+                    notifications.push({ type: 'editor:create-entity', payload: { ...mutation, parentId } });
+                    return true;
+                },
                 addEntityBranchToHierarchy(branch, parentId, afterId) {
                     const append = (node, parent) => {
                         const children = node.children || [];
@@ -230,10 +242,21 @@ function createMainHarness() {
                     siblings.splice(sourceIndex === -1 ? siblings.length : sourceIndex + 1, 0, branch.id);
                     append(branch, parentId);
                 },
-                renameEntityInHierarchy(id, name) { game.entities[id] = { ...game.entities[id], name }; },
-                setEntityActiveInHierarchy(id, active) { game.entities[id] = { ...game.entities[id], active }; },
+                renameEntityInHierarchy(id, name) { runner.EditorGameRunner.updateEntity(id, 'name', { value: name }); game.entities[id] = { ...game.entities[id], name }; },
+                setEntityActiveInHierarchy(id, active) { runner.EditorGameRunner.updateEntity(id, 'active', { value: active }); game.entities[id] = { ...game.entities[id], active }; },
                 setEntityLocked(id, locked) { game.entities[id] = { ...game.entities[id], locked }; },
+                duplicateEntityInHierarchy(id) {
+                    const branch = runner.EditorGameRunner.duplicateEntity(id);
+                    if (!branch) return null;
+                    modules['@/context/GameContext'].useGameContext().addEntityBranchToHierarchy(branch, game.entities[id].parentId, id);
+                    notifications.push({ type: 'editor:load-scene', payload: { data: runner.EditorGameRunner.currentScene } });
+                    return branch.id;
+                },
+                beginSceneEdit() { return { commit() {}, cancel() {} }; },
+                deleteEntitiesInHierarchy(ids) { ids.forEach(id => modules['@/context/GameContext'].useGameContext().removeEntityFromHierarchy(id)); },
                 removeEntityFromHierarchy(id) {
+                    if (!runner.EditorGameRunner.deleteEntity(id)) return;
+                    notifications.push({ type: 'editor:delete', payload: { id } });
                     const remove = entityId => {
                         (game.entities[entityId]?.children || []).forEach(remove);
                         delete game.entities[entityId];
@@ -310,16 +333,7 @@ function createMainHarness() {
     const dispatchMenuEvent = (payload) => {
         listeners.filter((listener) => listener.active).forEach((listener) => listener.handler({ payload }));
     };
-    const clickDuplicate = (node) => {
-        if (Array.isArray(node)) return node.some(clickDuplicate);
-        if (!node || typeof node !== "object") return false;
-        if (node.type === "ThemedContextMenuItem" && node.props?.children === "Duplicate") {
-            node.props.onClick();
-            return true;
-        }
-        const children = node.props?.children;
-        return Array.isArray(children) ? children.some(clickDuplicate) : clickDuplicate(children);
-    };
+    const clickDuplicate = node => clickContextAction(node, "source", "Duplicate");
 
     const clickAddEntity = (node, type) => {
         if (Array.isArray(node)) return node.some(child => clickAddEntity(child, type));
@@ -348,20 +362,25 @@ function createMainHarness() {
         return findHierarchyItem(node.props?.children, id);
     };
     const clickContextAction = (node, id, action) => {
-        if (Array.isArray(node)) return node.some(child => clickContextAction(child, id, action));
-        if (!node || typeof node !== "object") return false;
-        if (node.type === "ThemedContextMenu" && findHierarchyItem(node, id)) {
-            const visit = child => {
-                if (Array.isArray(child)) return child.some(visit);
-                if (!child || typeof child !== "object") return false;
-                if (child.type === "ThemedContextMenuItem" && child.props?.children === action) {
-                    child.props.onClick(); return true;
-                }
-                return visit(child.props?.children);
-            };
-            return visit(node);
-        }
-        return clickContextAction(node.props?.children, id, action);
+        const findWrapper = child => {
+            if (Array.isArray(child)) return child.map(findWrapper).find(Boolean);
+            if (!child || typeof child !== "object") return null;
+            if (child.props?.['data-hierarchy-item'] && findHierarchyItem(child, id)) return child;
+            return findWrapper(child.props?.children);
+        };
+        const wrapper = findWrapper(node);
+        if (!wrapper) return false;
+        wrapper.props.onContextMenu({ preventDefault() {}, stopPropagation() {}, clientX: 0, clientY: 0 });
+        const findMenu = child => {
+            if (Array.isArray(child)) return child.map(findMenu).find(Boolean);
+            if (!child || typeof child !== "object") return null;
+            if (child.type === "SceneContextMenu") return child;
+            return findMenu(child.props?.children);
+        };
+        const menu = findMenu(renderHierarchy());
+        if (!menu?.props.request) return false;
+        menu.props.onAction(action.toLowerCase().replaceAll(" ", "-"), menu.props.request);
+        return true;
     };
 
     const selectHierarchyEntity = (node, id, multi = false, shift = false) => {
@@ -665,7 +684,7 @@ describe("Triton persistence bridge", () => {
         expect(rust.includes("RESOURCE_REFERENCE_INVALID")).toBe(true);
         expect(rust.includes("async fn read_audio_asset")).toBe(true);
         expect(/read_audio_asset,\r?\n/.test(rust)).toBe(true);
-        expect(game.includes("setCurrentScenePayload")).toBe(true);
+        expect(game.includes("EditorGameRunner.openScene(data, path)")).toBe(true);
     });
 
     it("requires native filesystem round-trip coverage for IDs and schema fields", () => {
@@ -700,7 +719,7 @@ describe("Triton persistence bridge", () => {
         expect(hierarchy.includes("type === 'spawn-point' ? 'Spawn Point' : type === 'trigger-area' ? 'Trigger Area'")).toBe(true);
         expect(hierarchy.includes("type: 'SpawnPoint', props: { spawnId: id, facing: 'right' }")).toBe(true);
         expect(runtime.includes('ComponentRegistry.register("SpawnPoint", SpawnPoint)')).toBe(true);
-        expect(hierarchy.includes("EditorGameRunner.createEntity(persistenceParentId, { id, name, type, components: entityComponents })")).toBe(true);
+        expect(hierarchy.includes("addEntityToHierarchy(")).toBe(true);
         expect(loader.includes('if (typeof entityData.type === "string") entity.type = entityData.type;')).toBe(true);
     });
 
@@ -713,7 +732,7 @@ describe("Triton persistence bridge", () => {
         expect(engineTypes.includes("'entity'")).toBe(true);
         expect(hierarchy.includes("type === 'entity' ? 'New Entity'")).toBe(true);
         expect(hierarchy.includes("type: 'Transform', props: { position: { x: 0, y: 0 }, rotation: 0, scale: { x: 1, y: 1 } }")).toBe(true);
-        expect(hierarchy.includes("EditorGameRunner.createEntity(persistenceParentId, { id, name, type, components: entityComponents })")).toBe(true);
+        expect(hierarchy.includes("addEntityToHierarchy(")).toBe(true);
     });
 
     it("authors dialogue entities with editable runtime Dialogue properties", () => {
@@ -762,7 +781,7 @@ describe("Triton persistence bridge", () => {
         expect(component.includes('targetScene: ""')).toBe(true);
         expect(inspector.includes("const isSceneReference = lowerLabel === 'targetscene'")).toBe(true);
         expect(inspector.includes("isSafeSceneAssetPath(path)")).toBe(true);
-        expect(inspector.includes("Drag a .scene file here...")).toBe(true);
+        expect(inspector.includes("Project-relative .scene path")).toBe(true);
         expect(runtime.includes('ComponentRegistry.register("SceneTransition", SceneTransition)')).toBe(true);
     });
 
@@ -959,7 +978,7 @@ describe("Triton persistence bridge", () => {
         expect(inspector.includes("const entity: EntityData = selectedEntityData")).toBe(true);
         expect(inspector.includes("MockEntity")).toBe(false);
         expect(inspector.includes("as any as")).toBe(false);
-        expect(inspector.includes("applyInspectorComponentUpdate({")).toBe(true);
+        expect(inspector.includes("updateComponent(id, component, key, value)")).toBe(true);
         expect(updateHelper.includes("component.toLowerCase() === 'tilemap' && currentScenePath")).toBe(true);
         expect(updateHelper.includes("notifyGame('editor:load-scene'")).toBe(true);
         expect(registry.includes('import type { EntityData } from "@/types/engine"')).toBe(true);
@@ -973,7 +992,7 @@ describe("Triton persistence bridge", () => {
         expect(inspector.includes("const entity: EntityData = selectedEntityData")).toBe(true);
         expect(inspector.includes("renameEntityInHierarchy(entity.id, name)")).toBe(true);
         expect(inspector.includes("setEntityActiveInHierarchy(id, active)")).toBe(true);
-        expect(inspector.includes("EditorGameRunner.updateEntity(id, component, { enabled })")).toBe(true);
+        expect(inspector.includes('updateComponent(id, component, "enabled", enabled)')).toBe(true);
         expect(inspector.includes("activeStates")).toBe(false);
     });
 
@@ -2069,7 +2088,7 @@ describe("Triton persistence bridge", () => {
             body: makeElement(),
             head: makeElement()
         };
-        global.window = { innerWidth: 800, innerHeight: 600, outerWidth: 800, outerHeight: 600 };
+        global.window = { innerWidth: 800, innerHeight: 600, outerWidth: 800, outerHeight: 600, addEventListener() {}, removeEventListener() {} };
         global.Image = class { set src(_value) {} };
         global.fetch = async source => {
             expect(source).toBe(mapPath);
@@ -2305,6 +2324,8 @@ describe("Triton persistence bridge", () => {
         expect(harness.game.entities.parent.name).toBe("After");
         expect(harness.game.entities.parent.active).toBe(false);
         expect(harness.game.entities.parent.locked).toBe(true);
+        harness.findHierarchyItem(harness.renderHierarchy(), "parent").props.onToggleLock("parent");
+        expect(harness.game.entities.parent.locked).toBe(false);
         expect(harness.clickContextAction(harness.renderHierarchy(), "parent", "Duplicate")).toBe(true);
         const copy = harness.runner.currentScene.entities[1];
         expect(harness.game.entities.root.children).toEqual(["parent", copy.id, "sibling"]);
@@ -2338,3 +2359,12 @@ describe("Triton persistence bridge", () => {
         expect(true).toBe(true);
     });
 });
+
+// The integrated engine runner drains the shared harness itself. When this file
+// runs alone under node --test, drain it here so asynchronous checks are awaited.
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve("triton/tests/persistence-bridge.test.js")) {
+    test("persistence bridge checks", async () => {
+        const { failed } = await printResults();
+        assert.equal(failed, 0);
+    });
+}

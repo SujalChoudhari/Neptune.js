@@ -1,6 +1,5 @@
 import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import neptuneEntryUrl from "virtual:neptune-runtime-url";
-import cameraUrl from "../../../../src/thalassa/camera.js?url";
 import scenePickingUrl from "@/lib/scenePicking.mjs?url";
 import projectResourceBridgeUrl from "@/lib/projectResourceBridge.mjs?url";
 import authoredUiUrl from "../../../../src/ui/authoredUi.js?url";
@@ -61,7 +60,7 @@ export function SceneViewPanel() {
     const pendingContextRef = useRef<{ x: number; y: number } | null>(null);
     const { notifyGame, updateComponent, beginSceneEdit, selectEntities, addEntityToHierarchy,
         duplicateEntityInHierarchy, deleteEntitiesInHierarchy,
-        setEntityActiveInHierarchy, setEntityLocked, selectedEntityData, selectedEntitiesData,
+        setEntityActiveInHierarchy, setEntityLocked, selectedEntityData, selectedEntitiesData, entityDataCache,
         selectedIds, entities, canUndo, canRedo, undoSceneEdit, redoSceneEdit } = useGameContext();
     const [uiCapture, setUiCapture] = useState(false);
     const [gizmoPosition, setGizmoPosition] = useState<{ x: number; y: number } | null>(null);
@@ -90,10 +89,10 @@ export function SceneViewPanel() {
     } | null>(null);
     const suppressClickRef = useRef(false);
     const selectionOverlays = useMemo(() => selectedIds
-        .map(id => getEntityWorldSelectionGeometry(id, entities, selectedEntitiesData, pixelsPerMeter / 4))
+        .map(id => getEntityWorldSelectionGeometry(id, entities, entityDataCache, pixelsPerMeter / 4))
         .filter((geometry): geometry is NonNullable<typeof geometry> => geometry !== null)
         .map(geometry => ({ ...geometry.bounds, id: geometry.id, name: geometry.name, corners: geometry.corners })),
-    [selectedIds, selectedEntitiesData, entities]);
+    [selectedIds, entityDataCache, entities]);
     const canFrameSelection = selectedIds.length > 0 && selectionOverlays.length === selectedIds.length;
     const groupGizmoPosition = useMemo(() => selectionOverlays.length > 0 ? {
         x: (Math.min(...selectionOverlays.map(bounds => bounds.x))
@@ -103,7 +102,7 @@ export function SceneViewPanel() {
     } : null, [selectionOverlays]);
     const hasCompleteGroupTransform = hasCompleteGroupTransformSelection(selectedIds, selectedEntitiesData);
     const canTransformSelection = selectedIds.length > 0 && selectedIds.every(id => {
-        const matrix = getEntityWorldMatrix(id, entities, selectedEntitiesData);
+        const matrix = getEntityWorldMatrix(id, entities, entityDataCache);
         return matrix !== null && Math.abs(matrix.a * matrix.d - matrix.b * matrix.c) >= 1e-10;
     });
 
@@ -226,7 +225,7 @@ export function SceneViewPanel() {
         if (selectedIds.length > 1 && !operation.startsWith('translate')) return;
         const snapshot = captureTransformSnapshot(selectedIds, selectedEntitiesData);
         if (!snapshot) return;
-        const matrices = selectedIds.map(id => getEntityWorldMatrix(id, entities, selectedEntitiesData));
+        const matrices = selectedIds.map(id => getEntityWorldMatrix(id, entities, entityDataCache));
         if (matrices.some(matrix => !matrix || Math.abs(matrix.a * matrix.d - matrix.b * matrix.c) < 1e-10)) return;
         const startPositions: Record<string, { x: number; y: number }> = {};
         for (const id of selectedIds) {
@@ -324,7 +323,7 @@ export function SceneViewPanel() {
             selectedIds.forEach(id => {
                 const position = selectedEntitiesData[id]?.transform.position;
                 if (!position) return;
-                const localDelta = worldDeltaToEntityLocal(id, { x: isX ? delta : 0, y: isX ? 0 : delta }, entities, selectedEntitiesData);
+                const localDelta = worldDeltaToEntityLocal(id, { x: isX ? delta : 0, y: isX ? 0 : delta }, entities, entityDataCache);
                 if (localDelta) applyTransformEdit(id, { position: { x: position.x + localDelta.x, y: position.y + localDelta.y } });
             });
             transaction.commit();
@@ -369,7 +368,7 @@ export function SceneViewPanel() {
         event.stopPropagation();
         const transaction = beginSceneEdit(operation === 'rotate' ? 'Rotate entity' : operation === 'scale' ? 'Scale entity' : 'Move entity');
         if (worldMove) {
-            const localDelta = worldDeltaToEntityLocal(selectedIds[0], worldMove, entities, selectedEntitiesData);
+            const localDelta = worldDeltaToEntityLocal(selectedIds[0], worldMove, entities, entityDataCache);
             if (!localDelta) { transaction.cancel(); return; }
             data = { position: { x: transform.position.x + localDelta.x, y: transform.position.y + localDelta.y } };
         }
@@ -436,7 +435,7 @@ export function SceneViewPanel() {
             const worldDelta = { x: nextPosition.x - drag.position.x, y: nextPosition.y - drag.position.y };
             drag.ids.forEach(id => {
                 const start = drag.startPositions[id];
-                const localDelta = worldDeltaToEntityLocal(id, worldDelta, entities, selectedEntitiesData);
+                const localDelta = worldDeltaToEntityLocal(id, worldDelta, entities, entityDataCache);
                 if (!localDelta) return;
                 applyTransformEdit(id, { position: { x: start.x + localDelta.x, y: start.y + localDelta.y } });
             });
@@ -518,8 +517,7 @@ export function SceneViewPanel() {
         pendingContextRef.current = { x: event.clientX, y: event.clientY };
         iframeRef.current?.contentWindow?.postMessage({ type: 'editor:viewport-pick', payload: {
             x: event.clientX - rect.left, y: event.clientY - rect.top,
-            clientX: event.clientX, clientY: event.clientY,
-            excludedIds: Object.values(entities).filter(entity => entity.locked).map(entity => entity.id)
+            clientX: event.clientX, clientY: event.clientY
         } }, '*');
     };
 
@@ -529,9 +527,21 @@ export function SceneViewPanel() {
         else if (action === 'frame') window.dispatchEvent(new CustomEvent('editor:frame-selection', { detail: { ids } }));
         else if (action === 'rename' && request.targetId) window.dispatchEvent(new CustomEvent('editor:rename-selection', { detail: { id: request.targetId } }));
         else if (action === 'duplicate') {
+            const roots = ids.filter(id => {
+                const seen = new Set<string>();
+                for (let parent = entities[id]?.parentId; parent && !seen.has(parent); parent = entities[parent]?.parentId) {
+                    if (ids.includes(parent)) return false;
+                    seen.add(parent);
+                }
+                return true;
+            });
             const transaction = beginSceneEdit('Duplicate selection');
-            for (const id of ids) duplicateEntityInHierarchy(id);
-            transaction.commit();
+            try {
+                for (const id of roots) {
+                    if (!duplicateEntityInHierarchy(id)) { transaction.cancel(); return; }
+                }
+                transaction.commit();
+            } catch (error) { transaction.cancel(); EditorGameRunner.report(error); }
         } else if (action === 'delete') deleteEntitiesInHierarchy(ids);
         else if (action === 'toggle-active' && request.targetId) {
             const next = entities[request.targetId]?.active === false;
@@ -618,10 +628,10 @@ export function SceneViewPanel() {
         body { margin: 0; overflow: hidden; background-color: #000; width: 100vw; height: 100vh; }
         canvas { display: block; width: 100%; height: 100%; }
         .grid {
-            position: absolute; inset:0; pointer-events:none; opacity:0.45; z-index:1;
+            position: absolute; inset:0; pointer-events:none; opacity:0.45; z-index:2;
             background-repeat: repeat; background-position: 0 0;
         }
-        .axis-x,.axis-y { position:absolute; pointer-events:none; z-index:2; background:rgba(238,91,91,.45); }
+        .axis-x,.axis-y { position:absolute; pointer-events:none; z-index:3; background:rgba(238,91,91,.45); }
         .axis-x { width:1px; top:0; bottom:0; }
         .axis-y { height:1px; left:0; right:0; background:rgba(91,197,126,.45); }
         #neptune-play, #neptune-gamepage { display: none !important; }
@@ -634,7 +644,6 @@ export function SceneViewPanel() {
     <canvas id="neptune-canvas"></canvas>
     
     <script type="module">
-        import { Camera } from "${cameraUrl}";
         import { pickEntityAt, updateSelection } from "${scenePickingUrl}";
         import { installProjectResourceBridge } from "${projectResourceBridgeUrl}";
         window.__NEPTUNE_EDITOR_PREVIEW__ = true;
@@ -683,7 +692,7 @@ export function SceneViewPanel() {
              cleanup();
 
              // Editor Camera
-            const editorCamera = new Camera(window.innerWidth, window.innerHeight);
+            const editorCamera = new engineModule.Thalassa.Camera(window.innerWidth, window.innerHeight);
             editorCamera.zoom = 1;
             let editorSelection = [];
              const grid = document.querySelector('.grid');
@@ -730,7 +739,7 @@ export function SceneViewPanel() {
                     window.dispatchEvent(new CustomEvent('neptune:ui-capture', { detail: { enabled: uiCaptureEnabled } }));
                 }
                 else if (type === 'editor:viewport-pick') {
-                    const selectedId = game.scene && pickSceneEntityAt(game.scene, payload.x, payload.y, ${pixelsPerMeter}, payload.excludedIds || []);
+                    const selectedId = game.scene && pickSceneEntityAt(game.scene, payload.x, payload.y, ${pixelsPerMeter}, payload.excludedIds || [], shapeContainsPoint);
                     window.parent.postMessage({ type: 'game:viewport-picked', payload: { id: selectedId || null, x: payload.clientX, y: payload.clientY } }, '*');
                 }
                 else if (type === 'editor:select') {
@@ -743,7 +752,7 @@ export function SceneViewPanel() {
                      updateGrid();
                  }
                  else if (type === 'editor:viewport-select') {
-                     const selectedId = game.scene && pickSceneEntityAt(game.scene, payload.x, payload.y, ${pixelsPerMeter}, payload.excludedIds || []);
+                     const selectedId = game.scene && pickSceneEntityAt(game.scene, payload.x, payload.y, ${pixelsPerMeter}, payload.excludedIds || [], shapeContainsPoint);
                      editorSelection = updateSelection(editorSelection, selectedId, Boolean(payload.multi));
                      window.parent.postMessage({
                          type: 'game:selection-changed',

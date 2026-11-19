@@ -5,6 +5,9 @@ const settingsKey = `${prefix}.settings`;
 const readSettings = () => { try { const s = JSON.parse(localStorage.getItem(settingsKey) || '{}'); return { music: Number.isFinite(s.music) ? Math.max(0, Math.min(1, s.music)) : .28, sfx: Number.isFinite(s.sfx) ? Math.max(0, Math.min(1, s.sfx)) : .7 }; } catch { return { music: .28, sfx: .7 }; } };
 const settings = readSettings();
 const title = document.querySelector('#title');
+const saveError = sessionStorage.getItem(`${prefix}.save-error`);
+if (saveError) { document.querySelector('.intro').textContent = `Continue failed: ${saveError} Your save was kept; choose Begin journey to start over.`; sessionStorage.removeItem(`${prefix}.save-error`); }
+window.addEventListener('emberfall:invalid-save', event => { sessionStorage.setItem(`${prefix}.save-error`, event.detail); location.reload(); });
 const continueButton = document.querySelector('#continue');
 const pauseMenu = document.querySelector('#pause-menu');
 const savedRecord = () => { try { return localStorage.getItem(`${prefix}.slot-1`); } catch { return null; } };
@@ -22,7 +25,15 @@ async function begin(continueRun = false, classic = false) {
     Storage.DeserializeProject(project);
     application.clearColor = Color.FromHex(0x14221f);
     if (continueRun) sessionStorage.setItem(`${prefix}.continue`, '1');
-    await application.loadScene(classic ? project.scenes?.[0]?.path || './scenes/ruins.scene' : './scenes/adventure.scene');
+    if (classic) await application.loadScene(project.scenes?.[0]?.path || './scenes/ruins.scene');
+    else {
+      const scenePath = new URLSearchParams(location.search).has('practice') ? './scenes/adventure.scene' : './scenes/expedition.scene';
+      const scene = await (await fetch(scenePath)).json();
+      for (const actor of scene.entities) for (const component of actor.components || []) {
+        if (component.type === 'Sprite' && component.props.path?.startsWith('/assets/')) component.props.path = new URL(component.props.path.slice(1), location.href).href;
+      }
+      await application.loadScene(scene);
+    }
     title.hidden = true;
     document.querySelector('#neptune-play')?.remove();
     application.start();

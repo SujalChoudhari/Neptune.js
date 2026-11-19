@@ -5,6 +5,8 @@ let currentModule = null;
 let beforeEachCallbacks = [];
 let afterEachCallbacks = [];
 let currentTestFailed = false;
+const pendingTests = [];
+let draining = null;
 
 /**
  * Helper to mark current test as failed and throw
@@ -15,9 +17,11 @@ function fail(message) {
 }
 
 export function describe(description, callback) {
-    // Reset callbacks for each new module
-    beforeEachCallbacks = [];
-    afterEachCallbacks = [];
+    const parent = currentModule;
+    const parentBefore = beforeEachCallbacks;
+    const parentAfter = afterEachCallbacks;
+    beforeEachCallbacks = parent ? [...parentBefore] : [];
+    afterEachCallbacks = parent ? [...parentAfter] : [];
 
     currentModule = {
         description,
@@ -27,9 +31,13 @@ export function describe(description, callback) {
     };
     modulesData.push(currentModule);
     console.groupCollapsed(`Module: ${description}`);
-    callback();
-    console.groupEnd();
-    currentModule = null;
+    try { callback(); }
+    finally {
+        console.groupEnd();
+        currentModule = parent;
+        beforeEachCallbacks = parentBefore;
+        afterEachCallbacks = parentAfter;
+    }
 }
 
 export function beforeEach(callback) {
@@ -41,22 +49,40 @@ export function afterEach(callback) {
 }
 
 export function it(description, callback) {
-    currentTestFailed = false;
-    beforeEachCallbacks.forEach((cb) => cb());
-    try {
-        callback();
-        if (!currentTestFailed) {
-            console.log(`  ✅ ${description} - Passed`);
-            currentModule.passed++;
-            currentModule.tests.push({ description, passed: true });
+    if (!currentModule || typeof callback !== 'function') throw new TypeError('it() needs a describe() module and a test callback');
+    pendingTests.push({ description, callback, module: currentModule, before: [...beforeEachCallbacks], after: [...afterEachCallbacks] });
+}
+
+async function runPendingTests() {
+    if (draining) return draining;
+    draining = (async () => {
+        while (pendingTests.length) {
+            const test = pendingTests.shift();
+            currentTestFailed = false;
+            let failure = null;
+            try {
+                for (const setup of test.before) await setup();
+                await test.callback();
+                if (currentTestFailed) failure = new Error('A test expectation failed.');
+            } catch (error) { failure = error; }
+            for (const cleanup of [...test.after].reverse()) {
+                try { await cleanup(); }
+                catch (error) { failure ||= error; }
+            }
+            if (failure) {
+                console.error(`  ❌ ${test.description} - Failed`);
+                console.error(failure);
+                test.module.failed++;
+                test.module.tests.push({ description: test.description, passed: false, error: failure.message || String(failure) });
+            } else {
+                console.log(`  ✅ ${test.description} - Passed`);
+                test.module.passed++;
+                test.module.tests.push({ description: test.description, passed: true });
+            }
         }
-    } catch (error) {
-        console.error(`  ❌ ${description} - Failed`);
-        console.error(error);
-        currentModule.failed++;
-        currentModule.tests.push({ description, passed: false, error: error.message });
-    }
-    afterEachCallbacks.forEach((cb) => cb());
+    })();
+    try { await draining; }
+    finally { draining = null; }
 }
 
 export function expect(actual) {
@@ -291,6 +317,7 @@ export function expect(actual) {
 }
 
 export async function printResults() {
+    await runPendingTests();
     let totalPassed = 0;
     let totalFailed = 0;
 

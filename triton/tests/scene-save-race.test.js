@@ -7,7 +7,7 @@ import { buildSync } from "esbuild";
 
 const sourcefile = path.resolve("triton/src/lib/editorGameRunner.ts");
 const bundle = buildSync({ bundle: true, format: "cjs", platform: "node", write: false,
-    stdin: { contents: fs.readFileSync(sourcefile, "utf8"), loader: "ts", sourcefile }
+    stdin: { contents: fs.readFileSync(sourcefile, "utf8"), loader: "ts", sourcefile, resolveDir: path.dirname(sourcefile) }
 }).outputFiles[0].text;
 const module = { exports: {} };
 const activities = [];

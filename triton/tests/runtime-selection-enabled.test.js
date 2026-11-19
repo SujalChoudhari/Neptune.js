@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { pickRuntimeEntityAt, runtimeSelectionBridgeScript } from '../src/lib/runtimeSelectionBridge.mjs';
+import { applyRuntimeComponentUpdate } from '../src/lib/runtimeComponentBridge.mjs';
 
 class Transform {
     position = { x: 0, y: 0 };
@@ -21,6 +22,24 @@ class Sprite {
 function entity(id, sprite, children = []) {
     return { id, components: [new Transform(), sprite], children };
 }
+
+test('registered names keep picking and component updates working when constructors are renamed', () => {
+    class a extends Transform {}
+    class b extends Sprite {}
+    const moved = { id: 'minified', components: [new a(), new b()], children: [] };
+    moved.components[0].position.x = 2;
+    const scene = { children: [moved] };
+    const previous = globalThis.__neptuneEngineModule;
+    globalThis.__neptuneEngineModule = { ComponentRegistry: { nameOf(value) { return value instanceof a ? 'Transform' : value instanceof b ? 'Sprite' : ''; } } };
+    try {
+        assert.equal(pickRuntimeEntityAt(scene, 128, 0), 'minified');
+        assert.equal(applyRuntimeComponentUpdate({ scene }, { id: 'minified', component: 'Sprite', data: { enabled: false } }), true);
+        assert.equal(moved.components[1].enabled, false);
+    } finally {
+        if (previous === undefined) delete globalThis.__neptuneEngineModule;
+        else globalThis.__neptuneEngineModule = previous;
+    }
+});
 
 test('Game View picking skips disabled Sprites but retains enabled descendants and underlying Sprites', () => {
     const underneath = entity('underneath', new Sprite());

@@ -1,0 +1,2962 @@
+{
+  "type": "scene",
+  "schemaVersion": 1,
+  "version": "1.0.0",
+  "id": "emberfall-expedition",
+  "name": "Emberfall — The Three Seals",
+  "entities": [
+    {
+      "type": "entity",
+      "id": "world-floor",
+      "name": "Expedition ground",
+      "transform": {
+        "position": {
+          "x": 30,
+          "y": 18
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0
+      },
+      "components": [
+        {
+          "id": "world-floor-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 32,
+                "g": 44,
+                "b": 41,
+                "a": 1
+              },
+              "fill": true,
+              "width": 60,
+              "height": 36,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "hollow-floor",
+      "name": "Briar Hollow",
+      "transform": {
+        "position": {
+          "x": 6,
+          "y": 6
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.1
+      },
+      "components": [
+        {
+          "id": "hollow-floor-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 53,
+                "g": 81,
+                "b": 61,
+                "a": 1
+              },
+              "fill": true,
+              "width": 12,
+              "height": 12,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "bridge-floor",
+      "name": "Lantern Bridge",
+      "transform": {
+        "position": {
+          "x": 15,
+          "y": 6
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.1
+      },
+      "components": [
+        {
+          "id": "bridge-floor-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 92,
+                "g": 82,
+                "b": 65,
+                "a": 1
+              },
+              "fill": true,
+              "width": 6,
+              "height": 4,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "gatehall-floor",
+      "name": "gatehall floor",
+      "transform": {
+        "position": {
+          "x": 26,
+          "y": 6
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.1
+      },
+      "components": [
+        {
+          "id": "gatehall-floor-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 61,
+                "g": 65,
+                "b": 59,
+                "a": 1
+              },
+              "fill": true,
+              "width": 16,
+              "height": 12,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "barracks-floor",
+      "name": "barracks floor",
+      "transform": {
+        "position": {
+          "x": 42,
+          "y": 6
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.1
+      },
+      "components": [
+        {
+          "id": "barracks-floor-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 75,
+                "g": 64,
+                "b": 57,
+                "a": 1
+              },
+              "fill": true,
+              "width": 16,
+              "height": 12,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "vault-floor",
+      "name": "vault floor",
+      "transform": {
+        "position": {
+          "x": 26,
+          "y": 18
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.1
+      },
+      "components": [
+        {
+          "id": "vault-floor-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 59,
+                "g": 68,
+                "b": 64,
+                "a": 1
+              },
+              "fill": true,
+              "width": 16,
+              "height": 12,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "archive-floor",
+      "name": "archive floor",
+      "transform": {
+        "position": {
+          "x": 42,
+          "y": 18
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.1
+      },
+      "components": [
+        {
+          "id": "archive-floor-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 68,
+                "g": 64,
+                "b": 72,
+                "a": 1
+              },
+              "fill": true,
+              "width": 16,
+              "height": 12,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "crypt-floor",
+      "name": "crypt floor",
+      "transform": {
+        "position": {
+          "x": 26,
+          "y": 30
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.1
+      },
+      "components": [
+        {
+          "id": "crypt-floor-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 54,
+                "g": 60,
+                "b": 65,
+                "a": 1
+              },
+              "fill": true,
+              "width": 16,
+              "height": 12,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "ritual-floor",
+      "name": "ritual floor",
+      "transform": {
+        "position": {
+          "x": 42,
+          "y": 30
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.1
+      },
+      "components": [
+        {
+          "id": "ritual-floor-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 73,
+                "g": 61,
+                "b": 57,
+                "a": 1
+              },
+              "fill": true,
+              "width": 16,
+              "height": 12,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "sanctum-floor",
+      "name": "sanctum floor",
+      "transform": {
+        "position": {
+          "x": 55,
+          "y": 30
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.1
+      },
+      "components": [
+        {
+          "id": "sanctum-floor-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 78,
+                "g": 59,
+                "b": 50,
+                "a": 1
+              },
+              "fill": true,
+              "width": 10,
+              "height": 12,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "lantern-tree",
+      "name": "Lantern tree",
+      "transform": {
+        "position": {
+          "x": 5,
+          "y": 2
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.2
+      },
+      "components": [
+        {
+          "id": "lantern-tree-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 135,
+                "g": 164,
+                "b": 92,
+                "a": 1
+              },
+              "fill": true,
+              "width": 1.5,
+              "height": 1.5,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "gate-banner",
+      "name": "Gate banner",
+      "transform": {
+        "position": {
+          "x": 25,
+          "y": 2
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.2
+      },
+      "components": [
+        {
+          "id": "gate-banner-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 145,
+                "g": 95,
+                "b": 62,
+                "a": 1
+              },
+              "fill": true,
+              "width": 3,
+              "height": 0.35,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "vault-inlay",
+      "name": "Vault inlay",
+      "transform": {
+        "position": {
+          "x": 22,
+          "y": 15
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.2
+      },
+      "components": [
+        {
+          "id": "vault-inlay-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 156,
+                "g": 146,
+                "b": 95,
+                "a": 1
+              },
+              "fill": true,
+              "width": 3,
+              "height": 0.3,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "archive-inlay",
+      "name": "Archive shelves",
+      "transform": {
+        "position": {
+          "x": 42,
+          "y": 14
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.2
+      },
+      "components": [
+        {
+          "id": "archive-inlay-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 151,
+                "g": 118,
+                "b": 83,
+                "a": 1
+              },
+              "fill": true,
+              "width": 4,
+              "height": 0.35,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "crypt-inlay",
+      "name": "Crypt stones",
+      "transform": {
+        "position": {
+          "x": 22,
+          "y": 26
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.2
+      },
+      "components": [
+        {
+          "id": "crypt-inlay-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 129,
+                "g": 140,
+                "b": 143,
+                "a": 1
+              },
+              "fill": true,
+              "width": 3,
+              "height": 0.35,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "ritual-inlay",
+      "name": "Ritual ring",
+      "transform": {
+        "position": {
+          "x": 42,
+          "y": 32
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.2
+      },
+      "components": [
+        {
+          "id": "ritual-inlay-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 156,
+                "g": 91,
+                "b": 72,
+                "a": 1
+              },
+              "fill": true,
+              "width": 4,
+              "height": 0.35,
+              "outline": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-1",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 30,
+          "y": 0.25
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-1-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 60,
+              "height": 0.5,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-1-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 60,
+            "height": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-2",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 30,
+          "y": 35.75
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-2-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 60,
+              "height": 0.5,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-2-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 60,
+            "height": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-3",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 0.25,
+          "y": 18
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-3-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.5,
+              "height": 36,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-3-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 0.5,
+            "height": 36
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-4",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 59.75,
+          "y": 18
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-4-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.5,
+              "height": 36,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-4-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 0.5,
+            "height": 36
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-5",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 12,
+          "y": 2
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-5-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 1,
+              "height": 4,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-5-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 1,
+            "height": 4
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-6",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 12,
+          "y": 22
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-6-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 1,
+              "height": 28,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-6-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 1,
+            "height": 28
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-7",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 18,
+          "y": 2
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-7-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 1,
+              "height": 4,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-7-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 1,
+            "height": 4
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-8",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 18,
+          "y": 22
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-8-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 1,
+              "height": 28,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-8-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 1,
+            "height": 28
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-9",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 15,
+          "y": 4
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-9-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 6,
+              "height": 0.5,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-9-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 6,
+            "height": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-10",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 15,
+          "y": 8
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-10-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 6,
+              "height": 0.5,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-10-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 6,
+            "height": 0.5
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-11",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 21,
+          "y": 12
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-11-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 6,
+              "height": 1,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-11-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 6,
+            "height": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-12",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 31,
+          "y": 12
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-12-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 6,
+              "height": 1,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-12-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 6,
+            "height": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-13",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 37,
+          "y": 12
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-13-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 6,
+              "height": 1,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-13-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 6,
+            "height": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-14",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 46,
+          "y": 12
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-14-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 6,
+              "height": 1,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-14-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 6,
+            "height": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-15",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 21,
+          "y": 24
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-15-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 6,
+              "height": 1,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-15-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 6,
+            "height": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-16",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 31,
+          "y": 24
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-16-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 6,
+              "height": 1,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-16-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 6,
+            "height": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-17",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 37,
+          "y": 24
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-17-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 6,
+              "height": 1,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-17-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 6,
+            "height": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-18",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 46,
+          "y": 24
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-18-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 6,
+              "height": 1,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-18-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 6,
+            "height": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-19",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 34,
+          "y": 2
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-19-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 1,
+              "height": 4,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-19-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 1,
+            "height": 4
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-20",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 34,
+          "y": 10
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-20-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 1,
+              "height": 4,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-20-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 1,
+            "height": 4
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-21",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 34,
+          "y": 14
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-21-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 1,
+              "height": 4,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-21-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 1,
+            "height": 4
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-22",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 34,
+          "y": 22
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-22-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 1,
+              "height": 4,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-22-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 1,
+            "height": 4
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-23",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 34,
+          "y": 26
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-23-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 1,
+              "height": 4,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-23-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 1,
+            "height": 4
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-24",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 34,
+          "y": 34
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-24-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 1,
+              "height": 4,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-24-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 1,
+            "height": 4
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-25",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 50,
+          "y": 14
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-25-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 1,
+              "height": 28,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-25-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 1,
+            "height": 28
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "wall-26",
+      "name": "Stone wall",
+      "transform": {
+        "position": {
+          "x": 50,
+          "y": 34
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 0.5
+      },
+      "components": [
+        {
+          "id": "wall-26-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 91,
+                "g": 100,
+                "b": 91,
+                "a": 1
+              },
+              "fill": true,
+              "width": 1,
+              "height": 4,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "wall-26-collider",
+          "type": "BoxCollider",
+          "props": {
+            "width": 1,
+            "height": 4
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "hero",
+      "name": "Wanderer",
+      "transform": {
+        "position": {
+          "x": 2,
+          "y": 4.5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "hero-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 139,
+                "g": 212,
+                "b": 171,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.72,
+              "height": 0.8,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "hero-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "player",
+              "health": 100,
+              "speed": 3.6,
+              "world": {
+                "width": 60,
+                "height": 36
+              },
+              "altar": {
+                "x": 55,
+                "y": 29
+              },
+              "requiredRelics": [
+                "west-seal",
+                "archive-seal",
+                "crypt-seal"
+              ]
+            }
+          }
+        },
+        {
+          "id": "hero-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/wanderer-rest.png",
+            "width": 0.9,
+            "height": 1,
+            "renderOrder": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "mira",
+      "name": "Mira · keeper of the hollow",
+      "transform": {
+        "position": {
+          "x": 5,
+          "y": 4.5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "mira-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 224,
+                "g": 191,
+                "b": 131,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.72,
+              "height": 0.8,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "mira-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "npc",
+              "health": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "old-coffer",
+      "name": "Old coffer",
+      "transform": {
+        "position": {
+          "x": 23,
+          "y": 2.5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "old-coffer-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 199,
+                "g": 155,
+                "b": 84,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.72,
+              "height": 0.8,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "old-coffer-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "chest",
+              "health": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "briar-scout",
+      "name": "Briar raider",
+      "transform": {
+        "position": {
+          "x": 9,
+          "y": 5
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "briar-scout-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 165,
+                "g": 120,
+                "b": 98,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.72,
+              "height": 0.8,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "briar-scout-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "raider",
+              "health": 54
+            }
+          }
+        },
+        {
+          "id": "briar-scout-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/sentinel.png",
+            "width": 0.9,
+            "height": 1,
+            "renderOrder": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "gate-guard",
+      "name": "Gate sentinel",
+      "transform": {
+        "position": {
+          "x": 23,
+          "y": 6
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "gate-guard-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 165,
+                "g": 120,
+                "b": 98,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.72,
+              "height": 0.8,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "gate-guard-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "sentinel",
+              "health": 54
+            }
+          }
+        },
+        {
+          "id": "gate-guard-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/sentinel.png",
+            "width": 0.9,
+            "height": 1,
+            "renderOrder": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "vault-warden",
+      "name": "Vault warden",
+      "transform": {
+        "position": {
+          "x": 22,
+          "y": 19
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "vault-warden-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 165,
+                "g": 120,
+                "b": 98,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.72,
+              "height": 0.8,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "vault-warden-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "sentinel",
+              "health": 81
+            }
+          }
+        },
+        {
+          "id": "vault-warden-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/sentinel.png",
+            "width": 0.9,
+            "height": 1,
+            "renderOrder": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "vault-raider",
+      "name": "Vault raider",
+      "transform": {
+        "position": {
+          "x": 26,
+          "y": 16
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "vault-raider-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 165,
+                "g": 120,
+                "b": 98,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.72,
+              "height": 0.8,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "vault-raider-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "raider",
+              "health": 54
+            }
+          }
+        },
+        {
+          "id": "vault-raider-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/sentinel.png",
+            "width": 0.9,
+            "height": 1,
+            "renderOrder": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "barracks-warden",
+      "name": "Barracks sentinel",
+      "transform": {
+        "position": {
+          "x": 40,
+          "y": 6
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "barracks-warden-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 165,
+                "g": 120,
+                "b": 98,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.72,
+              "height": 0.8,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "barracks-warden-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "sentinel",
+              "health": 81
+            }
+          }
+        },
+        {
+          "id": "barracks-warden-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/sentinel.png",
+            "width": 0.9,
+            "height": 1,
+            "renderOrder": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "barracks-raider",
+      "name": "Barracks raider",
+      "transform": {
+        "position": {
+          "x": 44,
+          "y": 7
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "barracks-raider-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 165,
+                "g": 120,
+                "b": 98,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.72,
+              "height": 0.8,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "barracks-raider-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "raider",
+              "health": 54
+            }
+          }
+        },
+        {
+          "id": "barracks-raider-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/sentinel.png",
+            "width": 0.9,
+            "height": 1,
+            "renderOrder": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "archive-warden",
+      "name": "Archive sentinel",
+      "transform": {
+        "position": {
+          "x": 39,
+          "y": 16
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "archive-warden-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 165,
+                "g": 120,
+                "b": 98,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.72,
+              "height": 0.8,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "archive-warden-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "sentinel",
+              "health": 81
+            }
+          }
+        },
+        {
+          "id": "archive-warden-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/sentinel.png",
+            "width": 0.9,
+            "height": 1,
+            "renderOrder": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "archive-raider",
+      "name": "Archive raider",
+      "transform": {
+        "position": {
+          "x": 44,
+          "y": 19
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "archive-raider-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 165,
+                "g": 120,
+                "b": 98,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.72,
+              "height": 0.8,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "archive-raider-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "raider",
+              "health": 54
+            }
+          }
+        },
+        {
+          "id": "archive-raider-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/sentinel.png",
+            "width": 0.9,
+            "height": 1,
+            "renderOrder": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "crypt-warden",
+      "name": "Crypt sentinel",
+      "transform": {
+        "position": {
+          "x": 21,
+          "y": 28
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "crypt-warden-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 165,
+                "g": 120,
+                "b": 98,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.72,
+              "height": 0.8,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "crypt-warden-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "sentinel",
+              "health": 81
+            }
+          }
+        },
+        {
+          "id": "crypt-warden-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/sentinel.png",
+            "width": 0.9,
+            "height": 1,
+            "renderOrder": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "crypt-raider",
+      "name": "Crypt raider",
+      "transform": {
+        "position": {
+          "x": 27,
+          "y": 31
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "crypt-raider-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 165,
+                "g": 120,
+                "b": 98,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.72,
+              "height": 0.8,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "crypt-raider-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "raider",
+              "health": 54
+            }
+          }
+        },
+        {
+          "id": "crypt-raider-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/sentinel.png",
+            "width": 0.9,
+            "height": 1,
+            "renderOrder": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "ritual-warden",
+      "name": "Ritual sentinel",
+      "transform": {
+        "position": {
+          "x": 40,
+          "y": 29
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "ritual-warden-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 165,
+                "g": 120,
+                "b": 98,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.72,
+              "height": 0.8,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "ritual-warden-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "sentinel",
+              "health": 81
+            }
+          }
+        },
+        {
+          "id": "ritual-warden-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/sentinel.png",
+            "width": 0.9,
+            "height": 1,
+            "renderOrder": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "ritual-raider",
+      "name": "Ritual raider",
+      "transform": {
+        "position": {
+          "x": 44,
+          "y": 30
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "ritual-raider-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 165,
+                "g": 120,
+                "b": 98,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.72,
+              "height": 0.8,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "ritual-raider-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "raider",
+              "health": 54
+            }
+          }
+        },
+        {
+          "id": "ritual-raider-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/sentinel.png",
+            "width": 0.9,
+            "height": 1,
+            "renderOrder": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "keeper",
+      "name": "Ashbound Keeper",
+      "transform": {
+        "position": {
+          "x": 55,
+          "y": 30
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "keeper-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 165,
+                "g": 120,
+                "b": 98,
+                "a": 1
+              },
+              "fill": true,
+              "width": 1.2,
+              "height": 1.4,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "keeper-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "boss",
+              "health": 216
+            }
+          }
+        },
+        {
+          "id": "keeper-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/keeper.png",
+            "width": 1.4,
+            "height": 1.55,
+            "renderOrder": 1
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "west-seal",
+      "name": "West vault seal",
+      "transform": {
+        "position": {
+          "x": 23,
+          "y": 17
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "west-seal-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 106,
+                "g": 204,
+                "b": 213,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.72,
+              "height": 0.8,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "west-seal-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "relic",
+              "health": 1,
+              "requires": [
+                "vault-warden",
+                "vault-raider"
+              ],
+              "label": "West vault seal"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "archive-seal",
+      "name": "Archive seal",
+      "transform": {
+        "position": {
+          "x": 42,
+          "y": 17
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "archive-seal-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 106,
+                "g": 204,
+                "b": 213,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.72,
+              "height": 0.8,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "archive-seal-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "relic",
+              "health": 1,
+              "requires": [
+                "archive-warden",
+                "archive-raider"
+              ],
+              "label": "Archive seal"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "crypt-seal",
+      "name": "Crypt seal",
+      "transform": {
+        "position": {
+          "x": 23,
+          "y": 29
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "crypt-seal-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 106,
+                "g": 204,
+                "b": 213,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.72,
+              "height": 0.8,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "crypt-seal-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "relic",
+              "health": 1,
+              "requires": [
+                "crypt-warden",
+                "crypt-raider"
+              ],
+              "label": "Crypt seal"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "entity",
+      "id": "heartstone-altar",
+      "name": "Heartstone altar",
+      "transform": {
+        "position": {
+          "x": 55,
+          "y": 29
+        },
+        "rotation": 0,
+        "scale": {
+          "x": 1,
+          "y": 1
+        },
+        "z": 2
+      },
+      "components": [
+        {
+          "id": "heartstone-altar-shape",
+          "type": "Shape",
+          "props": {
+            "geometry": 1,
+            "param": {
+              "color": {
+                "r": 232,
+                "g": 164,
+                "b": 74,
+                "a": 1
+              },
+              "fill": true,
+              "width": 0.72,
+              "height": 0.8,
+              "outline": null
+            }
+          }
+        },
+        {
+          "id": "heartstone-altar-behaviour",
+          "type": "ProjectBehaviour",
+          "props": {
+            "module": "scripts/adventure-game.js",
+            "settings": {
+              "role": "altar",
+              "health": 1
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

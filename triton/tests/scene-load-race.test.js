@@ -6,7 +6,7 @@ import vm from 'node:vm';
 import { transformSync } from 'esbuild';
 
 const source = fs.readFileSync(path.resolve(process.env.SCENE_LOAD_SOURCE || 'triton/src/context/GameContext.tsx'), 'utf8');
-const handler = source.match(/    const loadScene = useCallback\(async \(path: string\) => \{[\s\S]*?\n    \}, \[readScene, notifyGame\]\);/)?.[0];
+const handler = source.match(/    const loadScene = useCallback\(async \(path: string\) => \{[\s\S]*?\n    \}, \[readScene, notifyGame, history\]\);/)?.[0];
 assert.ok(handler, 'exercise the production scene-loading handler');
 
 function deferred() {
@@ -28,7 +28,7 @@ test('a slower scene read cannot replace a newer opened scene or its save target
     ].map(name => [`set${name}`, value => { state[name] = value; }]));
     const code = transformSync(`${handler}\nloadScene`, { loader: 'tsx', format: 'cjs' }).code;
     const loadScene = vm.runInNewContext(code, {
-        useCallback: fn => fn,
+        history: { clear() {} }, entityDataCacheRef: { current: {} }, useCallback: fn => fn,
         sceneLoadSequence: { current: 0 },
         readScene: path => reads.get(path).promise,
         EditorGameRunner: { validateScene: value => value, openScene(value, path) { state.canonical = { value, path }; } },
@@ -45,7 +45,7 @@ test('a slower scene read cannot replace a newer opened scene or its save target
     await oldLoad;
     assert.equal(state.CurrentScenePath, 'new.scene');
     assert.equal(state.canonical.path, 'new.scene');
-    assert.equal(state.CurrentScenePayload.name, 'New');
+    assert.equal(state.canonical.value.name, 'New');
     assert.ok(state.Entities['new-entity']);
     assert.equal(state.Entities['old-entity'], undefined);
     assert.deepEqual(notifications.filter(message => message.type === 'editor:load-scene').map(message => message.payload.path), ['new.scene']);
@@ -61,7 +61,7 @@ test('an older rejected read cannot report an error after a newer scene opens', 
     const activities = [];
     const code = transformSync(`${handler}\nloadScene`, { loader: 'tsx', format: 'cjs' }).code;
     const loadScene = vm.runInNewContext(code, {
-        useCallback: fn => fn,
+        history: { clear() {} }, entityDataCacheRef: { current: {} }, useCallback: fn => fn,
         sceneLoadSequence: { current: 0 },
         readScene: path => path === 'old.scene' ? old.promise : Promise.resolve({ name: 'New', entities: [] }),
         EditorGameRunner: { validateScene: value => value, openScene(value, path) { state.canonical = { value, path }; } },
@@ -89,7 +89,7 @@ test('a rejected scene read leaves the last valid save target intact and reports
     const activities = [];
     const code = transformSync(`${handler}\nloadScene`, { loader: 'tsx', format: 'cjs' }).code;
     const loadScene = vm.runInNewContext(code, {
-        useCallback: fn => fn,
+        history: { clear() {} }, entityDataCacheRef: { current: {} }, useCallback: fn => fn,
         sceneLoadSequence: { current: 0 },
         readScene: path => path === 'broken.scn' ? Promise.reject(new Error('bad scene')) : Promise.resolve({ name: 'Good', entities: [] }),
         EditorGameRunner: {
@@ -124,7 +124,7 @@ test('a remounted game view receives unsaved scene edits without rereading disk'
     const activities = [];
     let reads = 0;
     const loadScene = vm.runInNewContext(transformSync(`${handler}\nloadScene`, { loader: 'tsx', format: 'cjs' }).code, {
-        useCallback: fn => fn, sceneLoadSequence: { current: 0 }, EditorGameRunner: runner,
+        history: { clear() {} }, entityDataCacheRef: { current: {} }, useCallback: fn => fn, sceneLoadSequence: { current: 0 }, EditorGameRunner: runner,
         readScene: async () => { reads++; return { name: 'Main', entities: [{ id: 'hero', name: 'Hero' }] }; },
         notifyGame: (type, payload) => notifications.push({ type, payload }),
         reportActivity: (message, type = 'info') => activities.push({ message, type }),

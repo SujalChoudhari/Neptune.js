@@ -67,8 +67,9 @@ export function shapeContainsPoint(component, x, y) {
     return inside;
 }
 
-export function pickRuntimeEntityAt(scene, screenX, screenY, pixelsPerMeter = 64, excludedIds = []) {
+export function pickRuntimeEntityAt(scene, screenX, screenY, pixelsPerMeter = 64, excludedIds = [], shapeTest = shapeContainsPoint) {
     if (!scene || !Number.isFinite(screenX) || !Number.isFinite(screenY)) return null;
+    const componentName = component => (globalThis.__neptuneEngineModule?.ComponentRegistry?.nameOf(component) || component?.constructor?.name || '').toLowerCase();
     const camera = scene.activeCamera;
     const point = camera?.screenToWorld
         ? camera.screenToWorld(screenX, screenY)
@@ -91,7 +92,7 @@ export function pickRuntimeEntityAt(scene, screenX, screenY, pixelsPerMeter = 64
     ];
     const getWorldMatrix = (entity, parentMatrix) => {
         const components = Array.isArray(entity.components) ? entity.components : [];
-        const transform = components.find(component => component?.constructor?.name?.toLowerCase() === "transform") || entity.transform;
+        const transform = components.find(component => componentName(component) === "transform") || entity.transform;
         const position = transform?.position || {};
         const scale = transform?.scale || {};
         const rotation = Number(transform?.rotation) || 0;
@@ -138,7 +139,7 @@ export function pickRuntimeEntityAt(scene, screenX, screenY, pixelsPerMeter = 64
     };
     const visitRenderable = ({ entity, component, worldMatrix }) => {
         const currentTraversalOrder = traversalOrder++;
-        if (!excludedIds.includes(entity.id) && ["sprite", "shape"].includes(component?.constructor?.name?.toLowerCase()) && typeof entity.id === "string") {
+        if (!excludedIds.includes(entity.id) && ["sprite", "shape"].includes(componentName(component)) && typeof entity.id === "string") {
             const [a, b, c, d, e, f] = worldMatrix;
             const determinant = a * d - b * c;
             if (Number.isFinite(determinant) && Math.abs(determinant) > Number.EPSILON) {
@@ -148,8 +149,8 @@ export function pickRuntimeEntityAt(scene, screenX, screenY, pixelsPerMeter = 64
                 const localY = (-b * translatedX + a * translatedY) / determinant;
                 const width = Number(component.width ?? component._properties?.width) || 0;
                 const height = Number(component.height ?? component._properties?.height) || 0;
-                const hit = component.constructor.name.toLowerCase() === "shape"
-                    ? shapeContainsPoint(component, localX, localY)
+                const hit = componentName(component) === "shape"
+                    ? shapeTest(component, localX, localY)
                     : Math.abs(localX) <= width / 2 && Math.abs(localY) <= height / 2;
                 if (hit &&
                     currentTraversalOrder > pickedTraversalOrder) {
@@ -317,7 +318,7 @@ export const runtimeSelectionBridgeScript = `
         if (!rect.width || !rect.height) return;
         const x = (event.clientX - rect.left) * ((canvas.width || rect.width) / rect.width);
         const y = (event.clientY - rect.top) * ((canvas.height || rect.height) / rect.height);
-        const id = pickRuntimeEntityAt(window.game?.scene, x, y);
+        const id = pickRuntimeEntityAt(window.game?.scene, x, y, 64, [], shapeContainsPoint);
         const existing = normalizeIds(window.game?.editorSelection);
         const multi = event.ctrlKey || event.metaKey || event.shiftKey;
         const ids = !id ? (multi ? existing : [])

@@ -17,7 +17,7 @@ export function applyRuntimeComponentUpdate(game, payload) {
         return true;
     }
     if (!payload.data || typeof payload.data !== 'object' || Array.isArray(payload.data)) return false;
-    const component = entity.components?.find(item => item.constructor.name.toLowerCase() === payload.component.toLowerCase())
+    const component = entity.components?.find(item => (globalThis.__neptuneEngineModule?.ComponentRegistry?.nameOf(item) || item.constructor.name).toLowerCase() === payload.component.toLowerCase())
         || (payload.component.toLowerCase() === 'transform' ? entity.transform : null);
     if (!component) return false;
     if (typeof component.deserialize === 'function') component.deserialize(payload.data);

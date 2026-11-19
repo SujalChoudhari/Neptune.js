@@ -116,6 +116,6 @@ export function ProjectExtensionLayer({ worldToScreen, screenToWorld }: Props) {
                     onClick={event => { event.preventDefault(); event.stopPropagation(); }} />
             </div>;
         })}
-        {host && extensions.registrations('tool').length > 0 && <button type="button" onClick={extensions.reload} className="absolute bottom-2 right-2 pointer-events-auto rounded border border-border bg-card px-2 py-1 text-[10px] text-muted-foreground shadow" title="Reload enabled editor extensions">Reload tools</button>}
+        {host && extensions.registrations('tool').length > 0 && <button type="button" onClick={extensions.reload} className="absolute top-2 right-2 pointer-events-auto rounded border border-border bg-card px-2 py-1 text-[10px] text-muted-foreground shadow" title="Reload enabled editor extensions">Reload tools</button>}
     </div>;
 }

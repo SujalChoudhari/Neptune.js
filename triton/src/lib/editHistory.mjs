@@ -61,7 +61,7 @@ export function createEditHistory({ limit = 100, onChange = () => {} } = {}) {
                 const reverted = [];
                 try {
                     for (let index = current.commands.length - 1; index >= 0; index -= 1) {
-                        current.commands[index].revert();
+                        if (current.commands[index].revert() === false) throw new Error(`Could not cancel '${current.commands[index].label}'.`);
                         reverted.push(current.commands[index]);
                     }
                 } catch (error) {

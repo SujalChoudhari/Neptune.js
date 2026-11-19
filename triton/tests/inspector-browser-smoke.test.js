@@ -83,6 +83,7 @@ test("editor scene edits persist and Game View playback and diagnostics use the 
     await page.getByText("Player", { exact: true }).click();
     await page.getByText("Companion", { exact: true }).click({ modifiers: ["Control"] });
     await page.getByText("2 Selected", { exact: true }).waitFor();
+    await page.waitForFunction(() => document.querySelector('iframe[title="Scene View"]')?.contentWindow?.game?.scene?.children?.some(entity => entity.id === 'companion'));
     await page.evaluate(() => {
         const frame = document.querySelector('iframe[title="Scene View"]');
         frame.contentWindow.dispatchEvent(new frame.contentWindow.CustomEvent('neptune:selection-changed', { detail: { ids: ['companion'] } }));
@@ -95,10 +96,10 @@ test("editor scene edits persist and Game View playback and diagnostics use the 
     await companionRow.evaluate(element => { if (!element.classList.contains('bg-primary/20')) throw new Error('Foreign selection replaced the live selection'); });
     await page.getByText("Player", { exact: true }).click();
     await page.getByRole("button", { name: "Add Component" }).click();
-    await page.getByRole("button", { name: /Dialogue/ }).click();
+    await page.getByRole("option", { name: /Dialogue/ }).click();
     await page.getByRole("group", { name: "speaker" }).locator("input").fill("Mira");
-    await page.getByRole("group", { name: "text" }).locator("input").fill("The gate is open.");
-    await page.getByText("Dialogue", { exact: true }).locator("xpath=ancestor::div[contains(@class,'group flex flex-col')]").getByRole("button").last().click();
+    await page.getByText("text", { exact: true }).locator("xpath=..").locator("textarea").fill("The gate is open.");
+    await page.getByText("Dialogue", { exact: true }).locator("xpath=ancestor::div[contains(@class,'group flex flex-col')]").locator("div.w-5.h-5").click({ button: "right" });
     await page.getByText("Remove", { exact: true }).click();
     await page.keyboard.press("Control+z");
     await page.getByRole("group", { name: "speaker" }).locator("input").waitFor();
@@ -124,12 +125,12 @@ test("editor scene edits persist and Game View playback and diagnostics use the 
     await page.keyboard.press("Enter");
     await page.getByText("Hero", { exact: true }).waitFor();
     await page.getByText("Hero", { exact: true }).click({ button: "right" });
-    await page.getByRole("button", { name: "Duplicate", exact: true }).click();
+    await page.getByRole("menuitem", { name: "Duplicate", exact: true }).click();
     const deleteCompanionRow = page.getByText("Companion", { exact: true }).locator("xpath=ancestor::div[@draggable]");
     await deleteCompanionRow.hover();
     await deleteCompanionRow.getByRole("button", { name: "Delete Companion", exact: true }).click();
     await page.getByRole("button", { name: "Save scene" }).click();
-    await page.waitForFunction(() => window.__nativeCalls.some(call => call.command === "write_scene"));
+    await page.waitForFunction(() => window.__files["scenes/main.scene"].entities.length === 2 && window.__files["scenes/main.scene"].entities[0].name === "Hero" && !window.__files["scenes/main.scene"].entities.some(entity => entity.id === "companion"));
     const saved = await page.evaluate(() => window.__files["scenes/main.scene"]);
     assert.equal(saved.entities[0].id, "player");
     assert.equal(saved.entities[0].name, "Hero");

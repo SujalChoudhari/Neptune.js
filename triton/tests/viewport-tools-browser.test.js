@@ -12,7 +12,10 @@ const scene = {
     type: 'scene', schemaVersion: 1, version: '1.0.0', id: 'viewport-tools-scene', name: 'Viewport Tools',
     entities: [
         { id: 'floor', name: 'Ruins floor', transform: { pos: { x: 6, y: 4 }, rot: 0, scale: { x: 1, y: 1 }, z: -10 }, components: [shape(12, 8, { r: 35, g: 58, b: 65, a: 1 })] },
-        { id: 'hero', name: 'Hero', transform: { pos: { x: 2, y: 4 }, rot: Math.PI / 6, scale: { x: 1, y: 1 }, z: 2 }, components: [shape(0.65, 0.65, { r: 124, g: 218, b: 194, a: 1 })] }
+        { id: 'hero', name: 'Hero', transform: { pos: { x: 2, y: 4 }, rot: Math.PI / 6, scale: { x: 1, y: 1 }, z: 2 }, components: [shape(0.65, 0.65, { r: 124, g: 218, b: 194, a: 1 })] },
+        { id: 'parent', name: 'Nested parent', transform: { pos: { x: 3, y: 2 }, rot: 0.35, scale: { x: 1 / 64, y: 2 / 64 } }, components: [shape(1, 1, { r: 20, g: 30, b: 40, a: 1 })], children: [
+            { id: 'child', name: 'Nested child', transform: { pos: { x: 1, y: 0.5 }, rot: -0.2, scale: { x: 1, y: 1 } }, components: [shape(1, 0.65, { r: 124, g: 218, b: 194, a: 1 })] }
+        ] }
     ]
 };
 const project = { type: 'project', schemaVersion: 1, version: '1.0.0', name: 'Viewport Tools', mainScene: 'scenes/main.scene', scenes: [] };
@@ -21,7 +24,10 @@ test('Scene View picks visible shapes and keeps focused tools, drags and overlay
     const probe = createServer(); probe.listen(0, '127.0.0.1'); await once(probe, 'listening');
     const port = probe.address().port;
     await new Promise((resolve, reject) => probe.close(error => error ? reject(error) : resolve()));
-    const server = spawn(process.execPath, [fileURLToPath(new URL('../node_modules/vite/bin/vite.js', import.meta.url)), '--host', '127.0.0.1', '--port', String(port), '--strictPort'], {
+    const viteArgs = [fileURLToPath(new URL('../node_modules/vite/bin/vite.js', import.meta.url))];
+    if (process.env.NEPTUNE_TEST_PRODUCTION === '1') viteArgs.push('preview');
+    viteArgs.push('--host', '127.0.0.1', '--port', String(port), '--strictPort');
+    const server = spawn(process.execPath, viteArgs, {
         cwd: new URL('../', import.meta.url), stdio: 'ignore', windowsHide: true
     });
     t.after(() => server.kill());
@@ -113,6 +119,56 @@ test('Scene View picks visible shapes and keeps focused tools, drags and overlay
     };
 
     await tool('move').click(); await page.getByTitle('Reset View', { exact: true }).click();
+    for (let i = 0; i < 8; i++) await page.getByRole('button', { name: 'Zoom In', exact: true }).click();
+    for (let i = 0; i < 8; i++) await page.getByRole('button', { name: 'Pan Left', exact: true }).click();
+    await page.waitForFunction(() => {
+        const camera = document.querySelector('iframe[title="Scene View"]')?.contentWindow?.game?.scene?.activeCamera;
+        return camera && camera.position.x < 0 && Math.abs(camera.zoom - 1.8) < 0.01;
+    });
+    const nestedGeometry = () => page.evaluate(() => {
+        const scene = document.querySelector('iframe[title="Scene View"]').contentWindow.game.scene;
+        const parent = scene.children.find(entity => entity.id === 'parent');
+        const p = parent.components.find(c => c.constructor.name.includes('Transform'));
+        const c = parent.children[0].components.find(c => c.constructor.name.includes('Transform'));
+        const cos = Math.cos(p.rotation), sin = Math.sin(p.rotation), cc = Math.cos(c.rotation), cs = Math.sin(c.rotation);
+        const convert = (x, y) => {
+            const childX = c.position.x * 64 + (cc * x - cs * y) * c.scale.x * 64;
+            const childY = c.position.y * 64 + (cs * x + cc * y) * c.scale.y * 64;
+            return scene.activeCamera.worldToScreen(p.position.x * 64 + cos * p.scale.x * 64 * childX - sin * p.scale.y * 64 * childY,
+                p.position.y * 64 + sin * p.scale.x * 64 * childX + cos * p.scale.y * 64 * childY);
+        };
+        return { origin: convert(0, 0), corners: [[-.5,-.325],[.5,-.325],[.5,.325],[-.5,.325]].map(([x,y]) => convert(x,y)), position: { ...c.position }, pan: { ...scene.activeCamera.position }, zoom: scene.activeCamera.zoom };
+    });
+    const nested = await nestedGeometry();
+    assert.ok(nested.pan.x < 0 && Math.abs(nested.zoom - 1.8) < 0.01);
+    await viewport.click({ position: { x: nested.origin.x, y: nested.origin.y } });
+    await viewport.locator('[data-selection-outline="child"]').waitFor();
+    const actualNested = await viewport.locator('[data-selection-outline="child"]').getAttribute('points');
+    const nestedPoints = actualNested.split(' ').map(pair => pair.split(',').map(Number));
+    nested.corners.forEach((point, i) => assert.ok(Math.hypot(point.x - nestedPoints[i][0], point.y - nestedPoints[i][1]) < 1, 'nested outline follows independently composed render coordinates'));
+    const nestedOrigin = await viewport.locator('[data-gizmo-origin]').evaluate(el => ({ x: Number(el.getAttribute('cx')), y: Number(el.getAttribute('cy')) }));
+    assert.ok(Math.hypot(nestedOrigin.x - nested.origin.x, nestedOrigin.y - nested.origin.y) < 1, 'nested gizmo follows rendered origin');
+    await drag(handle('Translate on X axis'), 30, 0);
+    await page.waitForFunction(before => {
+        const parent = document.querySelector('iframe[title="Scene View"]').contentWindow.game.scene.children.find(e => e.id === 'parent');
+        const position = parent.children[0].components.find(c => c.constructor.name.includes('Transform')).position;
+        return Math.hypot(position.x - before.x, position.y - before.y) > 0.01;
+    }, nested.position);
+    await page.keyboard.press('Control+z');
+    await page.waitForFunction(before => {
+        const parent = document.querySelector('iframe[title="Scene View"]').contentWindow.game.scene.children.find(e => e.id === 'parent');
+        const position = parent.children[0].components.find(c => c.constructor.name.includes('Transform')).position;
+        return Math.hypot(position.x - before.x, position.y - before.y) < 0.001;
+    }, nested.position);
+    await page.getByTitle('Reset View', { exact: true }).click();
+    const viewportRect = await viewport.boundingBox();
+    assert.ok(viewportRect);
+    const gridClip = { x: viewportRect.x + 32, y: viewportRect.y + 32, width: 64, height: 64 };
+    const withGrid = await page.screenshot({ clip: gridClip });
+    await page.frameLocator('iframe[title="Scene View"]').locator('.grid').evaluate(el => { el.style.visibility = 'hidden'; });
+    const withoutGrid = await page.screenshot({ clip: gridClip });
+    await page.frameLocator('iframe[title="Scene View"]').locator('.grid').evaluate(el => { el.style.visibility = ''; });
+    assert.notDeepEqual(withGrid, withoutGrid, 'world grid visibly changes viewport pixels above the rendered canvas');
     const origin = await expectedOrigin();
     assert.ok(Math.abs(origin.x - 128) < 1 && Math.abs(origin.y - 256) < 1);
     await viewport.click({ position: { x: origin.x, y: origin.y } });
@@ -120,9 +176,26 @@ test('Scene View picks visible shapes and keeps focused tools, drags and overlay
     assert.equal(await viewport.locator('[data-selection-outline="floor"]').count(), 0, 'foreground hero wins over its large background without a gameplay collider');
     await assertOriginAligned();
 
+    const beforeContext = await heroPosition();
+    await viewport.click({ position: { x: origin.x, y: origin.y }, button: 'right' });
+    await page.getByRole('menuitem', { name: 'Lock Selection' }).click();
+    await viewport.click({ position: { x: origin.x, y: origin.y }, button: 'right' });
+    const lockedMenu = page.getByRole('menu', { name: 'Hero actions' });
+    await lockedMenu.getByRole('menuitem', { name: 'Unlock Selection' }).waitFor();
+    assert.equal(await lockedMenu.getByRole('menuitem', { name: 'Duplicate' }).isDisabled(), true);
+    await page.keyboard.press('Escape');
+    await lockedMenu.waitFor({ state: 'hidden' });
+    await viewport.click({ position: { x: origin.x, y: origin.y }, button: 'right' });
+    await page.getByRole('menuitem', { name: 'Unlock Selection' }).click();
+    assert.deepEqual(await heroPosition(), beforeContext, 'context clicks do not move the object');
+    await viewport.click({ position: { x: origin.x, y: origin.y } });
+    await viewport.locator('[data-selection-outline="hero"]').waitFor();
+
     const outline = viewport.locator('[data-selection-outline="hero"]');
-    assert.ok(Math.abs(Number((await outline.getAttribute('transform')).match(/^rotate\((\S+)/)[1]) - 30) < 0.001);
-    assert.ok(Math.abs(Number(await outline.getAttribute('width')) - 0.65 * 64) < 0.01, 'outline follows the rotated visual bounds, not its enlarged world AABB');
+    const points = (await outline.getAttribute('points')).split(' ').map(pair => pair.split(',').map(Number));
+    assert.equal(points.length, 4);
+    assert.ok(Math.abs(Math.hypot(points[1][0] - points[0][0], points[1][1] - points[0][1]) - 0.65 * 64) < 0.01, 'outline follows the rotated visual bounds, not its enlarged world AABB');
+    assert.ok(Math.abs(Math.atan2(points[1][1] - points[0][1], points[1][0] - points[0][0]) - Math.PI / 6) < 0.001);
     assert.equal(await outline.getAttribute('fill'), 'none', 'selection does not tint the selected artwork');
 
     const before = await heroPosition();

@@ -1,15 +1,16 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import path from 'node:path';
 import test from 'node:test';
 import vm from 'node:vm';
 import { buildSync, transformSync } from 'esbuild';
 
 const source = fs.readFileSync('triton/src/context/GameContext.tsx', 'utf8');
-const handler = source.match(/    const loadScene = useCallback\(async \(path: string\) => \{[\s\S]*?\n    \}, \[readScene, notifyGame\]\);/)?.[0];
+const handler = source.match(/    const loadScene = useCallback\(async \(path: string\) => \{[\s\S]*?\n    \}, \[readScene, notifyGame, history\]\);/)?.[0];
 assert.ok(handler);
 const runnerSource = fs.readFileSync('triton/src/lib/editorGameRunner.ts', 'utf8');
 const module = { exports: {} };
-vm.runInNewContext(buildSync({ stdin: { contents: runnerSource, loader: 'ts' }, bundle: true, format: 'cjs', platform: 'node', write: false }).outputFiles[0].text, {
+vm.runInNewContext(buildSync({ stdin: { contents: runnerSource, loader: 'ts', resolveDir: path.resolve('triton/src/lib') }, bundle: true, format: 'cjs', platform: 'node', write: false }).outputFiles[0].text, {
     module, exports: module.exports, console, window: { dispatchEvent() {} },
     CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options?.detail; } }
 });
@@ -28,7 +29,7 @@ test('scene switch and reopen retain layer/entity hierarchy IDs and native save 
     const notifications = [];
     const activities = [];
     const loadScene = vm.runInNewContext(transformSync(`${handler}\nloadScene`, { loader: 'tsx', format: 'cjs' }).code, {
-        useCallback: fn => fn, sceneLoadSequence: { current: 0 },
+        history: { clear() {} }, entityDataCacheRef: { current: {} }, useCallback: fn => fn, sceneLoadSequence: { current: 0 },
         readScene: async path => { if (!scenes.has(path)) throw Error('missing scene'); return scenes.get(path); },
         EditorGameRunner: Runner,
         notifyGame: (type, payload) => { if (type === 'editor:load-scene') notifications.push(payload.path); },
@@ -52,7 +53,7 @@ test('scene switch and reopen retain layer/entity hierarchy IDs and native save 
     assert.equal(state.CurrentScenePath, 'scenes/level.scene');
     assert.deepEqual(notifications, ['scenes/level.scene', 'scenes/other.scene', 'scenes/level.scene']);
     assert.equal(activities.at(-1).message, 'Scene loaded: scenes/level.scene');
-    Runner.openScene(state.CurrentScenePayload, state.CurrentScenePath);
+    Runner.openScene(Runner.currentScene, state.CurrentScenePath);
     let savedPath;
     await Runner.saveScene(async (path, content) => {
         savedPath = path;
