@@ -4,7 +4,7 @@ import { join } from "node:path";
 export function preserveAuthoredDocs(sourceDirectory, generatedDirectory) {
   // Root Markdown guides and authored demo assets survive generated API refreshes.
   for (const entry of readdirSync(sourceDirectory, { withFileTypes: true })) {
-    if (entry.isFile() && (entry.name.endsWith(".md") || (entry.name.endsWith(".html") && entry.name.startsWith("demo")))) {
+    if (entry.isFile() && (entry.name.endsWith(".md") || (entry.name.endsWith(".html") && entry.name.startsWith("demo")) || entry.name === "vercel.json")) {
       cpSync(join(sourceDirectory, entry.name), join(generatedDirectory, entry.name));
     }
   }

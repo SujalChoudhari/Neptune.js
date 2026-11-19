@@ -29,8 +29,18 @@
 			"static_dir": ["./static"],
 			"menu": [
 				{
-					"title": "Github",
-					"link": "https://github.com/NotSujal/Neptune.js",
+					"title": "🎮 Live Demo",
+					"link": "demo.html",
+					"target": "_self"
+				},
+				{
+					"title": "Showcase Tutorial",
+					"link": "tutorial-08-Showcase Demo.html",
+					"target": "_self"
+				},
+				{
+					"title": "GitHub",
+					"link": "https://github.com/SujalChoudhari/Neptune.js",
 					"target": "_blank"
 				},
 				{

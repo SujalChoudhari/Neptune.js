@@ -1,5 +1,7 @@
 # Neptune.js
 
+> 🌟 **v3.4.0 Release Showcase**: [🎮 Play Live Demo](https://neptune.sujal.xyz/demo.html) | [📖 Systems Showcase Tutorial](https://neptune.sujal.xyz/tutorial-08-Showcase%20Demo.html) | [📦 GitHub Release 3.4.0](https://github.com/SujalChoudhari/Neptune.js/releases/tag/3.4.0)
+
 A modular JavaScript **2D game engine** with an entity-component architecture and a separate visual editor, **Triton**. Games run in the browser using Canvas 2D; Triton uses React, TypeScript, and Tauri for desktop authoring. MIT licensed.
 
 The current goal is to finish a coherent 2D engine and prove it with a small playable action-RPG demo. **3D and multiplayer are outside this delivery.** Existing modules and passing individual tests do not mean that the complete ARPG workflow is finished.
@@ -120,7 +122,7 @@ The proof content is one village and adjacent dungeon, 10-20 NPCs, three enemy a
 
 ## Tutorials
 
-- [Interactive Systems Showcase](docs/tutorials/showcase-demo.md) and [Playable Showcase Demo](https://neptune.sujal.xyz/demo.html)
+- [Interactive Systems Showcase Tutorial](https://neptune.sujal.xyz/tutorial-08-Showcase%20Demo.html) and [Playable Showcase Demo](https://neptune.sujal.xyz/demo.html)
 - [First game](docs/tutorials/first-game.md)
 - [Action RPG sample](docs/tutorials/action-rpg.md)
 - [Runtime and lifecycle](docs/tutorials/runtime.md)
