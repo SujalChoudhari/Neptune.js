@@ -709,6 +709,7 @@ let fpsCounter = 0;
 let fpsTimer = 0;
 
 export function updateShowcase(dt) {
+  dt = Math.max(0, Number.isFinite(dt) ? dt : 0);
   // 1. Ability Cooldowns & Mana Regen
   for (const k in abilityCooldowns) {
     if (abilityCooldowns[k] > 0) abilityCooldowns[k] = Math.max(0, abilityCooldowns[k] - dt);
@@ -1114,7 +1115,9 @@ export function renderShowcase() {
 }
 
 function gameLoop(timestamp) {
-  const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+  if (!lastTime) lastTime = timestamp;
+  const rawDt = (timestamp - lastTime) / 1000;
+  const dt = Math.max(0, Math.min(Number.isFinite(rawDt) ? rawDt : 0.016, 0.1));
   lastTime = timestamp;
 
   fpsCounter++;

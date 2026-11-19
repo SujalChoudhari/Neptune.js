@@ -20503,6 +20503,7 @@ var lastTime = typeof performance !== "undefined" ? performance.now() : 0;
 var fpsCounter = 0;
 var fpsTimer = 0;
 function updateShowcase(dt) {
+  dt = Math.max(0, Number.isFinite(dt) ? dt : 0);
   for (const k in abilityCooldowns) {
     if (abilityCooldowns[k] > 0) abilityCooldowns[k] = Math.max(0, abilityCooldowns[k] - dt);
   }
@@ -20846,7 +20847,9 @@ function renderShowcase() {
   });
 }
 function gameLoop(timestamp) {
-  const dt = Math.min((timestamp - lastTime) / 1e3, 0.1);
+  if (!lastTime) lastTime = timestamp;
+  const rawDt = (timestamp - lastTime) / 1e3;
+  const dt = Math.max(0, Math.min(Number.isFinite(rawDt) ? rawDt : 0.016, 0.1));
   lastTime = timestamp;
   fpsCounter++;
   fpsTimer += dt;
