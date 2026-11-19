@@ -12,6 +12,10 @@ export function preserveAuthoredDocs(sourceDirectory, generatedDirectory) {
   if (existsSync(tutorials)) {
     cpSync(tutorials, join(generatedDirectory, "tutorials"), { recursive: true });
   }
+  const showcaseDir = join(sourceDirectory, "showcase");
+  if (existsSync(showcaseDir)) {
+    cpSync(showcaseDir, join(generatedDirectory, "showcase"), { recursive: true });
+  }
   const demoDir = join(sourceDirectory, "demo");
   if (existsSync(demoDir)) {
     cpSync(demoDir, join(generatedDirectory, "demo"), { recursive: true });

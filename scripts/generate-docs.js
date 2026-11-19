@@ -46,7 +46,7 @@ try {
   // Ensure the interactive demo bundle is freshly compiled into docs/demo/
   const esbuildBinary = join(projectRoot, "node_modules", ".bin", "esbuild");
   const showcaseSource = join(projectRoot, "examples", "showcase", "showcase.js");
-  const showcaseTarget = join(temporaryDirectory, "demo", "showcase.js");
+  const showcaseTarget = join(temporaryDirectory, "showcase", "showcase.js");
   if (existsSync(esbuildBinary) && existsSync(showcaseSource)) {
     const bundleResult = spawnSync(
       esbuildBinary,
