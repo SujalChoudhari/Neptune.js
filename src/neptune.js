@@ -49,13 +49,15 @@ import * as Proteus from "./proteus/index.js";
 
 // Larissa - RPG System
 import * as Larissa from "./larissa/index.js";
+import { AbilityExecutor, AbilityBudgetExceededError, AbilityValidator, AbilityValidationError } from "./larissa/index.js";
 
 // Galatea - Cutscene System
 import * as Galatea from "./galatea/index.js";
+import { StoryGraph, QuestGraph } from "./galatea/storyGraph.js";
 
 // Sim - Environmental Simulation System
 import * as Sim from "./sim/index.js";
-import { MaterialRegistry, MaterialInteraction, MaterialState, InteractionType } from "./sim/materialRegistry.js";
+import { MaterialRegistry, MaterialInteraction, MaterialState, InteractionType, CellGridSimulation } from "./sim/index.js";
 
 
 
@@ -96,6 +98,6 @@ export {
     Script, ScriptManager, Global, Behaviour, ProjectBehaviour,
     MouseInput, KeyboardInput, InputActions, TouchInput,
     Maths, Vector2,
-    Titan, Thalassa, Nereid, Proteus, Larissa, Galatea,
-    Sim, MaterialRegistry, MaterialInteraction, MaterialState, InteractionType,
+    Titan, Thalassa, Nereid, Proteus, Larissa, AbilityExecutor, AbilityBudgetExceededError, AbilityValidator, AbilityValidationError, Galatea, StoryGraph, QuestGraph,
+    Sim, MaterialRegistry, MaterialInteraction, MaterialState, InteractionType, CellGridSimulation,
 }

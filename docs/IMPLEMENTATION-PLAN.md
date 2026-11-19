@@ -240,9 +240,31 @@ S01: CORE/INPUT; S02: PHYS; S03: WORLD; S04: NAV/PHYS-04; S05: RENDER; S06: FX; 
 
 No 3D, alternate isometric/rotating world mode, WebGPU, multiplayer, global fluid/electrical/structural solver, GOAP/behavior-tree alternative, runtime LLM requirement, arbitrary visual programming/shader graph, marketplace, shell rewrite or content padding. Stop when this queue and locked acceptance gates are verified. New capability requires explicit user scope approval with what is removed/delayed.
 
-## Claim log
-
-### Batch: CORE-03, ABILITY-01, SIM-01
+### Batch: STORY-01, SIM-02, ABILITY-02
+- **Task IDs:** STORY-01, SIM-02, ABILITY-02
+- **Status:** Verified
+- **Owner/Date:** Codex / Nov 19, 2026
+- **Exact File Ownership:**
+  - `STORY-01`: `src/galatea/storyGraph.js`, `tests/story-graph.test.mjs`
+  - `SIM-02`: `src/sim/cellSimulation.js`, `tests/cell-simulation.test.mjs`
+  - `ABILITY-02`: `src/larissa/abilityExecutor.js`, `tests/ability-executor.test.mjs`
+  - Integration: `src/neptune.js`, `src/galatea/index.js`, `src/sim/index.js`, `src/larissa/index.js`, `scripts/test.js`
+- **Prerequisite IDs:** CORE-03, ABILITY-01, SIM-01
+- **Shared API/Schema Decisions:**
+  - `STORY-01`: `StoryGraph` and `QuestGraph` evaluate typed conditions against `WorldFacts` (from CORE-03), resolve dialogue choices and quest objectives, prevent duplicate one-time rewards with deduplication records, diagnose missing nodes/cycles via DFS, and serialize/restore complete progression state.
+  - `SIM-02`: `CellGridSimulation` implements a bounded 2D cell grid using `MaterialRegistry` & `MaterialInteraction` (SIM-01). Simulates local fire spread to adjacent flammable cells (`wood`, `grass`), water flow extinguishing fire with precedence over ignition, update budget limits (`maxCellUpdatesPerTick`), safe boundary handling, and emits typed events (`sim:ignited`, `sim:extinguished`, `sim:charred`) via `TypedEventBus`.
+  - `ABILITY-02`: `AbilityExecutor` executes validated ability definitions (`ABILITY-01`) against `Combatant` / `Stats` targets, enforcing casting delay, cooldowns, execution budgets (`maxOperationsPerTick`), projectile/area effect dispatch, presentation cues, and cancellation if caster dies mid-cast.
+- **Implementation Checklist:**
+  - [x] Implement `src/galatea/storyGraph.js` and `tests/story-graph.test.mjs`
+  - [x] Implement `src/sim/cellSimulation.js` and `tests/cell-simulation.test.mjs`
+  - [x] Implement `src/larissa/abilityExecutor.js` and `tests/ability-executor.test.mjs`
+  - [x] Re-export modules in `src/galatea/index.js`, `src/sim/index.js`, `src/larissa/index.js`, and `src/neptune.js`
+  - [x] Integrate into `scripts/test.js` and run regression suite (36/36 tests passing)
+  - [x] Pass `npm run test:docs-contract`
+- **Checks and Evidence:**
+  - Focused suite: `node --test tests/story-graph.test.mjs tests/cell-simulation.test.mjs tests/ability-executor.test.mjs` passed 36/36 tests in 2.0s.
+  - Docs contract: `npm run test:docs-contract` passed cleanly without JSDoc syntax errors.
+- **Remaining Limitations:** Visual graph authoring in Triton remains part of S15.
 - **Task IDs:** CORE-03, ABILITY-01, SIM-01
 - **Status:** Verified
 - **Owner/Date:** Codex / Nov 19, 2026
