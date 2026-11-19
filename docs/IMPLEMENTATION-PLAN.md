@@ -242,6 +242,33 @@ No 3D, alternate isometric/rotating world mode, WebGPU, multiplayer, global flui
 
 ## Claim log
 
+### Batch: RPG-02, PHYS-02, PHYS-03
+- **Task IDs:** RPG-02, PHYS-02, PHYS-03
+- **Status:** Verified
+- **Owner/Date:** Codex / Nov 19, 2026
+- **Exact File Ownership:**
+  - `RPG-02`: `src/larissa/progressionSystem.js`, `tests/rpg-progression-status.test.mjs`
+  - `PHYS-02`: `src/nereid/collisionLayers.js`, `tests/physics-collision-masks.test.mjs`
+  - `PHYS-03`: `src/nereid/sweptCollision.js`, `tests/physics-swept-knockback.test.mjs`
+  - Integration: `src/larissa/index.js`, `src/nereid/index.js`, `src/neptune.js`, `scripts/test.js`
+- **Prerequisite IDs:** RPG-01, PHYS-01, COMBAT-01/02
+- **Shared API/Schema Decisions:**
+  - `RPG-02`: `LevelProgression` handles experience curves, multiple level gains in a single grant, and per-level stat scaling. `StatusEffectManager` implements versatile stacking rules (`replace`, `duration_stack`, `intensity_stack`, `independent`), periodic tick callbacks (DoT/HoT), paused state preservation preventing duration decay during pauses, and tag/category cleansing. `DeathRetryManager` snapshots checkpoints, handles death experience penalties, cleanses temporary buffs on death, and supports repeated retries without state corruption.
+  - `PHYS-02`: `CollisionLayers` establishes standard 32-bit bitmasks with symmetric and asymmetric detection. `ContactSolver` calculates AABB penetration depths, separation normals, corner collision sliding, and resolves overlapping spawns out of geometry. `TriggerLifecycleSystem` manages enter, stay, and exit events across steps with asymmetric mask support and safe defensive iteration during in-callback collider removal.
+  - `PHYS-03`: `SweptAABB` executes continuous Minkowski swept box raycasts, preventing fast projectile tunneling through thin walls and across long timesteps. `KnockbackMotor` simulates directional impulse with decay and stops cleanly at wall surfaces without geometry clipping. `ElevationFilter` enforces vertical height interval overlap checks, allowing high projectiles and jumping actors to avoid ground hazards. `HazardSystem` ticks periodic hazard zone damage to overlapping targets that share elevation intervals.
+- **Implementation Checklist:**
+  - [x] Implement `src/larissa/progressionSystem.js` and `tests/rpg-progression-status.test.mjs`
+  - [x] Implement `src/nereid/collisionLayers.js` and `tests/physics-collision-masks.test.mjs`
+  - [x] Implement `src/nereid/sweptCollision.js` and `tests/physics-swept-knockback.test.mjs`
+  - [x] Re-export modules in `src/larissa/index.js`, `src/nereid/index.js`, and `src/neptune.js`
+  - [x] Register test suites in `scripts/test.js`
+  - [x] Pass focused regression tests (24/24 tests)
+  - [x] Pass `npm run test:docs-contract`
+- **Checks and Evidence:**
+  - Focused suite: `node --test tests/rpg-progression-status.test.mjs tests/physics-collision-masks.test.mjs tests/physics-swept-knockback.test.mjs` passed 24/24 tests in 0.51s.
+  - Docs contract: `npm run test:docs-contract` passed cleanly without JSDoc syntax errors.
+- **Remaining Limitations:** Visual 3D elevation gizmos and particle presentation remain scheduled for S15 authoring phases.
+
 ### Batch: AI-02, AI-03, RPG-01
 - **Task IDs:** AI-02, AI-03, RPG-01
 - **Status:** Verified

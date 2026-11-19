@@ -44,6 +44,10 @@ import { NavigationGrid, NavigationPath } from "./thalassa/navigationGrid.js";
 
 // Nereid - Physics System
 import * as Nereid from "./nereid/index.js";
+import {
+    CollisionLayers, createCollisionMask, canLayersCollide, ContactSolver, TriggerLifecycleSystem,
+    SweptAABB, ElevationFilter, KnockbackMotor, HazardSystem
+} from "./nereid/index.js";
 
 // Proteus - Audio System
 import * as Proteus from "./proteus/index.js";
@@ -54,7 +58,8 @@ import {
     AbilityExecutor, AbilityBudgetExceededError, AbilityValidator, AbilityValidationError,
     PerceptionSystem, BoundedMemory, NPCKnowledge, UtilityAI,
     ScheduleSystem, FactionRegistry, NPCSchedule, ScheduleSlot, ROUTINE_ACTIVITIES, FACTION_DISPOSITION,
-    ItemRegistry, Inventory, EquipmentSystem, LootTable
+    ItemRegistry, Inventory, EquipmentSystem, LootTable,
+    LevelProgression, StatusEffectManager, DeathRetryManager
 } from "./larissa/index.js";
 
 // Galatea - Cutscene System
@@ -95,6 +100,10 @@ ComponentRegistry.register("SpawnPoint", SpawnPoint);
 ComponentRegistry.register("NPCKnowledge", NPCKnowledge);
 ComponentRegistry.register("NPCSchedule", NPCSchedule);
 ComponentRegistry.register("UtilityAI", UtilityAI);
+ComponentRegistry.register("LevelProgression", LevelProgression);
+ComponentRegistry.register("StatusEffectManager", StatusEffectManager);
+ComponentRegistry.register("DeathRetryManager", DeathRetryManager);
+ComponentRegistry.register("KnockbackMotor", KnockbackMotor);
 // Register other components as needed...
 
 export {
@@ -113,6 +122,9 @@ export {
     PerceptionSystem, BoundedMemory, NPCKnowledge, UtilityAI,
     ScheduleSystem, FactionRegistry, NPCSchedule, ScheduleSlot, ROUTINE_ACTIVITIES, FACTION_DISPOSITION,
     ItemRegistry, Inventory, EquipmentSystem, LootTable,
+    LevelProgression, StatusEffectManager, DeathRetryManager,
+    CollisionLayers, createCollisionMask, canLayersCollide, ContactSolver, TriggerLifecycleSystem,
+    SweptAABB, ElevationFilter, KnockbackMotor, HazardSystem,
     Galatea, StoryGraph, QuestGraph,
     Sim, MaterialRegistry, MaterialInteraction, MaterialState, InteractionType, CellGridSimulation,
 }
