@@ -6,9 +6,9 @@ Welcome to the **Neptune.js v3.4.0** comprehensive systems showcase. This playab
 
 ## Play the Live Showcase Demo
 
-You can interact directly with the embedded runtime demo below, or open it in a dedicated window via [Open Fullscreen Demo](../demo.html).
+You can interact directly with the embedded runtime demo below, or open it in a dedicated window via [Open Fullscreen Demo](./demo.html).
 
-<iframe src="../demo.html" width="100%" height="840" style="border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; margin: 16px 0; background: #0a0e17;" title="Neptune.js Systems Showcase"></iframe>
+<iframe src="./demo/index.html" width="100%" height="840" style="border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; margin: 16px 0; background: #0a0e17;" title="Neptune.js Systems Showcase"></iframe>
 
 ---
 

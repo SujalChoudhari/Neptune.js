@@ -43,6 +43,21 @@ try {
   // These developer guides are hand-authored and are not JSDoc tutorials.
   preserveAuthoredDocs(docsDirectory, temporaryDirectory);
 
+  // Ensure the interactive demo bundle is freshly compiled into docs/demo/
+  const esbuildBinary = join(projectRoot, "node_modules", ".bin", "esbuild");
+  const showcaseSource = join(projectRoot, "examples", "showcase", "showcase.js");
+  const showcaseTarget = join(temporaryDirectory, "demo", "showcase.js");
+  if (existsSync(esbuildBinary) && existsSync(showcaseSource)) {
+    const bundleResult = spawnSync(
+      esbuildBinary,
+      [showcaseSource, "--bundle", "--format=esm", `--outfile=${showcaseTarget}`],
+      { cwd: projectRoot, stdio: "inherit" },
+    );
+    if (bundleResult.error || bundleResult.status !== 0) {
+      console.warn("Warning: failed to bundle showcase demo script", bundleResult.error || bundleResult.status);
+    }
+  }
+
   // Replace the old tree only after JSDoc has produced a complete result.
   rmSync(docsDirectory, { recursive: true, force: true });
   renameSync(temporaryDirectory, docsDirectory);

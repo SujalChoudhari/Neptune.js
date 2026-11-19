@@ -77,20 +77,12 @@
     <div class="demo-nav-links">
       <a href="./index.html">← API Reference</a>
       <a href="./tutorial-08-Showcase Demo.html">Showcase Tutorial</a>
-      <a href="../examples/showcase/index.html" target="_blank">Open Fullscreen ↗</a>
+      <a href="./demo/index.html" target="_blank">Open Fullscreen ↗</a>
     </div>
   </nav>
 
   <div class="demo-frame-container">
-    <iframe id="demo-viewport" src="../examples/showcase/index.html" title="Neptune.js v3.4.0 Interactive Systems Showcase"></iframe>
+    <iframe id="demo-viewport" src="./demo/index.html" title="Neptune.js v3.4.0 Interactive Systems Showcase"></iframe>
   </div>
-
-  <script>
-    // Fallback if hosted where ../examples is outside docroot
-    const frame = document.getElementById('demo-viewport');
-    frame.onerror = () => {
-      frame.src = './demo/index.html';
-    };
-  </script>
 </body>
 </html>
