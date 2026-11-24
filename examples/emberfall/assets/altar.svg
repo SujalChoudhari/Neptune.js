@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+  <defs>
+    <radialGradient id="shadowGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#080e12" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#080e12" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="pedestalStone" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#73675a"/>
+      <stop offset="50%" stop-color="#4e4337"/>
+      <stop offset="100%" stop-color="#2b231b"/>
+    </linearGradient>
+    <linearGradient id="goldTrim" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffd56b"/>
+      <stop offset="50%" stop-color="#dfaa35"/>
+      <stop offset="100%" stop-color="#805609"/>
+    </linearGradient>
+  </defs>
+
+  <ellipse cx="48" cy="88" rx="42" ry="7" fill="url(#shadowGlow)"/>
+
+  <!-- Stepped Dais Base -->
+  <polygon points="12,82 84,82 78,70 18,70" fill="url(#pedestalStone)" stroke="#1a140e" stroke-width="2"/>
+  <polygon points="20,70 76,70 72,58 24,58" fill="url(#pedestalStone)" stroke="#1a140e" stroke-width="2"/>
+
+  <!-- Altar Pillar / Column -->
+  <rect x="28" y="34" width="40" height="24" fill="url(#pedestalStone)" stroke="#1a140e" stroke-width="2"/>
+  <!-- Carved Runes on Pillar -->
+  <path d="M36 40 L48 44 L60 40 M36 48 L48 52 L60 48" fill="none" stroke="url(#goldTrim)" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- Basin / Table Top -->
+  <polygon points="16,34 80,34 72,24 24,24" fill="url(#pedestalStone)" stroke="#1a140e" stroke-width="2.5"/>
+  <ellipse cx="48" cy="24" rx="22" ry="7" fill="#1b140d" stroke="url(#goldTrim)" stroke-width="1.8"/>
+
+  <!-- Dormant Heartstone Crystal -->
+  <polygon points="48,8 55,22 48,26 41,22" fill="#8c6d4d" stroke="#3d2a17" stroke-width="1.5"/>
+</svg>

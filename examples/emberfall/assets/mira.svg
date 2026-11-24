@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 112">
+  <defs>
+    <radialGradient id="shadowGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#080e12" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#080e12" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="robeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b7a60"/>
+      <stop offset="50%" stop-color="#23503d"/>
+      <stop offset="100%" stop-color="#122d22"/>
+    </linearGradient>
+    <linearGradient id="ivoryGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fdf8e8"/>
+      <stop offset="70%" stop-color="#e2d8be"/>
+      <stop offset="100%" stop-color="#c4b89b"/>
+    </linearGradient>
+    <linearGradient id="goldTrim" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffd56b"/>
+      <stop offset="50%" stop-color="#dfaa35"/>
+      <stop offset="100%" stop-color="#b07d18"/>
+    </linearGradient>
+    <radialGradient id="staffEmber" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="25%" stop-color="#ffe87a"/>
+      <stop offset="60%" stop-color="#ff9922"/>
+      <stop offset="100%" stop-color="#ff4400" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="auraGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffe699" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#ffe699" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Ground Shadow -->
+  <ellipse cx="48" cy="104" rx="28" ry="7" fill="url(#shadowGlow)"/>
+
+  <!-- Flowing Emerald Robe Hem -->
+  <path d="M26 48 L16 94 Q48 102 80 94 L70 48 Z" fill="url(#robeGrad)" stroke="#0d241c" stroke-width="2.5"/>
+  <path d="M18 92 Q48 100 78 92 L79 95 Q48 103 17 95 Z" fill="url(#goldTrim)"/>
+
+  <!-- Ivory Inner Stole / Tunic -->
+  <path d="M34 32 L36 94 L60 94 L62 32 Z" fill="url(#ivoryGrad)" stroke="#8e8166" stroke-width="1.5"/>
+  <path d="M36 32 L48 64 L60 32" fill="none" stroke="url(#goldTrim)" stroke-width="2"/>
+
+  <!-- Head / Hair / Circlet -->
+  <circle cx="48" cy="22" r="10" fill="#f0ceab"/>
+  <!-- Auburn braided hair -->
+  <path d="M38 18 C38 8 58 8 58 18 C59 28 56 34 55 38 C53 30 52 24 50 20 C46 24 45 30 43 38 C42 34 37 28 38 18 Z" fill="#75351f"/>
+  <!-- Golden Circlet -->
+  <path d="M40 18 Q48 14 56 18" fill="none" stroke="url(#goldTrim)" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="48" cy="16" r="2" fill="#75ffd4"/>
+
+  <!-- Face / Gentle expression -->
+  <ellipse cx="44.5" cy="22" rx="1.5" ry="1.5" fill="#2b1a11"/>
+  <ellipse cx="51.5" cy="22" rx="1.5" ry="1.5" fill="#2b1a11"/>
+  <path d="M46 27 Q48 29 50 27" fill="none" stroke="#b06c54" stroke-width="1.2" stroke-linecap="round"/>
+
+  <!-- Hood Draped on Shoulders -->
+  <path d="M28 32 Q48 42 68 32 Q62 25 48 26 Q34 25 28 32 Z" fill="url(#robeGrad)" stroke="#0d241c" stroke-width="2"/>
+
+  <!-- Wooden Staff in Hand -->
+  <ellipse cx="78" cy="24" rx="22" ry="22" fill="url(#auraGlow)"/>
+  <!-- Staff shaft -->
+  <path d="M72 16 L76 102" stroke="#5a3d24" stroke-width="3.5" stroke-linecap="round"/>
+  <!-- Staff Head (Ember Lantern Cage) -->
+  <circle cx="72" cy="16" r="10" fill="url(#staffEmber)"/>
+  <path d="M68 8 Q72 4 76 8 L77 22 Q72 26 67 22 Z" fill="none" stroke="url(#goldTrim)" stroke-width="2"/>
+  <circle cx="72" cy="15" r="3.5" fill="#ffffff"/>
+
+  <!-- Right Arm holding staff -->
+  <path d="M62 38 L72 48 L75 44 L66 35 Z" fill="url(#robeGrad)" stroke="#0d241c" stroke-width="1.8"/>
+  <circle cx="73" cy="46" r="3" fill="#f0ceab"/>
+  <!-- Left Hand folded gently -->
+  <path d="M34 38 L42 50 L46 47 L38 35 Z" fill="url(#robeGrad)" stroke="#0d241c" stroke-width="1.8"/>
+  <circle cx="44" cy="49" r="3" fill="#f0ceab"/>
+</svg>

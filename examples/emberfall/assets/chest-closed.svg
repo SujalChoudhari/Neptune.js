@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="shadowGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#080e12" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#080e12" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="woodPlank" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#805b3b"/>
+      <stop offset="50%" stop-color="#5e4128"/>
+      <stop offset="100%" stop-color="#3d2816"/>
+    </linearGradient>
+    <linearGradient id="ironBand" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5e6569"/>
+      <stop offset="50%" stop-color="#383d40"/>
+      <stop offset="100%" stop-color="#1f2224"/>
+    </linearGradient>
+    <linearGradient id="goldLock" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffd56b"/>
+      <stop offset="50%" stop-color="#dfaa35"/>
+      <stop offset="100%" stop-color="#94640d"/>
+    </linearGradient>
+  </defs>
+
+  <ellipse cx="32" cy="58" rx="26" ry="5" fill="url(#shadowGlow)"/>
+
+  <!-- Chest Body -->
+  <rect x="8" y="24" width="48" height="32" rx="4" fill="url(#woodPlank)" stroke="#1a1109" stroke-width="2.5"/>
+
+  <!-- Domed Lid -->
+  <path d="M6 24 C6 14 18 10 32 10 C46 10 58 14 58 24 Z" fill="url(#woodPlank)" stroke="#1a1109" stroke-width="2.5"/>
+
+  <!-- Iron Reinforcement Bands -->
+  <rect x="14" y="10.5" width="6" height="45.5" fill="url(#ironBand)" stroke="#111" stroke-width="1"/>
+  <rect x="44" y="10.5" width="6" height="45.5" fill="url(#ironBand)" stroke="#111" stroke-width="1"/>
+
+  <!-- Rivets -->
+  <circle cx="17" cy="16" r="1.2" fill="#adb8bf"/>
+  <circle cx="17" cy="32" r="1.2" fill="#adb8bf"/>
+  <circle cx="17" cy="48" r="1.2" fill="#adb8bf"/>
+  <circle cx="47" cy="16" r="1.2" fill="#adb8bf"/>
+  <circle cx="47" cy="32" r="1.2" fill="#adb8bf"/>
+  <circle cx="47" cy="48" r="1.2" fill="#adb8bf"/>
+
+  <!-- Golden Padlock / Latch with Ember Glow -->
+  <rect x="28" y="22" width="8" height="12" rx="2" fill="url(#goldLock)" stroke="#3e2a0b" stroke-width="1.2"/>
+  <circle cx="32" cy="27" r="1.8" fill="#ffb438"/>
+  <rect x="31" y="27" width="2" height="4" fill="#3e2a0b"/>
+</svg>

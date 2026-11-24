@@ -1,1 +1,55 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 104 112"><ellipse cx="52" cy="101" rx="32" ry="7" fill="#111514" opacity=".7"/><path d="M30 43 17 88l12 11 23-8 23 8 12-11-13-45Z" fill="#65594c" stroke="#242722" stroke-width="6" stroke-linejoin="round"/><path d="m29 72-8 26 18 2 9-26m12 0 9 26 18-2-8-26" fill="#7e7767" stroke="#282b27" stroke-width="5"/><path d="M34 22 25 49l10 18h34l10-18-9-27Z" fill="#8a7762" stroke="#282b27" stroke-width="5"/><path d="M32 39 52 45l20-6-2 9q-18 9-36 0Z" fill="#313532"/><path d="M33 15 38 5l13 7L65 5l8 11-4 22H35Z" fill="#6a5a49" stroke="#2a2924" stroke-width="5"/><path d="m41 25 7 2m10 0 7-2" stroke="#ffd07a" stroke-width="5" stroke-linecap="round"/><path d="M75 47 95 74l-7 7-24-25" fill="#9b815d" stroke="#292a25" stroke-width="5"/><path d="m27 49-18 23 7 8 25-25" fill="#9b815d" stroke="#292a25" stroke-width="5"/><path d="M4 39q21-18 42-5m13-8q22-8 38 5" fill="none" stroke="#ffe28a" stroke-width="4" stroke-linecap="round" opacity=".9"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 104 112">
+  <defs>
+    <radialGradient id="shadowGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#080e12" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#080e12" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="stoneArmor" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#736656"/>
+      <stop offset="40%" stop-color="#554b3f"/>
+      <stop offset="80%" stop-color="#3a3229"/>
+      <stop offset="100%" stop-color="#241e18"/>
+    </linearGradient>
+    <radialGradient id="warningGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="30%" stop-color="#ffe15c"/>
+      <stop offset="70%" stop-color="#ff9900"/>
+      <stop offset="100%" stop-color="#ff7700" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="poleaxeSteel" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fffae0"/>
+      <stop offset="50%" stop-color="#e8be56"/>
+      <stop offset="100%" stop-color="#734e12"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Warning Telegraph Aura -->
+  <circle cx="82" cy="18" r="26" fill="url(#warningGlow)"/>
+  <ellipse cx="52" cy="103" rx="36" ry="7" fill="url(#shadowGlow)"/>
+
+  <!-- Legs braced back for strike -->
+  <path d="M26 72 L14 98 L30 100 L40 74 Z" fill="url(#stoneArmor)" stroke="#1a140f" stroke-width="2.5"/>
+  <path d="M56 72 L68 100 L84 98 L70 70 Z" fill="url(#stoneArmor)" stroke="#1a140f" stroke-width="2.5"/>
+
+  <!-- Tassets -->
+  <path d="M26 48 L14 74 L48 78 L54 48 Z" fill="url(#stoneArmor)" stroke="#1a140f" stroke-width="2.5"/>
+  <path d="M52 48 L48 78 L80 74 L68 48 Z" fill="url(#stoneArmor)" stroke="#1a140f" stroke-width="2.5"/>
+
+  <!-- Torso reared back -->
+  <path d="M30 24 L22 50 L70 50 L64 24 Z" fill="url(#stoneArmor)" stroke="#1a140f" stroke-width="3"/>
+  <!-- Blazing Core -->
+  <circle cx="46" cy="38" r="7" fill="url(#warningGlow)"/>
+  <circle cx="46" cy="38" r="3.5" fill="#ffffff"/>
+
+  <!-- Blazing Eye Visor -->
+  <path d="M32 10 L60 10 L64 28 L28 28 Z" fill="url(#stoneArmor)" stroke="#1a140f" stroke-width="3"/>
+  <rect x="34" y="19" width="24" height="4" rx="1.5" fill="#fff194"/>
+
+  <!-- Weapon Raised High Overhead (Telegraph) -->
+  <path d="M86 4 L76 96" stroke="#524332" stroke-width="5" stroke-linecap="round"/>
+  <path d="M86 6 L104 16 L98 42 L80 34 Z" fill="url(#poleaxeSteel)" stroke="#473007" stroke-width="2.5" stroke-linejoin="round"/>
+
+  <!-- Crackling Energy Streaks -->
+  <path d="M60 8 Q82 4 100 12" fill="none" stroke="#fff5aa" stroke-width="3" stroke-linecap="round"/>
+  <path d="M72 32 Q96 28 102 44" fill="none" stroke="#ffd15c" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

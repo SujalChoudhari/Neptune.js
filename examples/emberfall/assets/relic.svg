@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="relicAura" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="30%" stop-color="#6df5e3"/>
+      <stop offset="70%" stop-color="#14a38f"/>
+      <stop offset="100%" stop-color="#0a4d43" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="crystalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="35%" stop-color="#79fbe9"/>
+      <stop offset="75%" stop-color="#24baa4"/>
+      <stop offset="100%" stop-color="#0d594f"/>
+    </linearGradient>
+    <linearGradient id="ringGold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffd56b"/>
+      <stop offset="50%" stop-color="#d99f2e"/>
+      <stop offset="100%" stop-color="#8a5a08"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Mystical Outer Glow -->
+  <circle cx="32" cy="32" r="28" fill="url(#relicAura)"/>
+
+  <!-- Celestial Bronze Gyro Ring -->
+  <ellipse cx="32" cy="32" rx="22" ry="12" fill="none" stroke="url(#ringGold)" stroke-width="2.5" transform="rotate(-25 32 32)"/>
+  <circle cx="15" cy="24" r="2" fill="#ffd56b"/>
+  <circle cx="49" cy="40" r="2" fill="#ffd56b"/>
+
+  <!-- Central Hovering Diamond Crystal Runestone -->
+  <polygon points="32,10 46,32 32,54 18,32" fill="url(#crystalGrad)" stroke="#063029" stroke-width="2"/>
+  <polygon points="32,16 41,32 32,48 23,32" fill="#ffffff" opacity="0.4"/>
+
+  <!-- Ancient Inscribed Rune in Core -->
+  <path d="M32 20 L32 44 M26 28 L38 28 M28 38 L36 38" fill="none" stroke="#04211c" stroke-width="2" stroke-linecap="round"/>
+</svg>

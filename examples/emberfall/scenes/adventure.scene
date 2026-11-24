@@ -430,6 +430,16 @@
               "outline": null
             }
           }
+        },
+        {
+          "id": "lantern-tree-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/lantern-tree.png",
+            "width": 2.4,
+            "height": 2.4,
+            "renderOrder": 0.5
+          }
         }
       ]
     },
@@ -516,6 +526,16 @@
               "role": "npc",
               "health": 1
             }
+          }
+        },
+        {
+          "id": "mira-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/mira.png",
+            "width": 0.85,
+            "height": 0.95,
+            "renderOrder": 1
           }
         }
       ]
@@ -1046,6 +1066,16 @@
               "health": 1
             }
           }
+        },
+        {
+          "id": "coffer-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/chest-closed.png",
+            "width": 0.9,
+            "height": 0.9,
+            "renderOrder": 1
+          }
         }
       ]
     },
@@ -1083,6 +1113,16 @@
               "height": 1.1,
               "outline": null
             }
+          }
+        },
+        {
+          "id": "ember-altar-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/altar.png",
+            "width": 1.4,
+            "height": 1.4,
+            "renderOrder": 1
           }
         }
       ]

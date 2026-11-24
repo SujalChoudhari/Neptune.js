@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <radialGradient id="shadowGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#080e12" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#080e12" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="barkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#694b30"/>
+      <stop offset="50%" stop-color="#4a321e"/>
+      <stop offset="100%" stop-color="#291a0c"/>
+    </linearGradient>
+    <radialGradient id="foliageGrad" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#558f62"/>
+      <stop offset="50%" stop-color="#366642"/>
+      <stop offset="85%" stop-color="#1f4229"/>
+      <stop offset="100%" stop-color="#122b1a"/>
+    </radialGradient>
+    <radialGradient id="lanternGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff8db" stop-opacity="1"/>
+      <stop offset="40%" stop-color="#ffb834" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#ff7b00" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="64" cy="120" rx="44" ry="7" fill="url(#shadowGlow)"/>
+
+  <!-- Gnarled Trunk and Roots -->
+  <path d="M52 64 Q46 90 32 118 L48 118 Q58 100 64 90 Q70 100 80 118 L96 118 Q82 90 76 64 Z" fill="url(#barkGrad)" stroke="#1a1107" stroke-width="2.5"/>
+
+  <!-- Canopy of Foliage (Layered Lush Trees) -->
+  <path d="M64 12 C30 12 16 34 20 54 C10 66 22 84 42 82 C48 88 80 88 86 82 C106 84 118 66 108 54 C112 34 98 12 64 12 Z" fill="url(#foliageGrad)" stroke="#0e2114" stroke-width="2.5"/>
+  <!-- Canopy Highlights -->
+  <ellipse cx="48" cy="38" rx="20" ry="14" fill="#69a878" opacity="0.4"/>
+  <ellipse cx="78" cy="42" rx="18" ry="12" fill="#69a878" opacity="0.4"/>
+
+  <!-- Lanterns Hanging from Boughs -->
+  <!-- Left Lantern -->
+  <ellipse cx="34" cy="74" rx="14" ry="14" fill="url(#lanternGlow)"/>
+  <line x1="34" y1="58" x2="34" y2="70" stroke="#332211" stroke-width="1.5"/>
+  <rect x="31.5" y="70" width="5" height="8" rx="1" fill="#fffbe8" stroke="#875317" stroke-width="1"/>
+  <!-- Right Lantern -->
+  <ellipse cx="94" cy="70" rx="14" ry="14" fill="url(#lanternGlow)"/>
+  <line x1="94" y1="52" x2="94" y2="66" stroke="#332211" stroke-width="1.5"/>
+  <rect x="91.5" y="66" width="5" height="8" rx="1" fill="#fffbe8" stroke="#875317" stroke-width="1"/>
+  <!-- Center Lantern -->
+  <ellipse cx="64" cy="80" rx="16" ry="16" fill="url(#lanternGlow)"/>
+  <line x1="64" y1="62" x2="64" y2="76" stroke="#332211" stroke-width="1.5"/>
+  <rect x="61" y="76" width="6" height="9" rx="1" fill="#fffbe8" stroke="#875317" stroke-width="1"/>
+</svg>

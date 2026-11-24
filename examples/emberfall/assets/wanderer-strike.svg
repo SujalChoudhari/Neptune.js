@@ -1,1 +1,80 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 112"><ellipse cx="48" cy="100" rx="28" ry="7" fill="#101817" opacity=".6"/><path d="M25 49 15 88l12 10 21-9 21 9 12-10-10-39Z" fill="#315c53" stroke="#152923" stroke-width="5" stroke-linejoin="round"/><path d="m28 75-8 22 14 2 9-23m16 0 9 23 14-2-8-22" fill="#d2ae78" stroke="#1e2823" stroke-width="4" stroke-linejoin="round"/><path d="M34 29q14-14 28 0l10 24-11 15H34L24 51Z" fill="#76ad91" stroke="#1e332d" stroke-width="5"/><path d="M29 40q19 8 38-2l2 9q-20 10-43 1Z" fill="#d6bb80"/><path d="M33 17q3-13 17-13 15 0 17 14l-3 22H33Z" fill="#d8b48a" stroke="#382c25" stroke-width="5"/><path d="M29 20Q30 2 50 2q19 0 22 20l-9-5-4-5q-13 12-30 10Z" fill="#493a32"/><circle cx="43" cy="24" r="2" fill="#292b25"/><circle cx="57" cy="24" r="2" fill="#292b25"/><path d="M67 57 91 26l5 4-22 35Z" fill="#d8e6d2" stroke="#a3844b" stroke-width="3"/><path d="M76 60q22-12 18-31" fill="none" stroke="#f5df9a" stroke-width="5" opacity=".8"/><path d="m23 51-16 9 4 10 20-9" fill="#d8b48a" stroke="#35312a" stroke-width="4" stroke-linejoin="round"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 112">
+  <defs>
+    <radialGradient id="shadowGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#080e12" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#080e12" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="cloakGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2a5a52"/>
+      <stop offset="50%" stop-color="#1b3c36"/>
+      <stop offset="100%" stop-color="#0f2622"/>
+    </linearGradient>
+    <linearGradient id="tunicGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#648f82"/>
+      <stop offset="70%" stop-color="#3d635a"/>
+      <stop offset="100%" stop-color="#28443e"/>
+    </linearGradient>
+    <linearGradient id="leatherGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8c6a47"/>
+      <stop offset="100%" stop-color="#4d3520"/>
+    </linearGradient>
+    <linearGradient id="goldTrim" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffd56b"/>
+      <stop offset="50%" stop-color="#dfaa35"/>
+      <stop offset="100%" stop-color="#b07d18"/>
+    </linearGradient>
+    <linearGradient id="bladeGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="30%" stop-color="#72f9d2"/>
+      <stop offset="70%" stop-color="#2eb392"/>
+      <stop offset="100%" stop-color="#0f5242"/>
+    </linearGradient>
+    <radialGradient id="slashArc" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="40%" stop-color="#66ffd4" stop-opacity="0.8"/>
+      <stop offset="80%" stop-color="#ffcc44" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#ffaa00" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Ground Shadow -->
+  <ellipse cx="48" cy="104" rx="34" ry="7" fill="url(#shadowGlow)"/>
+
+  <!-- Energy Slash Arc Trail -->
+  <path d="M42 16 Q88 12 94 62 Q78 52 56 46 Z" fill="url(#slashArc)"/>
+  <path d="M50 20 Q92 20 95 60" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Cloak Flaring on Strike -->
+  <path d="M22 52 L10 92 Q24 100 48 97 Q66 100 80 92 L70 52 Z" fill="url(#cloakGrad)" stroke="#0a1916" stroke-width="2.5"/>
+  <path d="M12 90 Q24 97 48 94 Q66 97 78 90 L79 93 Q66 101 48 98 Q24 101 11 93 Z" fill="url(#goldTrim)"/>
+
+  <!-- Wide Stable Stance Legs -->
+  <path d="M26 76 L16 98 L29 100 L37 78 Z" fill="url(#leatherGrad)" stroke="#1a1109" stroke-width="2"/>
+  <path d="M56 76 L66 98 L79 100 L68 76 Z" fill="url(#leatherGrad)" stroke="#1a1109" stroke-width="2"/>
+
+  <!-- Torso leaning forward -->
+  <path d="M28 35 Q48 30 68 35 L72 67 Q48 77 24 67 Z" fill="url(#tunicGrad)" stroke="#0e1f1c" stroke-width="2.5"/>
+  <path d="M25 63 Q48 70 71 63 L72 68 Q48 75 24 68 Z" fill="url(#leatherGrad)" stroke="#1a1109" stroke-width="1.5"/>
+
+  <!-- Left Arm (Guiding/stabilizing) -->
+  <path d="M24 40 L12 52 L18 57 L28 46 Z" fill="url(#tunicGrad)" stroke="#0a1916" stroke-width="1.5"/>
+
+  <!-- Right Arm (Extended in strike) -->
+  <path d="M66 38 L84 46 L82 53 L62 47 Z" fill="url(#tunicGrad)" stroke="#0a1916" stroke-width="1.5"/>
+  <path d="M80 44 L92 48 L90 54 L78 51 Z" fill="url(#leatherGrad)" stroke="#1a1109" stroke-width="1"/>
+
+  <!-- Steel Sword Blade Slashing Outward -->
+  <path d="M84 48 L94 22 L91 20 L79 44 Z" fill="url(#bladeGlow)" stroke="#0e3c32" stroke-width="1.5"/>
+  <path d="M85 46 L76 49 L78 52 L87 49 Z" fill="url(#goldTrim)"/>
+
+  <!-- Hood and Face -->
+  <path d="M28 20 C28 5 68 5 68 20 C71 35 68 47 48 48 C28 47 25 35 28 20 Z" fill="url(#cloakGrad)" stroke="#0a1916" stroke-width="2.5"/>
+  <path d="M33 21 C33 13 63 13 63 21 C64 33 60 41 48 42 C36 41 32 33 33 21 Z" fill="#0d1f1c"/>
+  <path d="M37 25 Q48 23 59 25 C60 34 56 39 48 40 C40 39 36 34 37 25 Z" fill="#e6c29a"/>
+  <!-- Glowing Fierce Eyes -->
+  <ellipse cx="44" cy="29" rx="3" ry="1.5" fill="#1b2420"/>
+  <circle cx="45" cy="28.7" r="1.2" fill="#75ffd4"/>
+  <ellipse cx="54" cy="29" rx="3" ry="1.5" fill="#1b2420"/>
+  <circle cx="55" cy="28.7" r="1.2" fill="#75ffd4"/>
+  <path d="M30 38 Q48 45 66 38 Q58 50 48 50 Q38 50 30 38 Z" fill="url(#cloakGrad)" stroke="#0a1916" stroke-width="1.5"/>
+</svg>

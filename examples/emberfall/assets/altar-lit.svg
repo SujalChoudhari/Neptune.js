@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+  <defs>
+    <radialGradient id="shadowGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#080e12" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#080e12" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="pedestalStone" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#73675a"/>
+      <stop offset="50%" stop-color="#4e4337"/>
+      <stop offset="100%" stop-color="#2b231b"/>
+    </linearGradient>
+    <linearGradient id="goldTrim" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffd56b"/>
+      <stop offset="50%" stop-color="#dfaa35"/>
+      <stop offset="100%" stop-color="#805609"/>
+    </linearGradient>
+    <radialGradient id="emberFlame" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="25%" stop-color="#fff27d"/>
+      <stop offset="60%" stop-color="#ff941a"/>
+      <stop offset="100%" stop-color="#ff4400" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="48" cy="88" rx="42" ry="7" fill="url(#shadowGlow)"/>
+
+  <!-- Stepped Dais Base -->
+  <polygon points="12,82 84,82 78,70 18,70" fill="url(#pedestalStone)" stroke="#1a140e" stroke-width="2"/>
+  <polygon points="20,70 76,70 72,58 24,58" fill="url(#pedestalStone)" stroke="#1a140e" stroke-width="2"/>
+
+  <!-- Altar Pillar / Column with Glowing Channels -->
+  <rect x="28" y="34" width="40" height="24" fill="url(#pedestalStone)" stroke="#1a140e" stroke-width="2"/>
+  <path d="M36 40 L48 44 L60 40 M36 48 L48 52 L60 48" fill="none" stroke="#ffb733" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Basin / Table Top -->
+  <polygon points="16,34 80,34 72,24 24,24" fill="url(#pedestalStone)" stroke="#1a140e" stroke-width="2.5"/>
+  <ellipse cx="48" cy="24" rx="22" ry="7" fill="#ff8c00" stroke="#ffd56b" stroke-width="2"/>
+
+  <!-- Towering Sacred Flame and Floating Ember Particles -->
+  <circle cx="48" cy="18" r="24" fill="url(#emberFlame)"/>
+  <!-- Blazing Flame Tendrils -->
+  <path d="M48 2 Q56 12 52 24 Q48 26 44 24 Q40 12 48 2 Z" fill="#ffffff"/>
+  <path d="M48 0 Q62 10 54 26 Q48 28 42 26 Q34 10 48 0 Z" fill="#ffe066" opacity="0.8"/>
+  <circle cx="36" cy="10" r="2" fill="#ffd56b"/>
+  <circle cx="60" cy="8" r="1.5" fill="#ffd56b"/>
+  <circle cx="44" cy="4" r="1.8" fill="#ffffff"/>
+</svg>

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="shadowGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#080e12" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#080e12" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="woodPlank" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#805b3b"/>
+      <stop offset="50%" stop-color="#5e4128"/>
+      <stop offset="100%" stop-color="#3d2816"/>
+    </linearGradient>
+    <radialGradient id="treasureGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#ffd56b"/>
+      <stop offset="80%" stop-color="#ff9922"/>
+      <stop offset="100%" stop-color="#ff7b00" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="32" cy="58" rx="26" ry="5" fill="url(#shadowGlow)"/>
+
+  <!-- Open Lid Tilted Back -->
+  <path d="M6 18 C6 6 18 2 32 2 C46 2 58 6 58 18 L54 22 L10 22 Z" fill="url(#woodPlank)" stroke="#1a1109" stroke-width="2"/>
+
+  <!-- Chest Body -->
+  <rect x="8" y="26" width="48" height="30" rx="4" fill="url(#woodPlank)" stroke="#1a1109" stroke-width="2.5"/>
+
+  <!-- Interior Glowing Treasure Cavity -->
+  <ellipse cx="32" cy="27" rx="20" ry="14" fill="url(#treasureGlow)"/>
+
+  <!-- Sparkling Golden Coins & Gems Spilling Out -->
+  <circle cx="24" cy="28" r="3.5" fill="#ffe066" stroke="#b37700" stroke-width="0.8"/>
+  <circle cx="32" cy="26" r="4" fill="#ffd438" stroke="#b37700" stroke-width="0.8"/>
+  <circle cx="40" cy="28" r="3.5" fill="#ffe066" stroke="#b37700" stroke-width="0.8"/>
+  <circle cx="28" cy="31" r="3.5" fill="#ffd438" stroke="#b37700" stroke-width="0.8"/>
+  <circle cx="36" cy="31" r="4" fill="#fff099" stroke="#b37700" stroke-width="0.8"/>
+  <!-- Red ruby gemstone -->
+  <polygon points="32,21 35,24 32,27 29,24" fill="#ff2652" stroke="#80001a" stroke-width="0.8"/>
+</svg>

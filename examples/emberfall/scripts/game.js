@@ -57,8 +57,8 @@ export function create({ entity, engine, properties }) {
             camera = new engine.Camera(window.innerWidth, window.innerHeight);
             scene.activeCamera = camera;
             hud = document.createElement('aside'); hud.id = 'emberfall-hud';
-            hud.style.cssText = 'position:fixed;left:18px;top:16px;max-width:420px;padding:14px 18px;background:#101d28e8;color:#e7dcc1;border:1px solid #ab8955;font:14px/1.6 system-ui;pointer-events:none;z-index:20';
-            hud.innerHTML = '<b>EMBERFALL · The First Ember</b><div data-state></div><div data-message></div><strong data-result></strong><small style="display:block;color:#b3c3c5">WASD / arrows move · J attack · E interact<br>O save · L load · R retry · editor Pause stops simulation</small>';
+            hud.style.cssText = 'position:fixed;left:18px;top:16px;max-width:440px;padding:16px 20px;background:linear-gradient(145deg,rgba(16,29,40,0.95),rgba(9,16,22,0.98));color:#f3ebd8;border:1.5px solid #ab8955;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,0.7),0 0 18px rgba(171,137,85,0.25);font:14px/1.65 system-ui,sans-serif;pointer-events:none;z-index:20;backdrop-filter:blur(4px)';
+            hud.innerHTML = '<b style="color:#ffd56b;letter-spacing:0.06em;font-size:15px;">EMBERFALL · The First Ember</b><div data-state style="font-weight:700;color:#78f4d5;margin:4px 0;"></div><div data-message style="color:#d9d3c5;font-style:italic;"></div><strong data-result style="display:block;margin:4px 0;color:#ffaa66;"></strong><small style="display:block;color:#96abb0;margin-top:6px;border-top:1px solid #32474f;padding-top:6px;">WASD / arrows move · J attack · E interact<br>O save · L load · R retry · editor Pause stops simulation</small>';
             document.body.append(hud); paint();
             combatant.onDeath = () => { message = 'The ruins claimed another wanderer.'; paint(); };
             system.on('death', ({ target }) => {

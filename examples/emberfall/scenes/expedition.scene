@@ -420,6 +420,16 @@
               "outline": null
             }
           }
+        },
+        {
+          "id": "lantern-tree-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/lantern-tree.png",
+            "width": 2.4,
+            "height": 2.4,
+            "renderOrder": 0.5
+          }
         }
       ]
     },
@@ -1928,6 +1938,16 @@
               "health": 1
             }
           }
+        },
+        {
+          "id": "mira-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/mira.png",
+            "width": 0.9,
+            "height": 1,
+            "renderOrder": 1
+          }
         }
       ]
     },
@@ -1976,6 +1996,16 @@
               "role": "chest",
               "health": 1
             }
+          }
+        },
+        {
+          "id": "old-coffer-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/chest-closed.png",
+            "width": 0.9,
+            "height": 0.9,
+            "renderOrder": 1
           }
         }
       ]
@@ -2798,6 +2828,16 @@
               "label": "West vault seal"
             }
           }
+        },
+        {
+          "id": "west-seal-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/relic.png",
+            "width": 0.8,
+            "height": 0.8,
+            "renderOrder": 1
+          }
         }
       ]
     },
@@ -2851,6 +2891,16 @@
               ],
               "label": "Archive seal"
             }
+          }
+        },
+        {
+          "id": "archive-seal-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/relic.png",
+            "width": 0.8,
+            "height": 0.8,
+            "renderOrder": 1
           }
         }
       ]
@@ -2906,6 +2956,16 @@
               "label": "Crypt seal"
             }
           }
+        },
+        {
+          "id": "crypt-seal-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/relic.png",
+            "width": 0.8,
+            "height": 0.8,
+            "renderOrder": 1
+          }
         }
       ]
     },
@@ -2954,6 +3014,16 @@
               "role": "altar",
               "health": 1
             }
+          }
+        },
+        {
+          "id": "heartstone-altar-sprite",
+          "type": "Sprite",
+          "props": {
+            "path": "/assets/altar.png",
+            "width": 1.2,
+            "height": 1.2,
+            "renderOrder": 1
           }
         }
       ]

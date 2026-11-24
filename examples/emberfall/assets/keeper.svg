@@ -1,1 +1,82 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 144"><ellipse cx="64" cy="133" rx="42" ry="8" fill="#0d1110" opacity=".8"/><path d="m29 56-16 50 20 18 31-10 31 10 20-18-16-50Z" fill="#5a4540" stroke="#211f1d" stroke-width="7" stroke-linejoin="round"/><path d="m35 87-10 38 20 3 16-31m12 0 16 31 20-3-10-38" fill="#777061" stroke="#292622" stroke-width="6"/><path d="m43 27-15 36 15 28h42l15-28-15-36Z" fill="#8c6553" stroke="#29231f" stroke-width="7"/><path d="M37 51 64 60l27-9-3 12q-24 12-48 0Z" fill="#322b26"/><path d="M46 17 51 4l13 8L77 4l7 13-5 31H51Z" fill="#635047" stroke="#25211f" stroke-width="6"/><path d="m52 29 8 2m13 0 8-2" stroke="#ffd36e" stroke-width="7" stroke-linecap="round"/><circle cx="64" cy="73" r="9" fill="#ffc65e" stroke="#73472d" stroke-width="4"/><circle cx="64" cy="73" r="3" fill="#fff1bc"/><path d="M95 52 122 82 112 91 82 67" fill="#a0794d" stroke="#2b2521" stroke-width="6"/><path d="M33 52 6 82l10 9 30-24" fill="#a0794d" stroke="#2b2521" stroke-width="6"/><path d="M5 76q20-17 31-6M96 69q17-12 28 5" fill="none" stroke="#f5bb5d" stroke-width="4" opacity=".8"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 144">
+  <defs>
+    <radialGradient id="shadowGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#080e12" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#080e12" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="keeperArmor" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#694f42"/>
+      <stop offset="40%" stop-color="#4e382e"/>
+      <stop offset="70%" stop-color="#36251e"/>
+      <stop offset="100%" stop-color="#1e1410"/>
+    </linearGradient>
+    <linearGradient id="bronzeTrim" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#d49b55"/>
+      <stop offset="50%" stop-color="#a67133"/>
+      <stop offset="100%" stop-color="#694318"/>
+    </linearGradient>
+    <radialGradient id="furnaceCore" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="35%" stop-color="#ffd269"/>
+      <stop offset="75%" stop-color="#ff7b1c"/>
+      <stop offset="100%" stop-color="#b03200" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="cleaverSteel" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a89280"/>
+      <stop offset="50%" stop-color="#6e594a"/>
+      <stop offset="100%" stop-color="#3b2d24"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Ground Shadow -->
+  <ellipse cx="64" cy="136" rx="46" ry="8" fill="url(#shadowGlow)"/>
+
+  <!-- Tattered Mantle / Cape Behind -->
+  <path d="M26 56 L12 112 Q64 126 116 112 L102 56 Z" fill="#2d1c16" stroke="#120a07" stroke-width="3"/>
+
+  <!-- Greaves / Massive Legs -->
+  <path d="M34 88 L22 130 L46 132 L56 90 Z" fill="url(#keeperArmor)" stroke="#1a0f0b" stroke-width="3"/>
+  <path d="M72 90 L82 132 L106 130 L94 88 Z" fill="url(#keeperArmor)" stroke="#1a0f0b" stroke-width="3"/>
+  <path d="M22 126 L46 128 L44 133 L20 131 Z" fill="url(#bronzeTrim)"/>
+  <path d="M82 128 L106 126 L108 131 L84 133 Z" fill="url(#bronzeTrim)"/>
+
+  <!-- Lower Tassets -->
+  <path d="M30 62 L18 96 L64 102 L64 62 Z" fill="url(#keeperArmor)" stroke="#1a0f0b" stroke-width="2.5"/>
+  <path d="M64 62 L64 102 L110 96 L98 62 Z" fill="url(#keeperArmor)" stroke="#1a0f0b" stroke-width="2.5"/>
+
+  <!-- Massive Chestplate -->
+  <path d="M32 30 L22 66 L106 66 L96 30 Z" fill="url(#keeperArmor)" stroke="#1a0f0b" stroke-width="3.5"/>
+  <path d="M32 32 L64 38 L96 32" fill="none" stroke="url(#bronzeTrim)" stroke-width="3"/>
+
+  <!-- Furnace Heart Core (Glowing Amber) -->
+  <ellipse cx="64" cy="56" rx="20" ry="20" fill="url(#furnaceCore)"/>
+  <circle cx="64" cy="56" r="9" fill="#ffb733" stroke="#662200" stroke-width="2"/>
+  <circle cx="64" cy="56" r="4" fill="#ffffff"/>
+
+  <!-- Spiked Pauldrons / Shoulders -->
+  <path d="M12 28 L34 22 L38 52 L16 54 Z" fill="url(#keeperArmor)" stroke="#1a0f0b" stroke-width="3"/>
+  <path d="M116 28 L94 22 L90 52 L112 54 Z" fill="url(#keeperArmor)" stroke="#1a0f0b" stroke-width="3"/>
+  <!-- Spikes on Shoulders -->
+  <path d="M14 26 L6 14 L24 24 Z" fill="url(#bronzeTrim)" stroke="#1a0f0b" stroke-width="1.5"/>
+  <path d="M114 26 L122 14 L104 24 Z" fill="url(#bronzeTrim)" stroke="#1a0f0b" stroke-width="1.5"/>
+
+  <!-- Helm with Crown Horns -->
+  <path d="M42 12 L86 12 L92 34 L36 34 Z" fill="url(#keeperArmor)" stroke="#1a0f0b" stroke-width="3.5"/>
+  <!-- Crown Horns -->
+  <path d="M42 12 L38 0 L50 8 L64 2 L78 8 L90 0 L86 12 Z" fill="url(#bronzeTrim)" stroke="#1a0f0b" stroke-width="2"/>
+  <!-- Blazing Eye Slits -->
+  <polygon points="46,24 58,24 56,28 48,28" fill="#ffd043"/>
+  <polygon points="70,24 82,24 80,28 72,28" fill="#ffd043"/>
+
+  <!-- Arms -->
+  <path d="M22 50 L10 78 L20 82 L32 54 Z" fill="url(#keeperArmor)" stroke="#1a0f0b" stroke-width="2.5"/>
+  <path d="M106 50 L118 78 L108 82 L96 54 Z" fill="url(#keeperArmor)" stroke="#1a0f0b" stroke-width="2.5"/>
+
+  <!-- Colossal Executioner Greatsword / Cleaver -->
+  <path d="M116 18 L108 116" stroke="#4a372c" stroke-width="6" stroke-linecap="round"/>
+  <!-- Massive Cleaver Blade -->
+  <path d="M116 20 L132 34 L126 94 L108 86 Z" fill="url(#cleaverSteel)" stroke="#1a0f0b" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M112 32 L124 38 L120 78 L110 74 Z" fill="#241710"/>
+  <!-- Engraved Rune on Blade -->
+  <path d="M117 44 L121 52 L116 60" fill="none" stroke="#d49b55" stroke-width="2" stroke-linecap="round"/>
+</svg>

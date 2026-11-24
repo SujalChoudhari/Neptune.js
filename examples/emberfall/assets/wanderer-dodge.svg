@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 112">
+  <defs>
+    <radialGradient id="shadowGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#080e12" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#080e12" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="cloakGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#347268"/>
+      <stop offset="100%" stop-color="#143630"/>
+    </linearGradient>
+    <linearGradient id="ghostGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#70ffd0" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#70ffd0" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Ground Shadow Stretched -->
+  <ellipse cx="50" cy="102" rx="38" ry="6" fill="url(#shadowGlow)"/>
+
+  <!-- Evasion Ghost Trail Lines -->
+  <path d="M12 40 L28 44 M8 55 L32 58 M15 72 L38 74 M22 88 L45 88" stroke="url(#ghostGrad)" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Low Tumble Body Profile -->
+  <path d="M25 58 C25 40 45 36 60 42 C72 47 78 62 76 75 C70 88 50 92 38 88 C28 85 25 72 25 58 Z" fill="url(#cloakGrad)" stroke="#0a1916" stroke-width="2.5"/>
+
+  <!-- Hood tuck -->
+  <circle cx="58" cy="48" r="14" fill="#1b3c36" stroke="#0a1916" stroke-width="2"/>
+  <ellipse cx="64" cy="48" rx="3" ry="1.5" fill="#75ffd4"/>
+
+  <!-- Tucked limbs -->
+  <path d="M36 78 L26 92 L38 96 L46 84 Z" fill="#6d5135" stroke="#1a1109" stroke-width="1.8"/>
+  <path d="M52 76 L62 94 L74 92 L62 76 Z" fill="#6d5135" stroke="#1a1109" stroke-width="1.8"/>
+
+  <!-- Wind streaks -->
+  <path d="M4 48 Q24 45 38 52" fill="none" stroke="#a7ffe4" stroke-width="2" stroke-linecap="round"/>
+  <path d="M6 68 Q28 66 42 70" fill="none" stroke="#a7ffe4" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

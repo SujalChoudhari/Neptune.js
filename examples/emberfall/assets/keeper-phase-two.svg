@@ -1,1 +1,55 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 144"><ellipse cx="64" cy="133" rx="42" ry="8" fill="#0d1110" opacity=".8"/><path d="m29 56-16 50 20 18 31-10 31 10 20-18-16-50Z" fill="#633f42" stroke="#211f1d" stroke-width="7" stroke-linejoin="round"/><path d="m35 87-10 38 20 3 16-31m12 0 16 31 20-3-10-38" fill="#777061" stroke="#292622" stroke-width="6"/><path d="m43 27-15 36 15 28h42l15-28-15-36Z" fill="#956053" stroke="#29231f" stroke-width="7"/><path d="M37 51 64 60l27-9-3 12q-24 12-48 0Z" fill="#322b26"/><path d="M46 17 51 4l13 8L77 4l7 13-5 31H51Z" fill="#704744" stroke="#25211f" stroke-width="6"/><path d="m52 29 8 2m13 0 8-2" stroke="#ff9b76" stroke-width="7" stroke-linecap="round"/><circle cx="64" cy="73" r="9" fill="#ff985f" stroke="#6b3e38" stroke-width="4"/><circle cx="64" cy="73" r="3" fill="#fff1bc"/><path d="M95 52 122 82 112 91 82 67" fill="#a0794d" stroke="#2b2521" stroke-width="6"/><path d="M33 52 6 82l10 9 30-24" fill="#a0794d" stroke="#2b2521" stroke-width="6"/><path d="M16 31 7 19m104 44 9-12M23 77l-14 2" stroke="#ff906a" stroke-width="5"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 144">
+  <defs>
+    <radialGradient id="shadowGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#080e12" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#080e12" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="charredArmor" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4d322b"/>
+      <stop offset="40%" stop-color="#361f18"/>
+      <stop offset="100%" stop-color="#190d09"/>
+    </linearGradient>
+    <radialGradient id="magmaGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="30%" stop-color="#ffb738"/>
+      <stop offset="70%" stop-color="#ff4800"/>
+      <stop offset="100%" stop-color="#801000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Ground Shadow with Heat Distortion -->
+  <ellipse cx="64" cy="136" rx="46" ry="8" fill="url(#shadowGlow)"/>
+
+  <!-- Flowing embers / heat vents -->
+  <circle cx="36" cy="40" r="2.5" fill="#ffb438"/>
+  <circle cx="94" cy="38" r="2" fill="#ff6a00"/>
+  <circle cx="78" cy="24" r="3" fill="#ffd469"/>
+
+  <!-- Armor cracked with magma fissures -->
+  <path d="M34 88 L22 130 L46 132 L56 90 Z" fill="url(#charredArmor)" stroke="#1a0f0b" stroke-width="3"/>
+  <path d="M72 90 L82 132 L106 130 L94 88 Z" fill="url(#charredArmor)" stroke="#1a0f0b" stroke-width="3"/>
+  <!-- Magma cracks on legs -->
+  <path d="M26 102 L34 112 L30 124 M88 100 L96 114 L90 126" stroke="#ff7711" stroke-width="2.5" fill="none"/>
+
+  <!-- Torso & Chestplate Cracked -->
+  <path d="M32 30 L22 66 L106 66 L96 30 Z" fill="url(#charredArmor)" stroke="#1a0f0b" stroke-width="3.5"/>
+  <!-- Deep Magma Fissures across Chest -->
+  <path d="M36 38 L48 50 L40 62 M92 38 L80 50 L88 62" stroke="#ff7b1a" stroke-width="3" fill="none"/>
+
+  <!-- Overheated Core Flaring Fiercely -->
+  <circle cx="64" cy="56" r="24" fill="url(#magmaGlow)"/>
+  <circle cx="64" cy="56" r="11" fill="#ff7700" stroke="#ffe073" stroke-width="2.5"/>
+  <circle cx="64" cy="56" r="5" fill="#ffffff"/>
+
+  <!-- Helm with Blazing Magma Horns -->
+  <path d="M42 12 L86 12 L92 34 L36 34 Z" fill="url(#charredArmor)" stroke="#1a0f0b" stroke-width="3.5"/>
+  <path d="M42 12 L36 -2 L50 8 L64 0 L78 8 L92 -2 L86 12 Z" fill="#ff8014" stroke="#421003" stroke-width="2"/>
+  <!-- Blazing Orange Eyes -->
+  <polygon points="46,24 58,24 56,28 48,28" fill="#ff4d00"/>
+  <polygon points="70,24 82,24 80,28 72,28" fill="#ff4d00"/>
+
+  <!-- Colossal Glowing Cleaver -->
+  <path d="M116 18 L108 116" stroke="#5c200c" stroke-width="6" stroke-linecap="round"/>
+  <path d="M116 20 L132 34 L126 94 L108 86 Z" fill="#ff6a19" stroke="#3d0e00" stroke-width="3"/>
+  <path d="M115 28 L126 36 L122 84 L112 78 Z" fill="#ffe26e"/>
+</svg>

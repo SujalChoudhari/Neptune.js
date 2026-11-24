@@ -1,3 +1,39 @@
 <!doctype html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Emberfall · Neptune ARPG Starter</title></head>
-<body><script type="module" src="./main.js"></script></body></html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Emberfall · Neptune ARPG Starter</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: radial-gradient(circle at center, #1b282c 0%, #0d1518 70%, #060a0c 100%);
+      font-family: 'Cinzel', Georgia, serif;
+      color: #edd79e;
+    }
+    #neptune-play {
+      background: linear-gradient(145deg, #384a46, #1c2624) !important;
+      color: #f7eed8 !important;
+      border: 2px solid #8e744a !important;
+      border-radius: 12px !important;
+      padding: 16px 36px !important;
+      font: 700 20px system-ui, sans-serif !important;
+      letter-spacing: 0.08em !important;
+      cursor: pointer !important;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7), 0 0 25px rgba(212, 173, 105, 0.25) !important;
+      transition: all 0.2s ease !important;
+    }
+    #neptune-play:hover {
+      border-color: #ffd56b !important;
+      color: #ffffff !important;
+      transform: translate(-50%, -52%) !important;
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.8), 0 0 35px rgba(255, 213, 107, 0.45) !important;
+    }
+  </style>
+</head>
+<body>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>

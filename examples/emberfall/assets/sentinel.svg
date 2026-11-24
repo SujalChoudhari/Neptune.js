@@ -1,1 +1,68 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 104 112"><ellipse cx="52" cy="101" rx="32" ry="7" fill="#111514" opacity=".7"/><path d="M30 43 17 88l12 11 23-8 23 8 12-11-13-45Z" fill="#65594c" stroke="#242722" stroke-width="6" stroke-linejoin="round"/><path d="m29 72-8 26 18 2 9-26m12 0 9 26 18-2-8-26" fill="#7e7767" stroke="#282b27" stroke-width="5"/><path d="M34 22 25 49l10 18h34l10-18-9-27Z" fill="#8a7762" stroke="#282b27" stroke-width="5"/><path d="M32 39 52 45l20-6-2 9q-18 9-36 0Z" fill="#313532"/><path d="M33 15 38 5l13 7L65 5l8 11-4 22H35Z" fill="#6a5a49" stroke="#2a2924" stroke-width="5"/><path d="m41 25 7 2m10 0 7-2" stroke="#ffd07a" stroke-width="5" stroke-linecap="round"/><path d="M75 47 95 74l-7 7-24-25" fill="#9b815d" stroke="#292a25" stroke-width="5"/><path d="m27 49-18 23 7 8 25-25" fill="#9b815d" stroke="#292a25" stroke-width="5"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 104 112">
+  <defs>
+    <radialGradient id="shadowGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#080e12" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#080e12" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="stoneArmor" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#736656"/>
+      <stop offset="40%" stop-color="#554b3f"/>
+      <stop offset="80%" stop-color="#3a3229"/>
+      <stop offset="100%" stop-color="#241e18"/>
+    </linearGradient>
+    <linearGradient id="mossGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4f7347"/>
+      <stop offset="100%" stop-color="#2b4226"/>
+    </linearGradient>
+    <linearGradient id="poleaxeSteel" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#b8a892"/>
+      <stop offset="50%" stop-color="#807260"/>
+      <stop offset="100%" stop-color="#4e4438"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Ground Shadow -->
+  <ellipse cx="52" cy="103" rx="34" ry="7" fill="url(#shadowGlow)"/>
+
+  <!-- Heavy Stone Greaves / Legs -->
+  <path d="M30 70 L20 98 L36 100 L44 72 Z" fill="url(#stoneArmor)" stroke="#1a140f" stroke-width="2.5"/>
+  <path d="M58 72 L66 100 L82 98 L72 70 Z" fill="url(#stoneArmor)" stroke="#1a140f" stroke-width="2.5"/>
+  <!-- Moss patches on legs -->
+  <path d="M22 88 Q28 84 34 89 Q30 96 22 94 Z" fill="url(#mossGrad)"/>
+
+  <!-- Tassets / Skirt Armor -->
+  <path d="M28 48 L18 74 L48 78 L54 48 Z" fill="url(#stoneArmor)" stroke="#1a140f" stroke-width="2.5"/>
+  <path d="M52 48 L48 78 L78 74 L68 48 Z" fill="url(#stoneArmor)" stroke="#1a140f" stroke-width="2.5"/>
+
+  <!-- Chestplate / Torso with Ancient Runes -->
+  <path d="M30 24 L24 50 L72 50 L66 24 Z" fill="url(#stoneArmor)" stroke="#1a140f" stroke-width="3"/>
+  <!-- Glowing Amber Runic Core -->
+  <circle cx="48" cy="38" r="4.5" fill="#ffb433" stroke="#874e00" stroke-width="1.5"/>
+  <circle cx="48" cy="38" r="2" fill="#fffbe0"/>
+  <!-- Runic engravings carved in stone -->
+  <path d="M42 34 L36 38 L42 42 M54 34 L60 38 L54 42" fill="none" stroke="#ffb433" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- Heavy Stone Helm -->
+  <path d="M34 10 L62 10 L66 28 L30 28 Z" fill="url(#stoneArmor)" stroke="#1a140f" stroke-width="3"/>
+  <!-- Glowing Visor / Slit -->
+  <rect x="36" y="19" width="24" height="4" rx="1.5" fill="#140f0a"/>
+  <rect x="38" y="20" width="20" height="2" rx="1" fill="#ffa826"/>
+
+  <!-- Horn / Crest on Helm -->
+  <path d="M46 3 L50 3 L52 10 L44 10 Z" fill="#443b32" stroke="#1a140f" stroke-width="1.5"/>
+
+  <!-- Left Arm holding Poleaxe Shaft -->
+  <circle cx="24" cy="32" r="8" fill="url(#stoneArmor)" stroke="#1a140f" stroke-width="2"/>
+  <path d="M22 38 L12 60 L19 63 L28 40 Z" fill="url(#stoneArmor)" stroke="#1a140f" stroke-width="2"/>
+
+  <!-- Right Arm with Stone Cleaver / Halberd -->
+  <circle cx="72" cy="32" r="8" fill="url(#stoneArmor)" stroke="#1a140f" stroke-width="2"/>
+  <path d="M74 38 L84 56 L77 60 L68 42 Z" fill="url(#stoneArmor)" stroke="#1a140f" stroke-width="2"/>
+
+  <!-- Massive Notched Stone Poleaxe -->
+  <path d="M82 12 L78 98" stroke="#3d3226" stroke-width="4.5" stroke-linecap="round"/>
+  <!-- Axe Blade -->
+  <path d="M82 14 L100 24 L96 46 L80 40 Z" fill="url(#poleaxeSteel)" stroke="#1a140f" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- Notch in blade -->
+  <path d="M98 32 L92 34 L97 38 Z" fill="#201a14"/>
+</svg>

@@ -1,3 +1,59 @@
 <!doctype html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#101b20"><title>Emberfall: The First Ember</title><link rel="stylesheet" href="./adventure.css"></head>
-<body><main id="title" aria-label="Emberfall title menu"><section class="title-card"><p class="eyebrow">A NEPTUNE 2D ADVENTURE</p><h1>EMBERFALL</h1><p class="subtitle">The First Ember</p><p class="intro">The lanterns in Briar Hollow are going dark. Carry the last spark through the drowned pass and wake the ember beneath the old keep.</p><div class="actions"><button id="new-game">Begin journey</button><button id="continue" disabled>Continue</button><button id="settings">Sound settings</button><button id="classic">Classic ruins</button></div><div id="settings-panel" hidden><label>Music <input id="music-volume" type="range" min="0" max="1" step="0.05" value="0.28"></label><label>Effects <input id="sfx-volume" type="range" min="0" max="1" step="0.05" value="0.7"></label></div><p class="controls">Move WASD / arrows · strike J · interact E · dodge Space · pause Esc</p></section></main><div id="pause-menu" hidden><section class="title-card"><h2>Paused</h2><button id="resume">Return to the Hollow</button><button id="save">Save journey</button><button id="title-button">Title</button></section></div><script type="module" src="./adventure.js"></script></body></html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101b20">
+  <title>Emberfall: The First Ember</title>
+  <link rel="stylesheet" href="./adventure.css">
+</head>
+<body>
+  <!-- Ambient Ember Particle Canvas -->
+  <canvas id="ember-bg-canvas"></canvas>
+
+  <!-- Title / Main Menu -->
+  <main id="title" aria-label="Emberfall title menu">
+    <section class="title-card">
+      <p class="eyebrow">A NEPTUNE 2D ADVENTURE</p>
+      <h1>EMBERFALL</h1>
+      <p class="subtitle">The First Ember</p>
+      <p class="intro">The lanterns in Briar Hollow are going dark. Carry the last spark through the drowned pass and wake the ember beneath the old keep.</p>
+      
+      <div class="actions">
+        <button id="new-game" data-neptune-nav>Begin journey</button>
+        <button id="continue" data-neptune-nav disabled>Continue</button>
+        <button id="settings" data-neptune-nav>Sound settings</button>
+        <button id="classic" data-neptune-nav>Classic ruins</button>
+      </div>
+
+      <div id="settings-panel" hidden>
+        <label>Music <input id="music-volume" type="range" min="0" max="1" step="0.05" value="0.28"></label>
+        <label>Effects <input id="sfx-volume" type="range" min="0" max="1" step="0.05" value="0.7"></label>
+      </div>
+
+      <div class="controls-legend">
+        <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> Move &middot;
+        <kbd>J</kbd> Strike &middot;
+        <kbd>Space</kbd> Dodge &middot;
+        <kbd>E</kbd> Interact &middot;
+        <kbd>Esc</kbd> Pause
+      </div>
+    </section>
+  </main>
+
+  <!-- Pause Menu -->
+  <div id="pause-menu" hidden>
+    <section class="title-card">
+      <h2>Paused</h2>
+      <p class="subtitle">Briar Hollow awaits your return</p>
+      <div class="actions">
+        <button id="resume" data-neptune-nav>Return to the Hollow</button>
+        <button id="save" data-neptune-nav>Save journey</button>
+        <button id="title-button" data-neptune-nav>Title</button>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="./adventure.js"></script>
+</body>
+</html>
