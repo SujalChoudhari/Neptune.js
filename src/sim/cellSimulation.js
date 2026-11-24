@@ -797,6 +797,36 @@ export class CellGridSimulation {
         }
         return matches;
     }
+
+    /**
+     * Advances simulation for distant chunks at a reduced fidelity and with a catch-up budget ceiling.
+     * Prevents long absences from triggering unbounded iteration freezes while advancing persistent state.
+     * @param {number} ticks - Requested elapsed simulation ticks
+     * @param {object} [options]
+     * @param {number} [options.catchUpBudget=50] - Maximum ticks allowed in catch-up step
+     * @param {number} [options.updateStride=2] - Stride multiplier for coarse updates
+     * @returns {number} Ticks actually executed
+     */
+    stepDistant(ticks, { catchUpBudget = 50, updateStride = 2 } = {}) {
+        if (!Number.isFinite(ticks) || ticks <= 0) return 0;
+        const boundedTicks = Math.min(Math.floor(ticks), catchUpBudget);
+        let executed = 0;
+        for (let i = 0; i < boundedTicks; i += updateStride) {
+            this.step();
+            executed++;
+        }
+        return executed;
+    }
+
+    /** Serialization alias for save games */
+    serialize() {
+        return this.snapshot();
+    }
+
+    /** Deserialization alias for save games */
+    deserialize(data) {
+        return this.restore(data);
+    }
 }
 
 export default CellGridSimulation;

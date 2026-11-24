@@ -104,7 +104,7 @@ export class Stats extends Component {
      * @param {number} amount 
      */
     heal(amount) {
-        if (this._combatant) return this._combatant.heal(amount);
+        if (this._combatant) return this._combatant.heal(amount, { allowRevive: true });
         const oldHealth = this.health;
         this.health = Math.min(this.maxHealth, this.health + amount);
         if (this.onHeal) this.onHeal(this.health - oldHealth);

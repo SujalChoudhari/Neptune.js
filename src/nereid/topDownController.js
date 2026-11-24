@@ -4,6 +4,7 @@ import { Transform } from "../components/transform.js";
 import { SceneManager } from "../core/sceneManager.js";
 import { isEntityActive } from "../core/entity.js";
 import { Collider } from "./collider.js";
+import { Body } from "./body.js";
 
 /** Adapt the engine's legacy BoxCollider dimensions to Nereid's overlap contract. */
 export function boxColliderToCollider(box, options = {}) {
@@ -14,20 +15,54 @@ export function boxColliderToCollider(box, options = {}) {
     if (![width, height, offsetX, offsetY].every(Number.isFinite) || width <= 0 || height <= 0) {
         throw new TypeError("BoxCollider must have positive finite dimensions and finite offsets");
     }
-    const collider = new Collider(width, height, offsetX - width / 2, offsetY - height / 2, {
-        role: options.role ?? "solid",
-        layer: box.layer ?? box.properties?.layer ?? 1,
-        mask: box.mask ?? box.properties?.mask ?? 0xffffffff
+
+    let scaleX = 1, scaleY = 1;
+    if (options.applyScale !== false && box.entity) {
+        let current = box.entity;
+        while (current) {
+            const transform = current.GetComponent?.(Transform);
+            if (transform?.scale) {
+                scaleX *= Math.abs(transform.scale.x);
+                scaleY *= Math.abs(transform.scale.y);
+            }
+            current = current.parent;
+        }
+    }
+
+    const effectiveWidth = width * scaleX;
+    const effectiveHeight = height * scaleY;
+    const effectiveOffsetX = offsetX * scaleX;
+    const effectiveOffsetY = offsetY * scaleY;
+
+    const collider = new Collider(effectiveWidth, effectiveHeight, effectiveOffsetX - effectiveWidth / 2, effectiveOffsetY - effectiveHeight / 2, {
+        role: options.role ?? box.role ?? (box.isTrigger ? "trigger" : "solid"),
+        layer: options.layer ?? box.layer ?? box.properties?.layer ?? 1,
+        mask: options.mask ?? box.mask ?? box.properties?.mask ?? 0xffffffff
     });
     collider.enabled = options.enabled ?? (box.enabled !== false && box.properties?.enabled !== false);
+    collider.entity = box.entity;
     return collider;
 }
 
-function collidersForEntity(entity) {
+export function collidersForEntity(entity, options = {}) {
     const result = [];
+    if (!entity) return result;
+    const body = entity.GetComponent?.(Body);
+    const bodyEnabled = body ? body.enabled !== false : true;
     for (const component of entity.components ?? []) {
-        if (component instanceof Collider) result.push(component);
-        else if (component instanceof BoxCollider) result.push(boxColliderToCollider(component));
+        if (component instanceof Collider) {
+            if (!bodyEnabled) {
+                const clone = Object.create(component);
+                clone.enabled = false;
+                result.push(clone);
+            } else {
+                result.push(component);
+            }
+        } else if (component instanceof BoxCollider) {
+            const adapted = boxColliderToCollider(component, options);
+            if (!bodyEnabled) adapted.enabled = false;
+            result.push(adapted);
+        }
     }
     return result;
 }

@@ -16,6 +16,7 @@ export class Body extends Component {
         this.grounded = false;
         this.friction = 0.9;
         this.drag = 0.98;
+        this.enabled = true;
     }
 
     /**

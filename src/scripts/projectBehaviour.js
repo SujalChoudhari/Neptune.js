@@ -12,8 +12,24 @@ import * as Larissa from '../larissa/index.js';
 import * as Nereid from '../nereid/index.js';
 import { InputActions } from '../input/actions.js';
 import { FixedStepper } from '../core/fixedStepper.js';
+import { SeededRandom } from '../core/seededRandom.js';
 
-const api = Object.freeze({ Transform, Shape, Sprite, Color, KeyboardInput, InputActions, FixedStepper, SceneManager, SaveManager, BoxCollider, Camera, Larissa, Nereid });
+export const projectApi = Object.freeze({
+    Transform,
+    Shape,
+    Sprite,
+    Color,
+    KeyboardInput,
+    InputActions,
+    FixedStepper,
+    SeededRandom,
+    SceneManager,
+    SaveManager,
+    BoxCollider,
+    Camera,
+    Larissa,
+    Nereid
+});
 
 export function validateProjectModulePath(path) {
     if (typeof path !== 'string' || path !== path.trim() || !path.endsWith('.js') || /[:\\?#%\0]/.test(path) || path.split('/').some(part => !part || part === '.' || part === '..')) {
@@ -27,15 +43,18 @@ export function validateProjectModulePath(path) {
  * Loading starts on Play, never during scene parsing or editor authoring.
  */
 export class ProjectBehaviour extends Behaviour {
+    #loadGeneration = 0;
+
     constructor() {
         super('ProjectBehaviour');
         this._properties = { module: '', settings: {} };
         this.instance = null;
         this.error = null;
         this.disposed = false;
+        this.loading = false;
     }
 
-    async loadModule() {
+    async #doLoad(generation) {
         let url;
         try {
             const path = validateProjectModulePath(this.properties.module);
@@ -43,12 +62,13 @@ export class ProjectBehaviour extends Behaviour {
             if (!response.ok) throw new Error(`Could not load ${path} (${response.status})`);
             url = URL.createObjectURL(new Blob([await response.text()], { type: 'text/javascript' }));
             const module = await import(/* @vite-ignore */ url);
-            if (this.disposed) return;
+            if (this.disposed || generation !== this.#loadGeneration) return;
             if (typeof module.create !== 'function') throw new Error(`${path} must export create(context)`);
-            this.instance = module.create({ entity: this.entity, engine: api, properties: this.properties.settings });
+            this.instance = module.create({ entity: this.entity, engine: projectApi, properties: this.properties.settings });
+            this.error = null;
             this.instance?.start?.();
         } catch (error) {
-            if (!this.disposed) {
+            if (!this.disposed && generation === this.#loadGeneration) {
                 this.error = error;
                 try { this.instance?.destroy?.(); } finally { this.instance = null; }
                 console.error('PROJECT_BEHAVIOUR_LOAD_FAILED', error);
@@ -58,13 +78,47 @@ export class ProjectBehaviour extends Behaviour {
         }
     }
 
+    async loadModule() {
+        this.loading = true;
+        this.#loadGeneration++;
+        return this.#doLoad(this.#loadGeneration);
+    }
+
+    async reload() {
+        if (this.disposed) return;
+        this.#loadGeneration++;
+        const currentGen = this.#loadGeneration;
+        try {
+            this.instance?.destroy?.();
+            this.instance?.onDispose?.();
+        } catch (err) {
+            console.warn('Error disposing previous module instance during reload:', err);
+        }
+        this.instance = null;
+        this.error = null;
+        this.loading = true;
+        return this.#doLoad(currentGen);
+    }
+
     Update(deltaTime) {
-        if (!this.loading) { this.loading = true; void this.loadModule(); }
+        if (!this.loading && this.properties.module) {
+            this.loading = true;
+            void this.loadModule();
+        }
         this.instance?.update?.(deltaTime);
     }
 
     destroy() {
         this.disposed = true;
-        try { this.instance?.destroy?.(); } finally { this.instance = null; super.destroy(); }
+        this.#loadGeneration++;
+        try {
+            this.instance?.destroy?.();
+            this.instance?.onDispose?.();
+        } catch (err) {
+            console.warn('Error disposing module on destroy:', err);
+        } finally {
+            this.instance = null;
+            super.destroy();
+        }
     }
 }

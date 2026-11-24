@@ -1332,6 +1332,16 @@ export class QuestGraph {
         };
     }
 
+    /** Serialization alias for save games */
+    serialize() {
+        return this.snapshot();
+    }
+
+    /** Deserialization alias for save games */
+    deserialize(data) {
+        return this.restore(data);
+    }
+
     /**
      * Restores quest state, active stage, and claimed reward deduplication guards from snapshot.
      * @param {Object} snapshot

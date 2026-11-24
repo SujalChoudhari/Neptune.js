@@ -91,6 +91,9 @@ export class Combatant extends Component {
         finiteNonNegative(this.invulnerabilityDuration, "invulnerabilityDuration");
         this.invulnerableRemaining = 0;
         this.staggerRemaining = 0;
+        this.dodgeRemaining = 0;
+        this.comboCount = 0;
+        this.comboTimer = 0;
         this.effects = [];
         this.body = config.body ?? null;
         this.cooldowns = new Map();
@@ -153,9 +156,16 @@ export class Combatant extends Component {
     }
 
     /** Restore health up to maxHealth and return the amount restored. */
-    heal(amount) {
+    heal(amount, { allowDead = false, allowRevive = false } = {}) {
         finiteNonNegative(amount, "Healing amount");
+        if (!this.isAlive && !allowDead && !allowRevive) return 0;
         return this.setHealth(Math.min(this.maxHealth, this.health + amount));
+    }
+
+    /** Revive a dead combatant with specified health amount. */
+    revive(amount = 1) {
+        finiteNonNegative(amount, "Revive amount");
+        return this.setHealth(Math.min(this.maxHealth, Math.max(1, amount)));
     }
 
     canTarget(targeting, other) {
@@ -205,6 +215,13 @@ export class Combatant extends Component {
         finiteNonNegative(deltaTime, "Combatant deltaTime");
         this.invulnerableRemaining = Math.max(0, this.invulnerableRemaining - deltaTime);
         this.staggerRemaining = Math.max(0, this.staggerRemaining - deltaTime);
+        this.dodgeRemaining = Math.max(0, this.dodgeRemaining - deltaTime);
+        if (this.comboTimer > 0) {
+            this.comboTimer -= deltaTime;
+            if (this.comboTimer <= 0) {
+                this.comboCount = 0;
+            }
+        }
         for (const effect of this.effects) effect.duration -= deltaTime;
         this.effects = this.effects.filter(effect => effect.duration > 0);
         for (const [name, remaining] of this.cooldowns) {
@@ -258,9 +275,39 @@ export class CombatSystem {
         if (attacker.isStaggered || attacker.cooldowns.has(definition.name) || this._attacks.has(attacker)) return false;
         if (!aim || !Number.isFinite(aim.x) || !Number.isFinite(aim.y) || Math.hypot(aim.x, aim.y) === 0) throw new TypeError("Attack aim must be a non-zero finite vector");
         const length = Math.hypot(aim.x, aim.y);
+
+        // Update combo tracking
+        if (attacker.comboTimer > 0) {
+            attacker.comboCount++;
+        } else {
+            attacker.comboCount = 1;
+        }
+        attacker.comboTimer = definition.active + definition.recovery + 0.5;
+
         const state = { id: this._serial++, attacker, definition, phase: "startup", elapsed: 0, targetsHit: new Set(), aim: { x: aim.x / length, y: aim.y / length }, spawned: false };
         this._attacks.set(attacker, state);
-        this._emit("attackStart", { attacker, definition, attackId: state.id });
+        this._emit("attackStart", { attacker, definition, attackId: state.id, combo: attacker.comboCount });
+        return true;
+    }
+
+    /** Perform a directional dodge roll with invulnerability frames (i-frames). */
+    dodge(combatant, direction, { duration = 0.35, speed = 8, iFrames = 0.25 } = {}) {
+        if (!(combatant instanceof Combatant)) throw new TypeError("dodge requires a Combatant");
+        if (!combatant.isAlive || combatant.isStaggered || combatant.dodgeRemaining > 0) return false;
+        if (!direction || !Number.isFinite(direction.x) || !Number.isFinite(direction.y)) throw new TypeError("dodge requires a finite direction vector");
+        const len = Math.hypot(direction.x, direction.y);
+        if (len === 0) return false;
+        const normX = direction.x / len;
+        const normY = direction.y / len;
+
+        combatant.dodgeRemaining = duration;
+        combatant.invulnerableRemaining = Math.max(combatant.invulnerableRemaining, iFrames);
+
+        if (combatant.body && typeof combatant.body.impulse === "function") {
+            combatant.body.impulse(normX * speed, normY * speed);
+        }
+
+        this._emit("dodge", { combatant, direction: { x: normX, y: normY }, duration });
         return true;
     }
 
@@ -352,7 +399,7 @@ export class CombatSystem {
                 if (duration === 0) {
                     if (state.phase === "startup") { state.phase = "active"; this._emit("attackActive", { attacker: state.attacker, definition: state.definition }); }
                     else if (state.phase === "active") { state.phase = "recovery"; this._emit("attackRecovery", { attacker: state.attacker, definition: state.definition }); }
-                    else { state.attacker.cooldowns.set(state.definition.name, state.definition.cooldown); this._attacks.delete(state.attacker); this._emit("attackComplete", { attacker: state.attacker, definition: state.definition }); }
+                    else { if (state.definition.cooldown > 0) state.attacker.cooldowns.set(state.definition.name, state.definition.cooldown); this._attacks.delete(state.attacker); this._emit("attackComplete", { attacker: state.attacker, definition: state.definition }); }
                     if (state.phase === "active" && state.definition.mode === "projectile") this._spawnProjectile(state);
                     continue;
                 }
@@ -367,7 +414,7 @@ export class CombatSystem {
                     state.elapsed = 0;
                     if (state.phase === "startup") { state.phase = "active"; this._emit("attackActive", { attacker: state.attacker, definition: state.definition }); }
                     else if (state.phase === "active") { state.phase = "recovery"; this._emit("attackRecovery", { attacker: state.attacker, definition: state.definition }); }
-                    else { state.attacker.cooldowns.set(state.definition.name, state.definition.cooldown); this._attacks.delete(state.attacker); this._emit("attackComplete", { attacker: state.attacker, definition: state.definition }); }
+                    else { if (state.definition.cooldown > 0) state.attacker.cooldowns.set(state.definition.name, state.definition.cooldown); this._attacks.delete(state.attacker); this._emit("attackComplete", { attacker: state.attacker, definition: state.definition }); }
                     if (state.phase === "active" && state.definition.mode === "projectile") this._spawnProjectile(state);
                 }
                 if (remaining <= 0 && this._attacks.has(state.attacker)) break;

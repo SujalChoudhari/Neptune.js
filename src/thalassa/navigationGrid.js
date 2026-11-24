@@ -897,6 +897,73 @@ export class NavigationGrid {
         }
     }
 
+    /**
+     * Compute a collision-avoidance steering adjustment for an agent in crowded or narrow corridors.
+     * Uses predictive separation to deflect velocity away from colliding neighbors.
+     * @param {{ x: number, y: number }} agentPos
+     * @param {{ x: number, y: number }} desiredVelocity
+     * @param {Array<Object>} neighbors
+     * @param {Object} [options]
+     * @param {number} [options.radius=0.5] - Personal avoidance radius
+     * @param {number} [options.maxAvoidanceForce=3.0]
+     * @returns {{ x: number, y: number }} Adjusted steering velocity
+     */
+    static computeLocalAvoidance(agentPos, desiredVelocity, neighbors, options = {}) {
+        if (!agentPos || !desiredVelocity || !Array.isArray(neighbors)) {
+            return desiredVelocity || { x: 0, y: 0 };
+        }
+        const radius = options.radius ?? 0.5;
+        const maxForce = options.maxAvoidanceForce ?? 3.0;
+        let avoidX = 0, avoidY = 0;
+
+        for (const neighbor of neighbors) {
+            if (!neighbor || neighbor === agentPos) continue;
+            const dx = agentPos.x - neighbor.x;
+            const dy = agentPos.y - neighbor.y;
+            const dist = Math.hypot(dx, dy);
+            const combinedRadius = radius + (neighbor.radius ?? radius);
+
+            if (dist < combinedRadius && dist > 0.0001) {
+                // Static overlapping or close collision: push away
+                const pushStrength = (combinedRadius - dist) / combinedRadius;
+                let nx = dx / dist;
+                let ny = dy / dist;
+                if (Math.abs(ny) < 0.001) {
+                    ny = 1.0; // Break symmetry when head-on along X axis
+                } else if (Math.abs(nx) < 0.001) {
+                    nx = 1.0; // Break symmetry when head-on along Y axis
+                }
+                avoidX += nx * pushStrength * maxForce;
+                avoidY += ny * pushStrength * maxForce;
+            } else if (dist < combinedRadius * 2 && dist > 0.0001) {
+                // Predictive collision check
+                const relVx = (desiredVelocity.x || 0) - (neighbor.velocity?.x || 0);
+                const relVy = (desiredVelocity.y || 0) - (neighbor.velocity?.y || 0);
+                const closingSpeed = -(relVx * dx + relVy * dy) / dist;
+                if (closingSpeed > 0) {
+                    const perpX = -dy / dist;
+                    const perpY = dx / dist;
+                    const steerSign = (relVx * perpY - relVy * perpX) >= 0 ? 1 : -1;
+                    avoidX += perpX * steerSign * maxForce * 0.5;
+                    avoidY += perpY * steerSign * maxForce * 0.5;
+                }
+            }
+        }
+
+        const finalX = desiredVelocity.x + avoidX;
+        const finalY = desiredVelocity.y + avoidY;
+        const desiredSpeed = Math.hypot(desiredVelocity.x, desiredVelocity.y);
+        const finalSpeed = Math.hypot(finalX, finalY);
+
+        if (finalSpeed > 0.0001 && desiredSpeed > 0) {
+            return {
+                x: (finalX / finalSpeed) * desiredSpeed,
+                y: (finalY / finalSpeed) * desiredSpeed
+            };
+        }
+        return { x: finalX, y: finalY };
+    }
+
     // =========================================================================
     // A* Pathfinding
     // =========================================================================

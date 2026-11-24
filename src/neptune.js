@@ -31,6 +31,7 @@ import { MouseInput } from "./input/mouseinput.js";
 import { KeyboardInput } from "./input/keyboardinput.js";
 import { InputActions } from "./input/actions.js";
 import { TouchInput } from "./input/touchinput.js";
+import { InputCoordinates } from "./input/coordinates.js";
 
 import { Maths } from "./math/math.js";
 import { Vector2 } from "./math/vec2.js";
@@ -40,7 +41,10 @@ import * as Titan from "./titan/index.js";
 
 // Thalassa - World/Camera System
 import * as Thalassa from "./thalassa/index.js";
-import { NavigationGrid, NavigationPath, WorldMetadataRegistry, SEMANTIC_LAYER_TYPES } from "./thalassa/index.js";
+import {
+    NavigationGrid, NavigationPath, WorldMetadataRegistry, SEMANTIC_LAYER_TYPES,
+    ChunkManager, Portal, PortalRegistry, PathfindingScheduler
+} from "./thalassa/index.js";
 
 // Nereid - Physics System
 import * as Nereid from "./nereid/index.js";
@@ -79,6 +83,7 @@ import { SaveManager } from "./core/saveManager.js";
 import { VersionedSaveEngine, SchemaMigrationRegistry, ReferenceValidator, FutureVersionError, ReferenceValidationError, MigrationError, CorruptSaveError, MapStorage } from "./core/versionedSave.js";
 import { GameClock } from "./core/gameClock.js";
 import { FixedStepper } from "./core/fixedStepper.js";
+import { SeededRandom } from "./core/seededRandom.js";
 import { WorldFacts, TypedEventBus, RuleEngine } from "./core/worldFacts.js";
 
 const application = new Application();
@@ -111,7 +116,7 @@ ComponentRegistry.register("AudioBusSystem", AudioBusSystem);
 // Register other components as needed...
 
 export {
-    application, Application, SaveManager, GameClock, FixedStepper,
+    application, Application, SaveManager, GameClock, FixedStepper, SeededRandom,
     WorldFacts, TypedEventBus, RuleEngine,
     VersionedSaveEngine, SchemaMigrationRegistry, ReferenceValidator, FutureVersionError, ReferenceValidationError, MigrationError, CorruptSaveError, MapStorage,
     Storage, Color, Filter, Entity, Scene, DestroyQueue, SceneManager, SceneLoader,
@@ -120,9 +125,10 @@ export {
     Sound,
     UI,
     Script, ScriptManager, Global, Behaviour, ProjectBehaviour,
-    MouseInput, KeyboardInput, InputActions, TouchInput,
+    MouseInput, KeyboardInput, InputActions, TouchInput, InputCoordinates,
     Maths, Vector2,
     Titan, Thalassa, NavigationGrid, NavigationPath, WorldMetadataRegistry, SEMANTIC_LAYER_TYPES,
+    ChunkManager, Portal, PortalRegistry, PathfindingScheduler,
     Nereid, Proteus, Larissa, AbilityExecutor, AbilityBudgetExceededError, AbilityValidator, AbilityValidationError,
     PerceptionSystem, BoundedMemory, NPCKnowledge, UtilityAI, UtilityAction, UtilityConsideration, UtilityCurves,
     ScheduleSystem, FactionRegistry, NPCSchedule, ScheduleSlot, ROUTINE_ACTIVITIES, FACTION_DISPOSITION,

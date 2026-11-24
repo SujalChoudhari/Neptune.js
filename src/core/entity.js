@@ -168,6 +168,9 @@ export class Entity {
      * 
      */
     AddComponent(component) {
+        if (this._destroyed) {
+            throw new Error("Cannot add component to a destroyed entity");
+        }
         if (!component || typeof component !== "object") {
             throw new TypeError("Entity.AddComponent expects a component instance.");
         }
@@ -194,8 +197,14 @@ export class Entity {
      * entity.AddChild(child);
      */
     AddChild(child) {
+        if (this._destroyed) {
+            throw new Error("Cannot add child to a destroyed entity");
+        }
         if (!child || typeof child !== "object") {
             throw new TypeError("Entity.AddChild expects an entity instance.");
+        }
+        if (child._destroyed) {
+            throw new Error("Cannot add a destroyed child entity");
         }
         for (let ancestor = this; ancestor; ancestor = ancestor.parent) {
             if (ancestor === child) {
@@ -336,13 +345,18 @@ export class Entity {
     }
 
 
-    /**@private */
+    /** Destroy this entity, all attached components, and all descendant children. */
     destroy() {
         if (this._destroyed) return;
         this._destroyed = true;
 
         for (const component of this._components.splice(0)) {
-            component.destroy();
+            if (typeof component.onDestroy === "function") {
+                try { component.onDestroy(); } catch (err) { console.error("Error in component onDestroy:", err); }
+            }
+            if (typeof component.destroy === "function") {
+                component.destroy();
+            }
         }
 
         for (const child of [...this._children]) {
