@@ -242,6 +242,109 @@ No 3D, alternate isometric/rotating world mode, WebGPU, multiplayer, global flui
 
 ## Claim log
 
+### Batch: SIM-03, STORY-02, STORY-03, COMBAT-01, COMBAT-02
+- **Task IDs:** SIM-03, STORY-02, STORY-03, COMBAT-01, COMBAT-02
+- **Status:** Verified
+- **Owner/Date:** Antigravity / Nov 24, 2026
+- **Exact File Ownership:**
+  - `SIM-03`: `src/sim/cellSimulation.js`, `tests/simulation-distant-updates.test.mjs`
+  - `STORY-02/03`: `src/galatea/storyGraph.js`, `src/galatea/cutscene.js`, `tests/story-cutscene-rewards.test.mjs`
+  - `COMBAT-01/02`: `src/larissa/combat.js`, `tests/combat-authoritative-phases.test.mjs`
+  - Integration: `src/neptune.js`, `scripts/test.js`
+- **Prerequisite IDs:** SIM-01/02, STORY-01, COMBAT-01, CORE-01/02/03
+- **Shared API/Schema Decisions:**
+  - `SIM-03`: `CellGridSimulation.stepDistant()` executes coarse-strided updates with a configurable `catchUpBudget` ceiling, bounding execution on long player absences and serializing full grid state.
+  - `STORY-02`: `QuestGraph` enforces deduplicated one-time reward claims via `#claimedRewards` set, preventing double rewards across repeated stage completions or save/reload cycles.
+  - `STORY-03`: `Cutscene` adds declarative step runners for actor movement, camera pan, dialogue display, wait timers, and typed event emissions, with safe recovery if actors are destroyed mid-cutscene and clean state restoration on `cancel()`.
+  - `COMBAT-01`: `Combatant` enforces authoritative health rules: healing dead actors is rejected, simultaneous lethal hits cleanly notify death once without underflow, and damage resistances reduce incoming damage.
+  - `COMBAT-02`: `CombatSystem.dodge()` provides invulnerability frames and mobility impulses. Attacks transition through `startup -> active -> recovery -> cooldown` with strict hit-once semantics per target per swing and combo window chaining.
+- **Implementation Checklist:**
+  - [x] Implement distant updates and serialization in `src/sim/cellSimulation.js`
+  - [x] Implement one-time reward deduplication in `src/galatea/storyGraph.js`
+  - [x] Implement declarative cutscene steps and cancel in `src/galatea/cutscene.js`
+  - [x] Implement dead healing rejection, dodge, and combos in `src/larissa/combat.js`
+  - [x] Add test suites to `scripts/test.js`
+  - [x] Pass all focused regression tests (9/9 tests)
+- **Checks and Evidence:**
+  - Focused suite: `node --test tests/simulation-distant-updates.test.mjs tests/story-cutscene-rewards.test.mjs tests/combat-authoritative-phases.test.mjs` passed 9/9 tests in 0.31s.
+- **Remaining Limitations:** Visual cutscene timeline scrubbers and ability node authoring in Triton UI remain scheduled for S15 authoring phases.
+
+### Batch: WORLD-02, WORLD-03, NAV-02, NAV-03
+- **Task IDs:** WORLD-02, WORLD-03, NAV-02, NAV-03
+- **Status:** Verified
+- **Owner/Date:** Antigravity / Nov 24, 2026
+- **Exact File Ownership:**
+  - `WORLD-02/03`: `src/thalassa/chunkManager.js`, `src/thalassa/portal.js`, `tests/world-chunks-portals.test.mjs`
+  - `NAV-02`: `src/thalassa/navigationGrid.js`, `tests/navigation-scaling-avoidance.test.mjs`
+  - `NAV-03`: `src/thalassa/pathfindingScheduler.js`
+  - Integration: `src/thalassa/index.js`, `src/neptune.js`, `scripts/test.js`
+- **Prerequisite IDs:** WORLD-01, NAV-01, CORE-01/02
+- **Shared API/Schema Decisions:**
+  - `WORLD-02/03`: `ChunkManager` streams chunks by radius, manages prefetch and unload boundaries, cancels pending loads on rapid movement via `AbortController`, and serializes persistent chunk modifications (e.g. broken doors, looted chests) that survive unloads/reloads. `PortalRegistry` and `Portal` provide cross-chunk/scene doorways with key unlocking, target existence validation, and loop detection.
+  - `NAV-02`: `NavigationGrid` handles dynamic obstacle insertions/removals with automatic route invalidation and `onRouteInvalidated` listeners. `computeLocalAvoidance` calculates predictive lateral deflection vectors to avoid deadlock when agents pass each other in narrow corridors.
+  - `NAV-03`: `PathfindingScheduler` processes path queries in priority order, bounding frame duration (`maxDurationMs`) and request counts (`maxRequestsPerTick`), and automatically drops requests from destroyed requesters.
+- **Implementation Checklist:**
+  - [x] Implement chunk streaming and persistence in `src/thalassa/chunkManager.js`
+  - [x] Implement portal resolution and locking in `src/thalassa/portal.js`
+  - [x] Implement local avoidance in `src/thalassa/navigationGrid.js`
+  - [x] Implement budgeted async scheduling in `src/thalassa/pathfindingScheduler.js`
+  - [x] Re-export in `src/thalassa/index.js` and `src/neptune.js`
+  - [x] Add test suites to `scripts/test.js`
+  - [x] Pass all focused regression tests (7/7 tests)
+- **Checks and Evidence:**
+  - Focused suite: `node --test tests/world-chunks-portals.test.mjs tests/navigation-scaling-avoidance.test.mjs` passed 7/7 tests in 0.23s.
+- **Remaining Limitations:** Visual chunk boundary gizmos in Triton editor UI remain scheduled for S15 authoring phases.
+
+### Batch: PHYS-01, INPUT-01, INPUT-02, INPUT-03
+- **Task IDs:** PHYS-01, INPUT-01, INPUT-02, INPUT-03
+- **Status:** Verified
+- **Owner/Date:** Antigravity / Nov 24, 2026
+- **Exact File Ownership:**
+  - `PHYS-01`: `src/components/boxCollider.js`, `src/nereid/body.js`, `src/nereid/topDownController.js`, `tests/physics-reconciliation.test.mjs`
+  - `INPUT-01/02`: `src/input/actions.js`, `tests/input-actions-remapping.test.mjs`
+  - `INPUT-03`: `src/input/coordinates.js`, `src/input/touchinput.js`
+  - Integration: `src/neptune.js`, `scripts/test.js`
+- **Prerequisite IDs:** CORE-01/02
+- **Shared API/Schema Decisions:**
+  - `PHYS-01`: Reconciles `BoxCollider` with Nereid `Collider` through `boxColliderToCollider` and `collidersForEntity`, factoring in hierarchical parent world scaling (`scaleX * scaleY`), mixed colliders (solid + trigger/hurtbox simultaneously), and disabled body/collider flags.
+  - `INPUT-01/02`: `InputActions` introduces push/pop context stack, typing focus guards that silence gameplay/menu inputs when text fields are active, multi-device support (keyboard, mouse, gamepad), conflict resolution policies (`replace`, `reject`, `allow`), and versioned JSON binding schema serialization/restoration.
+  - `INPUT-03`: `InputCoordinates` converts between screen CSS pixels, letterboxed/high-DPI canvas pixels, and camera-zoomed world space coordinates. `TouchInput` handles `touchcancel` events to avoid stuck touches.
+- **Implementation Checklist:**
+  - [x] Implement BoxCollider role/layer/scale support in `src/components/boxCollider.js` and `src/nereid/topDownController.js`
+  - [x] Implement context stack, remapping, and typing guards in `src/input/actions.js`
+  - [x] Implement coordinate conversion in `src/input/coordinates.js` and touch cancellation in `src/input/touchinput.js`
+  - [x] Re-export in `src/neptune.js`
+  - [x] Add test suites to `scripts/test.js`
+  - [x] Pass all focused regression tests (9/9 tests)
+- **Checks and Evidence:**
+  - Focused suite: `node --test tests/physics-reconciliation.test.mjs tests/input-actions-remapping.test.mjs` passed 9/9 tests in 0.20s.
+- **Remaining Limitations:** Keybinding customization settings UI in Triton editor remains scheduled for GUI/EDIT phases.
+
+### Batch: CORE-01, CORE-02, CORE-04
+- **Task IDs:** CORE-01, CORE-02, CORE-04
+- **Status:** Verified
+- **Owner/Date:** Antigravity / Nov 24, 2026
+- **Exact File Ownership:**
+  - `CORE-01`: `src/core/destroyQueue.js`, `src/core/entity.js`, `tests/core-lifecycle-destruction.test.mjs`
+  - `CORE-02`: `src/core/seededRandom.js`, `src/core/fixedStepper.js`, `tests/core-timing-random.test.mjs`
+  - `CORE-04`: `src/scripts/projectBehaviour.js`, `tests/core-project-modules.test.mjs`
+  - Integration: `src/neptune.js`, `scripts/test.js`
+- **Prerequisite IDs:** none
+- **Shared API/Schema Decisions:**
+  - `CORE-01`: `DestroyQueue` uses draining loop with re-entrant safe execution, processing entities and components added during destruction callbacks and deduplicating additions via `Set`. `Entity` validates against additions of children or components after destruction, safe idempotent double destroy, and notifies `onDestroy()` callbacks cleanly.
+  - `CORE-02`: `SeededRandom` provides deterministic Mulberry32 PRNG with float, integer, boolean, choice, shuffle, and state snapshot/restore methods. `FixedStepper` integrates `timeScale` (slow-motion, fast-forward), `pause()` / `resume()` for mid-attack freeze frames, and long frame delta dropping to prevent spiral of death.
+  - `CORE-04`: `ProjectBehaviour` introduces load generation counter to cancel stale async module loads on reload, reload cleanup of prior instances via `destroy()` and `onDispose()`, path validation preventing directory traversal, and isolated error reporting.
+- **Implementation Checklist:**
+  - [x] Implement re-entrant safe `src/core/destroyQueue.js` and `src/core/entity.js` checks
+  - [x] Implement `src/core/seededRandom.js` and `src/core/fixedStepper.js` time scale / pause
+  - [x] Implement `src/scripts/projectBehaviour.js` reload and cancellation
+  - [x] Re-export in `src/neptune.js`
+  - [x] Add test suites to `scripts/test.js`
+  - [x] Pass all focused regression tests (16/16 tests)
+- **Checks and Evidence:**
+  - Focused suite: `node --test tests/core-lifecycle-destruction.test.mjs tests/core-timing-random.test.mjs tests/core-project-modules.test.mjs` passed 16/16 tests in 0.33s.
+- **Remaining Limitations:** Project TS module compilation pipeline in Triton editor UI remains scheduled for EDIT phases.
+
 ### Batch: PHYS-04, WORLD-01, AUDIO-01
 - **Task IDs:** PHYS-04, WORLD-01, AUDIO-01
 - **Status:** Verified

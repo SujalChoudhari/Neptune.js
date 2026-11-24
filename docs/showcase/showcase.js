@@ -559,6 +559,9 @@ var init_entity = __esm({
        * 
        */
       AddComponent(component) {
+        if (this._destroyed) {
+          throw new Error("Cannot add component to a destroyed entity");
+        }
         if (!component || typeof component !== "object") {
           throw new TypeError("Entity.AddComponent expects a component instance.");
         }
@@ -584,8 +587,14 @@ var init_entity = __esm({
        * entity.AddChild(child);
        */
       AddChild(child) {
+        if (this._destroyed) {
+          throw new Error("Cannot add child to a destroyed entity");
+        }
         if (!child || typeof child !== "object") {
           throw new TypeError("Entity.AddChild expects an entity instance.");
+        }
+        if (child._destroyed) {
+          throw new Error("Cannot add a destroyed child entity");
         }
         for (let ancestor = this; ancestor; ancestor = ancestor.parent) {
           if (ancestor === child) {
@@ -711,12 +720,21 @@ var init_entity = __esm({
         });
         return tree;
       }
-      /**@private */
+      /** Destroy this entity, all attached components, and all descendant children. */
       destroy() {
         if (this._destroyed) return;
         this._destroyed = true;
         for (const component of this._components.splice(0)) {
-          component.destroy();
+          if (typeof component.onDestroy === "function") {
+            try {
+              component.onDestroy();
+            } catch (err) {
+              console.error("Error in component onDestroy:", err);
+            }
+          }
+          if (typeof component.destroy === "function") {
+            component.destroy();
+          }
         }
         for (const child of [...this._children]) {
           child.destroy();
@@ -3510,23 +3528,31 @@ var TouchInput = class _TouchInput {
   static #touches = [];
   /**@private */
   static init(canvas2) {
+    if (_TouchInput.#canvas) {
+      _TouchInput.dispose();
+    }
     _TouchInput.#canvas = canvas2;
     _TouchInput.#touches = [];
     _TouchInput.#canvas.addEventListener("touchstart", _TouchInput.#touchStart, { passive: true });
     _TouchInput.#canvas.addEventListener("touchend", _TouchInput.#touchEnd, { passive: true });
     _TouchInput.#canvas.addEventListener("touchmove", _TouchInput.#touchMove, { passive: true });
+    _TouchInput.#canvas.addEventListener("touchcancel", _TouchInput.#touchCancel, { passive: true });
   }
   /**@private */
   static #touchStart(event) {
-    _TouchInput.#touches = event.touches;
+    _TouchInput.#touches = event.touches ? [...event.touches] : [];
   }
   /**@private */
   static #touchEnd(event) {
-    _TouchInput.#touches = event.touches;
+    _TouchInput.#touches = event.touches ? [...event.touches] : [];
   }
   /**@private */
   static #touchMove(event) {
-    _TouchInput.#touches = event.touches;
+    _TouchInput.#touches = event.touches ? [...event.touches] : [];
+  }
+  /**@private */
+  static #touchCancel(event) {
+    _TouchInput.#touches = event.touches ? [...event.touches] : [];
   }
   /**
    * Get the number of active touches.
@@ -3536,14 +3562,15 @@ var TouchInput = class _TouchInput {
     return _TouchInput.#touches.length;
   }
   /**
-   * Get the position of the touch at the given index.
-   * @param {number} index The index of the touch to get the position of.
-   * @returns {Vector2} The position of the touch at the given index.
+   * Get the position of the touch at the given index in canvas coordinates.
+   * @param {number} index The index of the touch.
+   * @returns {Vector2|null} The position of the touch.
    */
   static GetTouch(index) {
     if (index >= 0 && index < _TouchInput.#touches.length) {
       const touch = _TouchInput.#touches[index];
-      return new Vector2(touch.pageX - _TouchInput.#canvas.offsetLeft, touch.pageY - _TouchInput.#canvas.offsetTop);
+      const rect = _TouchInput.#canvas?.getBoundingClientRect?.() ?? { left: 0, top: 0 };
+      return new Vector2(touch.clientX - rect.left, touch.clientY - rect.top);
     }
     return null;
   }
@@ -3557,6 +3584,17 @@ var TouchInput = class _TouchInput {
   }
   /**@private */
   static clear() {
+    _TouchInput.#touches = [];
+  }
+  /** Clean up listeners on canvas teardown */
+  static dispose() {
+    if (_TouchInput.#canvas) {
+      _TouchInput.#canvas.removeEventListener("touchstart", _TouchInput.#touchStart);
+      _TouchInput.#canvas.removeEventListener("touchend", _TouchInput.#touchEnd);
+      _TouchInput.#canvas.removeEventListener("touchmove", _TouchInput.#touchMove);
+      _TouchInput.#canvas.removeEventListener("touchcancel", _TouchInput.#touchCancel);
+      _TouchInput.#canvas = null;
+    }
     _TouchInput.#touches = [];
   }
 };
@@ -3656,27 +3694,56 @@ var ScriptManager = class {
 init_entity();
 init_component();
 var DestroyQueue = class _DestroyQueue {
-  static #queue = [];
+  static #queue = /* @__PURE__ */ new Set();
   /**
-   * Adds an entity to the destroy queue.
-   * Note: If a component is added to the destroy queue, The entire entity will be destroyed.
-   * @param {Entity} object The entity to be destroyed. or the component of the entity to be destroyed.
+   * Adds an entity or component to the destroy queue.
+   * Note: If a component is added to the destroy queue, the entire entity will be destroyed.
+   * If the component has no entity, it is destroyed immediately.
+   * @param {Entity|Component} object The entity to be destroyed, or a component whose entity should be destroyed.
    * @returns {void}
    */
   static Add(object) {
+    if (!object) return;
     if (object instanceof Entity) {
-      _DestroyQueue.#queue.push(object);
-    }
-    if (object instanceof Component) {
-      _DestroyQueue.#queue.push(object.entity);
+      if (!object._destroyed) {
+        _DestroyQueue.#queue.add(object);
+      }
+    } else if (object instanceof Component) {
+      if (object.entity && !object.entity._destroyed) {
+        _DestroyQueue.#queue.add(object.entity);
+      } else if (!object.entity && typeof object.destroy === "function") {
+        object.destroy();
+      }
     }
   }
-  /**@private */
+  /**
+   * Destroy all queued entities in FIFO order.
+   * Uses a draining loop so entities queued during destruction callbacks are also processed safely.
+   * @private
+   */
   static destroy() {
-    _DestroyQueue.#queue.forEach((entity) => {
-      entity.destroy();
-    });
-    _DestroyQueue.#queue = [];
+    while (_DestroyQueue.#queue.size > 0) {
+      const batch = [..._DestroyQueue.#queue];
+      _DestroyQueue.#queue.clear();
+      for (const entity of batch) {
+        if (entity && !entity._destroyed && typeof entity.destroy === "function") {
+          entity.destroy();
+        }
+      }
+    }
+  }
+  /**
+   * Clear all pending items without destroying them (e.g. for testing or scene teardown).
+   */
+  static clear() {
+    _DestroyQueue.#queue.clear();
+  }
+  /**
+   * Returns the count of pending entities to be destroyed.
+   * @type {number}
+   */
+  static get size() {
+    return _DestroyQueue.#queue.size;
   }
 };
 
@@ -3688,24 +3755,39 @@ var finitePositive = (value, name) => {
   if (!Number.isFinite(value) || value <= 0) throw new TypeError(`${name} must be a positive finite number`);
 };
 var FixedStepper = class {
-  constructor({ step = 1 / 60, maxSteps = 5, maxFrameDelta = 0.25 } = {}) {
+  constructor({ step = 1 / 60, maxSteps = 5, maxFrameDelta = 0.25, timeScale = 1, paused = false } = {}) {
     finitePositive(step, "step");
     finitePositive(maxFrameDelta, "maxFrameDelta");
     if (!Number.isInteger(maxSteps) || maxSteps < 1) throw new TypeError("maxSteps must be a positive integer");
+    if (!Number.isFinite(timeScale) || timeScale < 0) throw new TypeError("timeScale must be a non-negative finite number");
     this.step = step;
     this.maxSteps = maxSteps;
     this.maxFrameDelta = maxFrameDelta;
+    this.timeScale = timeScale;
+    this.paused = Boolean(paused);
     this.accumulator = 0;
     this.droppedTime = 0;
   }
   get interpolationAlpha() {
     return this.accumulator / this.step;
   }
+  pause() {
+    this.paused = true;
+  }
+  resume() {
+    this.paused = false;
+  }
+  setTimeScale(scale) {
+    if (!Number.isFinite(scale) || scale < 0) throw new TypeError("timeScale must be a non-negative finite number");
+    this.timeScale = scale;
+  }
   advance(frameDelta, update) {
     if (!Number.isFinite(frameDelta) || frameDelta < 0) throw new TypeError("frameDelta must be finite and non-negative");
     if (typeof update !== "function") throw new TypeError("advance requires an update callback");
-    const accepted = Math.min(frameDelta, this.maxFrameDelta);
-    this.droppedTime += frameDelta - accepted;
+    if (this.paused || this.timeScale === 0) return 0;
+    const scaledDelta = frameDelta * this.timeScale;
+    const accepted = Math.min(scaledDelta, this.maxFrameDelta);
+    this.droppedTime += scaledDelta - accepted;
     this.accumulator += accepted;
     let steps = 0;
     while (this.accumulator + Number.EPSILON >= this.step && steps < this.maxSteps) {
@@ -6258,10 +6340,15 @@ init_transform();
 init_component();
 init_vec2();
 var BoxCollider = class extends Component {
-  constructor(width = 1, height = 1, offsetX = 0, offsetY = 0) {
+  constructor(width = 1, height = 1, offsetX = 0, offsetY = 0, options = {}) {
     super();
     this._properties.size = new Vector2(width, height);
     this._properties.offset = new Vector2(offsetX, offsetY);
+    this._properties.enabled = options.enabled ?? true;
+    this._properties.role = options.role ?? "solid";
+    this._properties.layer = options.layer ?? 1;
+    this._properties.mask = options.mask ?? 4294967295;
+    this._properties.isTrigger = options.isTrigger ?? this._properties.role !== "solid";
   }
   get size() {
     return this._properties.size;
@@ -6275,13 +6362,55 @@ var BoxCollider = class extends Component {
   set offset(val) {
     this._properties.offset = val;
   }
+  get enabled() {
+    return this._properties.enabled !== false;
+  }
+  set enabled(val) {
+    this._properties.enabled = Boolean(val);
+  }
+  get role() {
+    return this._properties.role || "solid";
+  }
+  set role(val) {
+    this._properties.role = val;
+    this._properties.isTrigger = val !== "solid";
+  }
+  get layer() {
+    return this._properties.layer ?? 1;
+  }
+  set layer(val) {
+    this._properties.layer = val;
+  }
+  get mask() {
+    return this._properties.mask ?? 4294967295;
+  }
+  set mask(val) {
+    this._properties.mask = val >>> 0;
+  }
+  get isTrigger() {
+    return Boolean(this._properties.isTrigger);
+  }
+  set isTrigger(val) {
+    this._properties.isTrigger = Boolean(val);
+    if (this._properties.isTrigger && this._properties.role === "solid") {
+      this._properties.role = "trigger";
+    } else if (!this._properties.isTrigger && this._properties.role === "trigger") {
+      this._properties.role = "solid";
+    }
+  }
   deserialize(props) {
+    if (!props) return;
     if (props.size) this.size = new Vector2(props.size.x, props.size.y);
     if (props.offset) this.offset = new Vector2(props.offset.x, props.offset.y);
     if (props.offsetX !== void 0) this.offset.x = props.offsetX;
     if (props.offsetY !== void 0) this.offset.y = props.offsetY;
     if (props.width !== void 0) this.size.x = props.width;
     if (props.height !== void 0) this.size.y = props.height;
+    if (props.enabled !== void 0) this.enabled = props.enabled;
+    if (props.role !== void 0) this.role = props.role;
+    if (props.layer !== void 0) this.layer = props.layer;
+    if (props.mask !== void 0) this.mask = props.mask;
+    if (props.isTrigger !== void 0) this.isTrigger = props.isTrigger;
   }
 };
 
@@ -7427,7 +7556,7 @@ var Stats = class extends Component {
    * @param {number} amount 
    */
   heal(amount) {
-    if (this._combatant) return this._combatant.heal(amount);
+    if (this._combatant) return this._combatant.heal(amount, { allowRevive: true });
     const oldHealth = this.health;
     this.health = Math.min(this.maxHealth, this.health + amount);
     if (this.onHeal) this.onHeal(this.health - oldHealth);
@@ -8836,6 +8965,9 @@ var Combatant = class _Combatant extends Component {
     finiteNonNegative(this.invulnerabilityDuration, "invulnerabilityDuration");
     this.invulnerableRemaining = 0;
     this.staggerRemaining = 0;
+    this.dodgeRemaining = 0;
+    this.comboCount = 0;
+    this.comboTimer = 0;
     this.effects = [];
     this.body = config.body ?? null;
     this.cooldowns = /* @__PURE__ */ new Map();
@@ -8901,9 +9033,15 @@ var Combatant = class _Combatant extends Component {
     return delta;
   }
   /** Restore health up to maxHealth and return the amount restored. */
-  heal(amount) {
+  heal(amount, { allowDead = false, allowRevive = false } = {}) {
     finiteNonNegative(amount, "Healing amount");
+    if (!this.isAlive && !allowDead && !allowRevive) return 0;
     return this.setHealth(Math.min(this.maxHealth, this.health + amount));
+  }
+  /** Revive a dead combatant with specified health amount. */
+  revive(amount = 1) {
+    finiteNonNegative(amount, "Revive amount");
+    return this.setHealth(Math.min(this.maxHealth, Math.max(1, amount)));
   }
   canTarget(targeting, other) {
     if (!(other instanceof _Combatant) || other === this || !other.isAlive) return false;
@@ -8948,6 +9086,13 @@ var Combatant = class _Combatant extends Component {
     finiteNonNegative(deltaTime, "Combatant deltaTime");
     this.invulnerableRemaining = Math.max(0, this.invulnerableRemaining - deltaTime);
     this.staggerRemaining = Math.max(0, this.staggerRemaining - deltaTime);
+    this.dodgeRemaining = Math.max(0, this.dodgeRemaining - deltaTime);
+    if (this.comboTimer > 0) {
+      this.comboTimer -= deltaTime;
+      if (this.comboTimer <= 0) {
+        this.comboCount = 0;
+      }
+    }
     for (const effect of this.effects) effect.duration -= deltaTime;
     this.effects = this.effects.filter((effect) => effect.duration > 0);
     for (const [name, remaining] of this.cooldowns) {
@@ -8994,9 +9139,32 @@ var CombatSystem = class {
     if (attacker.isStaggered || attacker.cooldowns.has(definition.name) || this._attacks.has(attacker)) return false;
     if (!aim || !Number.isFinite(aim.x) || !Number.isFinite(aim.y) || Math.hypot(aim.x, aim.y) === 0) throw new TypeError("Attack aim must be a non-zero finite vector");
     const length = Math.hypot(aim.x, aim.y);
+    if (attacker.comboTimer > 0) {
+      attacker.comboCount++;
+    } else {
+      attacker.comboCount = 1;
+    }
+    attacker.comboTimer = definition.active + definition.recovery + 0.5;
     const state = { id: this._serial++, attacker, definition, phase: "startup", elapsed: 0, targetsHit: /* @__PURE__ */ new Set(), aim: { x: aim.x / length, y: aim.y / length }, spawned: false };
     this._attacks.set(attacker, state);
-    this._emit("attackStart", { attacker, definition, attackId: state.id });
+    this._emit("attackStart", { attacker, definition, attackId: state.id, combo: attacker.comboCount });
+    return true;
+  }
+  /** Perform a directional dodge roll with invulnerability frames (i-frames). */
+  dodge(combatant, direction, { duration = 0.35, speed = 8, iFrames = 0.25 } = {}) {
+    if (!(combatant instanceof Combatant)) throw new TypeError("dodge requires a Combatant");
+    if (!combatant.isAlive || combatant.isStaggered || combatant.dodgeRemaining > 0) return false;
+    if (!direction || !Number.isFinite(direction.x) || !Number.isFinite(direction.y)) throw new TypeError("dodge requires a finite direction vector");
+    const len = Math.hypot(direction.x, direction.y);
+    if (len === 0) return false;
+    const normX = direction.x / len;
+    const normY = direction.y / len;
+    combatant.dodgeRemaining = duration;
+    combatant.invulnerableRemaining = Math.max(combatant.invulnerableRemaining, iFrames);
+    if (combatant.body && typeof combatant.body.impulse === "function") {
+      combatant.body.impulse(normX * speed, normY * speed);
+    }
+    this._emit("dodge", { combatant, direction: { x: normX, y: normY }, duration });
     return true;
   }
   _hitTargets(state, targets) {
@@ -9105,7 +9273,7 @@ var CombatSystem = class {
             state.phase = "recovery";
             this._emit("attackRecovery", { attacker: state.attacker, definition: state.definition });
           } else {
-            state.attacker.cooldowns.set(state.definition.name, state.definition.cooldown);
+            if (state.definition.cooldown > 0) state.attacker.cooldowns.set(state.definition.name, state.definition.cooldown);
             this._attacks.delete(state.attacker);
             this._emit("attackComplete", { attacker: state.attacker, definition: state.definition });
           }
@@ -9128,7 +9296,7 @@ var CombatSystem = class {
             state.phase = "recovery";
             this._emit("attackRecovery", { attacker: state.attacker, definition: state.definition });
           } else {
-            state.attacker.cooldowns.set(state.definition.name, state.definition.cooldown);
+            if (state.definition.cooldown > 0) state.attacker.cooldowns.set(state.definition.name, state.definition.cooldown);
             this._attacks.delete(state.attacker);
             this._emit("attackComplete", { attacker: state.attacker, definition: state.definition });
           }
@@ -15114,6 +15282,7 @@ var Body = class extends Component {
     this.grounded = false;
     this.friction = 0.9;
     this.drag = 0.98;
+    this.enabled = true;
   }
   /**
    * Apply a force to the body.
@@ -16296,19 +16465,50 @@ function boxColliderToCollider(box, options = {}) {
   if (![width, height, offsetX, offsetY].every(Number.isFinite) || width <= 0 || height <= 0) {
     throw new TypeError("BoxCollider must have positive finite dimensions and finite offsets");
   }
-  const collider = new Collider(width, height, offsetX - width / 2, offsetY - height / 2, {
-    role: options.role ?? "solid",
-    layer: box.layer ?? box.properties?.layer ?? 1,
-    mask: box.mask ?? box.properties?.mask ?? 4294967295
+  let scaleX = 1, scaleY = 1;
+  if (options.applyScale !== false && box.entity) {
+    let current = box.entity;
+    while (current) {
+      const transform = current.GetComponent?.(Transform);
+      if (transform?.scale) {
+        scaleX *= Math.abs(transform.scale.x);
+        scaleY *= Math.abs(transform.scale.y);
+      }
+      current = current.parent;
+    }
+  }
+  const effectiveWidth = width * scaleX;
+  const effectiveHeight = height * scaleY;
+  const effectiveOffsetX = offsetX * scaleX;
+  const effectiveOffsetY = offsetY * scaleY;
+  const collider = new Collider(effectiveWidth, effectiveHeight, effectiveOffsetX - effectiveWidth / 2, effectiveOffsetY - effectiveHeight / 2, {
+    role: options.role ?? box.role ?? (box.isTrigger ? "trigger" : "solid"),
+    layer: options.layer ?? box.layer ?? box.properties?.layer ?? 1,
+    mask: options.mask ?? box.mask ?? box.properties?.mask ?? 4294967295
   });
   collider.enabled = options.enabled ?? (box.enabled !== false && box.properties?.enabled !== false);
+  collider.entity = box.entity;
   return collider;
 }
-function collidersForEntity(entity) {
+function collidersForEntity(entity, options = {}) {
   const result = [];
+  if (!entity) return result;
+  const body = entity.GetComponent?.(Body);
+  const bodyEnabled = body ? body.enabled !== false : true;
   for (const component of entity.components ?? []) {
-    if (component instanceof Collider) result.push(component);
-    else if (component instanceof BoxCollider) result.push(boxColliderToCollider(component));
+    if (component instanceof Collider) {
+      if (!bodyEnabled) {
+        const clone2 = Object.create(component);
+        clone2.enabled = false;
+        result.push(clone2);
+      } else {
+        result.push(component);
+      }
+    } else if (component instanceof BoxCollider) {
+      const adapted = boxColliderToCollider(component, options);
+      if (!bodyEnabled) adapted.enabled = false;
+      result.push(adapted);
+    }
   }
   return result;
 }
@@ -16382,42 +16582,182 @@ var TopDownController = class extends Component {
 
 // src/input/actions.js
 var keyCodes = KeyboardInput.KEY_CODE;
-var aliases = { ARROWUP: "UPARROW", ARROWDOWN: "DOWNARROW", ARROWLEFT: "LEFTARROW", ARROWRIGHT: "RIGHTARROW", ESCAPE: "ESC" };
-function normalizeKeys(keys) {
+var aliases = {
+  ARROWUP: "UPARROW",
+  ARROWDOWN: "DOWNARROW",
+  ARROWLEFT: "LEFTARROW",
+  ARROWRIGHT: "RIGHTARROW",
+  ESCAPE: "ESC"
+};
+var MOUSE_BUTTONS = {
+  MOUSE_LEFT: MouseInput.BUTTON.LEFT,
+  MOUSE_MIDDLE: MouseInput.BUTTON.MIDDLE,
+  MOUSE_RIGHT: MouseInput.BUTTON.RIGHT
+};
+var GAMEPAD_BUTTONS = {
+  GAMEPAD_A: 0,
+  GAMEPAD_B: 1,
+  GAMEPAD_X: 2,
+  GAMEPAD_Y: 3,
+  GAMEPAD_LB: 4,
+  GAMEPAD_RB: 5,
+  GAMEPAD_LT: 6,
+  GAMEPAD_RT: 7,
+  GAMEPAD_SELECT: 8,
+  GAMEPAD_START: 9,
+  GAMEPAD_LSTICK: 10,
+  GAMEPAD_RSTICK: 11,
+  GAMEPAD_UP: 12,
+  GAMEPAD_DOWN: 13,
+  GAMEPAD_LEFT: 14,
+  GAMEPAD_RIGHT: 15
+};
+function normalizeSingleBinding(binding) {
+  if (typeof binding === "object" && binding !== null && !Array.isArray(binding)) {
+    const type = binding.type || "keyboard";
+    if (type === "mouse") {
+      const btnVal = binding.code ?? binding.button ?? binding.raw;
+      const button = Number.isInteger(btnVal) ? btnVal : MOUSE_BUTTONS[String(btnVal).toUpperCase()];
+      if (button === void 0) throw new TypeError(`Unknown mouse button '${btnVal}'`);
+      return { type: "mouse", code: button, raw: binding.raw ?? btnVal };
+    }
+    if (type === "gamepad") {
+      const btnVal = binding.code ?? binding.button ?? binding.raw;
+      const index = Number.isInteger(btnVal) ? btnVal : GAMEPAD_BUTTONS[String(btnVal).toUpperCase()];
+      if (index === void 0) throw new TypeError(`Unknown gamepad button '${btnVal}'`);
+      return { type: "gamepad", code: index, raw: binding.raw ?? btnVal };
+    }
+    const code2 = Number.isInteger(binding.code) ? binding.code : binding.raw ? normalizeSingleBinding(binding.raw).code : void 0;
+    if (Number.isInteger(code2)) {
+      return { type: "keyboard", code: code2, raw: binding.raw ?? code2 };
+    }
+    return normalizeSingleBinding(binding.code ?? binding.key ?? binding.raw);
+  }
+  if (Number.isInteger(binding) && binding >= 0) {
+    return { type: "keyboard", code: binding, raw: binding };
+  }
+  if (typeof binding !== "string" || !binding.trim()) {
+    throw new TypeError("Input bindings must be key names, button names, or non-negative key codes");
+  }
+  const upper = binding.trim().toUpperCase();
+  if (upper in MOUSE_BUTTONS) {
+    return { type: "mouse", code: MOUSE_BUTTONS[upper], raw: upper };
+  }
+  if (upper in GAMEPAD_BUTTONS) {
+    return { type: "gamepad", code: GAMEPAD_BUTTONS[upper], raw: upper };
+  }
+  const code = keyCodes[aliases[upper] ?? upper] ?? (upper.length === 1 ? upper.charCodeAt(0) : void 0);
+  if (!Number.isInteger(code)) throw new TypeError(`Unknown keyboard binding '${binding}'`);
+  return { type: "keyboard", code, raw: upper };
+}
+function normalizeBindings(keys) {
   const values = Array.isArray(keys) ? keys : [keys];
   if (!values.length) throw new TypeError("An input action requires at least one key binding");
-  return [...new Set(values.map((key) => {
-    if (Number.isInteger(key) && key >= 0) return key;
-    if (typeof key !== "string" || !key.trim()) throw new TypeError("Input bindings must be key names or non-negative key codes");
-    const name = key.trim().toUpperCase();
-    const code = keyCodes[aliases[name] ?? name] ?? (name.length === 1 ? name.charCodeAt(0) : void 0);
-    if (!Number.isInteger(code)) throw new TypeError(`Unknown keyboard binding '${key}'`);
-    return code;
-  }))];
+  const normalized = values.map(normalizeSingleBinding);
+  const unique = [];
+  const seen = /* @__PURE__ */ new Set();
+  for (const b of normalized) {
+    const key = `${b.type}:${b.code}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(b);
+    }
+  }
+  return unique;
 }
-var InputActions = class {
+var InputActions = class _InputActions {
   #contexts = /* @__PURE__ */ new Map();
+  #contextStack = [];
   #context = "default";
   #enabled = true;
-  constructor(bindings = {}, { context = "default" } = {}) {
-    if (!bindings || typeof bindings !== "object" || Array.isArray(bindings)) throw new TypeError("InputActions bindings must be an object");
+  #defaultBindings = {};
+  #ignoreTypingCapture = false;
+  /**
+   * Determine if user focus is currently inside a text field (input, textarea, or contentEditable).
+   * @returns {boolean}
+   */
+  static isTypingFocused() {
+    if (typeof document === "undefined" || !document.activeElement) return false;
+    const el = document.activeElement;
+    const tag = el.tagName?.toUpperCase();
+    return tag === "INPUT" || tag === "TEXTAREA" || Boolean(el.isContentEditable);
+  }
+  constructor(bindings = {}, { context = "default", ignoreTypingCapture = false } = {}) {
+    if (!bindings || typeof bindings !== "object" || Array.isArray(bindings)) {
+      throw new TypeError("InputActions bindings must be an object");
+    }
     this.#context = context;
-    for (const [action, keys] of Object.entries(bindings)) this.bind(action, keys);
+    this.#contextStack = [context];
+    this.#ignoreTypingCapture = Boolean(ignoreTypingCapture);
+    this.#defaultBindings = JSON.parse(JSON.stringify(bindings));
+    for (const [action, keys] of Object.entries(bindings)) {
+      this.bind(action, keys, context);
+    }
   }
   bind(action, keys, context = this.#context) {
     if (typeof action !== "string" || !action.trim()) throw new TypeError("Input action name must be non-empty");
     if (typeof context !== "string" || !context.trim()) throw new TypeError("Input context name must be non-empty");
     if (!this.#contexts.has(context)) this.#contexts.set(context, /* @__PURE__ */ new Map());
-    this.#contexts.get(context).set(action, normalizeKeys(keys));
+    this.#contexts.get(context).set(action, normalizeBindings(keys));
     return this;
   }
   unbind(action, context = this.#context) {
     return this.#contexts.get(context)?.delete(action) ?? false;
   }
+  /**
+   * Remap an action to new bindings with configurable conflict policy.
+   * @param {string} action
+   * @param {any} keys
+   * @param {object} [options]
+   * @param {string} [options.context]
+   * @param {"replace"|"reject"|"allow"} [options.conflictPolicy="replace"]
+   */
+  remap(action, keys, { context = this.#context, conflictPolicy = "replace" } = {}) {
+    if (!["replace", "reject", "allow"].includes(conflictPolicy)) {
+      throw new TypeError("conflictPolicy must be 'replace', 'reject', or 'allow'");
+    }
+    const newBindings = normalizeBindings(keys);
+    const ctxMap = this.#contexts.get(context);
+    if (ctxMap && conflictPolicy !== "allow") {
+      const newKeys = new Set(newBindings.map((b) => `${b.type}:${b.code}`));
+      for (const [otherAction, existingBindings] of ctxMap.entries()) {
+        if (otherAction === action) continue;
+        const conflict = existingBindings.find((b) => newKeys.has(`${b.type}:${b.code}`));
+        if (conflict) {
+          if (conflictPolicy === "reject") {
+            throw new Error(`Conflict: binding '${conflict.raw || conflict.code}' is already bound to action '${otherAction}' in context '${context}'`);
+          }
+          if (conflictPolicy === "replace") {
+            const filtered = existingBindings.filter((b) => !newKeys.has(`${b.type}:${b.code}`));
+            if (filtered.length > 0) {
+              ctxMap.set(otherAction, filtered);
+            } else {
+              ctxMap.delete(otherAction);
+            }
+          }
+        }
+      }
+    }
+    return this.bind(action, newBindings, context);
+  }
   setContext(context) {
     if (typeof context !== "string" || !context.trim()) throw new TypeError("Input context name must be non-empty");
     this.#context = context;
+    this.#contextStack = [context];
     return this;
+  }
+  pushContext(context) {
+    if (typeof context !== "string" || !context.trim()) throw new TypeError("Input context name must be non-empty");
+    this.#contextStack.push(context);
+    this.#context = context;
+    return this;
+  }
+  popContext() {
+    if (this.#contextStack.length > 1) {
+      this.#contextStack.pop();
+      this.#context = this.#contextStack[this.#contextStack.length - 1];
+    }
+    return this.#context;
   }
   get context() {
     return this.#context;
@@ -16429,30 +16769,251 @@ var InputActions = class {
   get enabled() {
     return this.#enabled;
   }
-  #keys(action) {
-    return this.#enabled ? this.#contexts.get(this.#context)?.get(action) ?? [] : [];
+  #bindings(action) {
+    if (!this.#enabled) return [];
+    if (!this.#ignoreTypingCapture && this.#context !== "editor" && _InputActions.isTypingFocused()) {
+      return [];
+    }
+    const activeMap = this.#contexts.get(this.#context);
+    const actionBindings = activeMap?.get(action) ?? [];
+    if (this.#context !== "global" && this.#contexts.has("global")) {
+      const globalBindings = this.#contexts.get("global").get(action);
+      if (globalBindings) return [...actionBindings, ...globalBindings];
+    }
+    return actionBindings;
+  }
+  #checkBindingPressed(binding) {
+    if (binding.type === "keyboard") return KeyboardInput.IsKeyPressed(binding.code);
+    if (binding.type === "mouse") return MouseInput.IsClicked(binding.code);
+    if (binding.type === "gamepad" && typeof navigator !== "undefined" && navigator.getGamepads) {
+      const gamepads = navigator.getGamepads();
+      for (const gp of gamepads) {
+        if (gp?.buttons?.[binding.code]?.pressed) return true;
+      }
+    }
+    return false;
+  }
+  #checkBindingHeld(binding) {
+    if (binding.type === "keyboard") return KeyboardInput.IsKeyDown(binding.code);
+    if (binding.type === "mouse") return MouseInput.IsButtonDown(binding.code);
+    if (binding.type === "gamepad" && typeof navigator !== "undefined" && navigator.getGamepads) {
+      const gamepads = navigator.getGamepads();
+      for (const gp of gamepads) {
+        if (gp?.buttons?.[binding.code]?.pressed) return true;
+      }
+    }
+    return false;
+  }
+  #checkBindingReleased(binding) {
+    if (binding.type === "keyboard") return KeyboardInput.IsKeyReleased(binding.code);
+    if (binding.type === "mouse") return MouseInput.IsButtonUp(binding.code);
+    return false;
   }
   pressed(action) {
-    return this.#keys(action).some((key) => KeyboardInput.IsKeyPressed(key));
+    return this.#bindings(action).some((b) => this.#checkBindingPressed(b));
   }
   held(action) {
-    return this.#keys(action).some((key) => KeyboardInput.IsKeyDown(key));
+    return this.#bindings(action).some((b) => this.#checkBindingHeld(b));
   }
   released(action) {
-    return this.#keys(action).some((key) => KeyboardInput.IsKeyReleased(key));
+    return this.#bindings(action).some((b) => this.#checkBindingReleased(b));
   }
   state(action) {
     return { pressed: this.pressed(action), held: this.held(action), released: this.released(action) };
   }
-  /** Clear bindings and disable this instance when its owning gameplay context ends. */
+  axis(negativeAction, positiveAction) {
+    let val = 0;
+    if (this.held(negativeAction)) val -= 1;
+    if (this.held(positiveAction)) val += 1;
+    return val;
+  }
+  vector(leftAction, rightAction, upAction, downAction) {
+    const x = this.axis(leftAction, rightAction);
+    const y = this.axis(upAction, downAction);
+    const len = Math.hypot(x, y);
+    if (len > 1) {
+      return { x: x / len, y: y / len };
+    }
+    return { x, y };
+  }
+  serializeBindings() {
+    const output = { version: 1, contexts: {} };
+    for (const [ctx2, actionsMap] of this.#contexts.entries()) {
+      output.contexts[ctx2] = {};
+      for (const [action, bindings] of actionsMap.entries()) {
+        output.contexts[ctx2][action] = bindings.map((b) => ({ type: b.type, code: b.code, raw: b.raw }));
+      }
+    }
+    return output;
+  }
+  restoreBindings(data, { merge = false } = {}) {
+    if (!data || typeof data !== "object" || data.version !== 1 || !data.contexts) {
+      throw new TypeError("Invalid serialized input bindings schema");
+    }
+    if (!merge) {
+      this.#contexts.clear();
+    }
+    for (const [ctx2, actionsMap] of Object.entries(data.contexts)) {
+      for (const [action, bindings] of Object.entries(actionsMap)) {
+        this.bind(action, bindings, ctx2);
+      }
+    }
+    return this;
+  }
+  resetToDefaults() {
+    this.#contexts.clear();
+    for (const [action, keys] of Object.entries(this.#defaultBindings)) {
+      this.bind(action, keys, this.#context);
+    }
+    return this;
+  }
   dispose() {
     this.#contexts.clear();
+    this.#contextStack = [];
     this.#enabled = false;
   }
 };
 
+// src/core/seededRandom.js
+var SeededRandom = class {
+  #state;
+  #initialSeed;
+  /**
+   * @param {number} [seed=1] - Starting integer or float seed.
+   */
+  constructor(seed = 1) {
+    this.setSeed(seed);
+  }
+  /**
+   * Re-seed the generator with a new seed value.
+   * @param {number} seed 
+   */
+  setSeed(seed) {
+    if (!Number.isFinite(seed)) throw new TypeError("Seed must be a finite number");
+    this.#initialSeed = seed;
+    this.#state = (Math.floor(seed) ^ 1831565813) >>> 0;
+    if (this.#state === 0) this.#state = 1;
+  }
+  /**
+   * The original seed this instance was initialized or re-seeded with.
+   * @type {number}
+   */
+  get initialSeed() {
+    return this.#initialSeed;
+  }
+  /**
+   * Advance the generator and return a uniform float in [0, 1).
+   * @returns {number}
+   */
+  next() {
+    let t = this.#state += 1831565813;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  }
+  /**
+   * Return a uniform float in the range [min, max).
+   * @param {number} [min=0]
+   * @param {number} [max=1]
+   * @returns {number}
+   */
+  nextFloat(min = 0, max = 1) {
+    if (!Number.isFinite(min) || !Number.isFinite(max)) throw new TypeError("min and max must be finite numbers");
+    if (min >= max) throw new RangeError("min must be strictly less than max");
+    return min + this.next() * (max - min);
+  }
+  /**
+   * Return a uniform integer in the inclusive range [min, max].
+   * @param {number} min 
+   * @param {number} max 
+   * @returns {number}
+   */
+  nextInt(min, max) {
+    if (!Number.isInteger(min) || !Number.isInteger(max)) throw new TypeError("min and max must be integers");
+    if (min > max) throw new RangeError("min must be less than or equal to max");
+    if (min === max) return min;
+    return Math.floor(min + this.next() * (max - min + 1));
+  }
+  /**
+   * Return true with probability `chance` (defaults to 0.5 for a 50/50 flip).
+   * @param {number} [chance=0.5]
+   * @returns {boolean}
+   */
+  nextBool(chance = 0.5) {
+    if (!Number.isFinite(chance) || chance < 0 || chance > 1) {
+      throw new RangeError("chance must be between 0 and 1 inclusive");
+    }
+    return this.next() < chance;
+  }
+  /**
+   * Select a random item from an array without modifying the array.
+   * @template T
+   * @param {T[]} array 
+   * @returns {T|undefined}
+   */
+  choice(array) {
+    if (!Array.isArray(array)) throw new TypeError("choice requires an array");
+    if (array.length === 0) return void 0;
+    return array[this.nextInt(0, array.length - 1)];
+  }
+  /**
+   * In-place deterministic Fisher-Yates shuffle.
+   * @template T
+   * @param {T[]} array 
+   * @returns {T[]}
+   */
+  shuffle(array) {
+    if (!Array.isArray(array)) throw new TypeError("shuffle requires an array");
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = this.nextInt(0, i);
+      const temp = array[i];
+      array[i] = array[j];
+      array[j] = temp;
+    }
+    return array;
+  }
+  /**
+   * Snapshot current internal state for serialization / checkpoints.
+   * @returns {{ seed: number, state: number }}
+   */
+  getState() {
+    return {
+      seed: this.#initialSeed,
+      state: this.#state
+    };
+  }
+  /**
+   * Restore internal state from a previously saved snapshot.
+   * @param {Object} snapshot - State snapshot object containing numeric state.
+   * @param {number} [snapshot.seed]
+   * @param {number} snapshot.state
+   */
+  setState(snapshot) {
+    if (!snapshot || typeof snapshot !== "object" || !Number.isFinite(snapshot.state)) {
+      throw new TypeError("setState requires a snapshot object with numeric state");
+    }
+    this.#initialSeed = snapshot.seed ?? this.#initialSeed;
+    this.#state = snapshot.state >>> 0;
+  }
+};
+
 // src/scripts/projectBehaviour.js
-var api = Object.freeze({ Transform, Shape, Sprite, Color, KeyboardInput, InputActions, FixedStepper, SceneManager, SaveManager, BoxCollider, Camera, Larissa: larissa_exports, Nereid: nereid_exports });
+var projectApi = Object.freeze({
+  Transform,
+  Shape,
+  Sprite,
+  Color,
+  KeyboardInput,
+  InputActions,
+  FixedStepper,
+  SeededRandom,
+  SceneManager,
+  SaveManager,
+  BoxCollider,
+  Camera,
+  Larissa: larissa_exports,
+  Nereid: nereid_exports
+});
 function validateProjectModulePath(path) {
   if (typeof path !== "string" || path !== path.trim() || !path.endsWith(".js") || /[:\\?#%\0]/.test(path) || path.split("/").some((part) => !part || part === "." || part === "..")) {
     throw new Error("ProjectBehaviour.module must be a project-relative .js path");
@@ -16460,14 +17021,16 @@ function validateProjectModulePath(path) {
   return path;
 }
 var ProjectBehaviour = class extends Behaviour {
+  #loadGeneration = 0;
   constructor() {
     super("ProjectBehaviour");
     this._properties = { module: "", settings: {} };
     this.instance = null;
     this.error = null;
     this.disposed = false;
+    this.loading = false;
   }
-  async loadModule() {
+  async #doLoad(generation) {
     let url;
     try {
       const path = validateProjectModulePath(this.properties.module);
@@ -16478,12 +17041,13 @@ var ProjectBehaviour = class extends Behaviour {
         /* @vite-ignore */
         url
       );
-      if (this.disposed) return;
+      if (this.disposed || generation !== this.#loadGeneration) return;
       if (typeof module.create !== "function") throw new Error(`${path} must export create(context)`);
-      this.instance = module.create({ entity: this.entity, engine: api, properties: this.properties.settings });
+      this.instance = module.create({ entity: this.entity, engine: projectApi, properties: this.properties.settings });
+      this.error = null;
       this.instance?.start?.();
     } catch (error) {
-      if (!this.disposed) {
+      if (!this.disposed && generation === this.#loadGeneration) {
         this.error = error;
         try {
           this.instance?.destroy?.();
@@ -16496,8 +17060,28 @@ var ProjectBehaviour = class extends Behaviour {
       if (url) URL.revokeObjectURL(url);
     }
   }
+  async loadModule() {
+    this.loading = true;
+    this.#loadGeneration++;
+    return this.#doLoad(this.#loadGeneration);
+  }
+  async reload() {
+    if (this.disposed) return;
+    this.#loadGeneration++;
+    const currentGen = this.#loadGeneration;
+    try {
+      this.instance?.destroy?.();
+      this.instance?.onDispose?.();
+    } catch (err) {
+      console.warn("Error disposing previous module instance during reload:", err);
+    }
+    this.instance = null;
+    this.error = null;
+    this.loading = true;
+    return this.#doLoad(currentGen);
+  }
   Update(deltaTime) {
-    if (!this.loading) {
+    if (!this.loading && this.properties.module) {
       this.loading = true;
       void this.loadModule();
     }
@@ -16505,14 +17089,21 @@ var ProjectBehaviour = class extends Behaviour {
   }
   destroy() {
     this.disposed = true;
+    this.#loadGeneration++;
     try {
       this.instance?.destroy?.();
+      this.instance?.onDispose?.();
+    } catch (err) {
+      console.warn("Error disposing module on destroy:", err);
     } finally {
       this.instance = null;
       super.destroy();
     }
   }
 };
+
+// src/input/coordinates.js
+init_vec2();
 
 // src/neptune.js
 init_math();
@@ -17920,6 +18511,66 @@ var NavigationGrid = class _NavigationGrid {
       }
     }
   }
+  /**
+   * Compute a collision-avoidance steering adjustment for an agent in crowded or narrow corridors.
+   * Uses predictive separation to deflect velocity away from colliding neighbors.
+   * @param {{ x: number, y: number }} agentPos
+   * @param {{ x: number, y: number }} desiredVelocity
+   * @param {Array<Object>} neighbors
+   * @param {Object} [options]
+   * @param {number} [options.radius=0.5] - Personal avoidance radius
+   * @param {number} [options.maxAvoidanceForce=3.0]
+   * @returns {{ x: number, y: number }} Adjusted steering velocity
+   */
+  static computeLocalAvoidance(agentPos, desiredVelocity, neighbors, options = {}) {
+    if (!agentPos || !desiredVelocity || !Array.isArray(neighbors)) {
+      return desiredVelocity || { x: 0, y: 0 };
+    }
+    const radius = options.radius ?? 0.5;
+    const maxForce = options.maxAvoidanceForce ?? 3;
+    let avoidX = 0, avoidY = 0;
+    for (const neighbor of neighbors) {
+      if (!neighbor || neighbor === agentPos) continue;
+      const dx = agentPos.x - neighbor.x;
+      const dy = agentPos.y - neighbor.y;
+      const dist = Math.hypot(dx, dy);
+      const combinedRadius = radius + (neighbor.radius ?? radius);
+      if (dist < combinedRadius && dist > 1e-4) {
+        const pushStrength = (combinedRadius - dist) / combinedRadius;
+        let nx = dx / dist;
+        let ny = dy / dist;
+        if (Math.abs(ny) < 1e-3) {
+          ny = 1;
+        } else if (Math.abs(nx) < 1e-3) {
+          nx = 1;
+        }
+        avoidX += nx * pushStrength * maxForce;
+        avoidY += ny * pushStrength * maxForce;
+      } else if (dist < combinedRadius * 2 && dist > 1e-4) {
+        const relVx = (desiredVelocity.x || 0) - (neighbor.velocity?.x || 0);
+        const relVy = (desiredVelocity.y || 0) - (neighbor.velocity?.y || 0);
+        const closingSpeed = -(relVx * dx + relVy * dy) / dist;
+        if (closingSpeed > 0) {
+          const perpX = -dy / dist;
+          const perpY = dx / dist;
+          const steerSign = relVx * perpY - relVy * perpX >= 0 ? 1 : -1;
+          avoidX += perpX * steerSign * maxForce * 0.5;
+          avoidY += perpY * steerSign * maxForce * 0.5;
+        }
+      }
+    }
+    const finalX = desiredVelocity.x + avoidX;
+    const finalY = desiredVelocity.y + avoidY;
+    const desiredSpeed = Math.hypot(desiredVelocity.x, desiredVelocity.y);
+    const finalSpeed = Math.hypot(finalX, finalY);
+    if (finalSpeed > 1e-4 && desiredSpeed > 0) {
+      return {
+        x: finalX / finalSpeed * desiredSpeed,
+        y: finalY / finalSpeed * desiredSpeed
+      };
+    }
+    return { x: finalX, y: finalY };
+  }
   // =========================================================================
   // A* Pathfinding
   // =========================================================================
@@ -18294,6 +18945,13 @@ var NavigationGrid = class _NavigationGrid {
   }
 };
 
+// src/thalassa/chunkManager.js
+init_entity();
+
+// src/thalassa/portal.js
+init_component();
+init_vec2();
+
 // src/thalassa/worldMetadata.js
 init_component();
 function finiteNumber5(value, name, min = 0) {
@@ -18601,6 +19259,9 @@ var WorldMetadataRegistry = class _WorldMetadataRegistry extends Component {
 
 // src/proteus/soundPool.js
 init_scene();
+
+// src/galatea/cutscene.js
+init_transform();
 
 // src/galatea/storyGraph.js
 function evaluateSingleCondition(condition, facts2, context = null) {
@@ -19886,6 +20547,33 @@ var CellGridSimulation = class {
       }
     }
     return matches;
+  }
+  /**
+   * Advances simulation for distant chunks at a reduced fidelity and with a catch-up budget ceiling.
+   * Prevents long absences from triggering unbounded iteration freezes while advancing persistent state.
+   * @param {number} ticks - Requested elapsed simulation ticks
+   * @param {object} [options]
+   * @param {number} [options.catchUpBudget=50] - Maximum ticks allowed in catch-up step
+   * @param {number} [options.updateStride=2] - Stride multiplier for coarse updates
+   * @returns {number} Ticks actually executed
+   */
+  stepDistant(ticks, { catchUpBudget = 50, updateStride = 2 } = {}) {
+    if (!Number.isFinite(ticks) || ticks <= 0) return 0;
+    const boundedTicks = Math.min(Math.floor(ticks), catchUpBudget);
+    let executed = 0;
+    for (let i = 0; i < boundedTicks; i += updateStride) {
+      this.step();
+      executed++;
+    }
+    return executed;
+  }
+  /** Serialization alias for save games */
+  serialize() {
+    return this.snapshot();
+  }
+  /** Deserialization alias for save games */
+  deserialize(data) {
+    return this.restore(data);
   }
 };
 
